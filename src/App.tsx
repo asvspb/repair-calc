@@ -1454,7 +1454,7 @@ export default function App() {
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <div className="flex items-center gap-2 text-indigo-600">
             <Calculator className="w-6 h-6" />
-            <span className="font-semibold text-lg">Ремонт-Кальк</span>
+            <span className="font-semibold text-lg">Мой ремонт</span>
           </div>
           <button className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
             <X className="w-5 h-5 text-gray-500" />

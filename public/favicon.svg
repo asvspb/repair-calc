@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="handle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="32" cy="32" r="30" fill="#f1f5f9"/>
+  
+  <!-- Wrench (crossing from bottom-left to top-right) -->
+  <g transform="rotate(-50 32 32)">
+    <rect x="28" y="4" width="8" height="52" rx="3" fill="url(#steel)"/>
+    <path d="M24 4 h16 v10 c0 3-4 4-8 4s-8-1-8-4z" fill="url(#steel)"/>
+    <rect x="30" y="6" width="4" height="6" rx="1" fill="#cbd5e1"/>
+  </g>
+  
+  <!-- Hammer (crossing from top-left to bottom-right) -->
+  <g transform="rotate(40 32 32)">
+    <rect x="28" y="12" width="8" height="48" rx="3" fill="url(#handle)"/>
+    <rect x="18" y="4" width="28" height="12" rx="2" fill="url(#steel)"/>
+    <path d="M18 6 L12 3 L9 7 L16 12" fill="url(#steel)"/>
+    <path d="M46 6 L52 3 L55 7 L48 12" fill="url(#steel)"/>
+  </g>
+  
+  <!-- Center overlay -->
+  <circle cx="32" cy="32" r="4" fill="#e2e8f0" opacity="0.6"/>
+</svg>
