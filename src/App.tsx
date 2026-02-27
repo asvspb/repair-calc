@@ -156,9 +156,9 @@ const createNewRoom = (): RoomData => ({
   id: Math.random().toString(36).substring(2, 11),
   name: 'Новая комната',
   geometryMode: 'simple',
-  length: 4,
-  width: 3,
-  height: 2.6,
+  length: 0,
+  width: 0,
+  height: 0,
   segments: [],
   obstacles: [],
   wallSections: [],
@@ -326,12 +326,24 @@ type NumberInputProps = {
 
 function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: NumberInputProps) {
   const [str, setStr] = useState(value.toString());
+  const isTypingRef = React.useRef(false);
 
   useEffect(() => {
-    if (parseFloat(str) !== value && str !== '' && str !== '-') {
+    // Синхронизируем с внешним value только если пользователь не вводит данные
+    if (!isTypingRef.current) {
       setStr(value.toString());
     }
-  }, [value, str]);
+  }, [value]);
+
+  const handleFocus = () => {
+    isTypingRef.current = true;
+  };
+
+  const handleBlur = () => {
+    isTypingRef.current = false;
+    // При потере фокуса синхронизируем с value
+    setStr(value.toString());
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -350,7 +362,9 @@ function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: Num
       min={min} 
       step={step} 
       value={str} 
-      onChange={handleChange} 
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       className={`px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 ${className}`} 
     />
   );
@@ -441,7 +455,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
   const handleWorkChange = (id: string, field: keyof WorkData, value: string | number | boolean) => {
     updateRoom({
       ...room,
-      works: room.works.map(w => w.id === id ? { ...w, [field]: value } : w)
+      works: (room.works || []).map(w => w.id === id ? { ...w, [field]: value } : w)
     });
   };
 
@@ -459,14 +473,14 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
     };
     updateRoom({
       ...room,
-      works: [...room.works, newWork]
+      works: [...(room.works || []), newWork]
     });
   };
 
   const removeWork = (id: string) => {
     updateRoom({
       ...room,
-      works: room.works.filter(w => w.id !== id)
+      works: (room.works || []).filter(w => w.id !== id)
     });
   };
 
@@ -1179,7 +1193,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           <h3 className="text-lg font-medium">Работы и материалы</h3>
         </div>
         <div className="space-y-4 mb-6">
-          {room.works.map((work) => {
+          {(room.works || []).map((work) => {
             let qty = 0;
             if (work.calculationType === 'floorArea') qty = metrics.floorArea;
             else if (work.calculationType === 'netWallArea') qty = metrics.netWallArea;
