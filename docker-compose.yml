@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  # Dev-режим с горячей перезагрузкой
+  frontend-dev:
+    image: node:22-alpine
+    container_name: repair-calc-dev
+    working_dir: /app
+    volumes:
+      # Именованный том для node_modules (изолирован от хоста)
+      - repair-calc-node-modules:/app/node_modules
+      # Bind mount для исходного кода
+      - .:/app
+    ports:
+      - "3993:3993"
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - .env.local
+    command: >
+      sh -c "npm install && npm run dev"
+    profiles:
+      - dev
+    networks:
+      - repair-calc-network
+
+  # Prod-режим (сборка + nginx)
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: repair-calc-prod
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.local
+    volumes:
+      # Именованный том для логов nginx
+      - repair-calc-logs:/var/log/nginx
+      # Именованный том для кэша nginx
+      - repair-calc-cache:/var/cache/nginx
+      # Именованный том для бэкапов данных
+      - repair-calc-backups:/app/backups
+    profiles:
+      - prod
+    networks:
+      - repair-calc-network
+    restart: unless-stopped
+
+# Именованные тома
+volumes:
+  repair-calc-node-modules:
+    name: repair-calc-node-modules
+    driver: local
+  repair-calc-logs:
+    name: repair-calc-logs
+    driver: local
+  repair-calc-cache:
+    name: repair-calc-cache
+    driver: local
+  repair-calc-backups:
+    name: repair-calc-backups
+    driver: local
+
+# Сеть
+networks:
+  repair-calc-network:
+    name: repair-calc-network
+    driver: bridge
