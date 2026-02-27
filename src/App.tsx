@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler } from 'lucide-react';
 import { useProjects } from './hooks/useProjects';
+import { ChangeEvent } from 'react';
 import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
 
@@ -25,12 +26,56 @@ export type WorkData = {
   isCustom?: boolean;
 };
 
-export type RoomData = {
+// Geometry modes: simple (rectangular), extended (subsections), advanced (professional)
+export type GeometryMode = 'simple' | 'extended' | 'advanced';
+
+// Extended mode: sub-sections with own openings
+export type RoomSubSection = {
   id: string;
   name: string;
   length: number;
   width: number;
+  windows: Opening[];
+  doors: Opening[];
+};
+
+export type RoomSegment = {
+  id: string;
+  name: string;
+  length: number;
+  width: number;
+  operation: 'add' | 'subtract';
+};
+
+export type ObstacleType = 'column' | 'duct' | 'niche' | 'other';
+
+export type Obstacle = {
+  id: string;
+  name: string;
+  type: ObstacleType;
+  area: number;
+  perimeter: number;
+  operation: 'add' | 'subtract';
+};
+
+export type WallSection = {
+  id: string;
+  name: string;
+  length: number;
   height: number;
+};
+
+export type RoomData = {
+  id: string;
+  name: string;
+  geometryMode: GeometryMode;
+  length: number;
+  width: number;
+  height: number;
+  segments: RoomSegment[];
+  obstacles: Obstacle[];
+  wallSections: WallSection[];
+  subSections: RoomSubSection[];  // Extended mode: rectangular sub-rooms
   windows: Opening[];
   doors: Opening[];
   works: WorkData[];
@@ -46,9 +91,14 @@ const initialRooms: RoomData[] = [
   {
     id: '1',
     name: 'Комната 1',
+    geometryMode: 'simple',
     length: 3.6,
     width: 2.9,
     height: 2.6,
+    segments: [],
+    obstacles: [],
+    wallSections: [],
+    subSections: [],
     windows: [{ id: 'w1', width: 1.5, height: 1.5 }],
     doors: [{ id: 'd1', width: 1.0, height: 2.2 }],
     works: [
@@ -65,9 +115,14 @@ const initialRooms: RoomData[] = [
   {
     id: '2',
     name: 'Комната 2',
+    geometryMode: 'simple',
     length: 4.9,
     width: 3.6,
     height: 2.6,
+    segments: [],
+    obstacles: [],
+    wallSections: [],
+    subSections: [],
     windows: [{ id: 'w2', width: 1.4, height: 2.1 }],
     doors: [{ id: 'd2', width: 2.2, height: 2.5 }],
     works: [
@@ -92,39 +147,129 @@ const initialProjects: ProjectData[] = [
 ];
 
 const createNewProject = (): ProjectData => ({
-  id: Math.random().toString(36).substr(2, 9),
+  id: Math.random().toString(36).substring(2, 11),
   name: 'Новый объект',
   rooms: []
 });
 
 const createNewRoom = (): RoomData => ({
-  id: Math.random().toString(36).substr(2, 9),
+  id: Math.random().toString(36).substring(2, 11),
   name: 'Новая комната',
+  geometryMode: 'simple',
   length: 4,
   width: 3,
   height: 2.6,
-  windows: [{ id: Math.random().toString(), width: 1.5, height: 1.5 }],
-  doors: [{ id: Math.random().toString(), width: 0.9, height: 2.0 }],
-  works: [
-    { id: 'floorLeveling', name: 'Выравнивание пола', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 400, materialPriceType: 'per_unit', materialPrice: 250, isCustom: true },
-    { id: 'laminate', name: 'Укладка ламината', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 350, materialPriceType: 'per_unit', materialPrice: 0, isCustom: true },
-    { id: 'skirting', name: 'Монтаж плинтусов', unit: 'пог. м', calculationType: 'skirtingLength', enabled: true, workUnitPrice: 200, materialPriceType: 'per_unit', materialPrice: 0, isCustom: true },
-    { id: 'puttying', name: 'Шпаклевание стен', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 450, materialPriceType: 'per_unit', materialPrice: 120, isCustom: true },
-    { id: 'wallpaper', name: 'Поклейка обоев', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 350, materialPriceType: 'per_unit', materialPrice: 30, isCustom: true },
-    { id: 'ceiling', name: 'Натяжной потолок', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 900, materialPriceType: 'per_unit', materialPrice: 0, isCustom: true },
-    { id: 'doorInstall', name: 'Установка дверей', unit: 'шт', calculationType: 'customCount', enabled: true, workUnitPrice: 4500, materialPriceType: 'total', materialPrice: 15000, count: 1, isCustom: true },
-    { id: 'electrical', name: 'Электрика', unit: 'точек', calculationType: 'customCount', enabled: true, workUnitPrice: 300, materialPriceType: 'total', materialPrice: 4000, count: 6, isCustom: true },
-  ]
+  segments: [],
+  obstacles: [],
+  wallSections: [],
+  subSections: [],
+  windows: [],
+  doors: [],
+  works: []
 });
 
 function calculateRoomMetrics(room: RoomData) {
-  const floorArea = room.length * room.width;
-  const perimeter = (room.length + room.width) * 2;
-  const grossWallArea = perimeter * room.height;
-  
-  const windowsArea = room.windows.reduce((sum, w) => sum + w.width * w.height, 0);
-  const doorsArea = room.doors.reduce((sum, d) => sum + d.width * d.height, 0);
-  const doorsWidth = room.doors.reduce((sum, d) => sum + d.width, 0);
+  // Базовые расчеты
+  let floorArea = room.length * room.width;
+  let perimeter = (room.length + room.width) * 2;
+  let grossWallArea = perimeter * room.height;
+
+  // Гарантируем, что массивы существуют
+  const segments = room.segments || [];
+  const obstacles = room.obstacles || [];
+  const wallSections = room.wallSections || [];
+  const subSections = room.subSections || [];
+  const windows = room.windows || [];
+  const doors = room.doors || [];
+
+  // Расширенный режим: секции (подпомещения)
+  if (room.geometryMode === 'extended') {
+    // Каждая секция - прямоугольное подпомещение со своими проемами
+    // Площадь пола = сумма площадей всех секций + базовая площадь
+    // Базовая площадь в расширенном режиме = 0 (все через секции)
+    floorArea = 0;
+    
+    subSections.forEach(subSection => {
+      const subArea = subSection.length * subSection.width;
+      const subPerimeter = (subSection.length + subSection.width) * 2;
+      
+      floorArea += subArea;
+      perimeter += subPerimeter;
+    });
+    
+    // Пересчет площади стен
+    grossWallArea = perimeter * room.height;
+    
+    // Проемы из всех секций
+    let totalWindowsArea = 0;
+    let totalDoorsArea = 0;
+    let totalDoorsWidth = 0;
+    
+    subSections.forEach(subSection => {
+      totalWindowsArea += (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0);
+      totalDoorsArea += (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
+      totalDoorsWidth += (subSection.doors || []).reduce((sum, d) => sum + d.width, 0);
+    });
+    
+    // Гарантируем неотрицательные значения
+    floorArea = Math.max(0, floorArea);
+    perimeter = Math.max(0, perimeter);
+    grossWallArea = Math.max(0, grossWallArea);
+
+    const netWallArea = Math.max(0, grossWallArea - totalWindowsArea - totalDoorsArea);
+    const skirtingLength = Math.max(0, perimeter - totalDoorsWidth);
+
+    return {
+      floorArea,
+      perimeter,
+      grossWallArea,
+      windowsArea: totalWindowsArea,
+      doorsArea: totalDoorsArea,
+      netWallArea,
+      skirtingLength
+    };
+  }
+
+  // Профессиональный режим: учет сегментов и препятствий
+  if (room.geometryMode === 'advanced') {
+    // Сегменты: добавляем/вычитаем площадь и периметр
+    segments.forEach(segment => {
+      const segmentArea = segment.length * segment.width;
+      const segmentPerimeter = (segment.length + segment.width) * 2;
+      const sign = segment.operation === 'add' ? 1 : -1;
+      
+      floorArea += segmentArea * sign;
+      perimeter += segmentPerimeter * sign;
+    });
+
+    // Препятствия: добавляем/вычитаем площадь и периметр
+    obstacles.forEach(obstacle => {
+      const sign = obstacle.operation === 'add' ? 1 : -1;
+      floorArea += obstacle.area * sign;
+      perimeter += obstacle.perimeter * sign;
+    });
+
+    // Пересчет площади стен с новым периметром
+    grossWallArea = perimeter * room.height;
+
+    // Перепады высоты: корректируем площадь стен
+    wallSections.forEach(section => {
+      // Вычитаем стандартную площадь этого участка
+      grossWallArea -= section.length * room.height;
+      // Добавляем площадь с фактической высотой
+      grossWallArea += section.length * section.height;
+    });
+  }
+
+  // Гарантируем неотрицательные значения
+  floorArea = Math.max(0, floorArea);
+  perimeter = Math.max(0, perimeter);
+  grossWallArea = Math.max(0, grossWallArea);
+
+  // Расчет проемов
+  const windowsArea = windows.reduce((sum, w) => sum + w.width * w.height, 0);
+  const doorsArea = doors.reduce((sum, d) => sum + d.width * d.height, 0);
+  const doorsWidth = doors.reduce((sum, d) => sum + d.width, 0);
   
   const netWallArea = Math.max(0, grossWallArea - windowsArea - doorsArea);
   const skirtingLength = Math.max(0, perimeter - doorsWidth);
@@ -148,7 +293,8 @@ function calculateRoomCosts(room: RoomData) {
   let totalWork = 0;
   let totalMaterial = 0;
 
-  room.works.forEach(work => {
+  const works = room.works || [];
+  works.forEach(work => {
     if (!work.enabled) {
       costs[work.id] = { work: 0, material: 0, total: 0 };
       return;
@@ -170,7 +316,15 @@ function calculateRoomCosts(room: RoomData) {
   return { costs, totalWork, totalMaterial, total: totalWork + totalMaterial };
 }
 
-function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: any) {
+type NumberInputProps = {
+  value: number;
+  onChange: (value: number) => void;
+  className?: string;
+  min?: number;
+  step?: number;
+};
+
+function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: NumberInputProps) {
   const [str, setStr] = useState(value.toString());
 
   useEffect(() => {
@@ -179,7 +333,7 @@ function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: any
     }
   }, [value, str]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setStr(val);
     const parsed = parseFloat(val);
@@ -284,7 +438,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
   const metrics = calculateRoomMetrics(room);
   const { costs, total } = calculateRoomCosts(room);
 
-  const handleWorkChange = (id: string, field: keyof WorkData, value: any) => {
+  const handleWorkChange = (id: string, field: keyof WorkData, value: string | number | boolean) => {
     updateRoom({
       ...room,
       works: room.works.map(w => w.id === id ? { ...w, [field]: value } : w)
@@ -293,7 +447,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
   const addCustomWork = () => {
     const newWork: WorkData = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       name: 'Новая работа',
       unit: 'м²',
       enabled: true,
@@ -324,6 +478,58 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
   const removeDoor = (id: string) => updateRoom({...room, doors: room.doors.filter(d => d.id !== id)});
   const updateDoor = (id: string, field: keyof Opening, val: number) => updateRoom({...room, doors: room.doors.map(d => d.id === id ? { ...d, [field]: val } : d)});
 
+  // Advanced geometry: Segments
+  const addSegment = () => {
+    const newSegment: RoomSegment = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: 'Ниша',
+      length: 1,
+      width: 0.5,
+      operation: 'subtract'
+    };
+    updateRoom({...room, segments: [...room.segments, newSegment]});
+  };
+  const removeSegment = (id: string) => updateRoom({...room, segments: room.segments.filter(s => s.id !== id)});
+  const updateSegment = (id: string, field: keyof RoomSegment, val: string | number) => {
+    updateRoom({...room, segments: room.segments.map(s => s.id === id ? { ...s, [field]: val } : s)});
+  };
+
+  // Advanced geometry: Obstacles
+  const addObstacle = () => {
+    const newObstacle: Obstacle = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: 'Колонна',
+      type: 'column',
+      area: 0.25,
+      perimeter: 2,
+      operation: 'subtract'
+    };
+    updateRoom({...room, obstacles: [...room.obstacles, newObstacle]});
+  };
+  const removeObstacle = (id: string) => updateRoom({...room, obstacles: room.obstacles.filter(o => o.id !== id)});
+  const updateObstacle = (id: string, field: keyof Obstacle, val: string | number) => {
+    updateRoom({...room, obstacles: room.obstacles.map(o => o.id === id ? { ...o, [field]: val } : o)});
+  };
+
+  // Advanced geometry: Wall sections
+  const addWallSection = () => {
+    const newSection: WallSection = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: 'Участок с перепадом',
+      length: 1,
+      height: 3
+    };
+    updateRoom({...room, wallSections: [...room.wallSections, newSection]});
+  };
+  const removeWallSection = (id: string) => updateRoom({...room, wallSections: room.wallSections.filter(ws => ws.id !== id)});
+  const updateWallSection = (id: string, field: keyof WallSection, val: string | number) => {
+    updateRoom({...room, wallSections: room.wallSections.map(ws => ws.id === id ? { ...ws, [field]: val } : ws)});
+  };
+
+  // Calculate advanced metrics
+  const segmentsDelta = room.segments.reduce((sum, s) => sum + (s.length * s.width * (s.operation === 'add' ? 1 : -1)), 0);
+  const obstaclesDelta = room.obstacles.reduce((sum, o) => sum + (o.area * (o.operation === 'add' ? 1 : -1)), 0);
+
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto">
       <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -353,16 +559,101 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-medium mb-4">Габариты комнаты</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h3 className="text-lg font-medium">Габариты помещения</h3>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => updateRoom({...room, geometryMode: 'simple'})}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                room.geometryMode === 'simple' 
+                  ? 'bg-white text-indigo-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Простой
+            </button>
+            <button
+              onClick={() => updateRoom({...room, geometryMode: 'extended'})}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                room.geometryMode === 'extended' 
+                  ? 'bg-white text-indigo-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Расширенный
+            </button>
+            <button
+              onClick={() => updateRoom({...room, geometryMode: 'advanced'})}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                room.geometryMode === 'advanced' 
+                  ? 'bg-white text-indigo-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Профессиональный
+            </button>
+          </div>
+        </div>
+        
+        {/* Mode descriptions */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          {room.geometryMode === 'simple' && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium text-gray-700">Простой режим:</span> одна прямоугольная комната с окнами и дверями.
+            </p>
+          )}
+          {room.geometryMode === 'extended' && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium text-gray-700">Расширенный режим:</span> несколько прямоугольных секций (например, L-образная комната). Каждая секция имеет свои проёмы.
+            </p>
+          )}
+          {room.geometryMode === 'advanced' && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium text-gray-700">Профессиональный режим:</span> сегменты, препятствия, перепады высоты стен — для помещений сложной формы.
+            </p>
+          )}
+        </div>
+        
+        {/* Warning about existing data */}
+        {room.geometryMode === 'simple' && (room.segments.length + room.obstacles.length + room.wallSections.length + room.subSections.length > 0) && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">
+              Есть данные в других режимах. Переключение в простой режим сохранит их, но они не будут учитываться в расчетах.
+            </p>
+          </div>
+        )}
+        
+        {room.geometryMode === 'extended' && (room.segments.length + room.obstacles.length + room.wallSections.length > 0) && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">
+              Есть данные в профессиональном режиме. При переключении они сохранятся, но не будут использоваться.
+            </p>
+          </div>
+        )}
+        
+        {/* Height is always visible */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
-            <NumberInput value={room.length} onChange={(v: number) => updateRoom({...room, length: v})} className="w-full" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
-            <NumberInput value={room.width} onChange={(v: number) => updateRoom({...room, width: v})} className="w-full" />
-          </div>
+          {room.geometryMode !== 'extended' && (
+            <>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
+                <NumberInput value={room.length} onChange={(v: number) => updateRoom({...room, length: v})} className="w-full" />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
+                <NumberInput value={room.width} onChange={(v: number) => updateRoom({...room, width: v})} className="w-full" />
+              </div>
+            </>
+          )}
+          {room.geometryMode === 'extended' && (
+            <>
+              <div className="sm:col-span-2 text-sm text-gray-500 italic flex items-end pb-2">
+                Размеры секций указаны ниже
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-sm text-gray-500 mb-1">Высота (м)</label>
             <NumberInput value={room.height} onChange={(v: number) => updateRoom({...room, height: v})} className="w-full" />
@@ -370,55 +661,518 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Extended mode: SubSections */}
+      {room.geometryMode === 'extended' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">Окна</h3>
-            <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+          <div className="flex items-center gap-2 mb-4">
+            <Layers className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-medium">Секции помещения</h3>
           </div>
-          {room.windows.length === 0 ? (
-            <div className="text-sm text-gray-400 italic">Нет окон</div>
+          <p className="text-sm text-gray-500 mb-4">Разбейте помещение на прямоугольные секции. Каждая секция может иметь свои окна и двери.</p>
+          
+          {room.subSections.length === 0 ? (
+            <div className="text-sm text-gray-400 italic mb-4">Нет секций. Добавьте хотя бы одну секцию.</div>
           ) : (
-            <div className="space-y-3">
-              {room.windows.map((w, i) => (
-                <div key={w.id} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                  <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" />
-                  <span className="text-gray-400">×</span>
-                  <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" />
-                  <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+            <div className="space-y-4 mb-4">
+              {room.subSections.map((subSection, i) => {
+                const subArea = subSection.length * subSection.width;
+                const subWindowsArea = (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0);
+                const subDoorsArea = (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
+                
+                return (
+                  <div key={subSection.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">{i + 1}</span>
+                      <input
+                        value={subSection.name}
+                        onChange={e => {
+                          const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, name: e.target.value } : s);
+                          updateRoom({...room, subSections: updated});
+                        }}
+                        className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
+                        placeholder="Название секции"
+                      />
+                      <button 
+                        onClick={() => updateRoom({...room, subSections: room.subSections.filter(s => s.id !== subSection.id)})} 
+                        className="p-1 text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 pl-10">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
+                        <NumberInput 
+                          value={subSection.length} 
+                          onChange={(v: number) => {
+                            const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, length: v } : s);
+                            updateRoom({...room, subSections: updated});
+                          }} 
+                          className="w-full" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
+                        <NumberInput 
+                          value={subSection.width} 
+                          onChange={(v: number) => {
+                            const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, width: v } : s);
+                            updateRoom({...room, subSections: updated});
+                          }} 
+                          className="w-full" 
+                        />
+                      </div>
+                      <div className="col-span-2 flex items-end">
+                        <div className="text-sm text-gray-600">
+                          Площадь: <span className="font-medium">{subArea.toFixed(2)} м²</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Windows and Doors for this subsection */}
+                    <div className="pl-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-600">Окна</span>
+                          <button 
+                            onClick={() => {
+                              const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
+                              const updated = room.subSections.map(s => s.id === subSection.id 
+                                ? { ...s, windows: [...(s.windows || []), newWindow] } 
+                                : s
+                              );
+                              updateRoom({...room, subSections: updated});
+                            }}
+                            className="text-xs text-indigo-600 font-medium hover:text-indigo-700"
+                          >
+                            + Добавить
+                          </button>
+                        </div>
+                        {(subSection.windows || []).length === 0 ? (
+                          <div className="text-xs text-gray-400 italic">Нет окон</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {subSection.windows.map((w, wi) => (
+                              <div key={w.id} className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 w-4">{wi + 1}.</span>
+                                <NumberInput 
+                                  value={w.width} 
+                                  onChange={(v: number) => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, windows: s.windows.map(win => win.id === w.id ? { ...win, width: v } : win) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="w-16 text-xs py-1" 
+                                />
+                                <span className="text-gray-400 text-xs">×</span>
+                                <NumberInput 
+                                  value={w.height} 
+                                  onChange={(v: number) => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, windows: s.windows.map(win => win.id === w.id ? { ...win, height: v } : win) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="w-16 text-xs py-1" 
+                                />
+                                <button 
+                                  onClick={() => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, windows: s.windows.filter(win => win.id !== w.id) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="p-0.5 text-gray-300 hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-3 bg-white rounded-lg border border-gray-100">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-600">Двери/Проход</span>
+                          <button 
+                            onClick={() => {
+                              const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
+                              const updated = room.subSections.map(s => s.id === subSection.id 
+                                ? { ...s, doors: [...(s.doors || []), newDoor] } 
+                                : s
+                              );
+                              updateRoom({...room, subSections: updated});
+                            }}
+                            className="text-xs text-indigo-600 font-medium hover:text-indigo-700"
+                          >
+                            + Добавить
+                          </button>
+                        </div>
+                        {(subSection.doors || []).length === 0 ? (
+                          <div className="text-xs text-gray-400 italic">Нет дверей</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {subSection.doors.map((d, di) => (
+                              <div key={d.id} className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 w-4">{di + 1}.</span>
+                                <NumberInput 
+                                  value={d.width} 
+                                  onChange={(v: number) => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, doors: s.doors.map(door => door.id === d.id ? { ...door, width: v } : door) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="w-16 text-xs py-1" 
+                                />
+                                <span className="text-gray-400 text-xs">×</span>
+                                <NumberInput 
+                                  value={d.height} 
+                                  onChange={(v: number) => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, doors: s.doors.map(door => door.id === d.id ? { ...door, height: v } : door) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="w-16 text-xs py-1" 
+                                />
+                                <button 
+                                  onClick={() => {
+                                    const updated = room.subSections.map(s => s.id === subSection.id 
+                                      ? { ...s, doors: s.doors.filter(door => door.id !== d.id) } 
+                                      : s
+                                    );
+                                    updateRoom({...room, subSections: updated});
+                                  }}
+                                  className="p-0.5 text-gray-300 hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
+          
+          {/* Total summary */}
+          {room.subSections.length > 0 && (
+            <div className="mb-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-indigo-600 font-medium">Суммарная площадь:</span>
+                  <span className="ml-2 font-semibold">{room.subSections.reduce((sum, s) => sum + s.length * s.width, 0).toFixed(2)} м²</span>
+                </div>
+                <div>
+                  <span className="text-indigo-600 font-medium">Окна:</span>
+                  <span className="ml-2">{room.subSections.reduce((sum, s) => sum + (s.windows || []).reduce((wSum, w) => wSum + w.width * w.height, 0), 0).toFixed(2)} м²</span>
+                </div>
+                <div>
+                  <span className="text-indigo-600 font-medium">Двери:</span>
+                  <span className="ml-2">{room.subSections.reduce((sum, s) => sum + (s.doors || []).reduce((dSum, d) => dSum + d.width * d.height, 0), 0).toFixed(2)} м²</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <button 
+            onClick={() => {
+              const newSubSection: RoomSubSection = {
+                id: Math.random().toString(36).substring(2, 11),
+                name: `Секция ${room.subSections.length + 1}`,
+                length: 3,
+                width: 3,
+                windows: [],
+                doors: []
+              };
+              updateRoom({...room, subSections: [...room.subSections, newSubSection]});
+            }} 
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Добавить секцию
+          </button>
         </div>
+      )}
 
+      {/* Advanced Geometry: Segments */}
+      {room.geometryMode === 'advanced' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">Двери</h3>
-            <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+          <div className="flex items-center gap-2 mb-4">
+            <Layers className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-medium">Сегменты помещения</h3>
           </div>
-          {room.doors.length === 0 ? (
-            <div className="text-sm text-gray-400 italic">Нет дверей</div>
+          <p className="text-sm text-gray-500 mb-4">Для L-образных комнат, ниш и эркеров</p>
+          
+          {room.segments.length === 0 ? (
+            <div className="text-sm text-gray-400 italic mb-4">Нет сегментов</div>
           ) : (
-            <div className="space-y-3">
-              {room.doors.map((d, i) => (
-                <div key={d.id} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                  <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" />
-                  <span className="text-gray-400">×</span>
-                  <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" />
-                  <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
-                    <X className="w-4 h-4" />
-                  </button>
+            <div className="space-y-3 mb-4">
+              {room.segments.map((segment, i) => (
+                <div key={segment.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
+                    <input
+                      value={segment.name}
+                      onChange={e => updateSegment(segment.id, 'name', e.target.value)}
+                      className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
+                      placeholder="Название"
+                    />
+                    <button onClick={() => removeSegment(segment.id)} className="p-1 text-gray-400 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pl-8">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
+                      <NumberInput value={segment.length} onChange={(v: number) => updateSegment(segment.id, 'length', v)} className="w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
+                      <NumberInput value={segment.width} onChange={(v: number) => updateSegment(segment.id, 'width', v)} className="w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Операция</label>
+                      <select
+                        value={segment.operation}
+                        onChange={e => updateSegment(segment.id, 'operation', e.target.value)}
+                        className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                      >
+                        <option value="add">Добавить</option>
+                        <option value="subtract">Вычесть</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <div className="text-sm text-gray-600">
+                        Площадь: {(segment.length * segment.width).toFixed(2)} м²
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+          
+          {room.segments.length > 0 && (
+            <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
+              <div className="text-sm text-indigo-700">
+                <span className="font-medium">Итого сегменты:</span> {segmentsDelta > 0 ? '+' : ''}{segmentsDelta.toFixed(2)} м²
+              </div>
+            </div>
+          )}
+          
+          <button onClick={addSegment} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+            <Plus className="w-4 h-4" />
+            Добавить сегмент
+          </button>
         </div>
-      </div>
+      )}
+
+      {/* Advanced Geometry: Obstacles */}
+      {room.geometryMode === 'advanced' && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Box className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-medium">Препятствия</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">Колонны, воздуховоды, ниши</p>
+          
+          {room.obstacles.length === 0 ? (
+            <div className="text-sm text-gray-400 italic mb-4">Нет препятствий</div>
+          ) : (
+            <div className="space-y-3 mb-4">
+              {room.obstacles.map((obstacle, i) => (
+                <div key={obstacle.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
+                    <input
+                      value={obstacle.name}
+                      onChange={e => updateObstacle(obstacle.id, 'name', e.target.value)}
+                      className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
+                      placeholder="Название"
+                    />
+                    <button onClick={() => removeObstacle(obstacle.id)} className="p-1 text-gray-400 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pl-8">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Тип</label>
+                      <select
+                        value={obstacle.type}
+                        onChange={e => updateObstacle(obstacle.id, 'type', e.target.value)}
+                        className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                      >
+                        <option value="column">Колонна</option>
+                        <option value="duct">Воздуховод</option>
+                        <option value="niche">Ниша</option>
+                        <option value="other">Другое</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Площадь (м²)</label>
+                      <NumberInput value={obstacle.area} onChange={(v: number) => updateObstacle(obstacle.id, 'area', v)} className="w-full" step={0.01} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Периметр (м)</label>
+                      <NumberInput value={obstacle.perimeter} onChange={(v: number) => updateObstacle(obstacle.id, 'perimeter', v)} className="w-full" step={0.1} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Операция</label>
+                      <select
+                        value={obstacle.operation}
+                        onChange={e => updateObstacle(obstacle.id, 'operation', e.target.value)}
+                        className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+                      >
+                        <option value="add">Добавить</option>
+                        <option value="subtract">Вычесть</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <div className="text-sm text-gray-600">
+                        {obstacle.operation === 'add' ? '+' : '-'} {obstacle.area.toFixed(2)} м²
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {room.obstacles.length > 0 && (
+            <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
+              <div className="text-sm text-indigo-700">
+                <span className="font-medium">Итого препятствия:</span> {obstaclesDelta > 0 ? '+' : ''}{obstaclesDelta.toFixed(2)} м²
+              </div>
+            </div>
+          )}
+          
+          <button onClick={addObstacle} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+            <Plus className="w-4 h-4" />
+            Добавить препятствие
+          </button>
+        </div>
+      )}
+
+      {/* Advanced Geometry: Wall Sections */}
+      {room.geometryMode === 'advanced' && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Ruler className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-medium">Перепады высоты стен</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">Участки стен с отличающейся высотой</p>
+          
+          {room.wallSections.length === 0 ? (
+            <div className="text-sm text-gray-400 italic mb-4">Нет перепадов высоты</div>
+          ) : (
+            <div className="space-y-3 mb-4">
+              {room.wallSections.map((section, i) => (
+                <div key={section.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
+                    <input
+                      value={section.name}
+                      onChange={e => updateWallSection(section.id, 'name', e.target.value)}
+                      className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
+                      placeholder="Название"
+                    />
+                    <button onClick={() => removeWallSection(section.id)} className="p-1 text-gray-400 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 pl-8">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
+                      <NumberInput value={section.length} onChange={(v: number) => updateWallSection(section.id, 'length', v)} className="w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
+                      <NumberInput value={section.height} onChange={(v: number) => updateWallSection(section.id, 'height', v)} className="w-full" />
+                    </div>
+                    <div className="flex items-end">
+                      <div className="text-sm text-gray-600">
+                        Площадь: {(section.length * section.height).toFixed(2)} м²
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <button onClick={addWallSection} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+            <Plus className="w-4 h-4" />
+            Добавить участок
+          </button>
+        </div>
+      )}
+
+      {/* Windows and Doors - only for simple and advanced modes */}
+      {room.geometryMode !== 'extended' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Окна</h3>
+              <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+            </div>
+            {room.windows.length === 0 ? (
+              <div className="text-sm text-gray-400 italic">Нет окон</div>
+            ) : (
+              <div className="space-y-3">
+                {room.windows.map((w, i) => (
+                  <div key={w.id} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
+                    <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" />
+                    <span className="text-gray-400">×</span>
+                    <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" />
+                    <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Двери/Проход</h3>
+              <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+            </div>
+            {room.doors.length === 0 ? (
+              <div className="text-sm text-gray-400 italic">Нет дверей/проходов</div>
+            ) : (
+              <div className="space-y-3">
+                {room.doors.map((d, i) => (
+                  <div key={d.id} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
+                    <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" />
+                    <span className="text-gray-400">×</span>
+                    <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" />
+                    <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-4">
@@ -750,6 +1504,7 @@ export default function App() {
             ) : (
               activeProject.rooms.find(r => r.id === activeTab) && (
                 <RoomEditor 
+                  key={activeTab}
                   room={activeProject.rooms.find(r => r.id === activeTab)!} 
                   updateRoom={updateRoomInProject}
                   deleteRoom={() => deleteRoomFromProject(activeTab)}
