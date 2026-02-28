@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package } from 'lucide-react';
 import { useProjects } from './hooks/useProjects';
 import { ChangeEvent } from 'react';
 import { BackupManager } from './components/BackupManager';
@@ -13,17 +13,42 @@ export type Opening = {
 
 export type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 
+// New types for materials and tools
+export type Material = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  pricePerUnit: number;
+};
+
+export type Tool = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  isRent: boolean;
+  rentPeriod?: number;
+};
+
 export type WorkData = {
   id: string;
   name: string;
   unit: string;
   enabled: boolean;
   workUnitPrice: number;
-  materialPriceType: 'per_unit' | 'total';
-  materialPrice: number;
+  // Legacy fields (for backward compatibility)
+  materialPriceType?: 'per_unit' | 'total';
+  materialPrice?: number;
+  // New fields
+  materials: Material[];
+  tools: Tool[];
   count?: number;
   calculationType: CalculationType;
   isCustom?: boolean;
+  // Manual quantity override
+  useManualQty?: boolean;
+  manualQty?: number;
 };
 
 // Geometry modes: simple (rectangular), extended (subsections), advanced (professional)
@@ -168,6 +193,52 @@ const createNewRoom = (): RoomData => ({
   works: []
 });
 
+// Миграция данных для обратной совместимости
+function migrateWorkData(work: WorkData): WorkData {
+  // Создаём копию, чтобы не мутировать оригинальный объект
+  const migrated = { ...work };
+  
+  // Если materials/tools не существуют - инициализируем пустыми массивами
+  if (!migrated.materials) {
+    migrated.materials = [];
+  }
+  if (!migrated.tools) {
+    migrated.tools = [];
+  }
+  
+  // Если есть legacy materialPrice и нет материалов - создаём один материал
+  if (migrated.materialPrice && migrated.materialPrice > 0 && migrated.materials.length === 0) {
+    migrated.materials = [{
+      id: Math.random().toString(36).substring(2, 11),
+      name: 'Материалы',
+      quantity: 1,
+      unit: migrated.unit || 'м²',
+      pricePerUnit: migrated.materialPrice
+    }];
+  }
+  
+  return migrated;
+}
+
+// Создание нового материала
+const createNewMaterial = (unit: string): Material => ({
+  id: Math.random().toString(36).substring(2, 11),
+  name: '',
+  quantity: 1,
+  unit: unit,
+  pricePerUnit: 0
+});
+
+// Создание нового инструмента
+const createNewTool = (): Tool => ({
+  id: Math.random().toString(36).substring(2, 11),
+  name: '',
+  quantity: 1,
+  price: 0,
+  isRent: false,
+  rentPeriod: 1
+});
+
 function calculateRoomMetrics(room: RoomData) {
   // Базовые расчеты
   let floorArea = room.length * room.width;
@@ -288,32 +359,59 @@ function calculateRoomMetrics(room: RoomData) {
 function calculateRoomCosts(room: RoomData) {
   const metrics = calculateRoomMetrics(room);
   
-  const costs: Record<string, { work: number, material: number, total: number }> = {};
+  const costs: Record<string, { work: number, material: number, tools: number, total: number }> = {};
 
   let totalWork = 0;
   let totalMaterial = 0;
+  let totalTools = 0;
 
   const works = room.works || [];
   works.forEach(work => {
-    if (!work.enabled) {
-      costs[work.id] = { work: 0, material: 0, total: 0 };
+    // Применяем миграцию для обратной совместимости
+    const migratedWork = migrateWorkData(work);
+    
+    if (!migratedWork.enabled) {
+      costs[migratedWork.id] = { work: 0, material: 0, tools: 0, total: 0 };
       return;
     }
     
     let qty = 0;
-    if (work.calculationType === 'floorArea') qty = metrics.floorArea;
-    else if (work.calculationType === 'netWallArea') qty = metrics.netWallArea;
-    else if (work.calculationType === 'skirtingLength') qty = metrics.skirtingLength;
-    else if (work.calculationType === 'customCount') qty = work.count || 0;
+    if (migratedWork.manualQty !== undefined) {
+      // Используем заданный объем
+      qty = migratedWork.manualQty;
+    } else if (migratedWork.calculationType === 'floorArea') qty = metrics.floorArea;
+    else if (migratedWork.calculationType === 'netWallArea') qty = metrics.netWallArea;
+    else if (migratedWork.calculationType === 'skirtingLength') qty = metrics.skirtingLength;
+    else if (migratedWork.calculationType === 'customCount') qty = migratedWork.count || 0;
 
-    const wCost = qty * work.workUnitPrice;
-    const mCost = work.materialPriceType === 'per_unit' ? qty * work.materialPrice : work.materialPrice;
-    costs[work.id] = { work: wCost, material: mCost, total: wCost + mCost };
+    // Стоимость работы
+    const wCost = qty * migratedWork.workUnitPrice;
+    
+    // Стоимость материалов (новый способ или legacy)
+    let mCost = 0;
+    if (migratedWork.materials && migratedWork.materials.length > 0) {
+      // Новый способ: сумма стоимости всех материалов
+      mCost = migratedWork.materials.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0);
+    } else if (migratedWork.materialPrice) {
+      // Legacy: старый способ расчёта
+      mCost = migratedWork.materialPriceType === 'per_unit' ? qty * migratedWork.materialPrice : migratedWork.materialPrice;
+    }
+    
+    // Стоимость инструментов
+    const tCost = (migratedWork.tools || []).reduce((sum, t) => {
+      if (t.isRent && t.rentPeriod) {
+        return sum + t.price * t.quantity * t.rentPeriod;
+      }
+      return sum + t.price * t.quantity;
+    }, 0);
+    
+    costs[migratedWork.id] = { work: wCost, material: mCost, tools: tCost, total: wCost + mCost + tCost };
     totalWork += wCost;
     totalMaterial += mCost;
+    totalTools += tCost;
   });
 
-  return { costs, totalWork, totalMaterial, total: totalWork + totalMaterial };
+  return { costs, totalWork, totalMaterial, totalTools, total: totalWork + totalMaterial + totalTools };
 }
 
 type NumberInputProps = {
@@ -375,6 +473,7 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
   let totalWallArea = 0;
   let totalWorkCost = 0;
   let totalMaterialCost = 0;
+  let totalToolsCost = 0;
 
   project.rooms.forEach(r => {
     const metrics = calculateRoomMetrics(r);
@@ -383,9 +482,10 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
     totalWallArea += metrics.netWallArea;
     totalWorkCost += costs.totalWork;
     totalMaterialCost += costs.totalMaterial;
+    totalToolsCost += costs.totalTools;
   });
 
-  const grandTotal = totalWorkCost + totalMaterialCost;
+  const grandTotal = totalWorkCost + totalMaterialCost + totalToolsCost;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -428,7 +528,9 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
                 <div>
                   <h4 className="font-medium text-lg">{room.name}</h4>
                   <div className="text-sm text-gray-500 mt-1">
-                    Работы: {costs.totalWork.toLocaleString('ru-RU')} ₽ • Материалы: {costs.totalMaterial.toLocaleString('ru-RU')} ₽
+                    Работы: {costs.totalWork.toLocaleString('ru-RU')} ₽ • Материалы: {costs.totalMaterial.toLocaleString('ru-RU')} ₽{costs.totalTools > 0 && (
+                      <span> • Инструменты: {costs.totalTools.toLocaleString('ru-RU')} ₽</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-2xl font-light">
@@ -451,11 +553,109 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
 function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRoom: (r: RoomData) => void, deleteRoom: () => void }) {
   const metrics = calculateRoomMetrics(room);
   const { costs, total } = calculateRoomCosts(room);
+  
+  // Состояние для развернутых карточек работ
+  const [expandedWorks, setExpandedWorks] = useState<Set<string>>(new Set());
+  
+  const toggleWorkExpand = (workId: string) => {
+    setExpandedWorks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(workId)) {
+        newSet.delete(workId);
+      } else {
+        newSet.add(workId);
+      }
+      return newSet;
+    });
+  };
 
   const handleWorkChange = (id: string, field: keyof WorkData, value: string | number | boolean) => {
     updateRoom({
       ...room,
       works: (room.works || []).map(w => w.id === id ? { ...w, [field]: value } : w)
+    });
+  };
+  
+  // Обработчики материалов
+  const handleMaterialChange = (workId: string, materialId: string, field: keyof Material, value: string | number) => {
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          materials: (w.materials || []).map(m => m.id === materialId ? { ...m, [field]: value } : m)
+        };
+      })
+    });
+  };
+  
+  const addMaterial = (workId: string) => {
+    const work = (room.works || []).find(w => w.id === workId);
+    const newMaterial = createNewMaterial(work?.unit || 'м²');
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          materials: [...(w.materials || []), newMaterial]
+        };
+      })
+    });
+  };
+  
+  const removeMaterial = (workId: string, materialId: string) => {
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          materials: (w.materials || []).filter(m => m.id !== materialId)
+        };
+      })
+    });
+  };
+  
+  // Обработчики инструментов
+  const handleToolChange = (workId: string, toolId: string, field: keyof Tool, value: string | number | boolean) => {
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          tools: (w.tools || []).map(t => t.id === toolId ? { ...t, [field]: value } : t)
+        };
+      })
+    });
+  };
+  
+  const addTool = (workId: string) => {
+    const newTool = createNewTool();
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          tools: [...(w.tools || []), newTool]
+        };
+      })
+    });
+  };
+  
+  const removeTool = (workId: string, toolId: string) => {
+    updateRoom({
+      ...room,
+      works: (room.works || []).map(w => {
+        if (w.id !== workId) return w;
+        return {
+          ...w,
+          tools: (w.tools || []).filter(t => t.id !== toolId)
+        };
+      })
     });
   };
 
@@ -468,6 +668,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       workUnitPrice: 0,
       materialPriceType: 'total',
       materialPrice: 0,
+      materials: [],
+      tools: [],
       calculationType: 'floorArea',
       isCustom: true
     };
@@ -1194,96 +1396,309 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         </div>
         <div className="space-y-4 mb-6">
           {(room.works || []).map((work) => {
-            let qty = 0;
-            if (work.calculationType === 'floorArea') qty = metrics.floorArea;
-            else if (work.calculationType === 'netWallArea') qty = metrics.netWallArea;
-            else if (work.calculationType === 'skirtingLength') qty = metrics.skirtingLength;
-            else if (work.calculationType === 'customCount') qty = work.count || 0;
+            // Вычисляем автоматически рассчитанный объем
+            let autoQty = 0;
+            if (work.calculationType === 'floorArea') autoQty = metrics.floorArea;
+            else if (work.calculationType === 'netWallArea') autoQty = metrics.netWallArea;
+            else if (work.calculationType === 'skirtingLength') autoQty = metrics.skirtingLength;
+            else if (work.calculationType === 'customCount') autoQty = work.count || 0;
             
-            const cost = costs[work.id] || { total: 0 };
+            // Используем заданный объем или автоматически рассчитанный
+            let qty = work.manualQty !== undefined ? work.manualQty : autoQty;
+            
+            const cost = costs[work.id] || { work: 0, material: 0, tools: 0, total: 0 };
+            const isExpanded = expandedWorks.has(work.id);
+            const migratedWork = migrateWorkData(work);
+            const hasMaterials = (migratedWork.materials?.length || 0) > 0;
+            const hasTools = (migratedWork.tools?.length || 0) > 0;
 
             return (
-              <div key={work.id} className={`p-4 rounded-xl border transition-colors ${work.enabled ? 'border-indigo-100 bg-indigo-50/30' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 flex-1">
-                    <input 
-                      type="checkbox" 
-                      checked={work.enabled} 
-                      onChange={e => handleWorkChange(work.id, 'enabled', e.target.checked)} 
-                      className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" 
-                    />
-                    <div className="flex items-center gap-2 flex-1 max-w-sm">
-                      <Settings2 className="w-5 h-5 text-gray-500 flex-shrink-0" />
+              <div key={work.id} className={`rounded-xl border transition-colors ${work.enabled ? 'border-indigo-100 bg-indigo-50/30' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
+                {/* Header row */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
                       <input 
-                        value={work.name} 
-                        onChange={e => handleWorkChange(work.id, 'name', e.target.value)} 
-                        className="font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full"
-                        placeholder="Название работы"
+                        type="checkbox" 
+                        checked={work.enabled} 
+                        onChange={e => handleWorkChange(work.id, 'enabled', e.target.checked)} 
+                        className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" 
                       />
+                      <button 
+                        onClick={() => toggleWorkExpand(work.id)}
+                        className="flex items-center gap-2 flex-1 max-w-sm text-left"
+                      >
+                        <Settings2 className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <input 
+                          value={work.name} 
+                          onChange={e => handleWorkChange(work.id, 'name', e.target.value)} 
+                          onClick={e => e.stopPropagation()}
+                          className="font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full"
+                          placeholder="Название работы"
+                        />
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="font-semibold text-indigo-900">{cost.total.toLocaleString('ru-RU')} ₽</div>
-                    <button onClick={() => removeWork(work.id)} className="text-gray-400 hover:text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="font-semibold text-indigo-900">{cost.total.toLocaleString('ru-RU')} ₽</div>
+                        <div className="text-xs text-gray-500">
+                          Р: {cost.work.toLocaleString('ru-RU')} • М: {cost.material.toLocaleString('ru-RU')}
+                          {cost.tools > 0 && ` • И: ${cost.tools.toLocaleString('ru-RU')}`}
+                        </div>
+                      </div>
+                      <button onClick={() => removeWork(work.id)} className="text-gray-400 hover:text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
-                {work.enabled && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pl-8">
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-gray-500 mb-1">Расчет по</label>
-                      <select 
-                        value={work.calculationType} 
-                        onChange={e => {
-                          const val = e.target.value as CalculationType;
-                          handleWorkChange(work.id, 'calculationType', val);
-                          handleWorkChange(work.id, 'unit', val === 'floorArea' || val === 'netWallArea' ? 'м²' : val === 'skirtingLength' ? 'пог. м' : 'шт');
-                        }}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      >
-                        <option value="floorArea">Площади пола</option>
-                        <option value="netWallArea">Площади стен</option>
-                        <option value="skirtingLength">Периметру</option>
-                        <option value="customCount">Вручную (шт)</option>
-                      </select>
+                {/* Expanded content */}
+                {work.enabled && isExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-100 pt-4">
+                    {/* Basic work settings */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Расчет по</label>
+                        <select 
+                          value={work.calculationType} 
+                          onChange={e => {
+                            const val = e.target.value as CalculationType;
+                            // Атомарное обновление всех полей
+                            const newUnit = val === 'floorArea' || val === 'netWallArea' ? 'м²' : val === 'skirtingLength' ? 'пог. м' : 'шт';
+                            const updatedWork: WorkData = {
+                              ...work,
+                              calculationType: val,
+                              unit: newUnit,
+                            };
+                            // Удаляем manualQty при переключении на автоматический режим
+                            if (val !== 'customCount') {
+                              delete updatedWork.manualQty;
+                            }
+                            updateRoom({
+                              ...room,
+                              works: (room.works || []).map(w => w.id === work.id ? updatedWork : w)
+                            });
+                          }}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        >
+                          <option value="floorArea">Площади пола</option>
+                          <option value="netWallArea">Площади стен</option>
+                          <option value="skirtingLength">Периметру</option>
+                          <option value="customCount">Вручную (шт)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Объем ({work.unit})</label>
+                        {work.calculationType === 'customCount' ? (
+                          <NumberInput value={work.count || 0} onChange={(v: number) => handleWorkChange(work.id, 'count', v)} className="w-full" />
+                        ) : (
+                          <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-700">
+                            {autoQty.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Цена работы (за ед.)</label>
+                        <div className="relative">
+                          <NumberInput value={work.workUnitPrice} onChange={(v: number) => handleWorkChange(work.id, 'workUnitPrice', v)} className="w-full pr-8" />
+                          <span className="absolute right-3 top-2 text-gray-400 text-sm">₽</span>
+                        </div>
+                      </div>
+                      <div className="flex items-end">
+                        <div className="text-sm text-gray-600">
+                          Стоимость работы: <span className="font-semibold text-indigo-900">{(qty * work.workUnitPrice).toLocaleString('ru-RU')} ₽</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-gray-500 mb-1">Объем ({work.unit})</label>
-                      {work.calculationType === 'customCount' ? (
-                        <NumberInput value={work.count || 0} onChange={(v: number) => handleWorkChange(work.id, 'count', v)} className="w-full" />
+                    
+                    {/* Materials section */}
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Package className="w-4 h-4 text-emerald-600" />
+                        <h4 className="font-medium text-gray-700">Материалы</h4>
+                        {(migratedWork.materials?.length || 0) > 0 && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {migratedWork.materials!.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0).toLocaleString('ru-RU')} ₽
+                          </span>
+                        )}
+                      </div>
+                      
+                      {(migratedWork.materials || []).length === 0 ? (
+                        <div className="text-sm text-gray-400 italic mb-3 pl-6">Нет материалов</div>
                       ) : (
-                        <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 font-mono text-sm">
-                          {qty.toFixed(2)}
+                        <div className="space-y-2 mb-3 pl-6">
+                          {(migratedWork.materials || []).map((material, i) => (
+                            <div key={material.id} className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                              <span className="text-xs text-gray-400 w-5">{i + 1}.</span>
+                              <input
+                                value={material.name}
+                                onChange={e => handleMaterialChange(work.id, material.id, 'name', e.target.value)}
+                                placeholder="Название"
+                                className="flex-1 min-w-[120px] px-2 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none text-sm"
+                              />
+                              <div className="flex items-center gap-1">
+                                <NumberInput
+                                  value={material.quantity}
+                                  onChange={v => handleMaterialChange(work.id, material.id, 'quantity', v)}
+                                  className="w-16 text-sm py-1"
+                                  step={0.1}
+                                />
+                                <input
+                                  value={material.unit}
+                                  onChange={e => handleMaterialChange(work.id, material.id, 'unit', e.target.value)}
+                                  className="w-12 px-1 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none text-sm text-center"
+                                  placeholder="ед."
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-400 text-xs">×</span>
+                                <NumberInput
+                                  value={material.pricePerUnit}
+                                  onChange={v => handleMaterialChange(work.id, material.id, 'pricePerUnit', v)}
+                                  className="w-20 text-sm py-1"
+                                />
+                                <span className="text-gray-400 text-xs">₽</span>
+                              </div>
+                              <div className="text-sm text-gray-600 min-w-[80px] text-right">
+                                = {(material.quantity * material.pricePerUnit).toLocaleString('ru-RU')} ₽
+                              </div>
+                              <button
+                                onClick={() => removeMaterial(work.id, material.id)}
+                                className="p-1 text-gray-300 hover:text-red-500"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
-                    </div>
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-gray-500 mb-1">Цена работы (за ед.)</label>
-                      <div className="relative">
-                        <NumberInput value={work.workUnitPrice} onChange={(v: number) => handleWorkChange(work.id, 'workUnitPrice', v)} className="w-full pr-8" />
-                        <span className="absolute right-3 top-2 text-gray-400 text-sm">₽</span>
-                      </div>
-                    </div>
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-gray-500 mb-1">Тип цены материалов</label>
-                      <select 
-                        value={work.materialPriceType} 
-                        onChange={e => handleWorkChange(work.id, 'materialPriceType', e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      
+                      <button
+                        onClick={() => addMaterial(work.id)}
+                        className="text-sm text-emerald-600 font-medium hover:text-emerald-700 pl-6"
                       >
-                        <option value="total">За весь объем</option>
-                        <option value="per_unit">За единицу</option>
-                      </select>
+                        + Добавить материал
+                      </button>
                     </div>
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-gray-500 mb-1">Цена материалов</label>
-                      <div className="relative">
-                        <NumberInput value={work.materialPrice} onChange={(v: number) => handleWorkChange(work.id, 'materialPrice', v)} className="w-full pr-8" />
-                        <span className="absolute right-3 top-2 text-gray-400 text-sm">₽</span>
+                    
+                    {/* Tools section */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Wrench className="w-4 h-4 text-amber-600" />
+                        <h4 className="font-medium text-gray-700">Инструменты</h4>
+                        {(migratedWork.tools?.length || 0) > 0 && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {migratedWork.tools!.reduce((sum, t) => {
+                              if (t.isRent && t.rentPeriod) {
+                                return sum + t.price * t.quantity * t.rentPeriod;
+                              }
+                              return sum + t.price * t.quantity;
+                            }, 0).toLocaleString('ru-RU')} ₽
+                          </span>
+                        )}
                       </div>
+                      
+                      {(migratedWork.tools || []).length === 0 ? (
+                        <div className="text-sm text-gray-400 italic mb-3 pl-6">Нет инструментов</div>
+                      ) : (
+                        <div className="space-y-2 mb-3 pl-6">
+                          {(migratedWork.tools || []).map((tool, i) => {
+                            const toolCost = tool.isRent && tool.rentPeriod 
+                              ? tool.price * tool.quantity * tool.rentPeriod 
+                              : tool.price * tool.quantity;
+                            
+                            return (
+                              <div key={tool.id} className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                                <span className="text-xs text-gray-400 w-5">{i + 1}.</span>
+                                <input
+                                  value={tool.name}
+                                  onChange={e => handleToolChange(work.id, tool.id, 'name', e.target.value)}
+                                  placeholder="Название"
+                                  className="flex-1 min-w-[120px] px-2 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none text-sm"
+                                />
+                                <div className="flex items-center gap-1">
+                                  <NumberInput
+                                    value={tool.quantity}
+                                    onChange={v => handleToolChange(work.id, tool.id, 'quantity', v)}
+                                    className="w-14 text-sm py-1"
+                                    min={1}
+                                  />
+                                  <span className="text-gray-400 text-xs">шт</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <NumberInput
+                                    value={tool.price}
+                                    onChange={v => handleToolChange(work.id, tool.id, 'price', v)}
+                                    className="w-20 text-sm py-1"
+                                  />
+                                  <span className="text-gray-400 text-xs">₽</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={tool.isRent}
+                                      onChange={e => handleToolChange(work.id, tool.id, 'isRent', e.target.checked)}
+                                      className="w-4 h-4 text-amber-600 rounded border-gray-300"
+                                    />
+                                    Аренда
+                                  </label>
+                                  {tool.isRent && (
+                                    <div className="flex items-center gap-1">
+                                      <NumberInput
+                                        value={tool.rentPeriod || 1}
+                                        onChange={v => handleToolChange(work.id, tool.id, 'rentPeriod', v)}
+                                        className="w-12 text-sm py-1"
+                                        min={1}
+                                      />
+                                      <span className="text-gray-400 text-xs">дн.</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-600 min-w-[80px] text-right">
+                                  = {toolCost.toLocaleString('ru-RU')} ₽
+                                </div>
+                                <button
+                                  onClick={() => removeTool(work.id, tool.id)}
+                                  className="p-1 text-gray-300 hover:text-red-500"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={() => addTool(work.id)}
+                        className="text-sm text-amber-600 font-medium hover:text-amber-700 pl-6"
+                      >
+                        + Добавить инструмент
+                      </button>
                     </div>
+                  </div>
+                )}
+                
+                {/* Collapsed preview */}
+                {work.enabled && !isExpanded && (
+                  <div className="px-4 pb-3">
+                    <button 
+                      onClick={() => toggleWorkExpand(work.id)}
+                      className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
+                    >
+                      {hasMaterials || hasTools ? (
+                        <>
+                          {hasMaterials && <span className="inline-flex items-center gap-1"><Package className="w-3 h-3" />{migratedWork.materials!.length}</span>}
+                          {hasMaterials && hasTools && <span>•</span>}
+                          {hasTools && <span className="inline-flex items-center gap-1"><Wrench className="w-3 h-3" />{migratedWork.tools!.length}</span>}
+                          <span className="ml-1">— нажмите для редактирования</span>
+                        </>
+                      ) : (
+                        <span>+ Добавить материалы/инструменты</span>
+                      )}
+                    </button>
                   </div>
                 )}
               </div>
