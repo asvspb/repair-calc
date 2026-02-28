@@ -919,14 +919,18 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 mb-1">Площадь по полу</div>
+          <div className="text-sm text-gray-500 mb-1">Площадь пола</div>
           <div className="text-xl font-light">{metrics.floorArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
           <div className="text-xl font-light">{metrics.netWallArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">Периметр</div>
+          <div className="text-xl font-light">{metrics.perimeter.toFixed(2)} <span className="text-sm text-gray-400">м</span></div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="text-sm text-gray-500 mb-1">Объем</div>
@@ -1101,6 +1105,10 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                   }
                 };
                 const subMetrics = getSectionMetrics();
+                const openingsArea = (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0) +
+                                    (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
+                const wallArea = subMetrics.perimeter * room.height - openingsArea;
+                const volume = subMetrics.area * room.height;
                 
                 // Shape icon
                 const ShapeIcon = subSection.shape === 'trapezoid' ? Trapezoid : 
@@ -1460,10 +1468,23 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
                     {/* Section metrics */}
                     <div className="mt-4 pl-10">
-                      <div className="text-sm text-gray-600">
-                        Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
-                        <span className="mx-2">•</span>
-                        Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Пол/Потолок</div>
+                          <div className="text-sm font-semibold text-gray-900">{subMetrics.area.toFixed(2)} м²</div>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Стены</div>
+                          <div className="text-sm font-semibold text-gray-900">{wallArea.toFixed(2)} м²</div>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Периметр</div>
+                          <div className="text-sm font-semibold text-gray-900">{subMetrics.perimeter.toFixed(2)} м</div>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Объем</div>
+                          <div className="text-sm font-semibold text-gray-900">{volume.toFixed(2)} м³</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1472,30 +1493,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
             </div>
           )}
 
-          {/* Total summary */}
-          {room.subSections.length > 0 && (
-            <div className="mb-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-indigo-600 font-medium">Суммарная площадь:</span>
-                  <span className="ml-2 font-semibold">{(() => {
-                    const metrics = calculateRoomMetrics(room);
-                    return metrics.floorArea.toFixed(2);
-                  })()} м²</span>
-                </div>
-                <div>
-                  <span className="text-indigo-600 font-medium">Окна:</span>
-                  <span className="ml-2">{room.subSections.reduce((sum, s) => sum + (s.windows || []).reduce((wSum, w) => wSum + w.width * w.height, 0), 0).toFixed(2)} м²</span>
-                </div>
-                <div>
-                  <span className="text-indigo-600 font-medium">Двери:</span>
-                  <span className="ml-2">{room.subSections.reduce((sum, s) => sum + (s.doors || []).reduce((dSum, d) => dSum + d.width * d.height, 0), 0).toFixed(2)} м²</span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <button 
+          <button
             onClick={() => {
               const newSubSection: RoomSubSection = {
                 id: Math.random().toString(36).substring(2, 11),
