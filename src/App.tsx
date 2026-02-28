@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package, Square, Triangle } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronRight, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package, Square, Triangle } from 'lucide-react';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -856,6 +856,56 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
   const segmentsDelta = room.segments.reduce((sum, s) => sum + (s.length * s.width * (s.operation === 'add' ? 1 : -1)), 0);
   const obstaclesDelta = room.obstacles.reduce((sum, o) => sum + (o.area * (o.operation === 'add' ? 1 : -1)), 0);
 
+  // Handler for geometry mode switching - clears mode-specific data
+  const handleGeometryModeChange = (newMode: GeometryMode) => {
+    let updatedRoom: RoomData = {
+      ...room,
+      geometryMode: newMode
+    };
+
+    // When switching FROM Simple mode TO Extended or Advanced
+    if (room.geometryMode === 'simple' && newMode !== 'simple') {
+      // Clear simple mode specific data when switching to extended or advanced
+      if (newMode === 'extended') {
+        updatedRoom = {
+          ...updatedRoom,
+          length: 0,
+          width: 0,
+          windows: [],
+          doors: []
+        };
+      } else if (newMode === 'advanced') {
+        updatedRoom = {
+          ...updatedRoom,
+          length: 0,
+          width: 0,
+          windows: [],
+          doors: []
+        };
+      }
+    }
+
+    // When switching FROM Extended mode TO Simple or Advanced
+    if (room.geometryMode === 'extended' && newMode !== 'extended') {
+      updatedRoom = {
+        ...updatedRoom,
+        subSections: []
+      };
+    }
+
+    // When switching FROM Advanced mode TO Simple or Extended
+    if (room.geometryMode === 'advanced' && newMode !== 'advanced') {
+      updatedRoom = {
+        ...updatedRoom,
+        segments: [],
+        obstacles: [],
+        wallSections: []
+      };
+    }
+
+    updateRoom(updatedRoom);
+  };
+
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto">
       <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -893,30 +943,30 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           <h3 className="text-lg font-medium">Габариты помещения</h3>
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => updateRoom({...room, geometryMode: 'simple'})}
+              onClick={() => handleGeometryModeChange('simple')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                room.geometryMode === 'simple' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
+                room.geometryMode === 'simple'
+                  ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
               Простой
             </button>
             <button
-              onClick={() => updateRoom({...room, geometryMode: 'extended'})}
+              onClick={() => handleGeometryModeChange('extended')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                room.geometryMode === 'extended' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
+                room.geometryMode === 'extended'
+                  ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
               Расширенный
             </button>
             <button
-              onClick={() => updateRoom({...room, geometryMode: 'advanced'})}
+              onClick={() => handleGeometryModeChange('advanced')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                room.geometryMode === 'advanced' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
+                room.geometryMode === 'advanced'
+                  ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
@@ -1915,7 +1965,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                           ))}
                         </div>
                       )}
-                      
+
                       <button
                         onClick={() => addMaterial(work.id)}
                         className="text-sm text-emerald-600 font-medium hover:text-emerald-700 pl-6"
@@ -1923,9 +1973,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         + Добавить материал
                       </button>
                     </div>
-                    
+
                     {/* Tools section */}
-                    <div>
+                    <div className="mb-6">
                       <div className="flex items-center gap-2 mb-3">
                         <Wrench className="w-4 h-4 text-amber-600" />
                         <h4 className="font-medium text-gray-700">Инструменты</h4>
@@ -2019,6 +2069,16 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                       >
                         + Добавить инструмент
                       </button>
+
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => toggleWorkExpand(work.id)}
+                          className="text-sm text-gray-400 hover:text-gray-600 font-medium flex items-center gap-1"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                          Свернуть
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2118,8 +2178,6 @@ export default function App() {
     setActiveProjectId(newProject.id);
     setActiveTab('summary');
   };
-
-
 
   const updateRoomInProject = (updatedRoom: RoomData) => {
     const updatedProject = {
