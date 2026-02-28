@@ -41,8 +41,8 @@ export type WorkData = {
   materialPriceType?: 'per_unit' | 'total';
   materialPrice?: number;
   // New fields
-  materials: Material[];
-  tools: Tool[];
+  materials?: Material[];
+  tools?: Tool[];
   count?: number;
   calculationType: CalculationType;
   isCustom?: boolean;
@@ -289,6 +289,9 @@ function calculateRoomMetrics(room: RoomData) {
 
     const netWallArea = Math.max(0, grossWallArea - totalWindowsArea - totalDoorsArea);
     const skirtingLength = Math.max(0, perimeter - totalDoorsWidth);
+    
+    // Объем помещения
+    const volume = floorArea * room.height;
 
     return {
       floorArea,
@@ -297,7 +300,8 @@ function calculateRoomMetrics(room: RoomData) {
       windowsArea: totalWindowsArea,
       doorsArea: totalDoorsArea,
       netWallArea,
-      skirtingLength
+      skirtingLength,
+      volume
     };
   }
 
@@ -344,6 +348,9 @@ function calculateRoomMetrics(room: RoomData) {
   
   const netWallArea = Math.max(0, grossWallArea - windowsArea - doorsArea);
   const skirtingLength = Math.max(0, perimeter - doorsWidth);
+  
+  // Объем помещения
+  const volume = floorArea * room.height;
 
   return {
     floorArea,
@@ -352,7 +359,8 @@ function calculateRoomMetrics(room: RoomData) {
     windowsArea,
     doorsArea,
     netWallArea,
-    skirtingLength
+    skirtingLength,
+    volume
   };
 }
 
@@ -471,6 +479,7 @@ function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: Num
 function SummaryView({ project, updateProject, deleteProject }: { project: ProjectData, updateProject: (p: ProjectData) => void, deleteProject: () => void }) {
   let totalFloorArea = 0;
   let totalWallArea = 0;
+  let totalVolume = 0;
   let totalWorkCost = 0;
   let totalMaterialCost = 0;
   let totalToolsCost = 0;
@@ -480,6 +489,7 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
     const costs = calculateRoomCosts(r);
     totalFloorArea += metrics.floorArea;
     totalWallArea += metrics.netWallArea;
+    totalVolume += metrics.volume || 0;
     totalWorkCost += costs.totalWork;
     totalMaterialCost += costs.totalMaterial;
     totalToolsCost += costs.totalTools;
@@ -501,14 +511,18 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="text-sm text-gray-500 mb-1">Площадь по полу</div>
           <div className="text-3xl font-light">{totalFloorArea.toFixed(2)} <span className="text-lg text-gray-400">м²</span></div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 mb-1">Площадь стен (под обои)</div>
+          <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
           <div className="text-3xl font-light">{totalWallArea.toFixed(2)} <span className="text-lg text-gray-400">м²</span></div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">Общий объем</div>
+          <div className="text-3xl font-light">{totalVolume.toFixed(2)} <span className="text-lg text-gray-400">м³</span></div>
         </div>
         <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-md">
           <div className="text-indigo-100 text-sm mb-1">Итоговая стоимость</div>
@@ -759,18 +773,22 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="text-sm text-gray-500 mb-1">Площадь по полу</div>
-          <div className="text-2xl font-light">{metrics.floorArea.toFixed(2)} <span className="text-base text-gray-400">м²</span></div>
+          <div className="text-xl font-light">{metrics.floorArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 mb-1">Площадь стен (под обои)</div>
-          <div className="text-2xl font-light">{metrics.netWallArea.toFixed(2)} <span className="text-base text-gray-400">м²</span></div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
+          <div className="text-xl font-light">{metrics.netWallArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
         </div>
-        <div className="bg-indigo-50 p-6 rounded-2xl shadow-sm border border-indigo-100">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">Объем</div>
+          <div className="text-xl font-light">{metrics.volume?.toFixed(2) || '0.00'} <span className="text-sm text-gray-400">м³</span></div>
+        </div>
+        <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100">
           <div className="text-sm text-indigo-600 mb-1">Итого по комнате</div>
-          <div className="text-2xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-base text-indigo-400">₽</span></div>
+          <div className="text-xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-sm text-indigo-400">₽</span></div>
         </div>
       </div>
 
@@ -2006,7 +2024,6 @@ export default function App() {
             ) : (
               activeProject.rooms.find(r => r.id === activeTab) && (
                 <RoomEditor 
-                  key={activeTab}
                   room={activeProject.rooms.find(r => r.id === activeTab)!} 
                   updateRoom={updateRoomInProject}
                   deleteRoom={() => deleteRoomFromProject(activeTab)}
