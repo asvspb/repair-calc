@@ -595,14 +595,14 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <input 
+      <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <input
           className="text-3xl font-light text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
           value={project.name}
           onChange={e => updateProject({...project, name: e.target.value})}
           placeholder="Название объекта"
         />
-        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Удалить объект">
+        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" title="Удалить объект">
           <Trash2 className="w-5 h-5" />
         </button>
       </div>
@@ -908,13 +908,13 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <input 
+      <div className="group flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <input
           className="text-2xl font-semibold bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
           value={room.name}
           onChange={e => updateRoom({...room, name: e.target.value})}
         />
-        <button onClick={deleteRoom} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Удалить комнату">
+        <button onClick={deleteRoom} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Удалить комнату">
           <Trash2 className="w-5 h-5" />
         </button>
       </div>
@@ -2323,11 +2323,11 @@ export default function App() {
               <div className="px-2 py-3 text-gray-400 hover:text-gray-600 transition-colors cursor-grab active:cursor-grabbing">
                 <GripVertical className="w-4 h-4" />
               </div>
-              <button 
+              <button
                 onClick={() => { setActiveTab(room.id); setIsMobileMenuOpen(false); }}
                 className={`flex-1 flex items-center justify-between px-4 py-3 text-left transition-colors ${
-                  activeTab === room.id 
-                    ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' 
+                  activeTab === room.id
+                    ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
