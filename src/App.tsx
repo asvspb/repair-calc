@@ -1138,13 +1138,6 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                               className="w-full" 
                             />
                           </div>
-                          <div className="col-span-2 flex items-end">
-                            <div className="text-sm text-gray-600">
-                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
-                              <span className="mx-2">•</span>
-                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
-                            </div>
-                          </div>
                         </div>
                       ) : subSection.shape === 'trapezoid' ? (
                         // Trapezoid: base1, base2, height, side1, side2
@@ -1447,7 +1440,10 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-indigo-600 font-medium">Суммарная площадь:</span>
-                  <span className="ml-2 font-semibold">{room.subSections.reduce((sum, s) => sum + s.length * s.width, 0).toFixed(2)} м²</span>
+                  <span className="ml-2 font-semibold">{(() => {
+                    const metrics = calculateRoomMetrics(room);
+                    return metrics.floorArea.toFixed(2);
+                  })()} м²</span>
                 </div>
                 <div>
                   <span className="text-indigo-600 font-medium">Окна:</span>
@@ -1466,8 +1462,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
               const newSubSection: RoomSubSection = {
                 id: Math.random().toString(36).substring(2, 11),
                 name: `Секция ${room.subSections.length + 1}`,
-                length: 3,
-                width: 3,
+                shape: 'rectangle',
+                length: 0,
+                width: 0,
                 windows: [],
                 doors: []
               };
