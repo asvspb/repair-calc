@@ -663,10 +663,13 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
 function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRoom: (r: RoomData) => void, deleteRoom: () => void }) {
   const metrics = calculateRoomMetrics(room);
   const { costs, total } = calculateRoomCosts(room);
-  
+
   // Состояние для развернутых карточек работ
   const [expandedWorks, setExpandedWorks] = useState<Set<string>>(new Set());
-  
+
+  // Состояние для сворачивания секций помещения
+  const [subSectionsExpanded, setSubSectionsExpanded] = useState(true);
+
   const toggleWorkExpand = (workId: string) => {
     setExpandedWorks(prev => {
       const newSet = new Set(prev);
@@ -1055,12 +1058,16 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       {/* Extended mode: SubSections */}
       {room.geometryMode === 'extended' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-4">
-            <Layers className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-lg font-medium">Секции помещения</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-lg font-medium">Секции помещения</h3>
+            </div>
           </div>
           <p className="text-sm text-gray-500 mb-4">Разбейте помещение на секции разной формы. Каждая секция может иметь свои окна и двери.</p>
-          
+
+          {subSectionsExpanded && (
+            <>
           {/* Shape type legend */}
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="text-xs font-medium text-gray-600 mb-2">Доступные формы секций:</div>
@@ -1521,12 +1528,24 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                 doors: []
               };
               updateRoom({...room, subSections: [...room.subSections, newSubSection]});
-            }} 
+            }}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all"
           >
             <Plus className="w-4 h-4" />
             Добавить секцию
           </button>
+            </>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => setSubSectionsExpanded(!subSectionsExpanded)}
+              className="text-sm text-gray-400 hover:text-gray-600 font-medium flex items-center gap-1"
+            >
+              <ChevronUp className={`w-4 h-4 transition-transform ${subSectionsExpanded ? '' : 'rotate-180'}`} />
+              {subSectionsExpanded ? 'Свернуть' : 'Развернуть'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -2280,19 +2299,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <div className="flex items-center gap-2 text-indigo-600">
-            <Calculator className="w-6 h-6" />
-            <span className="font-semibold text-lg">Мой ремонт</span>
-          </div>
-          <button className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-        
         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Объект</label>
-          <select 
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
+            <button className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+          <select
             value={activeProjectId}
             onChange={(e) => {
               setActiveProjectId(e.target.value);
@@ -2387,8 +2401,8 @@ export default function App() {
         </header>
 
         {/* Desktop header with backup manager */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 p-4 items-center justify-between">
-          <div className="flex items-center gap-2">
+        <header className="hidden md:flex bg-white border-b border-gray-200 p-4 items-center justify-end">
+          <div className="flex items-center gap-4">
             {lastSaved && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <Save className="w-3 h-3" />
@@ -2400,13 +2414,13 @@ export default function App() {
                 {saveError}
               </div>
             )}
+            <BackupManager
+              projects={projects}
+              activeProjectId={activeProjectId}
+              onImport={handleImport}
+              onClearAll={handleClearAll}
+            />
           </div>
-          <BackupManager 
-            projects={projects}
-            activeProjectId={activeProjectId}
-            onImport={handleImport}
-            onClearAll={handleClearAll}
-          />
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
