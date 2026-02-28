@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronRight, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package, Square, Triangle } from 'lucide-react';
+
+// Custom SVG icons for shapes not available in lucide-react
+const Trapezoid = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19 L7 5 L17 5 L20 19 Z" />
+  </svg>
+);
+
+const Parallelogram = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 19 L12 5 L22 5 L18 19 Z" />
+  </svg>
+);
 import { useProjects } from './hooks/useProjects';
 import { ChangeEvent } from 'react';
 import { BackupManager } from './components/BackupManager';
@@ -54,12 +67,31 @@ export type WorkData = {
 // Geometry modes: simple (rectangular), extended (subsections), advanced (professional)
 export type GeometryMode = 'simple' | 'extended' | 'advanced';
 
+// Section shapes for extended mode
+export type SectionShape = 'rectangle' | 'trapezoid' | 'triangle' | 'parallelogram';
+
 // Extended mode: sub-sections with own openings
 export type RoomSubSection = {
   id: string;
   name: string;
+  shape: SectionShape;
+  // Rectangle: length × width
   length: number;
   width: number;
+  // Trapezoid: base1, base2, height, side1, side2
+  base1?: number;
+  base2?: number;
+  height?: number;
+  side1?: number;
+  side2?: number;
+  // Triangle: sideA, sideB, sideC (or base + height for simple)
+  sideA?: number;
+  sideB?: number;
+  sideC?: number;
+  // Parallelogram: base, height, side
+  base?: number;
+  side?: number;
+  // Openings
   windows: Opening[];
   doors: Opening[];
 };
@@ -253,18 +285,82 @@ function calculateRoomMetrics(room: RoomData) {
   const windows = room.windows || [];
   const doors = room.doors || [];
 
+  // Helper function to calculate section metrics based on shape
+  function calculateSectionMetrics(section: RoomSubSection): { area: number; perimeter: number } {
+    const shape = section.shape || 'rectangle'; // Default to rectangle for backward compatibility
+    
+    switch (shape) {
+      case 'rectangle': {
+        const area = section.length * section.width;
+        const perimeter = (section.length + section.width) * 2;
+        return { area, perimeter };
+      }
+      
+      case 'trapezoid': {
+        // Площадь трапеции: (base1 + base2) * height / 2
+        // Периметр: base1 + base2 + side1 + side2
+        const base1 = section.base1 || 0;
+        const base2 = section.base2 || 0;
+        const height = section.height || 0;
+        const side1 = section.side1 || 0;
+        const side2 = section.side2 || 0;
+        const area = (base1 + base2) * height / 2;
+        const perimeter = base1 + base2 + side1 + side2;
+        return { area, perimeter };
+      }
+      
+      case 'triangle': {
+        // Формула Герона для площади по трём сторонам
+        const a = section.sideA || 0;
+        const b = section.sideB || 0;
+        const c = section.sideC || 0;
+        
+        if (a > 0 && b > 0 && c > 0) {
+          // Проверка треугольника: сумма любых двух сторон больше третьей
+          if (a + b > c && a + c > b && b + c > a) {
+            const s = (a + b + c) / 2; // полупериметр
+            const area = Math.sqrt(s * (s - a) * (s - b) * (s - c));
+            const perimeter = a + b + c;
+            return { area, perimeter };
+          }
+        }
+        
+        // Fallback: base × height / 2 (если есть base и height)
+        const base = section.length || 0;
+        const height = section.width || 0;
+        const area = base * height / 2;
+        // Для прямоугольного треугольника: perimeter = base + height + sqrt(base² + height²)
+        const perimeter = base + height + Math.sqrt(base * base + height * height);
+        return { area, perimeter };
+      }
+      
+      case 'parallelogram': {
+        // Площадь: base × height
+        // Периметр: 2 × (base + side)
+        const base = section.base || section.length || 0;
+        const height = section.height || section.width || 0;
+        const side = section.side || 0;
+        const area = base * height;
+        const perimeter = 2 * (base + side);
+        return { area, perimeter };
+      }
+      
+      default:
+        return { area: 0, perimeter: 0 };
+    }
+  }
+
   // Расширенный режим: секции (подпомещения)
   if (room.geometryMode === 'extended') {
-    // Каждая секция - прямоугольное подпомещение со своими проемами
+    // Каждая секция может иметь разную форму
     // Площадь пола = сумма площадей всех секций + базовая площадь
     // Базовая площадь в расширенном режиме = 0 (все через секции)
     floorArea = 0;
     
     subSections.forEach(subSection => {
-      const subArea = subSection.length * subSection.width;
-      const subPerimeter = (subSection.length + subSection.width) * 2;
+      const { area, perimeter: subPerimeter } = calculateSectionMetrics(subSection);
       
-      floorArea += subArea;
+      floorArea += area;
       perimeter += subPerimeter;
     });
     
@@ -902,21 +998,70 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
             <Layers className="w-5 h-5 text-indigo-600" />
             <h3 className="text-lg font-medium">Секции помещения</h3>
           </div>
-          <p className="text-sm text-gray-500 mb-4">Разбейте помещение на прямоугольные секции. Каждая секция может иметь свои окна и двери.</p>
+          <p className="text-sm text-gray-500 mb-4">Разбейте помещение на секции разной формы. Каждая секция может иметь свои окна и двери.</p>
+          
+          {/* Shape type legend */}
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="text-xs font-medium text-gray-600 mb-2">Доступные формы секций:</div>
+            <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><Square className="w-4 h-4 text-indigo-500" /> Прямоугольник</span>
+              <span className="flex items-center gap-1"><Trapezoid className="w-4 h-4 text-indigo-500" /> Трапеция</span>
+              <span className="flex items-center gap-1"><Triangle className="w-4 h-4 text-indigo-500" /> Треугольник</span>
+              <span className="flex items-center gap-1"><Parallelogram className="w-4 h-4 text-indigo-500" /> Параллелограмм</span>
+            </div>
+          </div>
           
           {room.subSections.length === 0 ? (
             <div className="text-sm text-gray-400 italic mb-4">Нет секций. Добавьте хотя бы одну секцию.</div>
           ) : (
             <div className="space-y-4 mb-4">
               {room.subSections.map((subSection, i) => {
-                const subArea = subSection.length * subSection.width;
-                const subWindowsArea = (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0);
-                const subDoorsArea = (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
+                // Calculate metrics based on shape
+                const getSectionMetrics = () => {
+                  const shape = subSection.shape || 'rectangle';
+                  switch (shape) {
+                    case 'rectangle':
+                      return { area: subSection.length * subSection.width, perimeter: (subSection.length + subSection.width) * 2 };
+                    case 'trapezoid': {
+                      const base1 = subSection.base1 || 0;
+                      const base2 = subSection.base2 || 0;
+                      const height = subSection.height || 0;
+                      const side1 = subSection.side1 || 0;
+                      const side2 = subSection.side2 || 0;
+                      return { area: (base1 + base2) * height / 2, perimeter: base1 + base2 + side1 + side2 };
+                    }
+                    case 'triangle': {
+                      const a = subSection.sideA || 0;
+                      const b = subSection.sideB || 0;
+                      const c = subSection.sideC || 0;
+                      if (a > 0 && b > 0 && c > 0 && a + b > c && a + c > b && b + c > a) {
+                        const s = (a + b + c) / 2;
+                        return { area: Math.sqrt(s * (s - a) * (s - b) * (s - c)), perimeter: a + b + c };
+                      }
+                      return { area: (subSection.length * subSection.width) / 2, perimeter: subSection.length + subSection.width + Math.sqrt(subSection.length ** 2 + subSection.width ** 2) };
+                    }
+                    case 'parallelogram': {
+                      const base = subSection.base || subSection.length || 0;
+                      const height = subSection.height || subSection.width || 0;
+                      const side = subSection.side || 0;
+                      return { area: base * height, perimeter: 2 * (base + side) };
+                    }
+                    default:
+                      return { area: 0, perimeter: 0 };
+                  }
+                };
+                const subMetrics = getSectionMetrics();
+                
+                // Shape icon
+                const ShapeIcon = subSection.shape === 'trapezoid' ? Trapezoid : 
+                                  subSection.shape === 'triangle' ? Triangle : 
+                                  subSection.shape === 'parallelogram' ? Parallelogram : Square;
                 
                 return (
                   <div key={subSection.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <div className="flex items-center gap-3 mb-4">
                       <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">{i + 1}</span>
+                      <ShapeIcon className="w-4 h-4 text-indigo-500" />
                       <input
                         value={subSection.name}
                         onChange={e => {
@@ -934,34 +1079,228 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 pl-10">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
-                        <NumberInput 
-                          value={subSection.length} 
-                          onChange={(v: number) => {
-                            const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, length: v } : s);
-                            updateRoom({...room, subSections: updated});
-                          }} 
-                          className="w-full" 
-                        />
+                    {/* Shape selector */}
+                    <div className="mb-4 pl-10">
+                      <label className="block text-xs text-gray-500 mb-2">Форма секции</label>
+                      <div className="flex flex-wrap gap-2">
+                        {(['rectangle', 'trapezoid', 'triangle', 'parallelogram'] as SectionShape[]).map(shape => {
+                          const Icon = shape === 'trapezoid' ? Trapezoid : 
+                                      shape === 'triangle' ? Triangle : 
+                                      shape === 'parallelogram' ? Parallelogram : Square;
+                          const label = shape === 'rectangle' ? 'Прямоугольник' :
+                                        shape === 'trapezoid' ? 'Трапеция' :
+                                        shape === 'triangle' ? 'Треугольник' : 'Параллелограмм';
+                          return (
+                            <button
+                              key={shape}
+                              onClick={() => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, shape } : s);
+                                updateRoom({...room, subSections: updated});
+                              }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                (subSection.shape || 'rectangle') === shape
+                                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                              {label}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
-                        <NumberInput 
-                          value={subSection.width} 
-                          onChange={(v: number) => {
-                            const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, width: v } : s);
-                            updateRoom({...room, subSections: updated});
-                          }} 
-                          className="w-full" 
-                        />
-                      </div>
-                      <div className="col-span-2 flex items-end">
-                        <div className="text-sm text-gray-600">
-                          Площадь: <span className="font-medium">{subArea.toFixed(2)} м²</span>
+                    </div>
+                    
+                    {/* Dimension inputs based on shape */}
+                    <div className="mb-4 pl-10">
+                      {subSection.shape === 'rectangle' || !subSection.shape ? (
+                        // Rectangle: length × width
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
+                            <NumberInput 
+                              value={subSection.length} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, length: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
+                            <NumberInput 
+                              value={subSection.width} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, width: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div className="col-span-2 flex items-end">
+                            <div className="text-sm text-gray-600">
+                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
+                              <span className="mx-2">•</span>
+                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : subSection.shape === 'trapezoid' ? (
+                        // Trapezoid: base1, base2, height, side1, side2
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Основание 1 (м)</label>
+                            <NumberInput 
+                              value={subSection.base1 || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base1: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Основание 2 (м)</label>
+                            <NumberInput 
+                              value={subSection.base2 || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base2: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
+                            <NumberInput 
+                              value={subSection.height || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Бок. сторона 1 (м)</label>
+                            <NumberInput 
+                              value={subSection.side1 || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side1: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Бок. сторона 2 (м)</label>
+                            <NumberInput 
+                              value={subSection.side2 || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side2: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div className="col-span-2 sm:col-span-5 flex items-center">
+                            <div className="text-sm text-gray-600">
+                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
+                              <span className="mx-2">•</span>
+                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : subSection.shape === 'triangle' ? (
+                        // Triangle: sideA, sideB, sideC
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Сторона A (м)</label>
+                            <NumberInput 
+                              value={subSection.sideA || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideA: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Сторона B (м)</label>
+                            <NumberInput 
+                              value={subSection.sideB || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideB: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Сторона C (м)</label>
+                            <NumberInput 
+                              value={subSection.sideC || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideC: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <div className="text-sm text-gray-600">
+                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
+                              <span className="mx-2">•</span>
+                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : subSection.shape === 'parallelogram' ? (
+                        // Parallelogram: base, height, side
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Основание (м)</label>
+                            <NumberInput 
+                              value={subSection.base || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
+                            <NumberInput 
+                              value={subSection.height || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Боковая сторона (м)</label>
+                            <NumberInput 
+                              value={subSection.side || 0} 
+                              onChange={(v: number) => {
+                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side: v } : s);
+                                updateRoom({...room, subSections: updated});
+                              }} 
+                              className="w-full" 
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <div className="text-sm text-gray-600">
+                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
+                              <span className="mx-2">•</span>
+                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                     
                     {/* Windows and Doors for this subsection */}
