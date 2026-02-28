@@ -1144,65 +1144,58 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Основание 1 (м)</label>
-                            <NumberInput 
-                              value={subSection.base1 || 0} 
+                            <NumberInput
+                              value={subSection.base1 || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base1: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Основание 2 (м)</label>
-                            <NumberInput 
-                              value={subSection.base2 || 0} 
+                            <NumberInput
+                              value={subSection.base2 || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base2: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
-                            <NumberInput 
-                              value={subSection.height || 0} 
+                            <NumberInput
+                              value={subSection.height || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Бок. сторона 1 (м)</label>
-                            <NumberInput 
-                              value={subSection.side1 || 0} 
+                            <NumberInput
+                              value={subSection.side1 || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side1: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Бок. сторона 2 (м)</label>
-                            <NumberInput 
-                              value={subSection.side2 || 0} 
+                            <NumberInput
+                              value={subSection.side2 || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side2: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
-                          </div>
-                          <div className="col-span-2 sm:col-span-5 flex items-center">
-                            <div className="text-sm text-gray-600">
-                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
-                              <span className="mx-2">•</span>
-                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
-                            </div>
                           </div>
                         </div>
                       ) : subSection.shape === 'triangle' ? (
@@ -1210,43 +1203,36 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Сторона A (м)</label>
-                            <NumberInput 
-                              value={subSection.sideA || 0} 
+                            <NumberInput
+                              value={subSection.sideA || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideA: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Сторона B (м)</label>
-                            <NumberInput 
-                              value={subSection.sideB || 0} 
+                            <NumberInput
+                              value={subSection.sideB || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideB: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Сторона C (м)</label>
-                            <NumberInput 
-                              value={subSection.sideC || 0} 
+                            <NumberInput
+                              value={subSection.sideC || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideC: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
-                          </div>
-                          <div className="flex items-end">
-                            <div className="text-sm text-gray-600">
-                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
-                              <span className="mx-2">•</span>
-                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
-                            </div>
                           </div>
                         </div>
                       ) : subSection.shape === 'parallelogram' ? (
@@ -1254,43 +1240,36 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Основание (м)</label>
-                            <NumberInput 
-                              value={subSection.base || 0} 
+                            <NumberInput
+                              value={subSection.base || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
-                            <NumberInput 
-                              value={subSection.height || 0} 
+                            <NumberInput
+                              value={subSection.height || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Боковая сторона (м)</label>
-                            <NumberInput 
-                              value={subSection.side || 0} 
+                            <NumberInput
+                              value={subSection.side || 0}
                               onChange={(v: number) => {
                                 const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side: v } : s);
                                 updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                              }}
+                              className="w-full"
                             />
-                          </div>
-                          <div className="flex items-end">
-                            <div className="text-sm text-gray-600">
-                              Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
-                              <span className="mx-2">•</span>
-                              Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
-                            </div>
                           </div>
                         </div>
                       ) : null}
@@ -1428,12 +1407,21 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         )}
                       </div>
                     </div>
+
+                    {/* Section metrics */}
+                    <div className="mt-4 pl-10">
+                      <div className="text-sm text-gray-600">
+                        Площадь: <span className="font-medium">{subMetrics.area.toFixed(2)} м²</span>
+                        <span className="mx-2">•</span>
+                        Периметр: <span className="font-medium">{subMetrics.perimeter.toFixed(2)} м</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
-          
+
           {/* Total summary */}
           {room.subSections.length > 0 && (
             <div className="mb-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
