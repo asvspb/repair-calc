@@ -920,23 +920,30 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-gray-500 mb-1">Площадь пола</div>
           <div className="text-xl font-light">{metrics.floorArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
           <div className="text-xl font-light">{metrics.netWallArea.toFixed(2)} <span className="text-sm text-gray-400">м²</span></div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 mb-1">Периметр</div>
-          <div className="text-xl font-light">{metrics.perimeter.toFixed(2)} <span className="text-sm text-gray-400">м</span></div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
+          <div className="text-sm text-gray-500 mb-1">Периметр/Плинтус</div>
+          <div className="flex items-baseline gap-2">
+            <div className="flex flex-col items-center">
+              <div className="text-xl font-light">{metrics.perimeter.toFixed(2)}</div>
+              <div className="w-10 border-t border-gray-200 my-1"></div>
+              <div className="text-xl font-light">{metrics.skirtingLength.toFixed(2)}</div>
+            </div>
+            <span className="text-sm text-gray-400">м</span>
+          </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-gray-500 mb-1">Объем</div>
           <div className="text-xl font-light">{metrics.volume?.toFixed(2) || '0.00'} <span className="text-sm text-gray-400">м³</span></div>
         </div>
-        <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100">
+        <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-indigo-600 mb-1">Итого по комнате</div>
           <div className="text-xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-sm text-indigo-400">₽</span></div>
         </div>
@@ -1109,6 +1116,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                                     (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
                 const wallArea = subMetrics.perimeter * room.height - openingsArea;
                 const volume = subMetrics.area * room.height;
+                const doorsWidth = (subSection.doors || []).reduce((sum, d) => sum + d.width, 0);
+                const skirtingLength = Math.max(0, subMetrics.perimeter - doorsWidth);
                 
                 // Shape icon
                 const ShapeIcon = subSection.shape === 'trapezoid' ? Trapezoid : 
@@ -1468,20 +1477,27 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
                     {/* Section metrics */}
                     <div className="mt-4 pl-10">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
+                        <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
                           <div className="text-xs text-gray-500 mb-1">Пол/Потолок</div>
                           <div className="text-sm font-semibold text-gray-900">{subMetrics.area.toFixed(2)} м²</div>
                         </div>
-                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
                           <div className="text-xs text-gray-500 mb-1">Стены</div>
                           <div className="text-sm font-semibold text-gray-900">{wallArea.toFixed(2)} м²</div>
                         </div>
-                        <div className="bg-white p-3 rounded-lg border border-gray-100">
-                          <div className="text-xs text-gray-500 mb-1">Периметр</div>
-                          <div className="text-sm font-semibold text-gray-900">{subMetrics.perimeter.toFixed(2)} м</div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
+                          <div className="text-xs text-gray-500 mb-1">Периметр/Плинтус</div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex flex-col items-center">
+                              <div className="text-sm font-semibold">{subMetrics.perimeter.toFixed(2)}</div>
+                              <div className="w-8 border-t border-gray-200 my-0.5"></div>
+                              <div className="text-sm font-semibold">{skirtingLength.toFixed(2)}</div>
+                            </div>
+                            <span className="text-xs text-gray-400">м</span>
+                          </div>
                         </div>
-                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
                           <div className="text-xs text-gray-500 mb-1">Объем</div>
                           <div className="text-sm font-semibold text-gray-900">{volume.toFixed(2)} м³</div>
                         </div>
