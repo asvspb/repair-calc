@@ -609,7 +609,7 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 mb-1">Площадь по полу</div>
+          <div className="text-sm text-gray-500 mb-1">Площадь пола</div>
           <div className="text-3xl font-light">{totalFloorArea.toFixed(2)} <span className="text-lg text-gray-400">м²</span></div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
