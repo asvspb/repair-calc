@@ -124,6 +124,24 @@ export type WallSection = {
   height: number;
 };
 
+// Mode-specific data storage
+export type SimpleModeData = {
+  length: number;
+  width: number;
+  windows: Opening[];
+  doors: Opening[];
+};
+
+export type ExtendedModeData = {
+  subSections: RoomSubSection[];
+};
+
+export type AdvancedModeData = {
+  segments: RoomSegment[];
+  obstacles: Obstacle[];
+  wallSections: WallSection[];
+};
+
 export type RoomData = {
   id: string;
   name: string;
@@ -138,6 +156,10 @@ export type RoomData = {
   windows: Opening[];
   doors: Opening[];
   works: WorkData[];
+  // Mode-specific data storage
+  simpleModeData?: SimpleModeData;
+  extendedModeData?: ExtendedModeData;
+  advancedModeData?: AdvancedModeData;
 };
 
 export type ProjectData = {
@@ -169,7 +191,21 @@ const initialRooms: RoomData[] = [
       { id: 'ceiling', name: 'Натяжной потолок', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 900, materialPriceType: 'total', materialPrice: 0, isCustom: true },
       { id: 'doorInstall', name: 'Установка дверей', unit: 'шт', calculationType: 'customCount', enabled: true, workUnitPrice: 4500, materialPriceType: 'total', materialPrice: 15000, count: 1, isCustom: true },
       { id: 'electrical', name: 'Электрика', unit: 'точек', calculationType: 'customCount', enabled: true, workUnitPrice: 300, materialPriceType: 'total', materialPrice: 4000, count: 6, isCustom: true },
-    ]
+    ],
+    simpleModeData: {
+      length: 3.6,
+      width: 2.9,
+      windows: [{ id: 'w1', width: 1.5, height: 1.5 }],
+      doors: [{ id: 'd1', width: 1.0, height: 2.2 }]
+    },
+    extendedModeData: {
+      subSections: []
+    },
+    advancedModeData: {
+      segments: [],
+      obstacles: [],
+      wallSections: []
+    }
   },
   {
     id: '2',
@@ -193,7 +229,21 @@ const initialRooms: RoomData[] = [
       { id: 'ceiling', name: 'Натяжной потолок', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 900, materialPriceType: 'total', materialPrice: 0, isCustom: true },
       { id: 'doorInstall', name: 'Установка дверей', unit: 'шт', calculationType: 'customCount', enabled: true, workUnitPrice: 8000, materialPriceType: 'total', materialPrice: 35000, count: 1, isCustom: true },
       { id: 'electrical', name: 'Электрика', unit: 'точек', calculationType: 'customCount', enabled: true, workUnitPrice: 300, materialPriceType: 'total', materialPrice: 6500, count: 10, isCustom: true },
-    ]
+    ],
+    simpleModeData: {
+      length: 4.9,
+      width: 3.6,
+      windows: [{ id: 'w2', width: 1.4, height: 2.1 }],
+      doors: [{ id: 'd2', width: 2.2, height: 2.5 }]
+    },
+    extendedModeData: {
+      subSections: []
+    },
+    advancedModeData: {
+      segments: [],
+      obstacles: [],
+      wallSections: []
+    }
   }
 ];
 
@@ -224,7 +274,21 @@ const createNewRoom = (): RoomData => ({
   subSections: [],
   windows: [],
   doors: [],
-  works: []
+  works: [],
+  simpleModeData: {
+    length: 0,
+    width: 0,
+    windows: [],
+    doors: []
+  },
+  extendedModeData: {
+    subSections: []
+  },
+  advancedModeData: {
+    segments: [],
+    obstacles: [],
+    wallSections: []
+  }
 });
 
 // Миграция данных для обратной совместимости
@@ -355,13 +419,14 @@ function calculateRoomMetrics(room: RoomData) {
   // Расширенный режим: секции (подпомещения)
   if (room.geometryMode === 'extended') {
     // Каждая секция может иметь разную форму
-    // Площадь пола = сумма площадей всех секций + базовая площадь
+    // Площадь пола = сумма площадей всех секций
     // Базовая площадь в расширенном режиме = 0 (все через секции)
     floorArea = 0;
-    
+    perimeter = 0; // Сбрасываем периметр, чтобы не использовать данные из простого режима
+
     subSections.forEach(subSection => {
       const { area, perimeter: subPerimeter } = calculateSectionMetrics(subSection);
-      
+
       floorArea += area;
       perimeter += subPerimeter;
     });
@@ -405,12 +470,16 @@ function calculateRoomMetrics(room: RoomData) {
 
   // Профессиональный режим: учет сегментов и препятствий
   if (room.geometryMode === 'advanced') {
+    // Сбрасываем базовые значения, чтобы не использовать данные из простого режима
+    floorArea = 0;
+    perimeter = 0;
+
     // Сегменты: добавляем/вычитаем площадь и периметр
     segments.forEach(segment => {
       const segmentArea = segment.length * segment.width;
       const segmentPerimeter = (segment.length + segment.width) * 2;
       const sign = segment.operation === 'add' ? 1 : -1;
-      
+
       floorArea += segmentArea * sign;
       perimeter += segmentPerimeter * sign;
     });
@@ -813,15 +882,264 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
     });
   };
 
-  const addWindow = () => updateRoom({...room, windows: [...room.windows, { id: Math.random().toString(), width: 1.5, height: 1.5 }]});
-  const removeWindow = (id: string) => updateRoom({...room, windows: room.windows.filter(w => w.id !== id)});
-  const updateWindow = (id: string, field: keyof Opening, val: number) => updateRoom({...room, windows: room.windows.map(w => w.id === id ? { ...w, [field]: val } : w)});
+  // Simple mode handlers - update both main fields and mode-specific storage
+  const updateSimpleField = (field: 'length' | 'width', val: number) => {
+    const updatedRoom = { ...room, [field]: val };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        [field]: val
+      };
+    }
+    updateRoom(updatedRoom);
+  };
 
-  const addDoor = () => updateRoom({...room, doors: [...room.doors, { id: Math.random().toString(), width: 0.9, height: 2.0 }]});
-  const removeDoor = (id: string) => updateRoom({...room, doors: room.doors.filter(d => d.id !== id)});
-  const updateDoor = (id: string, field: keyof Opening, val: number) => updateRoom({...room, doors: room.doors.map(d => d.id === id ? { ...d, [field]: val } : d)});
+  const addWindow = () => {
+    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
+    const updatedRoom = { ...room, windows: [...room.windows, newWindow] };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        windows: [...(room.simpleModeData?.windows || room.windows), newWindow]
+      };
+    }
+    updateRoom(updatedRoom);
+  };
 
-  // Advanced geometry: Segments
+  const removeWindow = (id: string) => {
+    const updatedRoom = { ...room, windows: room.windows.filter(w => w.id !== id) };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        windows: (room.simpleModeData?.windows || room.windows).filter(w => w.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const updateWindow = (id: string, field: keyof Opening, val: number) => {
+    const updatedRoom = { ...room, windows: room.windows.map(w => w.id === id ? { ...w, [field]: val } : w) };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        windows: (room.simpleModeData?.windows || room.windows).map(w => w.id === id ? { ...w, [field]: val } : w)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const addDoor = () => {
+    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
+    const updatedRoom = { ...room, doors: [...room.doors, newDoor] };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        doors: [...(room.simpleModeData?.doors || room.doors), newDoor]
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const removeDoor = (id: string) => {
+    const updatedRoom = { ...room, doors: room.doors.filter(d => d.id !== id) };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        doors: (room.simpleModeData?.doors || room.doors).filter(d => d.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const updateDoor = (id: string, field: keyof Opening, val: number) => {
+    const updatedRoom = { ...room, doors: room.doors.map(d => d.id === id ? { ...d, [field]: val } : d) };
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
+        doors: (room.simpleModeData?.doors || room.doors).map(d => d.id === id ? { ...d, [field]: val } : d)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  // Extended mode: SubSections - update both main fields and mode-specific storage
+  const addSubSection = () => {
+    const newSubSection: RoomSubSection = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: 'Секция',
+      shape: 'rectangle',
+      length: 0,
+      width: 0,
+      windows: [],
+      doors: []
+    };
+    const updatedRoom = { ...room, subSections: [...room.subSections, newSubSection] };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: [...(room.extendedModeData?.subSections || room.subSections), newSubSection]
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const removeSubSection = (id: string) => {
+    const updatedRoom = { ...room, subSections: room.subSections.filter(s => s.id !== id) };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).filter(s => s.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const updateSubSection = (id: string, field: keyof RoomSubSection, val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[]) => {
+    const updatedRoom = { ...room, subSections: room.subSections.map(s => s.id === id ? { ...s, [field]: val } : s) };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => s.id === id ? { ...s, [field]: val } : s)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const updateSubSectionWindow = (subSectionId: string, windowId: string, field: keyof Opening, val: number) => {
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return {
+          ...s,
+          windows: s.windows.map(w => w.id === windowId ? { ...w, [field]: val } : w)
+        };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return {
+            ...s,
+            windows: (s.windows || []).map(w => w.id === windowId ? { ...w, [field]: val } : w)
+          };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const addSubSectionWindow = (subSectionId: string) => {
+    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return { ...s, windows: [...(s.windows || []), newWindow] };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return { ...s, windows: [...(s.windows || []), newWindow] };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const removeSubSectionWindow = (subSectionId: string, windowId: string) => {
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return { ...s, windows: (s.windows || []).filter(w => w.id !== windowId) };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return { ...s, windows: (s.windows || []).filter(w => w.id !== windowId) };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const updateSubSectionDoor = (subSectionId: string, doorId: string, field: keyof Opening, val: number) => {
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return {
+          ...s,
+          doors: s.doors.map(d => d.id === doorId ? { ...d, [field]: val } : d)
+        };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return {
+            ...s,
+            doors: (s.doors || []).map(d => d.id === doorId ? { ...d, [field]: val } : d)
+          };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const addSubSectionDoor = (subSectionId: string) => {
+    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return { ...s, doors: [...(s.doors || []), newDoor] };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return { ...s, doors: [...(s.doors || []), newDoor] };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  const removeSubSectionDoor = (subSectionId: string, doorId: string) => {
+    const updatedRoom = {
+      ...room,
+      subSections: room.subSections.map(s => {
+        if (s.id !== subSectionId) return s;
+        return { ...s, doors: (s.doors || []).filter(d => d.id !== doorId) };
+      })
+    };
+    if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        ...(room.extendedModeData || { subSections: [...room.subSections] }),
+        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
+          if (s.id !== subSectionId) return s;
+          return { ...s, doors: (s.doors || []).filter(d => d.id !== doorId) };
+        })
+      };
+    }
+    updateRoom(updatedRoom);
+  };
+
+  // Advanced geometry: Segments - update both main fields and mode-specific storage
   const addSegment = () => {
     const newSegment: RoomSegment = {
       id: Math.random().toString(36).substring(2, 11),
@@ -830,11 +1148,34 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       width: 0.5,
       operation: 'subtract'
     };
-    updateRoom({...room, segments: [...room.segments, newSegment]});
+    const updatedRoom = { ...room, segments: [...room.segments, newSegment] };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        segments: [...(room.advancedModeData?.segments || room.segments), newSegment]
+      };
+    }
+    updateRoom(updatedRoom);
   };
-  const removeSegment = (id: string) => updateRoom({...room, segments: room.segments.filter(s => s.id !== id)});
+  const removeSegment = (id: string) => {
+    const updatedRoom = { ...room, segments: room.segments.filter(s => s.id !== id) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        segments: (room.advancedModeData?.segments || room.segments).filter(s => s.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
   const updateSegment = (id: string, field: keyof RoomSegment, val: string | number) => {
-    updateRoom({...room, segments: room.segments.map(s => s.id === id ? { ...s, [field]: val } : s)});
+    const updatedRoom = { ...room, segments: room.segments.map(s => s.id === id ? { ...s, [field]: val } : s) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        segments: (room.advancedModeData?.segments || room.segments).map(s => s.id === id ? { ...s, [field]: val } : s)
+      };
+    }
+    updateRoom(updatedRoom);
   };
 
   // Advanced geometry: Obstacles
@@ -847,11 +1188,34 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       perimeter: 2,
       operation: 'subtract'
     };
-    updateRoom({...room, obstacles: [...room.obstacles, newObstacle]});
+    const updatedRoom = { ...room, obstacles: [...room.obstacles, newObstacle] };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        obstacles: [...(room.advancedModeData?.obstacles || room.obstacles), newObstacle]
+      };
+    }
+    updateRoom(updatedRoom);
   };
-  const removeObstacle = (id: string) => updateRoom({...room, obstacles: room.obstacles.filter(o => o.id !== id)});
+  const removeObstacle = (id: string) => {
+    const updatedRoom = { ...room, obstacles: room.obstacles.filter(o => o.id !== id) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        obstacles: (room.advancedModeData?.obstacles || room.obstacles).filter(o => o.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
   const updateObstacle = (id: string, field: keyof Obstacle, val: string | number) => {
-    updateRoom({...room, obstacles: room.obstacles.map(o => o.id === id ? { ...o, [field]: val } : o)});
+    const updatedRoom = { ...room, obstacles: room.obstacles.map(o => o.id === id ? { ...o, [field]: val } : o) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        obstacles: (room.advancedModeData?.obstacles || room.obstacles).map(o => o.id === id ? { ...o, [field]: val } : o)
+      };
+    }
+    updateRoom(updatedRoom);
   };
 
   // Advanced geometry: Wall sections
@@ -862,28 +1226,87 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       length: 1,
       height: 3
     };
-    updateRoom({...room, wallSections: [...room.wallSections, newSection]});
+    const updatedRoom = { ...room, wallSections: [...room.wallSections, newSection] };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        wallSections: [...(room.advancedModeData?.wallSections || room.wallSections), newSection]
+      };
+    }
+    updateRoom(updatedRoom);
   };
-  const removeWallSection = (id: string) => updateRoom({...room, wallSections: room.wallSections.filter(ws => ws.id !== id)});
+  const removeWallSection = (id: string) => {
+    const updatedRoom = { ...room, wallSections: room.wallSections.filter(ws => ws.id !== id) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        wallSections: (room.advancedModeData?.wallSections || room.wallSections).filter(ws => ws.id !== id)
+      };
+    }
+    updateRoom(updatedRoom);
+  };
   const updateWallSection = (id: string, field: keyof WallSection, val: string | number) => {
-    updateRoom({...room, wallSections: room.wallSections.map(ws => ws.id === id ? { ...ws, [field]: val } : ws)});
+    const updatedRoom = { ...room, wallSections: room.wallSections.map(ws => ws.id === id ? { ...ws, [field]: val } : ws) };
+    if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
+        wallSections: (room.advancedModeData?.wallSections || room.wallSections).map(ws => ws.id === id ? { ...ws, [field]: val } : ws)
+      };
+    }
+    updateRoom(updatedRoom);
   };
 
   // Calculate advanced metrics
-  const segmentsDelta = room.segments.reduce((sum, s) => sum + (s.length * s.width * (s.operation === 'add' ? 1 : -1)), 0);
-  const obstaclesDelta = room.obstacles.reduce((sum, o) => sum + (o.area * (o.operation === 'add' ? 1 : -1)), 0);
+  const segmentsDelta = (room.segments || []).reduce((sum, s) => sum + (s.length * s.width * (s.operation === 'add' ? 1 : -1)), 0);
+  const obstaclesDelta = (room.obstacles || []).reduce((sum, o) => sum + (o.area * (o.operation === 'add' ? 1 : -1)), 0);
 
-  // Handler for geometry mode switching - clears mode-specific data
+  // Handler for geometry mode switching - saves and restores mode-specific data
   const handleGeometryModeChange = (newMode: GeometryMode) => {
+    // Prevent unnecessary updates
+    if (room.geometryMode === newMode) return;
+
     let updatedRoom: RoomData = {
       ...room,
       geometryMode: newMode
     };
 
-    // When switching FROM Simple mode TO Extended or Advanced
-    if (room.geometryMode === 'simple' && newMode !== 'simple') {
-      // Clear simple mode specific data when switching to extended or advanced
-      if (newMode === 'extended') {
+    // Save current mode data before switching (deep copy for nested arrays)
+    if (room.geometryMode === 'simple') {
+      updatedRoom.simpleModeData = {
+        length: room.length,
+        width: room.width,
+        windows: room.windows.map(w => ({ ...w })),
+        doors: room.doors.map(d => ({ ...d }))
+      };
+    } else if (room.geometryMode === 'extended') {
+      updatedRoom.extendedModeData = {
+        subSections: room.subSections.map(s => ({
+          ...s,
+          windows: (s.windows || []).map(w => ({ ...w })),
+          doors: (s.doors || []).map(d => ({ ...d }))
+        }))
+      };
+    } else if (room.geometryMode === 'advanced') {
+      updatedRoom.advancedModeData = {
+        segments: room.segments.map(s => ({ ...s })),
+        obstacles: room.obstacles.map(o => ({ ...o })),
+        wallSections: room.wallSections.map(ws => ({ ...ws }))
+      };
+    }
+
+    // Restore target mode data if it exists, otherwise initialize with defaults
+    if (newMode === 'simple') {
+      if (updatedRoom.simpleModeData) {
+        // Restore from saved data (deep copy)
+        updatedRoom = {
+          ...updatedRoom,
+          length: updatedRoom.simpleModeData.length,
+          width: updatedRoom.simpleModeData.width,
+          windows: updatedRoom.simpleModeData.windows.map(w => ({ ...w })),
+          doors: updatedRoom.simpleModeData.doors.map(d => ({ ...d }))
+        };
+      } else {
+        // Initialize with default values
         updatedRoom = {
           ...updatedRoom,
           length: 0,
@@ -891,33 +1314,60 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           windows: [],
           doors: []
         };
-      } else if (newMode === 'advanced') {
-        updatedRoom = {
-          ...updatedRoom,
+        // Create the mode data storage
+        updatedRoom.simpleModeData = {
           length: 0,
           width: 0,
           windows: [],
           doors: []
         };
       }
-    }
-
-    // When switching FROM Extended mode TO Simple or Advanced
-    if (room.geometryMode === 'extended' && newMode !== 'extended') {
-      updatedRoom = {
-        ...updatedRoom,
-        subSections: []
-      };
-    }
-
-    // When switching FROM Advanced mode TO Simple or Extended
-    if (room.geometryMode === 'advanced' && newMode !== 'advanced') {
-      updatedRoom = {
-        ...updatedRoom,
-        segments: [],
-        obstacles: [],
-        wallSections: []
-      };
+    } else if (newMode === 'extended') {
+      if (updatedRoom.extendedModeData) {
+        // Restore from saved data (deep copy)
+        updatedRoom = {
+          ...updatedRoom,
+          subSections: updatedRoom.extendedModeData.subSections.map(s => ({
+            ...s,
+            windows: (s.windows || []).map(w => ({ ...w })),
+            doors: (s.doors || []).map(d => ({ ...d }))
+          }))
+        };
+      } else {
+        // Initialize with default values
+        updatedRoom = {
+          ...updatedRoom,
+          subSections: []
+        };
+        // Create the mode data storage
+        updatedRoom.extendedModeData = {
+          subSections: []
+        };
+      }
+    } else if (newMode === 'advanced') {
+      if (updatedRoom.advancedModeData) {
+        // Restore from saved data (deep copy)
+        updatedRoom = {
+          ...updatedRoom,
+          segments: updatedRoom.advancedModeData.segments.map(s => ({ ...s })),
+          obstacles: updatedRoom.advancedModeData.obstacles.map(o => ({ ...o })),
+          wallSections: updatedRoom.advancedModeData.wallSections.map(ws => ({ ...ws }))
+        };
+      } else {
+        // Initialize with default values
+        updatedRoom = {
+          ...updatedRoom,
+          segments: [],
+          obstacles: [],
+          wallSections: []
+        };
+        // Create the mode data storage
+        updatedRoom.advancedModeData = {
+          segments: [],
+          obstacles: [],
+          wallSections: []
+        };
+      }
     }
 
     updateRoom(updatedRoom);
@@ -1047,11 +1497,11 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
             <>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
-                <NumberInput value={room.length} onChange={(v: number) => updateRoom({...room, length: v})} className="w-full" />
+                <NumberInput value={room.length} onChange={(v: number) => updateSimpleField('length', v)} className="w-full" />
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
-                <NumberInput value={room.width} onChange={(v: number) => updateRoom({...room, width: v})} className="w-full" />
+                <NumberInput value={room.width} onChange={(v: number) => updateSimpleField('width', v)} className="w-full" />
               </div>
             </>
           )}
@@ -1082,7 +1532,6 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
           {subSectionsExpanded && (
             <>
-          {/* Shape type legend */}
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="text-xs font-medium text-gray-600 mb-2">Доступные формы секций:</div>
             <div className="flex flex-wrap gap-4 text-xs text-gray-500">
@@ -1093,11 +1542,11 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
             </div>
           </div>
           
-          {room.subSections.length === 0 ? (
+          {(room.subSections || []).length === 0 ? (
             <div className="text-sm text-gray-400 italic mb-4">Нет секций. Добавьте хотя бы одну секцию.</div>
           ) : (
             <div className="space-y-4 mb-4">
-              {room.subSections.map((subSection, i) => {
+              {(room.subSections || []).map((subSection, i) => {
                 // Calculate metrics based on shape
                 const getSectionMetrics = () => {
                   const shape = subSection.shape || 'rectangle';
@@ -1152,15 +1601,12 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                       <ShapeIcon className="w-4 h-4 text-indigo-500" />
                       <input
                         value={subSection.name}
-                        onChange={e => {
-                          const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, name: e.target.value } : s);
-                          updateRoom({...room, subSections: updated});
-                        }}
+                        onChange={e => updateSubSection(subSection.id, 'name', e.target.value)}
                         className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
                         placeholder="Название секции"
                       />
-                      <button 
-                        onClick={() => updateRoom({...room, subSections: room.subSections.filter(s => s.id !== subSection.id)})} 
+                      <button
+                        onClick={() => removeSubSection(subSection.id)}
                         className="p-1 text-gray-400 hover:text-red-500"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1181,10 +1627,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                           return (
                             <button
                               key={shape}
-                              onClick={() => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, shape } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onClick={() => updateSubSection(subSection.id, 'shape', shape)}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                                 (subSection.shape || 'rectangle') === shape
                                   ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
@@ -1206,24 +1649,18 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
-                            <NumberInput 
-                              value={subSection.length} 
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, length: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                            <NumberInput
+                              value={subSection.length}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'length', v)}
+                              className="w-full"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
-                            <NumberInput 
-                              value={subSection.width} 
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, width: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }} 
-                              className="w-full" 
+                            <NumberInput
+                              value={subSection.width}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'width', v)}
+                              className="w-full"
                             />
                           </div>
                         </div>
@@ -1234,10 +1671,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Основание 1 (м)</label>
                             <NumberInput
                               value={subSection.base1 || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base1: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'base1', v)}
                               className="w-full"
                             />
                           </div>
@@ -1245,10 +1679,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Основание 2 (м)</label>
                             <NumberInput
                               value={subSection.base2 || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base2: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'base2', v)}
                               className="w-full"
                             />
                           </div>
@@ -1256,10 +1687,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
                             <NumberInput
                               value={subSection.height || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'height', v)}
                               className="w-full"
                             />
                           </div>
@@ -1267,10 +1695,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Бок. сторона 1 (м)</label>
                             <NumberInput
                               value={subSection.side1 || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side1: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'side1', v)}
                               className="w-full"
                             />
                           </div>
@@ -1278,10 +1703,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Бок. сторона 2 (м)</label>
                             <NumberInput
                               value={subSection.side2 || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side2: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'side2', v)}
                               className="w-full"
                             />
                           </div>
@@ -1293,10 +1715,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Сторона A (м)</label>
                             <NumberInput
                               value={subSection.sideA || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideA: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'sideA', v)}
                               className="w-full"
                             />
                           </div>
@@ -1304,10 +1723,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Сторона B (м)</label>
                             <NumberInput
                               value={subSection.sideB || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideB: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'sideB', v)}
                               className="w-full"
                             />
                           </div>
@@ -1315,10 +1731,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Сторона C (м)</label>
                             <NumberInput
                               value={subSection.sideC || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, sideC: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'sideC', v)}
                               className="w-full"
                             />
                           </div>
@@ -1330,10 +1743,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Основание (м)</label>
                             <NumberInput
                               value={subSection.base || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, base: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'base', v)}
                               className="w-full"
                             />
                           </div>
@@ -1341,10 +1751,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
                             <NumberInput
                               value={subSection.height || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, height: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'height', v)}
                               className="w-full"
                             />
                           </div>
@@ -1352,10 +1759,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             <label className="block text-xs text-gray-500 mb-1">Боковая сторона (м)</label>
                             <NumberInput
                               value={subSection.side || 0}
-                              onChange={(v: number) => {
-                                const updated = room.subSections.map(s => s.id === subSection.id ? { ...s, side: v } : s);
-                                updateRoom({...room, subSections: updated});
-                              }}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'side', v)}
                               className="w-full"
                             />
                           </div>
@@ -1368,15 +1772,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                       <div className="p-3 bg-white rounded-lg border border-gray-100">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-medium text-gray-600">Окна</span>
-                          <button 
-                            onClick={() => {
-                              const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
-                              const updated = room.subSections.map(s => s.id === subSection.id 
-                                ? { ...s, windows: [...(s.windows || []), newWindow] } 
-                                : s
-                              );
-                              updateRoom({...room, subSections: updated});
-                            }}
+                          <button
+                            onClick={() => addSubSectionWindow(subSection.id)}
                             className="text-xs text-indigo-600 font-medium hover:text-indigo-700"
                           >
                             + Добавить
@@ -1389,37 +1786,19 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             {subSection.windows.map((w, wi) => (
                               <div key={w.id} className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400 w-4">{wi + 1}.</span>
-                                <NumberInput 
-                                  value={w.width} 
-                                  onChange={(v: number) => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, windows: s.windows.map(win => win.id === w.id ? { ...win, width: v } : win) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
-                                  className="w-16 text-xs py-1" 
+                                <NumberInput
+                                  value={w.width}
+                                  onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'width', v)}
+                                  className="w-16 text-xs py-1"
                                 />
                                 <span className="text-gray-400 text-xs">×</span>
-                                <NumberInput 
-                                  value={w.height} 
-                                  onChange={(v: number) => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, windows: s.windows.map(win => win.id === w.id ? { ...win, height: v } : win) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
-                                  className="w-16 text-xs py-1" 
+                                <NumberInput
+                                  value={w.height}
+                                  onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'height', v)}
+                                  className="w-16 text-xs py-1"
                                 />
-                                <button 
-                                  onClick={() => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, windows: s.windows.filter(win => win.id !== w.id) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
+                                <button
+                                  onClick={() => removeSubSectionWindow(subSection.id, w.id)}
                                   className="p-0.5 text-gray-300 hover:text-red-500"
                                 >
                                   <X className="w-3 h-3" />
@@ -1429,19 +1808,12 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="p-3 bg-white rounded-lg border border-gray-100">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-medium text-gray-600">Двери/Проход</span>
-                          <button 
-                            onClick={() => {
-                              const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
-                              const updated = room.subSections.map(s => s.id === subSection.id 
-                                ? { ...s, doors: [...(s.doors || []), newDoor] } 
-                                : s
-                              );
-                              updateRoom({...room, subSections: updated});
-                            }}
+                          <button
+                            onClick={() => addSubSectionDoor(subSection.id)}
                             className="text-xs text-indigo-600 font-medium hover:text-indigo-700"
                           >
                             + Добавить
@@ -1454,37 +1826,19 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                             {subSection.doors.map((d, di) => (
                               <div key={d.id} className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400 w-4">{di + 1}.</span>
-                                <NumberInput 
-                                  value={d.width} 
-                                  onChange={(v: number) => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, doors: s.doors.map(door => door.id === d.id ? { ...door, width: v } : door) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
-                                  className="w-16 text-xs py-1" 
+                                <NumberInput
+                                  value={d.width}
+                                  onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'width', v)}
+                                  className="w-16 text-xs py-1"
                                 />
                                 <span className="text-gray-400 text-xs">×</span>
-                                <NumberInput 
-                                  value={d.height} 
-                                  onChange={(v: number) => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, doors: s.doors.map(door => door.id === d.id ? { ...door, height: v } : door) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
-                                  className="w-16 text-xs py-1" 
+                                <NumberInput
+                                  value={d.height}
+                                  onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'height', v)}
+                                  className="w-16 text-xs py-1"
                                 />
-                                <button 
-                                  onClick={() => {
-                                    const updated = room.subSections.map(s => s.id === subSection.id 
-                                      ? { ...s, doors: s.doors.filter(door => door.id !== d.id) } 
-                                      : s
-                                    );
-                                    updateRoom({...room, subSections: updated});
-                                  }}
+                                <button
+                                  onClick={() => removeSubSectionDoor(subSection.id, d.id)}
                                   className="p-0.5 text-gray-300 hover:text-red-500"
                                 >
                                   <X className="w-3 h-3" />
@@ -1531,18 +1885,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           )}
 
           <button
-            onClick={() => {
-              const newSubSection: RoomSubSection = {
-                id: Math.random().toString(36).substring(2, 11),
-                name: `Секция ${room.subSections.length + 1}`,
-                shape: 'rectangle',
-                length: 0,
-                width: 0,
-                windows: [],
-                doors: []
-              };
-              updateRoom({...room, subSections: [...room.subSections, newSubSection]});
-            }}
+            onClick={() => addSubSection()}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all"
           >
             <Plus className="w-4 h-4" />
