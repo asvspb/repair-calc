@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Settings2, Trash2, Box, ChevronUp, Package, Wrench } from 'lucide-react';
+import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
 import type { WorkData } from '../../App';
 
 type WorkListItemProps = {
@@ -84,9 +84,6 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
             ) : null}
           </button>
 
-          {/* Settings Icon */}
-          <Settings2 className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-
           {/* Work Name & Edit Area */}
           <div
             onClick={() => onToggleExpand && onToggleExpand(work.id)}
@@ -103,15 +100,18 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
             </div>
             {work.enabled && (
               <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
-                <Box className="w-4 h-4" />
-                <span>
-                  {work.manualQty !== undefined
-                    ? work.manualQty
-                    : work.calculationType === 'customCount'
-                    ? work.count || 0
-                    : '—'}
-                </span>
-                <span className="text-gray-400">—</span>
+                {hasMaterials && (
+                  <span className="inline-flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {migratedWork.materials!.length}
+                  </span>
+                )}
+                {hasTools && (
+                  <span className="inline-flex items-center gap-1">
+                    <Wrench className="w-3 h-3" />
+                    {migratedWork.tools!.length}
+                  </span>
+                )}
                 <span>нажмите для редактирования</span>
               </div>
             )}
@@ -163,47 +163,22 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
         </div>
 
         {/* Expanded/Collapsed indicator */}
-        {work.enabled && (
+        {work.enabled && onToggleExpand && (
           <div className="mt-2 ml-14">
-            {onToggleExpand && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExpand(work.id);
-                }}
-                className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
-              >
-                {hasMaterials || hasTools ? (
-                  <>
-                    {hasMaterials && (
-                      <span className="inline-flex items-center gap-1">
-                        <Package className="w-3 h-3" />
-                        {migratedWork.materials!.length}
-                      </span>
-                    )}
-                    {hasMaterials && hasTools && <span>•</span>}
-                    {hasTools && (
-                      <span className="inline-flex items-center gap-1">
-                        <Wrench className="w-3 h-3" />
-                        {migratedWork.tools!.length}
-                      </span>
-                    )}
-                    <span className="ml-1">
-                      {isExpanded ? '— свернуть' : '— нажмите для редактирования'}
-                    </span>
-                  </>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <ChevronUp
-                      className={`w-3 h-3 transition-transform ${
-                        isExpanded ? 'rotate-0' : 'rotate-180'
-                      }`}
-                    />
-                    {isExpanded ? 'свернуть' : '+ Добавить материалы/инструменты'}
-                  </span>
-                )}
-              </button>
-            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpand(work.id);
+              }}
+              className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronUp
+                className={`w-3 h-3 transition-transform ${
+                  isExpanded ? 'rotate-0' : 'rotate-180'
+                }`}
+              />
+              {isExpanded ? 'свернуть' : 'Развернуть'}
+            </button>
           </div>
         )}
       </div>
