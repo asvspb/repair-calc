@@ -1562,9 +1562,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                   {room.windows.map((w, i) => (
                     <div key={w.id} className="flex items-center gap-2">
                       <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-16 text-xs py-1" />
+                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                       <span className="text-gray-400 text-xs">×</span>
-                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-16 text-xs py-1" />
+                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
                       <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500">
                         <X className="w-3 h-3" />
                       </button>
@@ -1586,9 +1586,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                   {room.doors.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-2">
                       <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-16 text-xs py-1" />
+                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                       <span className="text-gray-400 text-xs">×</span>
-                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-16 text-xs py-1" />
+                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
                       <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500">
                         <X className="w-3 h-3" />
                       </button>
@@ -1873,13 +1873,15 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                                 <NumberInput
                                   value={w.width}
                                   onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'width', v)}
-                                  className="w-16 text-xs py-1"
+                                  className="w-20 text-xs py-1"
+                                  step={0.1}
                                 />
                                 <span className="text-gray-400 text-xs">×</span>
                                 <NumberInput
                                   value={w.height}
                                   onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'height', v)}
-                                  className="w-16 text-xs py-1"
+                                  className="w-20 text-xs py-1"
+                                  step={0.1}
                                 />
                                 <button
                                   onClick={() => removeSubSectionWindow(subSection.id, w.id)}
@@ -1913,13 +1915,15 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                                 <NumberInput
                                   value={d.width}
                                   onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'width', v)}
-                                  className="w-16 text-xs py-1"
+                                  className="w-20 text-xs py-1"
+                                  step={0.1}
                                 />
                                 <span className="text-gray-400 text-xs">×</span>
                                 <NumberInput
                                   value={d.height}
                                   onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'height', v)}
-                                  className="w-16 text-xs py-1"
+                                  className="w-20 text-xs py-1"
+                                  step={0.1}
                                 />
                                 <button
                                   onClick={() => removeSubSectionDoor(subSection.id, d.id)}
@@ -2218,9 +2222,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                 {room.windows.map((w, i) => (
                   <div key={w.id} className="flex items-center gap-3">
                     <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                    <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" />
+                    <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
                     <span className="text-gray-400">×</span>
-                    <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" />
+                    <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
                     <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
                       <X className="w-4 h-4" />
                     </button>
@@ -2242,9 +2246,9 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
                 {room.doors.map((d, i) => (
                   <div key={d.id} className="flex items-center gap-3">
                     <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                    <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" />
+                    <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
                     <span className="text-gray-400">×</span>
-                    <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" />
+                    <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
                     <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
                       <X className="w-4 h-4" />
                     </button>
