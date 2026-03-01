@@ -621,8 +621,8 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
           <div className="text-3xl font-light">{totalVolume.toFixed(2)} <span className="text-lg text-gray-400">м³</span></div>
         </div>
         <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-md flex flex-col items-center text-center">
-          <div className="text-indigo-100 text-sm mb-1">Итоговая стоимость</div>
-          <div className="text-3xl font-semibold">{grandTotal.toLocaleString('ru-RU')} <span className="text-indigo-200 text-lg">₽</span></div>
+          <div className="text-indigo-100 text-sm mb-1">Стоимость, ₽</div>
+          <div className="text-3xl font-semibold">{grandTotal.toLocaleString('ru-RU')}</div>
         </div>
       </div>
 
