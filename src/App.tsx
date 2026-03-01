@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronRight, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, GripVertical, Wrench, Package, Square, Triangle } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle } from 'lucide-react';
 import { WorkList } from './components/works/WorkList';
+import { RoomList } from './components/rooms/RoomList';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -2111,10 +2112,6 @@ export default function App() {
   
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Drag and Drop state for rooms
-  const [draggedRoomId, setDraggedRoomId] = useState<string | null>(null);
-  const [dragOverRoomId, setDragOverRoomId] = useState<string | null>(null);
 
   const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
 
@@ -2186,53 +2183,6 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
-  // Drag and Drop handlers for rooms
-  const handleRoomDragStart = (roomId: string) => {
-    setDraggedRoomId(roomId);
-  };
-
-  const handleRoomDragOver = (e: React.DragEvent, roomId: string) => {
-    e.preventDefault();
-    if (roomId !== draggedRoomId) {
-      setDragOverRoomId(roomId);
-    }
-  };
-
-  const handleRoomDragLeave = () => {
-    setDragOverRoomId(null);
-  };
-
-  const handleRoomDrop = (e: React.DragEvent, targetRoomId: string) => {
-    e.preventDefault();
-    if (!draggedRoomId || draggedRoomId === targetRoomId) {
-      setDraggedRoomId(null);
-      setDragOverRoomId(null);
-      return;
-    }
-
-    const rooms = [...activeProject.rooms];
-    const draggedIndex = rooms.findIndex(r => r.id === draggedRoomId);
-    const targetIndex = rooms.findIndex(r => r.id === targetRoomId);
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedRoomId(null);
-      setDragOverRoomId(null);
-      return;
-    }
-
-    // Remove dragged room and insert at new position
-    const [draggedRoom] = rooms.splice(draggedIndex, 1);
-    rooms.splice(targetIndex, 0, draggedRoom);
-
-    const updatedProject = {
-      ...activeProject,
-      rooms: rooms
-    };
-    updateActiveProject(updatedProject);
-    setDraggedRoomId(null);
-    setDragOverRoomId(null);
-  };
-
   const addNewProject = () => {
     const newProject = createNewProject();
     updateProjects([...projects, newProject]);
@@ -2268,7 +2218,7 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto py-4">
           <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
-          <button 
+          <button
             onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
             className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
           >
@@ -2277,38 +2227,21 @@ export default function App() {
           </button>
 
           <div className="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-          {activeProject.rooms.map(room => (
-            <div
-              key={room.id}
-              draggable
-              onDragStart={() => handleRoomDragStart(room.id)}
-              onDragOver={(e) => handleRoomDragOver(e, room.id)}
-              onDragLeave={handleRoomDragLeave}
-              onDrop={(e) => handleRoomDrop(e, room.id)}
-              className={`group flex items-center cursor-move transition-all ${
-                draggedRoomId === room.id 
-                  ? 'opacity-50' 
-                  : dragOverRoomId === room.id 
-                    ? 'bg-indigo-100 border-r-2 border-indigo-600' 
-                    : ''
-              }`}
-            >
-              <div className="px-2 py-3 text-gray-400 hover:text-gray-600 transition-colors cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="w-4 h-4" />
-              </div>
-              <button
-                onClick={() => { setActiveTab(room.id); setIsMobileMenuOpen(false); }}
-                className={`flex-1 flex items-center justify-between px-4 py-3 text-left transition-colors ${
-                  activeTab === room.id
-                    ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span className="truncate pr-2">{room.name}</span>
-                <ChevronRight className={`w-4 h-4 ${activeTab === room.id ? 'text-indigo-600' : 'text-gray-400'}`} />
-              </button>
-            </div>
-          ))}
+          <RoomList
+            rooms={activeProject.rooms}
+            activeTab={activeTab}
+            onRoomClick={(roomId) => {
+              setActiveTab(roomId);
+              setIsMobileMenuOpen(false);
+            }}
+            onReorderRooms={(newRooms) => {
+              const updatedProject = {
+                ...activeProject,
+                rooms: newRooms
+              };
+              updateActiveProject(updatedProject);
+            }}
+          />
         </div>
 
         <div className="p-4 border-t border-gray-100 space-y-3">
