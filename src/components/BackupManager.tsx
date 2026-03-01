@@ -8,15 +8,16 @@ interface BackupManagerProps {
   activeProjectId: string;
   onImport: (projects: ProjectData[], activeProjectId: string) => void;
   onClearAll: () => void;
+  onImportTemplates?: (templates: any[]) => void;
 }
 
 type ImportStatus = {
   type: 'success' | 'error' | 'confirm';
   message: string;
-  data?: { projects: ProjectData[]; activeProjectId: string };
+  data?: { projects: ProjectData[]; activeProjectId: string; workTemplates?: any[] };
 };
 
-export function BackupManager({ projects, activeProjectId, onImport, onClearAll }: BackupManagerProps) {
+export function BackupManager({ projects, activeProjectId, onImport, onClearAll, onImportTemplates }: BackupManagerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -56,12 +57,17 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll 
     reader.onload = (e) => {
       const content = e.target?.result as string;
       const result = StorageManager.importFromJSON(content);
-      
+
       if (result.success) {
+        const hasTemplates = result.data.workTemplates && result.data.workTemplates.length > 0;
         setImportStatus({
           type: 'confirm',
-          message: `Импортировать ${result.data.projects.length} проектов? Текущие данные будут заменены.`,
-          data: { projects: result.data.projects, activeProjectId: result.data.activeProjectId }
+          message: `Импортировать ${result.data.projects.length} проектов${hasTemplates ? ` и ${result.data.workTemplates.length} шаблонов` : ''}? Текущие данные будут заменены.`,
+          data: { 
+            projects: result.data.projects, 
+            activeProjectId: result.data.activeProjectId,
+            workTemplates: result.data.workTemplates
+          }
         });
       } else {
         const errorMessage = 'error' in result ? result.error : 'Неизвестная ошибка импорта';
@@ -86,16 +92,21 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll 
   const handleConfirmImport = useCallback(() => {
     if (importStatus?.data) {
       onImport(importStatus.data.projects, importStatus.data.activeProjectId);
+      // Import templates if present
+      if (onImportTemplates && importStatus.data.workTemplates) {
+        StorageManager.importWorkTemplates(importStatus.data.workTemplates);
+        onImportTemplates(importStatus.data.workTemplates);
+      }
       setImportStatus({
         type: 'success',
-        message: `Успешно импортировано ${importStatus.data.projects.length} проектов`
+        message: `Успешно импортировано ${importStatus.data.projects.length} проектов${importStatus.data.workTemplates ? ` и ${importStatus.data.workTemplates.length} шаблонов` : ''}`
       });
       setTimeout(() => {
         setImportStatus(null);
         setIsOpen(false);
       }, 2000);
     }
-  }, [importStatus, onImport]);
+  }, [importStatus, onImport, onImportTemplates]);
 
   const handleClearAll = useCallback(() => {
     onClearAll();

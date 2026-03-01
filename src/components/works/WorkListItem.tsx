@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
 import type { WorkData } from '../../App';
+import { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 
 type WorkListItemProps = {
   work: WorkData;
@@ -12,6 +13,7 @@ type WorkListItemProps = {
   onNameChange: (id: string, name: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: (id: string) => void;
+  onSaveTemplate?: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
 };
 
 export const WorkListItem: React.FC<WorkListItemProps> = ({
@@ -22,6 +24,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
   onNameChange,
   isExpanded = false,
   onToggleExpand,
+  onSaveTemplate,
 }) => {
   const {
     attributes,
@@ -162,9 +165,9 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
           </button>
         </div>
 
-        {/* Expanded/Collapsed indicator */}
+        {/* Expanded/Collapsed indicator and Save Template button */}
         {work.enabled && onToggleExpand && (
-          <div className="mt-2 ml-14">
+          <div className="mt-2 ml-14 flex items-center justify-between">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -179,6 +182,12 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
               />
               {isExpanded ? 'свернуть' : 'Развернуть'}
             </button>
+            {onSaveTemplate && (
+              <WorkTemplateSaveButton
+                work={work}
+                onSave={onSaveTemplate}
+              />
+            )}
           </div>
         )}
       </div>

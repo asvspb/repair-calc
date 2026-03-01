@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle, ClipboardList } from 'lucide-react';
 import { WorkList } from './components/works/WorkList';
 import { RoomList } from './components/rooms/RoomList';
+import { useWorkTemplates } from './hooks/useWorkTemplates';
+import { WorkTemplatePickerModal } from './components/works/WorkTemplatePickerModal';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -736,7 +738,29 @@ function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { p
   );
 }
 
-function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRoom: (r: RoomData) => void, deleteRoom: () => void }) {
+function RoomEditor({ 
+  room, 
+  updateRoom, 
+  deleteRoom,
+  templates,
+  onSaveTemplate,
+  onLoadTemplate,
+  onDeleteTemplate,
+  isTemplatePickerOpen,
+  onOpenTemplatePicker,
+  onCloseTemplatePicker,
+}: { 
+  room: RoomData, 
+  updateRoom: (r: RoomData) => void, 
+  deleteRoom: () => void,
+  templates: any[],
+  onSaveTemplate: (work: WorkData, forceReplace: boolean) => any,
+  onLoadTemplate: (template: any) => WorkData,
+  onDeleteTemplate: (id: string) => void,
+  isTemplatePickerOpen: boolean,
+  onOpenTemplatePicker: () => void,
+  onCloseTemplatePicker: () => void,
+}) {
   const metrics = calculateRoomMetrics(room);
   const { costs, total } = calculateRoomCosts(room);
 
@@ -896,6 +920,23 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       ...room,
       works: newWorks
     });
+  };
+
+  // Template handlers
+  const handleSaveTemplate = (work: WorkData, forceReplace: boolean) => {
+    return onSaveTemplate(work, forceReplace);
+  };
+
+  const handleLoadTemplate = (template: any) => {
+    const work = onLoadTemplate(template);
+    updateRoom({
+      ...room,
+      works: [...(room.works || []), work]
+    });
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    onDeleteTemplate(id);
   };
 
   // Simple mode handlers - update both main fields and mode-specific storage
@@ -2263,6 +2304,15 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium">Работы и материалы</h3>
+          <button
+            onClick={onOpenTemplatePicker}
+            disabled={templates.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            title={templates.length === 0 ? 'Нет сохранённых шаблонов' : 'Загрузить из шаблона'}
+          >
+            <ClipboardList className="w-4 h-4" />
+            Из шаблона
+          </button>
         </div>
 
         {/* Draggable Work List */}
@@ -2280,6 +2330,7 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           onNameChange={(id, name) => handleWorkChange(id, 'name', name)}
           onReorderWorks={reorderWorks}
           onToggleExpand={toggleWorkExpand}
+          onSaveTemplate={handleSaveTemplate}
           renderExpandedContent={(work) => {
             const migratedWork = migrateWorkData(work);
             let autoQty = 0;
@@ -2525,6 +2576,16 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           Добавить работу
         </button>
       </div>
+
+      {/* Template Picker Modal */}
+      <WorkTemplatePickerModal
+        isOpen={isTemplatePickerOpen}
+        onClose={onCloseTemplatePicker}
+        onSelect={handleLoadTemplate}
+        templates={templates}
+        onLoadTemplate={onLoadTemplate}
+        onDeleteTemplate={handleDeleteTemplate}
+      />
     </div>
   );
 }
@@ -2540,7 +2601,20 @@ export default function App() {
     lastSaved,
     saveError
   } = useProjects(initialProjects);
-  
+
+  // Work templates hook
+  const {
+    templates,
+    isLoading: templatesLoading,
+    saveTemplate,
+    loadTemplate,
+    deleteTemplate,
+    importTemplates,
+  } = useWorkTemplates();
+
+  // Template picker modal state
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -2622,6 +2696,18 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleImportTemplates = (importedTemplates: any[]) => {
+    importTemplates(importedTemplates);
+  };
+
+  const handleSaveTemplate = (work: WorkData, forceReplace: boolean) => {
+    return saveTemplate(work, forceReplace);
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    deleteTemplate(id);
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -2701,11 +2787,12 @@ export default function App() {
           <span className="font-semibold text-lg truncate flex-1">
             {activeTab === 'summary' ? activeProject.name : activeProject.rooms.find(r => r.id === activeTab)?.name}
           </span>
-          <BackupManager 
+          <BackupManager
             projects={projects}
             activeProjectId={activeProjectId}
             onImport={handleImport}
             onClearAll={handleClearAll}
+            onImportTemplates={handleImportTemplates}
           />
         </header>
 
@@ -2728,6 +2815,7 @@ export default function App() {
               activeProjectId={activeProjectId}
               onImport={handleImport}
               onClearAll={handleClearAll}
+              onImportTemplates={handleImportTemplates}
             />
           </div>
         </header>
@@ -2743,10 +2831,17 @@ export default function App() {
               />
             ) : (
               activeProject.rooms.find(r => r.id === activeTab) && (
-                <RoomEditor 
-                  room={activeProject.rooms.find(r => r.id === activeTab)!} 
+                <RoomEditor
+                  room={activeProject.rooms.find(r => r.id === activeTab)!}
                   updateRoom={updateRoomInProject}
                   deleteRoom={() => deleteRoomFromProject(activeTab)}
+                  templates={templates}
+                  onSaveTemplate={handleSaveTemplate}
+                  onLoadTemplate={loadTemplate}
+                  onDeleteTemplate={handleDeleteTemplate}
+                  isTemplatePickerOpen={isTemplatePickerOpen}
+                  onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
+                  onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}
                 />
               )
             )}

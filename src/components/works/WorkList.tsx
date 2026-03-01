@@ -25,6 +25,7 @@ type WorkListProps = {
   onReorderWorks: (works: WorkData[]) => void;
   onToggleExpand: (id: string) => void;
   renderExpandedContent?: (work: WorkData) => React.ReactNode;
+  onSaveTemplate?: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
 };
 
 export const WorkList: React.FC<WorkListProps> = ({
@@ -37,6 +38,7 @@ export const WorkList: React.FC<WorkListProps> = ({
   onReorderWorks,
   onToggleExpand,
   renderExpandedContent,
+  onSaveTemplate,
 }) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -78,6 +80,7 @@ export const WorkList: React.FC<WorkListProps> = ({
                 onNameChange={onNameChange}
                 isExpanded={expandedWorks.has(work.id)}
                 onToggleExpand={onToggleExpand}
+                onSaveTemplate={onSaveTemplate}
               />
               {renderExpandedContent && expandedWorks.has(work.id) && (
                 <div className="mt-3 ml-8 pl-4 border-l-2 border-indigo-100">
