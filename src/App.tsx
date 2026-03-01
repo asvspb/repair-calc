@@ -947,8 +947,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
           <div className="text-xl font-light">{metrics.volume?.toFixed(2) || '0.00'} <span className="text-sm text-gray-400">м³</span></div>
         </div>
         <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center items-center text-center">
-          <div className="text-sm text-indigo-600 mb-1">Итого по комнате</div>
-          <div className="text-xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-sm text-indigo-400">₽</span></div>
+          <div className="text-sm text-indigo-600 mb-1">Стоимость, ₽</div>
+          <div className="text-xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-sm text-indigo-400"></span></div>
         </div>
       </div>
 
