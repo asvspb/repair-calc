@@ -1,7 +1,7 @@
 # Техническое задание: Шаблоны работ (Work Templates)
 
 **Дата:** 2026-03-01  
-**Статус:** Проектирование  
+**Статус:** Реализовано (v1) · Проектирование (v2 — пересчёт материалов)  
 **Приоритет:** Средний (после Фазы 1–2 из ARCHITECTURE.md)  
 **Связанные документы:** [ARCHITECTURE.md](./ARCHITECTURE.md), [CODE_REVIEW.md](./CODE_REVIEW.md)
 
@@ -66,6 +66,7 @@ export type WorkTemplate = {
   workUnitPrice: number;            // Цена работы за единицу
   calculationType: CalculationType; // Способ расчёта объёма
   count?: number;                   // Количество (для customCount)
+  sourceVolume?: number;            // [v2] Объём работы при сохранении (м², пог.м, шт)
   materials: WorkTemplateMaterial[];  // Материалы (шаблонные)
   tools: WorkTemplateTool[];         // Инструменты (шаблонные)
   createdAt: string;                // ISO дата создания
@@ -74,7 +75,7 @@ export type WorkTemplate = {
 
 export type WorkTemplateMaterial = {
   name: string;
-  quantity: number;
+  quantity: number;                 // Абсолютное количество (при сохранении)
   unit: string;
   pricePerUnit: number;
 };
@@ -99,8 +100,9 @@ export type WorkTemplateCategory = 'floor' | 'walls' | 'perimeter' | 'other';
 | `workUnitPrice` | ✅ Да | Цена за единицу |
 | `calculationType` | ✅ Да | Способ расчёта объёма |
 | `count` | ✅ Да | Для типа `customCount` |
-| `materials[]` | ✅ Да (без `id`) | Материалы шаблона |
+| `materials[]` | ✅ Да (без `id`) | Материалы шаблона (абсолютные количества) |
 | `tools[]` | ✅ Да (без `id`) | Инструменты шаблона |
+| *объём работы* | ✅ Да (`sourceVolume`) | [v2] Для пересчёта материалов |
 | `id` | ❌ Нет | Генерируется при загрузке |
 | `enabled` | ❌ Нет | Всегда `true` при загрузке |
 | `manualQty` | ❌ Нет | Привязан к конкретной комнате |
@@ -347,11 +349,136 @@ function loadTemplate(template: WorkTemplate): WorkData {
 
 **Пересчёт происходит автоматически** — `calculateRoomCosts()` уже использует метрики комнаты для расчёта объёма. При загрузке шаблона НЕ устанавливается `manualQty`, поэтому используется авто-расчёт.
 
-### 6.3. Материалы и инструменты
+### 6.3. Материалы и инструменты (v1 — текущая реализация)
 
-Материалы и инструменты копируются **как есть** (абсолютные значения количества и цен). Пользователь может скорректировать их вручную после загрузки.
+Материалы и инструменты копируются **как есть** (абсолютные значения количества и цен). Пользователь может скорректировать их вручную после загрузке.
 
-> **Примечание:** В будущей версии можно добавить возможность привязки количества материала к объёму работы (например, «расход 0.3 кг/м²»), но это за рамками текущего ТЗ.
+### 6.4. Авто-пересчёт материалов через `sourceVolume` (v2 — запланировано)
+
+#### Проблема
+
+В v1 материалы копируются с абсолютными количествами. Например:
+- Комната 1: площадь пола = **10.44 м²**, материал «Волма ровнитель грубый (25кг)» = **45 шт** × 400₽ = 18 000₽
+- При загрузке в Комнату 2 (площадь = **17.64 м²**) количество остаётся **45 шт** — это **неверно**.
+
+#### Решение: коэффициент масштабирования
+
+При сохранении шаблона фиксируем **объём работы** (`sourceVolume`). При загрузке вычисляем коэффициент:
+
+```
+ratio = targetVolume / sourceVolume
+newQuantity = material.quantity × ratio
+```
+
+**Пример:**
+```
+Сохранение (Комната 1):
+  sourceVolume = 10.44 м²
+  «Волма ровнитель» quantity = 45 шт
+  Расход: 45 / 10.44 ≈ 4.31 шт/м²
+
+Загрузка (Комната 2):
+  targetVolume = 17.64 м²
+  ratio = 17.64 / 10.44 = 1.69
+  newQuantity = 45 × 1.69 = 76.09 шт
+  Новая стоимость: 76.09 × 400 = 30 436₽
+```
+
+#### Изменение модели данных
+
+Добавляется **одно поле** в `WorkTemplate`:
+
+```typescript
+export type WorkTemplate = {
+  // ... существующие поля ...
+  sourceVolume?: number;  // Объём работы при сохранении (м², пог.м, шт)
+};
+```
+
+`WorkTemplateMaterial` **не меняется** — `quantity` хранится абсолютно, пересчёт через общий `ratio`.
+
+#### Логика сохранения
+
+В `RoomEditor` уже есть `metrics = calculateRoomMetrics(room)`. При сохранении вычисляем `workVolume`:
+
+```typescript
+// RoomEditor.handleSaveTemplate — передаём объём в saveTemplate
+const handleSaveTemplate = (work: WorkData, forceReplace: boolean) => {
+  let workVolume = 0;
+  if (work.calculationType === 'floorArea') workVolume = metrics.floorArea;
+  else if (work.calculationType === 'netWallArea') workVolume = metrics.netWallArea;
+  else if (work.calculationType === 'skirtingLength') workVolume = metrics.skirtingLength;
+  else if (work.calculationType === 'customCount') workVolume = work.count || 0;
+
+  return onSaveTemplate(work, forceReplace, workVolume);
+};
+```
+
+В `useWorkTemplates.saveTemplate` сохраняем `sourceVolume: workVolume` в шаблон.
+
+#### Логика загрузки
+
+```typescript
+loadTemplate(template: WorkTemplate, targetMetrics: RoomMetrics): WorkData {
+  // Определяем целевой объём
+  let targetVolume = 0;
+  if (template.calculationType === 'floorArea') targetVolume = targetMetrics.floorArea;
+  else if (template.calculationType === 'netWallArea') targetVolume = targetMetrics.netWallArea;
+  else if (template.calculationType === 'skirtingLength') targetVolume = targetMetrics.skirtingLength;
+  else if (template.calculationType === 'customCount') targetVolume = template.count || 0;
+
+  const sourceVolume = template.sourceVolume || 0;
+  const shouldScale = sourceVolume > 0 && targetVolume > 0;
+  const ratio = shouldScale ? targetVolume / sourceVolume : 1;
+
+  return {
+    // ... existing fields ...
+    materials: template.materials.map(m => ({
+      id: crypto.randomUUID(),
+      name: m.name,
+      quantity: shouldScale
+        ? Math.round(m.quantity * ratio * 100) / 100  // округление до 2 знаков
+        : m.quantity,
+      unit: m.unit,
+      pricePerUnit: m.pricePerUnit,  // цена за единицу НЕ масштабируется
+    })),
+    tools: template.tools.map(t => ({
+      // Инструменты НЕ масштабируются (1 лобзик на любой метраж)
+      id: crypto.randomUUID(),
+      ...t,
+    })),
+  };
+}
+```
+
+#### Что масштабируется / не масштабируется
+
+| Элемент | Масштабируется? | Причина |
+|---|---|---|
+| `material.quantity` | ✅ Да | 45 мешков → 76 мешков |
+| `material.pricePerUnit` | ❌ Нет | 400₽/мешок — фиксировано |
+| `workUnitPrice` | ❌ Нет | 350₽/м² — одинакова в любой комнате |
+| `tools` | ❌ Нет | 1 лобзик на любую площадь |
+
+#### Edge cases (v2)
+
+| Ситуация | Поведение |
+|---|---|
+| `sourceVolume = 0` (комната без размеров) | `shouldScale = false` → копируем quantity как есть |
+| `targetVolume = 0` (новая пустая комната) | `shouldScale = false` → копируем как есть |
+| `customCount` (шт) | sourceVolume = count; ratio = newCount / oldCount |
+| Старый шаблон без `sourceVolume` | `sourceVolume = undefined → 0` → обратная совместимость |
+| Инструменты | Не масштабируются |
+
+#### Изменяемые файлы (v2)
+
+| Файл | Что меняется |
+|---|---|
+| `src/types/workTemplate.ts` | `sourceVolume?: number` в `WorkTemplate` |
+| `src/hooks/useWorkTemplates.ts` | `saveTemplate(work, force, workVolume)`, `loadTemplate(template, metrics)` |
+| `src/App.tsx` | Передаём объём при сохранении, метрики при загрузке, обновляем типы пропсов |
+
+**Не меняются:** `WorkTemplateSaveButton`, `WorkList`, `WorkListItem`, `WorkTemplatePickerModal`, `templateStorage.ts`.
 
 ---
 
@@ -429,7 +556,7 @@ DELETE /api/work-templates/:id          Удалить шаблон
 |---|---|
 | Сохранение работы без названия | Использовать «Без названия» как имя шаблона |
 | Сохранение с пустой ценой (0 ₽) | Разрешено — пользователь может заполнить позже |
-| Загрузка в комнату без размеров | Работа добавляется с объёмом 0 — пользователь позже введёт размеры |
+| Загрузка в комнату без размеров | Работа добавляется с объёмом 0 — пользователь позже введёт размеры. Материалы копируются без масштабирования (v2: `shouldScale = false`) |
 | Дубликат имени при сохранении | Подтверждение замены (см. сценарий 3) |
 | Удаление шаблона не влияет на работы | Уже загруженные работы не зависят от шаблона |
 | Шаблон с legacy-полями (materialPrice) | При сохранении legacy-поля игнорируются; используются только `materials[]` |
@@ -438,7 +565,16 @@ DELETE /api/work-templates/:id          Удалить шаблон
 
 ---
 
-## 10. Экспорт/Импорт шаблонов
+## 10. Дорожная карта версий
+
+| Версия | Что входит | Статус |
+|---|---|---|
+| **v1** | Сохранение/загрузка шаблонов, поиск, фильтры, экспорт/импорт | ✅ Реализовано |
+| **v2** | Авто-пересчёт материалов через `sourceVolume` (раздел 6.4) | 📋 Спроектировано |
+
+---
+
+## 11. Экспорт/Импорт шаблонов
 
 Шаблоны включаются в JSON-бэкап (`BackupManager`):
 
@@ -456,7 +592,7 @@ export interface BackupData {
 
 ---
 
-## 11. Оценка трудозатрат
+## 12. Оценка трудозатрат
 
 | Задача | Оценка |
 |---|---|
@@ -467,11 +603,19 @@ export interface BackupData {
 | Интеграция в `App.tsx` / `RoomEditor` | 3 часа |
 | Включение в экспорт/импорт (`BackupManager`) | 1 час |
 | Тестирование и отладка | 2 часа |
-| **Итого** | **~16 часов (2 дня)** |
+| **Итого v1** | **~16 часов (2 дня)** |
+| | |
+| **v2: Пересчёт материалов** | |
+| Добавить `sourceVolume` в тип и storage | 1 час |
+| Обновить `saveTemplate` (передача workVolume) | 1 час |
+| Обновить `loadTemplate` (масштабирование) | 2 часа |
+| Обновить `App.tsx` (пропсы, метрики) | 2 часа |
+| Тестирование edge cases | 1 час |
+| **Итого v2** | **~7 часов (1 день)** |
 
 ---
 
-## 12. Критерии приёмки
+## 13. Критерии приёмки
 
 1. ✅ Пользователь может сохранить работу как шаблон одним кликом
 2. ✅ Пользователь может загрузить шаблон в любую комнату
@@ -484,9 +628,18 @@ export interface BackupData {
 9. ✅ Пользователь может удалить ненужные шаблоны
 10. ✅ UI соответствует текущему дизайну (Tailwind CSS, lucide-react иконки, indigo-палитра)
 
+### Критерии приёмки v2 (пересчёт материалов)
+
+11. ⬜ При сохранении шаблона фиксируется `sourceVolume` (объём работы в исходной комнате)
+12. ⬜ При загрузке шаблона материалы пересчитываются пропорционально `targetVolume / sourceVolume`
+13. ⬜ Инструменты НЕ масштабируются
+14. ⬜ Старые шаблоны без `sourceVolume` загружаются без масштабирования (обратная совместимость)
+15. ⬜ При `sourceVolume = 0` или `targetVolume = 0` — материалы копируются как есть
+16. ⬜ Цены за единицу (`pricePerUnit`, `workUnitPrice`) НЕ масштабируются
+
 ---
 
-## 13. Мокап UI (ASCII)
+## 14. Мокап UI (ASCII)
 
 ### Карточка работы с кнопкой сохранения (hover state)
 
