@@ -1,6 +1,6 @@
 # Задача: Шаблоны работ (Work Templates)
 
-**Статус:** ✅ Реализовано  
+**Статус:** ✅ Реализовано (v1 + v2)  
 **Приоритет:** Высокий  
 **Ссылка на ТЗ:** [WORK_TEMPLATES_SPEC.md](./WORK_TEMPLATES_SPEC.md)
 
@@ -8,6 +8,7 @@
 
 ## Реализовано
 
+### v1 (базовая функциональность)
 - [x] Типы данных (`src/types/workTemplate.ts`)
 - [x] Storage-слой (`src/utils/templateStorage.ts`)
 - [x] React-хук (`src/hooks/useWorkTemplates.ts`)
@@ -16,6 +17,35 @@
 - [x] Интеграция в `App.tsx` / `RoomEditor`
 - [x] Включение в экспорт/импорт (`BackupManager`)
 - [x] Сборка и типы без ошибок
+
+### v2 (авто-пересчёт материалов)
+- [x] Добавлено поле `sourceVolume` в `WorkTemplate`
+- [x] Обновлён `saveTemplate` — сохранение объёма работы
+- [x] Обновлён `loadTemplate` — масштабирование материалов по коэффициенту
+- [x] Обновлён `RoomEditor` — передача `workVolume` и `metrics`
+- [x] Обратная совместимость — старые шаблоны без `sourceVolume` работают
+
+---
+
+## Как работает v2
+
+**При сохранении:**
+```typescript
+workVolume = metrics.floorArea (или netWallArea, skirtingLength)
+sourceVolume = workVolume  // сохраняется в шаблон
+```
+
+**При загрузке:**
+```typescript
+ratio = targetVolume / sourceVolume
+newQuantity = material.quantity × ratio
+```
+
+**Пример:**
+| Комната | Площадь | Материал (кол-во) |
+|---|---|---|
+| Комната 1 (сохранение) | 10.44 м² | 45 мешков |
+| Комната 2 (загрузка) | 17.64 м² | 45 × 1.69 = **76 мешков** |
 
 ---
 

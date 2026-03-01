@@ -4,12 +4,18 @@ import type { WorkData, Material, Tool } from '../App';
 import { TemplateStorage } from '../utils/templateStorage';
 import { getTemplateCategory } from '../types/workTemplate';
 
-export type SaveResult = 
+export type SaveResult =
   | { success: true; isUpdate: boolean }
   | { success: false; error: string; needsConfirm?: boolean };
 
+export type RoomMetrics = {
+  floorArea: number;
+  netWallArea: number;
+  skirtingLength: number;
+};
+
 /**
- * React hook for managing work templates
+ * React hook for managing work templates (v2 with material scaling)
  */
 export function useWorkTemplates() {
   const [templates, setTemplates] = useState<WorkTemplate[]>([]);
@@ -23,15 +29,15 @@ export function useWorkTemplates() {
   }, []);
 
   /**
-   * Save a work as a template
+   * Save a work as a template (v2: with sourceVolume for material scaling)
    */
-  const saveTemplate = useCallback((work: WorkData, forceReplace = false): SaveResult => {
+  const saveTemplate = useCallback((work: WorkData, forceReplace = false, workVolume?: number): SaveResult => {
     try {
       const now = new Date().toISOString();
-      
+
       // Check if template with this name already exists
       const existingTemplate = TemplateStorage.findByName(work.name);
-      
+
       if (existingTemplate && !forceReplace) {
         return { success: false, error: 'Шаблон с таким названием уже существует', needsConfirm: true };
       }
@@ -44,6 +50,7 @@ export function useWorkTemplates() {
         workUnitPrice: work.workUnitPrice,
         calculationType: work.calculationType,
         count: work.count,
+        sourceVolume: workVolume,  // v2: сохраняем объём для масштабирования
         materials: (work.materials || []).map((m: Material) => ({
           name: m.name,
           quantity: m.quantity,
@@ -63,7 +70,7 @@ export function useWorkTemplates() {
 
       const updatedTemplates = TemplateStorage.upsertByName(template);
       setTemplates(updatedTemplates);
-      
+
       return { success: true, isUpdate: !!existingTemplate };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Ошибка сохранения шаблона';
@@ -72,9 +79,23 @@ export function useWorkTemplates() {
   }, []);
 
   /**
-   * Load a template into a WorkData format (ready to add to room)
+   * Load a template into a WorkData format (v2: with material scaling based on room metrics)
    */
-  const loadTemplate = useCallback((template: WorkTemplate): WorkData => {
+  const loadTemplate = useCallback((template: WorkTemplate, metrics?: RoomMetrics): WorkData => {
+    // Определяем целевой объём по метрикам комнаты
+    let targetVolume = 0;
+    if (metrics) {
+      if (template.calculationType === 'floorArea') targetVolume = metrics.floorArea;
+      else if (template.calculationType === 'netWallArea') targetVolume = metrics.netWallArea;
+      else if (template.calculationType === 'skirtingLength') targetVolume = metrics.skirtingLength;
+    } else if (template.calculationType === 'customCount') {
+      targetVolume = template.count || 0;
+    }
+
+    const sourceVolume = template.sourceVolume || 0;
+    const shouldScale = sourceVolume > 0 && targetVolume > 0;
+    const ratio = shouldScale ? targetVolume / sourceVolume : 1;
+
     return {
       id: crypto.randomUUID(),
       enabled: true,
@@ -87,14 +108,16 @@ export function useWorkTemplates() {
       materials: template.materials.map(m => ({
         id: crypto.randomUUID(),
         name: m.name,
-        quantity: m.quantity,
+        quantity: shouldScale
+          ? Math.round(m.quantity * ratio * 100) / 100  // округление до 2 знаков
+          : m.quantity,
         unit: m.unit,
-        pricePerUnit: m.pricePerUnit,
+        pricePerUnit: m.pricePerUnit,  // цена за единицу НЕ масштабируется
       })),
       tools: template.tools.map(t => ({
         id: crypto.randomUUID(),
         name: t.name,
-        quantity: t.quantity,
+        quantity: t.quantity,  // инструменты НЕ масштабируются
         price: t.price,
         isRent: t.isRent,
         rentPeriod: t.rentPeriod,

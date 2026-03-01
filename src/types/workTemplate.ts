@@ -25,6 +25,7 @@ export type WorkTemplate = {
   workUnitPrice: number;
   calculationType: CalculationType;
   count?: number;
+  sourceVolume?: number;  // v2: Объём работы при сохранении (м², пог.м, шт)
   materials: WorkTemplateMaterial[];
   tools: WorkTemplateTool[];
   createdAt: string;

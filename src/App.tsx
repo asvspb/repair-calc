@@ -749,13 +749,13 @@ function RoomEditor({
   isTemplatePickerOpen,
   onOpenTemplatePicker,
   onCloseTemplatePicker,
-}: { 
-  room: RoomData, 
-  updateRoom: (r: RoomData) => void, 
+}: {
+  room: RoomData,
+  updateRoom: (r: RoomData) => void,
   deleteRoom: () => void,
   templates: any[],
-  onSaveTemplate: (work: WorkData, forceReplace: boolean) => any,
-  onLoadTemplate: (template: any) => WorkData,
+  onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => any,
+  onLoadTemplate: (template: any, metrics?: { floorArea: number; netWallArea: number; skirtingLength: number }) => WorkData,
   onDeleteTemplate: (id: string) => void,
   isTemplatePickerOpen: boolean,
   onOpenTemplatePicker: () => void,
@@ -922,13 +922,21 @@ function RoomEditor({
     });
   };
 
-  // Template handlers
+  // Template handlers (v2: with workVolume for material scaling)
   const handleSaveTemplate = (work: WorkData, forceReplace: boolean) => {
-    return onSaveTemplate(work, forceReplace);
+    // Вычисляем объём работы для масштабирования материалов
+    let workVolume = 0;
+    if (work.calculationType === 'floorArea') workVolume = metrics.floorArea;
+    else if (work.calculationType === 'netWallArea') workVolume = metrics.netWallArea;
+    else if (work.calculationType === 'skirtingLength') workVolume = metrics.skirtingLength;
+    else if (work.calculationType === 'customCount') workVolume = work.count || 0;
+
+    return onSaveTemplate(work, forceReplace, workVolume);
   };
 
   const handleLoadTemplate = (template: any) => {
-    const work = onLoadTemplate(template);
+    // Передаём метрики для масштабирования материалов
+    const work = onLoadTemplate(template, metrics);
     updateRoom({
       ...room,
       works: [...(room.works || []), work]
@@ -2585,6 +2593,7 @@ function RoomEditor({
         templates={templates}
         onLoadTemplate={onLoadTemplate}
         onDeleteTemplate={handleDeleteTemplate}
+        roomMetrics={metrics}
       />
     </div>
   );
@@ -2698,10 +2707,6 @@ export default function App() {
 
   const handleImportTemplates = (importedTemplates: any[]) => {
     importTemplates(importedTemplates);
-  };
-
-  const handleSaveTemplate = (work: WorkData, forceReplace: boolean) => {
-    return saveTemplate(work, forceReplace);
   };
 
   const handleDeleteTemplate = (id: string) => {
@@ -2836,9 +2841,9 @@ export default function App() {
                   updateRoom={updateRoomInProject}
                   deleteRoom={() => deleteRoomFromProject(activeTab)}
                   templates={templates}
-                  onSaveTemplate={handleSaveTemplate}
+                  onSaveTemplate={saveTemplate}
                   onLoadTemplate={loadTemplate}
-                  onDeleteTemplate={handleDeleteTemplate}
+                  onDeleteTemplate={deleteTemplate}
                   isTemplatePickerOpen={isTemplatePickerOpen}
                   onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
                   onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}

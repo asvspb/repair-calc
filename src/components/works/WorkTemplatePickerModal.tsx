@@ -8,8 +8,9 @@ type Props = {
   onClose: () => void;
   onSelect: (work: WorkData) => void;
   templates: WorkTemplate[];
-  onLoadTemplate: (template: WorkTemplate) => WorkData;
+  onLoadTemplate: (template: WorkTemplate, metrics?: { floorArea: number; netWallArea: number; skirtingLength: number }) => WorkData;
   onDeleteTemplate: (id: string) => void;
+  roomMetrics?: { floorArea: number; netWallArea: number; skirtingLength: number };
 };
 
 const CATEGORY_LABELS: Record<WorkTemplateCategory | 'all', string> = {
@@ -27,6 +28,7 @@ export function WorkTemplatePickerModal({
   templates,
   onLoadTemplate,
   onDeleteTemplate,
+  roomMetrics,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<WorkTemplateCategory | 'all'>('all');
@@ -63,7 +65,7 @@ export function WorkTemplatePickerModal({
   }, [filteredTemplates]);
 
   const handleSelect = (template: WorkTemplate) => {
-    const work = onLoadTemplate(template);
+    const work = onLoadTemplate(template, roomMetrics);
     onSelect(work);
     onClose();
   };
