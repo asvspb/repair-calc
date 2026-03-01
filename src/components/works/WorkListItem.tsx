@@ -57,7 +57,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
           <button
             {...attributes}
             {...listeners}
-            className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing touch-none mt-0.5"
+            className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing touch-none mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             title="Перетащить для изменения порядка"
             aria-label="Перетащить элемент"
           >
