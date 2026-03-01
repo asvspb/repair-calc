@@ -572,7 +572,7 @@ function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: Num
   );
 }
 
-function SummaryView({ project, updateProject, deleteProject }: { project: ProjectData, updateProject: (p: ProjectData) => void, deleteProject: () => void }) {
+function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { project: ProjectData, updateProject: (p: ProjectData) => void, deleteProject: () => void, onRoomClick: (roomId: string) => void }) {
   let totalFloorArea = 0;
   let totalWallArea = 0;
   let totalVolume = 0;
@@ -636,7 +636,12 @@ function SummaryView({ project, updateProject, deleteProject }: { project: Proje
             return (
               <div key={room.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h4 className="font-medium text-lg">{room.name}</h4>
+                  <button
+                    onClick={() => onRoomClick(room.id)}
+                    className="font-medium text-lg text-left hover:text-indigo-600 transition-colors"
+                  >
+                    {room.name}
+                  </button>
                   <div className="text-sm text-gray-500 mt-1">
                     Работы: {costs.totalWork.toLocaleString('ru-RU')} ₽ • Материалы: {costs.totalMaterial.toLocaleString('ru-RU')} ₽{costs.totalTools > 0 && (
                       <span> • Инструменты: {costs.totalTools.toLocaleString('ru-RU')} ₽</span>
@@ -2426,10 +2431,11 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
             {activeTab === 'summary' ? (
-              <SummaryView 
-                project={activeProject} 
-                updateProject={updateActiveProject} 
-                deleteProject={handleDeleteActiveProject} 
+              <SummaryView
+                project={activeProject}
+                updateProject={updateActiveProject}
+                deleteProject={handleDeleteActiveProject}
+                onRoomClick={(roomId) => setActiveTab(roomId)}
               />
             ) : (
               activeProject.rooms.find(r => r.id === activeTab) && (
