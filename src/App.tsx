@@ -746,6 +746,22 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
   // Состояние для сворачивания секций помещения
   const [subSectionsExpanded, setSubSectionsExpanded] = useState(true);
 
+  // Состояние для сворачивания блока "Габариты помещения" (простой режим)
+  const [isGeometryCollapsed, setIsGeometryCollapsed] = useState(false);
+
+  // Загрузка сохраненного состояния сворачивания при монтировании
+  useEffect(() => {
+    const saved = sessionStorage.getItem('simpleMode_geometry_collapsed');
+    if (saved !== null) {
+      setIsGeometryCollapsed(saved === 'true');
+    }
+  }, []);
+
+  // Сохранение состояния сворачивания при изменении
+  useEffect(() => {
+    sessionStorage.setItem('simpleMode_geometry_collapsed', String(isGeometryCollapsed));
+  }, [isGeometryCollapsed]);
+
   const toggleWorkExpand = (workId: string) => {
     setExpandedWorks(prev => {
       const newSet = new Set(prev);
@@ -1418,7 +1434,18 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h3 className="text-lg font-medium">Габариты помещения</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-medium">Габариты помещения</h3>
+            {room.geometryMode === 'simple' && (
+              <button
+                onClick={() => setIsGeometryCollapsed(!isGeometryCollapsed)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title={isGeometryCollapsed ? 'Развернуть' : 'Свернуть'}
+              >
+                <ChevronUp className={`w-5 h-5 transition-transform ${isGeometryCollapsed ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => handleGeometryModeChange('simple')}
@@ -1492,6 +1519,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         )}
         
         {/* Height is always visible */}
+        {!isGeometryCollapsed && (
+          <>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {room.geometryMode !== 'extended' && (
             <>
@@ -1517,6 +1546,61 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
             <NumberInput value={room.height} onChange={(v: number) => updateRoom({...room, height: v})} className="w-full" />
           </div>
         </div>
+
+        {/* Windows and Doors for simple mode */}
+        {room.geometryMode === 'simple' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-medium text-gray-700">Окна</h4>
+                <button onClick={addWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
+              </div>
+              {room.windows.length === 0 ? (
+                <div className="text-xs text-gray-400 italic">Нет окон</div>
+              ) : (
+                <div className="space-y-2">
+                  {room.windows.map((w, i) => (
+                    <div key={w.id} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-16 text-xs py-1" />
+                      <span className="text-gray-400 text-xs">×</span>
+                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-16 text-xs py-1" />
+                      <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-medium text-gray-700">Двери/Проход</h4>
+                <button onClick={addDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
+              </div>
+              {room.doors.length === 0 ? (
+                <div className="text-xs text-gray-400 italic">Нет дверей/проходов</div>
+              ) : (
+                <div className="space-y-2">
+                  {room.doors.map((d, i) => (
+                    <div key={d.id} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-16 text-xs py-1" />
+                      <span className="text-gray-400 text-xs">×</span>
+                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-16 text-xs py-1" />
+                      <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+          </>
+        )}
       </div>
 
       {/* Extended mode: SubSections */}
@@ -2119,8 +2203,8 @@ function RoomEditor({ room, updateRoom, deleteRoom }: { room: RoomData, updateRo
         </div>
       )}
 
-      {/* Windows and Doors - only for simple and advanced modes */}
-      {room.geometryMode !== 'extended' && (
+      {/* Windows and Doors - only for advanced mode */}
+      {room.geometryMode === 'advanced' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
