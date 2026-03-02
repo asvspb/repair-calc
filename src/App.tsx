@@ -891,7 +891,7 @@ function RoomEditor({
   const addCustomWork = () => {
     const newWork: WorkData = {
       id: Math.random().toString(36).substring(2, 11),
-      name: 'Новая работа',
+      name: 'Работа',
       unit: 'м²',
       enabled: true,
       workUnitPrice: 0,
@@ -1656,9 +1656,10 @@ function RoomEditor({
       {room.geometryMode === 'extended' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setSubSectionsExpanded(!subSectionsExpanded)}>
               <Layers className="w-5 h-5 text-indigo-600" />
               <h3 className="text-lg font-medium">Секции помещения</h3>
+              <ChevronUp className={`w-4 h-4 text-gray-400 transition-transform ${subSectionsExpanded ? '' : 'rotate-180'}`} />
             </div>
           </div>
           <p className="text-sm text-gray-500 mb-4">Разбейте помещение на секции разной формы. Каждая секция может иметь свои окна и двери.</p>
@@ -2396,7 +2397,7 @@ function RoomEditor({
 
                 {/* Materials section */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-3 justify-center">
                     <Package className="w-4 h-4 text-emerald-600" />
                     <h4 className="font-medium text-gray-700">Материалы</h4>
                     {(migratedWork.materials?.length || 0) > 0 && (
@@ -2466,7 +2467,7 @@ function RoomEditor({
 
                 {/* Tools section */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-3 justify-center">
                     <Wrench className="w-4 h-4 text-amber-600" />
                     <h4 className="font-medium text-gray-700">Инструменты</h4>
                     {(migratedWork.tools?.length || 0) > 0 && (
@@ -2570,7 +2571,7 @@ function RoomEditor({
           className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
         >
           <Plus className="w-5 h-5" />
-          Добавить работу
+          Новая работа
         </button>
 
         <button
@@ -2580,7 +2581,7 @@ function RoomEditor({
           title={templates.length === 0 ? 'Нет сохранённых шаблонов' : 'Загрузить из шаблона'}
         >
           <ClipboardList className="w-4 h-4" />
-          Работы по шаблону
+          Работа по шаблону
         </button>
       </div>
 
