@@ -773,11 +773,25 @@ function RoomEditor({
   // Состояние для сворачивания блока "Габариты помещения" (простой режим)
   const [isGeometryCollapsed, setIsGeometryCollapsed] = useState(false);
 
+  // Состояние для сворачивания блока "Габариты помещения" (расширенный режим)
+  const [isExtendedGeometryCollapsed, setIsExtendedGeometryCollapsed] = useState(false);
+
+  // Состояние для сворачивания блока "Работы и материалы"
+  const [isWorksCollapsed, setIsWorksCollapsed] = useState(false);
+
   // Загрузка сохраненного состояния сворачивания при монтировании
   useEffect(() => {
     const saved = sessionStorage.getItem('simpleMode_geometry_collapsed');
     if (saved !== null) {
       setIsGeometryCollapsed(saved === 'true');
+    }
+    const savedWorks = sessionStorage.getItem('simpleMode_works_collapsed');
+    if (savedWorks !== null) {
+      setIsWorksCollapsed(savedWorks === 'true');
+    }
+    const savedExtended = sessionStorage.getItem('extendedMode_geometry_collapsed');
+    if (savedExtended !== null) {
+      setIsExtendedGeometryCollapsed(savedExtended === 'true');
     }
   }, []);
 
@@ -785,6 +799,14 @@ function RoomEditor({
   useEffect(() => {
     sessionStorage.setItem('simpleMode_geometry_collapsed', String(isGeometryCollapsed));
   }, [isGeometryCollapsed]);
+
+  useEffect(() => {
+    sessionStorage.setItem('simpleMode_works_collapsed', String(isWorksCollapsed));
+  }, [isWorksCollapsed]);
+
+  useEffect(() => {
+    sessionStorage.setItem('extendedMode_geometry_collapsed', String(isExtendedGeometryCollapsed));
+  }, [isExtendedGeometryCollapsed]);
 
   const toggleWorkExpand = (workId: string) => {
     setExpandedWorks(prev => {
@@ -1485,15 +1507,19 @@ function RoomEditor({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-medium">Габариты помещения</h3>
-            {room.geometryMode === 'simple' && (
-              <button
-                onClick={() => setIsGeometryCollapsed(!isGeometryCollapsed)}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                title={isGeometryCollapsed ? 'Развернуть' : 'Свернуть'}
-              >
-                <ChevronUp className={`w-5 h-5 transition-transform ${isGeometryCollapsed ? 'rotate-180' : ''}`} />
-              </button>
-            )}
+            <button
+              onClick={() => {
+                if (room.geometryMode === 'simple') setIsGeometryCollapsed(!isGeometryCollapsed);
+                else if (room.geometryMode === 'extended') setIsExtendedGeometryCollapsed(!isExtendedGeometryCollapsed);
+              }}
+              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              title={room.geometryMode === 'simple' && isGeometryCollapsed ? 'Развернуть' : 'Свернуть'}
+            >
+              <ChevronUp className={`w-5 h-5 transition-transform ${
+                (room.geometryMode === 'simple' && isGeometryCollapsed) || 
+                (room.geometryMode === 'extended' && isExtendedGeometryCollapsed) ? 'rotate-180' : ''
+              }`} />
+            </button>
           </div>
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
@@ -1568,7 +1594,8 @@ function RoomEditor({
         )}
         
         {/* Height is always visible */}
-        {!isGeometryCollapsed && (
+        {((room.geometryMode === 'simple' || room.geometryMode === 'advanced') && !isGeometryCollapsed) ||
+         (room.geometryMode === 'extended' && !isExtendedGeometryCollapsed) ? (
           <>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {room.geometryMode !== 'extended' && (
@@ -1649,7 +1676,7 @@ function RoomEditor({
           </div>
         )}
           </>
-        )}
+        ) : null}
       </div>
 
       {/* Extended mode: SubSections */}
@@ -2311,7 +2338,15 @@ function RoomEditor({
       )}
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-medium mb-4">Работы и материалы</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsWorksCollapsed(!isWorksCollapsed)}>
+            <h3 className="text-lg font-medium">Работы и материалы</h3>
+            <ChevronUp className={`w-5 h-5 text-gray-400 transition-transform ${isWorksCollapsed ? 'rotate-180' : ''}`} />
+          </div>
+        </div>
+
+        {!isWorksCollapsed && (
+          <>
 
         {/* Draggable Work List */}
         <WorkList
@@ -2583,6 +2618,8 @@ function RoomEditor({
           <ClipboardList className="w-4 h-4" />
           Работа по шаблону
         </button>
+          </>
+        )}
       </div>
 
       {/* Template Picker Modal */}
