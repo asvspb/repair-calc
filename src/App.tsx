@@ -2310,18 +2310,7 @@ function RoomEditor({
       )}
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Работы и материалы</h3>
-          <button
-            onClick={onOpenTemplatePicker}
-            disabled={templates.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-            title={templates.length === 0 ? 'Нет сохранённых шаблонов' : 'Загрузить из шаблона'}
-          >
-            <ClipboardList className="w-4 h-4" />
-            Из шаблона
-          </button>
-        </div>
+        <h3 className="text-lg font-medium mb-4">Работы и материалы</h3>
 
         {/* Draggable Work List */}
         <WorkList
@@ -2578,10 +2567,20 @@ function RoomEditor({
 
         <button
           onClick={addCustomWork}
-          className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all"
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
         >
           <Plus className="w-5 h-5" />
           Добавить работу
+        </button>
+
+        <button
+          onClick={onOpenTemplatePicker}
+          disabled={templates.length === 0}
+          className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          title={templates.length === 0 ? 'Нет сохранённых шаблонов' : 'Загрузить из шаблона'}
+        >
+          <ClipboardList className="w-4 h-4" />
+          Работы по шаблону
         </button>
       </div>
 
