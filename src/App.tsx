@@ -767,8 +767,20 @@ function RoomEditor({
   onOpenTemplatePicker: () => void,
   onCloseTemplatePicker: () => void,
 }) {
-  const metrics = calculateRoomMetrics(room);
-  const { costs, total } = calculateRoomCosts(room);
+  // Normalize room data to ensure all arrays exist
+  const normalizedRoom = {
+    ...room,
+    segments: room.segments || [],
+    obstacles: room.obstacles || [],
+    wallSections: room.wallSections || [],
+    subSections: room.subSections || [],
+    windows: room.windows || [],
+    doors: room.doors || [],
+    works: room.works || []
+  };
+  
+  const metrics = calculateRoomMetrics(normalizedRoom);
+  const { costs, total } = calculateRoomCosts(normalizedRoom);
 
   // Состояние для развернутых карточек работ
   const [expandedWorks, setExpandedWorks] = useState<Set<string>>(new Set());
@@ -1581,7 +1593,7 @@ function RoomEditor({
         </div>
         
         {/* Warning about existing data */}
-        {room.geometryMode === 'simple' && ((room.segments || []).length + (room.obstacles || []).length + (room.wallSections || []).length + (room.subSections || []).length > 0) && (
+        {normalizedRoom.geometryMode === 'simple' && (normalizedRoom.segments.length + normalizedRoom.obstacles.length + normalizedRoom.wallSections.length + normalizedRoom.subSections.length > 0) && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-yellow-800">
@@ -1590,7 +1602,7 @@ function RoomEditor({
           </div>
         )}
 
-        {room.geometryMode === 'extended' && ((room.segments || []).length + (room.obstacles || []).length + (room.wallSections || []).length > 0) && (
+        {normalizedRoom.geometryMode === 'extended' && (normalizedRoom.segments.length + normalizedRoom.obstacles.length + normalizedRoom.wallSections.length > 0) && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-yellow-800">
@@ -1637,11 +1649,11 @@ function RoomEditor({
                 <h4 className="text-sm font-medium text-gray-700">Окна</h4>
                 <button onClick={addWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
               </div>
-              {room.windows.length === 0 ? (
+              {(room.windows || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет окон</div>
               ) : (
                 <div className="space-y-3">
-                  {room.windows.map((w, i) => (
+                  {(room.windows || []).map((w, i) => (
                     <div key={w.id} className="p-2 bg-white rounded border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
@@ -1670,11 +1682,11 @@ function RoomEditor({
                 <h4 className="text-sm font-medium text-gray-700">Двери/Проход</h4>
                 <button onClick={addDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
               </div>
-              {room.doors.length === 0 ? (
+              {(room.doors || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет дверей/проходов</div>
               ) : (
                 <div className="space-y-3">
-                  {room.doors.map((d, i) => (
+                  {(room.doors || []).map((d, i) => (
                     <div key={d.id} className="p-2 bg-white rounded border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
@@ -2151,11 +2163,11 @@ function RoomEditor({
           </div>
           <p className="text-sm text-gray-500 mb-4">Для L-образных комнат, ниш и эркеров</p>
           
-          {room.segments.length === 0 ? (
+          {(room.segments || []).length === 0 ? (
             <div className="text-sm text-gray-400 italic mb-4">Нет сегментов</div>
           ) : (
             <div className="space-y-3 mb-4">
-              {room.segments.map((segment, i) => (
+              {(room.segments || []).map((segment, i) => (
                 <div key={segment.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
@@ -2200,7 +2212,7 @@ function RoomEditor({
             </div>
           )}
           
-          {room.segments.length > 0 && (
+          {(room.segments || []).length > 0 && (
             <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
               <div className="text-sm text-indigo-700">
                 <span className="font-medium">Итого сегменты:</span> {segmentsDelta > 0 ? '+' : ''}{segmentsDelta.toFixed(2)} м²
@@ -2224,11 +2236,11 @@ function RoomEditor({
           </div>
           <p className="text-sm text-gray-500 mb-4">Колонны, воздуховоды, ниши</p>
           
-          {room.obstacles.length === 0 ? (
+          {(room.obstacles || []).length === 0 ? (
             <div className="text-sm text-gray-400 italic mb-4">Нет препятствий</div>
           ) : (
             <div className="space-y-3 mb-4">
-              {room.obstacles.map((obstacle, i) => (
+              {(room.obstacles || []).map((obstacle, i) => (
                 <div key={obstacle.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
@@ -2286,7 +2298,7 @@ function RoomEditor({
             </div>
           )}
           
-          {room.obstacles.length > 0 && (
+          {(room.obstacles || []).length > 0 && (
             <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
               <div className="text-sm text-indigo-700">
                 <span className="font-medium">Итого препятствия:</span> {obstaclesDelta > 0 ? '+' : ''}{obstaclesDelta.toFixed(2)} м²
@@ -2310,11 +2322,11 @@ function RoomEditor({
           </div>
           <p className="text-sm text-gray-500 mb-4">Участки стен с отличающейся высотой</p>
           
-          {room.wallSections.length === 0 ? (
+          {(room.wallSections || []).length === 0 ? (
             <div className="text-sm text-gray-400 italic mb-4">Нет перепадов высоты</div>
           ) : (
             <div className="space-y-3 mb-4">
-              {room.wallSections.map((section, i) => (
+              {(room.wallSections || []).map((section, i) => (
                 <div key={section.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
@@ -2363,11 +2375,11 @@ function RoomEditor({
               <h3 className="text-lg font-medium">Окна</h3>
               <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
             </div>
-            {room.windows.length === 0 ? (
+            {(room.windows || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет окон</div>
             ) : (
               <div className="space-y-3">
-                {room.windows.map((w, i) => (
+                {(room.windows || []).map((w, i) => (
                   <div key={w.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>
@@ -2396,11 +2408,11 @@ function RoomEditor({
               <h3 className="text-lg font-medium">Двери/Проход</h3>
               <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
             </div>
-            {room.doors.length === 0 ? (
+            {(room.doors || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет дверей/проходов</div>
             ) : (
               <div className="space-y-3">
-                {room.doors.map((d, i) => (
+                {(room.doors || []).map((d, i) => (
                   <div key={d.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>

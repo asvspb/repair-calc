@@ -1,6 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ProjectData } from '../App';
+import type { ProjectData, RoomData } from '../App';
 import { StorageManager, StorageError } from '../utils/storage';
+
+// Миграция данных комнаты для обеспечения наличия всех полей
+function migrateRoom(room: RoomData): RoomData {
+  return {
+    ...room,
+    segments: room.segments || [],
+    obstacles: room.obstacles || [],
+    wallSections: room.wallSections || [],
+    subSections: room.subSections || [],
+    windows: room.windows || [],
+    doors: room.doors || [],
+    works: room.works || []
+  };
+}
+
+// Миграция проекта для обеспечения наличия всех полей у комнат
+function migrateProject(project: ProjectData): ProjectData {
+  return {
+    ...project,
+    rooms: project.rooms.map(migrateRoom)
+  };
+}
 
 interface UseProjectsReturn {
   projects: ProjectData[];
@@ -15,8 +37,10 @@ interface UseProjectsReturn {
 }
 
 export function useProjects(initialProjects: ProjectData[]): UseProjectsReturn {
-  const [projects, setProjects] = useState<ProjectData[]>(initialProjects);
-  const [activeProjectId, setActiveProjectIdState] = useState<string>(initialProjects[0]?.id || '');
+  // Миграция начальных данных
+  const migratedInitial = initialProjects.map(migrateProject);
+  const [projects, setProjects] = useState<ProjectData[]>(migratedInitial);
+  const [activeProjectId, setActiveProjectIdState] = useState<string>(migratedInitial[0]?.id || '');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<StorageError | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -31,10 +55,12 @@ export function useProjects(initialProjects: ProjectData[]): UseProjectsReturn {
       try {
         const savedProjects = StorageManager.loadProjects();
         const savedActiveProject = StorageManager.loadActiveProject();
-        
+
         if (savedProjects && savedProjects.length > 0) {
-          setProjects(savedProjects);
-          
+          // Миграция данных для обеспечения наличия всех полей
+          const migratedProjects = savedProjects.map(migrateProject);
+          setProjects(migratedProjects);
+
           // Проверяем, существует ли сохраненный активный проект
           const activeExists = savedProjects.some(p => p.id === savedActiveProject);
           if (savedActiveProject && activeExists) {
