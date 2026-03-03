@@ -166,7 +166,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
         </div>
 
         {/* Expanded/Collapsed indicator and Save Template button */}
-        {work.enabled && onToggleExpand && (
+        {onToggleExpand && (
           <div className="mt-2 ml-14 flex items-center justify-between">
             <button
               onClick={(e) => {
