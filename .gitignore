@@ -48,6 +48,7 @@ Thumbs.db
 .parcel-cache
 .cache/
 *.tsbuildinfo
+.vite/
 
 # Local files
 *.local

@@ -1506,20 +1506,20 @@ function RoomEditor({
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-4">
-            <h3 className="text-lg font-medium">Габариты помещения</h3>
-            <button
+            <div
               onClick={() => {
                 if (room.geometryMode === 'simple') setIsGeometryCollapsed(!isGeometryCollapsed);
                 else if (room.geometryMode === 'extended') setIsExtendedGeometryCollapsed(!isExtendedGeometryCollapsed);
               }}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="flex items-center gap-4 cursor-pointer"
               title={room.geometryMode === 'simple' && isGeometryCollapsed ? 'Развернуть' : 'Свернуть'}
             >
-              <ChevronUp className={`w-5 h-5 transition-transform ${
-                (room.geometryMode === 'simple' && isGeometryCollapsed) || 
+              <h3 className="text-lg font-medium">Габариты помещения</h3>
+              <ChevronUp className={`w-5 h-5 text-gray-400 transition-transform ${
+                (room.geometryMode === 'simple' && isGeometryCollapsed) ||
                 (room.geometryMode === 'extended' && isExtendedGeometryCollapsed) ? 'rotate-180' : ''
               }`} />
-            </button>
+            </div>
           </div>
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
