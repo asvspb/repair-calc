@@ -366,14 +366,14 @@ function calculateRoomMetrics(room: RoomData) {
       }
       
       case 'trapezoid': {
-        // Площадь трапеции: (base1 + base2) * height / 2
+        // Площадь трапеции: (base1 + base2) * depth / 2
         // Периметр: base1 + base2 + side1 + side2
         const base1 = section.base1 || 0;
         const base2 = section.base2 || 0;
-        const height = section.height || 0;
+        const depth = section.depth || 0;
         const side1 = section.side1 || 0;
         const side2 = section.side2 || 0;
-        const area = (base1 + base2) * height / 2;
+        const area = (base1 + base2) * depth / 2;
         const perimeter = base1 + base2 + side1 + side2;
         return { area, perimeter };
       }
@@ -404,12 +404,12 @@ function calculateRoomMetrics(room: RoomData) {
       }
       
       case 'parallelogram': {
-        // Площадь: base × height
+        // Площадь: base × depth
         // Периметр: 2 × (base + side)
         const base = section.base || section.length || 0;
-        const height = section.height || section.width || 0;
+        const depth = section.depth || section.width || 0;
         const side = section.side || 0;
-        const area = base * height;
+        const area = base * depth;
         const perimeter = 2 * (base + side);
         return { area, perimeter };
       }
