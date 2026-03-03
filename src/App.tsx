@@ -1825,7 +1825,7 @@ function RoomEditor({
                             <button
                               key={shape}
                               onClick={() => updateSubSection(subSection.id, 'shape', shape)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                                 (subSection.shape || 'rectangle') === shape
                                   ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
                                   : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
