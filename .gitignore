@@ -64,12 +64,12 @@ tests/            # Test files
 .dockerignore
 *.dockerapp
 docker-build-*
-.docker/
 
 # Docker volumes and compose
 compose/
 !docker-compose.yml
 !Dockerfile
+!.docker/
 
 # TypeScript/React specific
 .next/
