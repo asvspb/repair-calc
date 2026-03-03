@@ -83,17 +83,17 @@ export type RoomSubSection = {
   // Rectangle: length × width
   length: number;
   width: number;
-  // Trapezoid: base1, base2, height, side1, side2
+  // Trapezoid: base1, base2, depth, side1, side2
   base1?: number;
   base2?: number;
-  height?: number;
+  depth?: number;
   side1?: number;
   side2?: number;
   // Triangle: sideA, sideB, sideC (or base + height for simple)
   sideA?: number;
   sideB?: number;
   sideC?: number;
-  // Parallelogram: base, height, side
+  // Parallelogram: base, depth, side
   base?: number;
   side?: number;
   // Openings
@@ -1736,10 +1736,10 @@ function RoomEditor({
                     case 'trapezoid': {
                       const base1 = subSection.base1 || 0;
                       const base2 = subSection.base2 || 0;
-                      const height = subSection.height || 0;
+                      const depth = subSection.depth || 0;
                       const side1 = subSection.side1 || 0;
                       const side2 = subSection.side2 || 0;
-                      return { area: (base1 + base2) * height / 2, perimeter: base1 + base2 + side1 + side2 };
+                      return { area: (base1 + base2) * depth / 2, perimeter: base1 + base2 + side1 + side2 };
                     }
                     case 'triangle': {
                       const a = subSection.sideA || 0;
@@ -1753,9 +1753,9 @@ function RoomEditor({
                     }
                     case 'parallelogram': {
                       const base = subSection.base || subSection.length || 0;
-                      const height = subSection.height || subSection.width || 0;
+                      const depth = subSection.depth || subSection.width || 0;
                       const side = subSection.side || 0;
-                      return { area: base * height, perimeter: 2 * (base + side) };
+                      return { area: base * depth, perimeter: 2 * (base + side) };
                     }
                     default:
                       return { area: 0, perimeter: 0 };
@@ -1845,7 +1845,7 @@ function RoomEditor({
                           </div>
                         </div>
                       ) : subSection.shape === 'trapezoid' ? (
-                        // Trapezoid: base1, base2, height, side1, side2
+                        // Trapezoid: base1, base2, depth, side1, side2
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Основание 1 (м)</label>
@@ -1864,10 +1864,10 @@ function RoomEditor({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
+                            <label className="block text-xs text-gray-500 mb-1">Глубина (м)</label>
                             <NumberInput
-                              value={subSection.height || 0}
-                              onChange={(v: number) => updateSubSection(subSection.id, 'height', v)}
+                              value={subSection.depth || 0}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
                               className="w-full"
                             />
                           </div>
@@ -1917,7 +1917,7 @@ function RoomEditor({
                           </div>
                         </div>
                       ) : subSection.shape === 'parallelogram' ? (
-                        // Parallelogram: base, height, side
+                        // Parallelogram: base, depth, side
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Основание (м)</label>
@@ -1928,10 +1928,10 @@ function RoomEditor({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
+                            <label className="block text-xs text-gray-500 mb-1">Глубина (м)</label>
                             <NumberInput
-                              value={subSection.height || 0}
-                              onChange={(v: number) => updateSubSection(subSection.id, 'height', v)}
+                              value={subSection.depth || 0}
+                              onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
                               className="w-full"
                             />
                           </div>
