@@ -1530,7 +1530,7 @@ function RoomEditor({
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => handleGeometryModeChange('simple')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 room.geometryMode === 'simple'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
@@ -1540,7 +1540,7 @@ function RoomEditor({
             </button>
             <button
               onClick={() => handleGeometryModeChange('extended')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 room.geometryMode === 'extended'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
@@ -1550,7 +1550,7 @@ function RoomEditor({
             </button>
             <button
               onClick={() => handleGeometryModeChange('advanced')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 room.geometryMode === 'advanced'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
