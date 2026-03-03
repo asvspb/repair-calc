@@ -50,7 +50,7 @@ export const RoomListItem: React.FC<RoomListItemProps> = ({
       </button>
       <button
         onClick={onClick}
-        className={`flex-1 flex items-center justify-between px-4 py-3 text-left transition-colors ${
+        className={`flex-1 flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
           isActive
             ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600'
             : 'text-gray-600 hover:bg-gray-50'

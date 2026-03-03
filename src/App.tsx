@@ -26,6 +26,7 @@ export type Opening = {
   id: string;
   width: number;
   height: number;
+  comment?: string;
 };
 
 export type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
@@ -182,8 +183,8 @@ const initialRooms: RoomData[] = [
     obstacles: [],
     wallSections: [],
     subSections: [],
-    windows: [{ id: 'w1', width: 1.5, height: 1.5 }],
-    doors: [{ id: 'd1', width: 1.0, height: 2.2 }],
+    windows: [{ id: 'w1', width: 1.5, height: 1.5, comment: '' }],
+    doors: [{ id: 'd1', width: 1.0, height: 2.2, comment: '' }],
     works: [
       { id: 'floorLeveling', name: 'Выравнивание пола', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 400, materialPriceType: 'total', materialPrice: 2500, isCustom: true },
       { id: 'laminate', name: 'Укладка ламината', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 0, isCustom: true },
@@ -197,8 +198,8 @@ const initialRooms: RoomData[] = [
     simpleModeData: {
       length: 3.6,
       width: 2.9,
-      windows: [{ id: 'w1', width: 1.5, height: 1.5 }],
-      doors: [{ id: 'd1', width: 1.0, height: 2.2 }]
+      windows: [{ id: 'w1', width: 1.5, height: 1.5, comment: '' }],
+      doors: [{ id: 'd1', width: 1.0, height: 2.2, comment: '' }]
     },
     extendedModeData: {
       subSections: []
@@ -220,8 +221,8 @@ const initialRooms: RoomData[] = [
     obstacles: [],
     wallSections: [],
     subSections: [],
-    windows: [{ id: 'w2', width: 1.4, height: 2.1 }],
-    doors: [{ id: 'd2', width: 2.2, height: 2.5 }],
+    windows: [{ id: 'w2', width: 1.4, height: 2.1, comment: '' }],
+    doors: [{ id: 'd2', width: 2.2, height: 2.5, comment: '' }],
     works: [
       { id: 'floorLeveling', name: 'Выравнивание пола', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 400, materialPriceType: 'total', materialPrice: 4500, isCustom: true },
       { id: 'laminate', name: 'Укладка ламината', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 0, isCustom: true },
@@ -235,8 +236,8 @@ const initialRooms: RoomData[] = [
     simpleModeData: {
       length: 4.9,
       width: 3.6,
-      windows: [{ id: 'w2', width: 1.4, height: 2.1 }],
-      doors: [{ id: 'd2', width: 2.2, height: 2.5 }]
+      windows: [{ id: 'w2', width: 1.4, height: 2.1, comment: '' }],
+      doors: [{ id: 'd2', width: 2.2, height: 2.5, comment: '' }]
     },
     extendedModeData: {
       subSections: []
@@ -675,7 +676,7 @@ function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { p
           onChange={e => updateProject({...project, name: e.target.value})}
           placeholder="Название объекта"
         />
-        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" title="Удалить объект">
+        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 cursor-pointer" title="Удалить объект">
           <Trash2 className="w-5 h-5" />
         </button>
       </div>
@@ -711,7 +712,7 @@ function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { p
                 <div>
                   <button
                     onClick={() => onRoomClick(room.id)}
-                    className="font-medium text-lg text-left hover:text-indigo-600 transition-colors"
+                    className="font-medium text-lg text-left hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     {room.name}
                   </button>
@@ -982,7 +983,7 @@ function RoomEditor({
   };
 
   const addWindow = () => {
-    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
+    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5, comment: '' };
     const updatedRoom = { ...room, windows: [...room.windows, newWindow] };
     if (room.geometryMode === 'simple') {
       updatedRoom.simpleModeData = {
@@ -1004,7 +1005,7 @@ function RoomEditor({
     updateRoom(updatedRoom);
   };
 
-  const updateWindow = (id: string, field: keyof Opening, val: number) => {
+  const updateWindow = (id: string, field: keyof Opening, val: number | string) => {
     const updatedRoom = { ...room, windows: room.windows.map(w => w.id === id ? { ...w, [field]: val } : w) };
     if (room.geometryMode === 'simple') {
       updatedRoom.simpleModeData = {
@@ -1016,7 +1017,7 @@ function RoomEditor({
   };
 
   const addDoor = () => {
-    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
+    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0, comment: '' };
     const updatedRoom = { ...room, doors: [...room.doors, newDoor] };
     if (room.geometryMode === 'simple') {
       updatedRoom.simpleModeData = {
@@ -1038,7 +1039,7 @@ function RoomEditor({
     updateRoom(updatedRoom);
   };
 
-  const updateDoor = (id: string, field: keyof Opening, val: number) => {
+  const updateDoor = (id: string, field: keyof Opening, val: number | string) => {
     const updatedRoom = { ...room, doors: room.doors.map(d => d.id === id ? { ...d, [field]: val } : d) };
     if (room.geometryMode === 'simple') {
       updatedRoom.simpleModeData = {
@@ -1092,7 +1093,7 @@ function RoomEditor({
     updateRoom(updatedRoom);
   };
 
-  const updateSubSectionWindow = (subSectionId: string, windowId: string, field: keyof Opening, val: number) => {
+  const updateSubSectionWindow = (subSectionId: string, windowId: string, field: keyof Opening, val: number | string) => {
     const updatedRoom = {
       ...room,
       subSections: room.subSections.map(s => {
@@ -1119,7 +1120,7 @@ function RoomEditor({
   };
 
   const addSubSectionWindow = (subSectionId: string) => {
-    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5 };
+    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5, comment: '' };
     const updatedRoom = {
       ...room,
       subSections: room.subSections.map(s => {
@@ -1159,7 +1160,7 @@ function RoomEditor({
     updateRoom(updatedRoom);
   };
 
-  const updateSubSectionDoor = (subSectionId: string, doorId: string, field: keyof Opening, val: number) => {
+  const updateSubSectionDoor = (subSectionId: string, doorId: string, field: keyof Opening, val: number | string) => {
     const updatedRoom = {
       ...room,
       subSections: room.subSections.map(s => {
@@ -1186,7 +1187,7 @@ function RoomEditor({
   };
 
   const addSubSectionDoor = (subSectionId: string) => {
-    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0 };
+    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0, comment: '' };
     const updatedRoom = {
       ...room,
       subSections: room.subSections.map(s => {
@@ -1634,16 +1635,25 @@ function RoomEditor({
               {room.windows.length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет окон</div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {room.windows.map((w, i) => (
-                    <div key={w.id} className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
-                      <span className="text-gray-400 text-xs">×</span>
-                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                      <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500">
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div key={w.id} className="p-2 bg-white rounded border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
+                        <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <span className="text-gray-400 text-xs">×</span>
+                        <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Комментарий (например, балконный блок)"
+                        value={w.comment || ''}
+                        onChange={(e) => updateWindow(w.id, 'comment', e.target.value)}
+                        className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
+                      />
                     </div>
                   ))}
                 </div>
@@ -1658,16 +1668,25 @@ function RoomEditor({
               {room.doors.length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет дверей/проходов</div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {room.doors.map((d, i) => (
-                    <div key={d.id} className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
-                      <span className="text-gray-400 text-xs">×</span>
-                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                      <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500">
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div key={d.id} className="p-2 bg-white rounded border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
+                        <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <span className="text-gray-400 text-xs">×</span>
+                        <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Комментарий (например, входная дверь)"
+                        value={d.comment || ''}
+                        onChange={(e) => updateDoor(d.id, 'comment', e.target.value)}
+                        className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
+                      />
                     </div>
                   ))}
                 </div>
@@ -1945,27 +1964,36 @@ function RoomEditor({
                         ) : (
                           <div className="space-y-2">
                             {subSection.windows.map((w, wi) => (
-                              <div key={w.id} className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400 w-4">{wi + 1}.</span>
-                                <NumberInput
-                                  value={w.width}
-                                  onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'width', v)}
-                                  className="w-20 text-xs py-1"
-                                  step={0.1}
+                              <div key={w.id} className="p-2 bg-gray-50 rounded border border-gray-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs text-gray-400 w-4 font-medium">{wi + 1}.</span>
+                                  <NumberInput
+                                    value={w.width}
+                                    onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'width', v)}
+                                    className="w-20 text-xs py-1"
+                                    step={0.1}
+                                  />
+                                  <span className="text-gray-400 text-xs">×</span>
+                                  <NumberInput
+                                    value={w.height}
+                                    onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'height', v)}
+                                    className="w-20 text-xs py-1"
+                                    step={0.1}
+                                  />
+                                  <button
+                                    onClick={() => removeSubSectionWindow(subSection.id, w.id)}
+                                    className="p-0.5 text-gray-300 hover:text-red-500 ml-auto"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  placeholder="Комментарий"
+                                  value={w.comment || ''}
+                                  onChange={(e) => updateSubSectionWindow(subSection.id, w.id, 'comment', e.target.value)}
+                                  className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                                 />
-                                <span className="text-gray-400 text-xs">×</span>
-                                <NumberInput
-                                  value={w.height}
-                                  onChange={(v: number) => updateSubSectionWindow(subSection.id, w.id, 'height', v)}
-                                  className="w-20 text-xs py-1"
-                                  step={0.1}
-                                />
-                                <button
-                                  onClick={() => removeSubSectionWindow(subSection.id, w.id)}
-                                  className="p-0.5 text-gray-300 hover:text-red-500"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
                               </div>
                             ))}
                           </div>
@@ -1987,27 +2015,36 @@ function RoomEditor({
                         ) : (
                           <div className="space-y-2">
                             {subSection.doors.map((d, di) => (
-                              <div key={d.id} className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400 w-4">{di + 1}.</span>
-                                <NumberInput
-                                  value={d.width}
-                                  onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'width', v)}
-                                  className="w-20 text-xs py-1"
-                                  step={0.1}
+                              <div key={d.id} className="p-2 bg-gray-50 rounded border border-gray-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs text-gray-400 w-4 font-medium">{di + 1}.</span>
+                                  <NumberInput
+                                    value={d.width}
+                                    onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'width', v)}
+                                    className="w-20 text-xs py-1"
+                                    step={0.1}
+                                  />
+                                  <span className="text-gray-400 text-xs">×</span>
+                                  <NumberInput
+                                    value={d.height}
+                                    onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'height', v)}
+                                    className="w-20 text-xs py-1"
+                                    step={0.1}
+                                  />
+                                  <button
+                                    onClick={() => removeSubSectionDoor(subSection.id, d.id)}
+                                    className="p-0.5 text-gray-300 hover:text-red-500 ml-auto"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  placeholder="Комментарий"
+                                  value={d.comment || ''}
+                                  onChange={(e) => updateSubSectionDoor(subSection.id, d.id, 'comment', e.target.value)}
+                                  className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                                 />
-                                <span className="text-gray-400 text-xs">×</span>
-                                <NumberInput
-                                  value={d.height}
-                                  onChange={(v: number) => updateSubSectionDoor(subSection.id, d.id, 'height', v)}
-                                  className="w-20 text-xs py-1"
-                                  step={0.1}
-                                />
-                                <button
-                                  onClick={() => removeSubSectionDoor(subSection.id, d.id)}
-                                  className="p-0.5 text-gray-300 hover:text-red-500"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
                               </div>
                             ))}
                           </div>
@@ -2297,14 +2334,23 @@ function RoomEditor({
             ) : (
               <div className="space-y-3">
                 {room.windows.map((w, i) => (
-                  <div key={w.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                    <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
-                    <span className="text-gray-400">×</span>
-                    <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
-                    <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
-                      <X className="w-4 h-4" />
-                    </button>
+                  <div key={w.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>
+                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
+                      <span className="text-gray-400">×</span>
+                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
+                      <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Комментарий (например, балконный блок)"
+                      value={w.comment || ''}
+                      onChange={(e) => updateWindow(w.id, 'comment', e.target.value)}
+                      className="w-full text-sm px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
+                    />
                   </div>
                 ))}
               </div>
@@ -2321,14 +2367,23 @@ function RoomEditor({
             ) : (
               <div className="space-y-3">
                 {room.doors.map((d, i) => (
-                  <div key={d.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                    <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
-                    <span className="text-gray-400">×</span>
-                    <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
-                    <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
-                      <X className="w-4 h-4" />
-                    </button>
+                  <div key={d.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>
+                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
+                      <span className="text-gray-400">×</span>
+                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
+                      <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Комментарий (например, входная дверь)"
+                      value={d.comment || ''}
+                      onChange={(e) => updateDoor(d.id, 'comment', e.target.value)}
+                      className="w-full text-sm px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
+                    />
                   </div>
                 ))}
               </div>
@@ -2756,7 +2811,7 @@ export default function App() {
         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex justify-between items-center mb-2">
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
-            <button className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+            <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
@@ -2767,7 +2822,7 @@ export default function App() {
               setActiveTab('summary');
               setIsMobileMenuOpen(false);
             }}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
           >
             {projects.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -2779,7 +2834,7 @@ export default function App() {
           <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
           <button
             onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
-            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium">Общая смета</span>
@@ -2804,18 +2859,18 @@ export default function App() {
         </div>
 
         <div className="p-4 border-t border-gray-100 space-y-3">
-          <button 
+          <button
             onClick={addRoomToProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Добавить комнату
           </button>
-          <button 
-            onClick={addNewProject} 
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all"
+          <button
+            onClick={addNewProject}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> 
+            <Plus className="w-4 h-4" />
             Новый объект
           </button>
         </div>
@@ -2823,7 +2878,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-          <button onClick={() => setIsMobileMenuOpen(true)}>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="cursor-pointer">
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
           <span className="font-semibold text-lg truncate flex-1">
