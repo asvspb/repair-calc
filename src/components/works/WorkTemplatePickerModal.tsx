@@ -87,7 +87,7 @@ export function WorkTemplatePickerModal({
           <h2 className="text-lg font-semibold text-gray-800">Шаблоны работ</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -113,7 +113,7 @@ export function WorkTemplatePickerModal({
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer ${
                   selectedCategory === cat
                     ? 'bg-indigo-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -159,7 +159,7 @@ export function WorkTemplatePickerModal({
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, template.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                     title="Удалить шаблон"
                   >
                     <Trash2 className="w-4 h-4" />

@@ -51,13 +51,13 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
         <span className="text-xs text-gray-500">Заменить?</span>
         <button
           onClick={() => handleConfirm(true)}
-          className="text-xs text-indigo-600 font-medium hover:text-indigo-700"
+          className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer"
         >
           Да
         </button>
         <button
           onClick={() => handleConfirm(false)}
-          className="text-xs text-gray-400 font-medium hover:text-gray-600"
+          className="text-xs text-gray-400 font-medium hover:text-gray-600 cursor-pointer"
         >
           Нет
         </button>
@@ -68,7 +68,7 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
   return (
     <button
       onClick={handleClick}
-      className={`flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors ${className}`}
+      className={`flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer ${className}`}
       title="Сохранить как шаблон"
     >
       <Save className="w-3 h-3" />

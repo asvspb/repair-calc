@@ -73,7 +73,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
               e.stopPropagation();
               onToggle(work.id);
             }}
-            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 mt-0.5 ${
+            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 mt-0.5 cursor-pointer ${
               work.enabled
                 ? 'bg-indigo-600 border-indigo-600 hover:bg-indigo-700 hover:border-indigo-700'
                 : 'bg-white border-gray-300 hover:border-indigo-400'
@@ -158,7 +158,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
               e.stopPropagation();
               onDelete(work.id);
             }}
-            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
             title="Удалить"
           >
             <Trash2 className="w-4 h-4" />

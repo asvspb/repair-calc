@@ -638,15 +638,15 @@ function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: Num
   };
 
   return (
-    <input 
-      type="number" 
-      min={min} 
-      step={step} 
-      value={str} 
+    <input
+      type="number"
+      min={min}
+      step={step}
+      value={str}
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      className={`px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 ${className}`} 
+      className={`px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-text [&::-webkit-inner-spin-button]:cursor-pointer [&::-webkit-outer-spin-button]:cursor-pointer [&::-webkit-inner-spin-button]:hover:bg-indigo-50 [&::-webkit-outer-spin-button]:hover:bg-indigo-50 ${className}`}
     />
   );
 }
@@ -1486,7 +1486,7 @@ function RoomEditor({
           value={room.name}
           onChange={e => updateRoom({...room, name: e.target.value})}
         />
-        <button onClick={deleteRoom} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Удалить комнату">
+        <button onClick={deleteRoom} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" title="Удалить комнату">
           <Trash2 className="w-5 h-5" />
         </button>
       </div>
@@ -1647,7 +1647,7 @@ function RoomEditor({
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="text-sm font-medium text-gray-700">Окна</h4>
-                <button onClick={addWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
+                <button onClick={addWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
               </div>
               {(room.windows || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет окон</div>
@@ -1660,7 +1660,7 @@ function RoomEditor({
                         <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                         <span className="text-gray-400 text-xs">×</span>
                         <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                        <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto">
+                        <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -1680,7 +1680,7 @@ function RoomEditor({
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="text-sm font-medium text-gray-700">Двери/Проход</h4>
-                <button onClick={addDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">+ Добавить</button>
+                <button onClick={addDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
               </div>
               {(room.doors || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет дверей/проходов</div>
@@ -1693,7 +1693,7 @@ function RoomEditor({
                         <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                         <span className="text-gray-400 text-xs">×</span>
                         <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                        <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto">
+                        <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -2134,7 +2134,7 @@ function RoomEditor({
 
           <button
             onClick={() => addSubSection()}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Добавить секцию
@@ -2177,7 +2177,7 @@ function RoomEditor({
                       className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
                       placeholder="Название"
                     />
-                    <button onClick={() => removeSegment(segment.id)} className="p-1 text-gray-400 hover:text-red-500">
+                    <button onClick={() => removeSegment(segment.id)} className="p-1 text-gray-400 hover:text-red-500 cursor-pointer">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -2220,7 +2220,7 @@ function RoomEditor({
             </div>
           )}
           
-          <button onClick={addSegment} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+          <button onClick={addSegment} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all cursor-pointer">
             <Plus className="w-4 h-4" />
             Добавить сегмент
           </button>
@@ -2250,7 +2250,7 @@ function RoomEditor({
                       className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
                       placeholder="Название"
                     />
-                    <button onClick={() => removeObstacle(obstacle.id)} className="p-1 text-gray-400 hover:text-red-500">
+                    <button onClick={() => removeObstacle(obstacle.id)} className="p-1 text-gray-400 hover:text-red-500 cursor-pointer">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -2306,7 +2306,7 @@ function RoomEditor({
             </div>
           )}
           
-          <button onClick={addObstacle} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+          <button onClick={addObstacle} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all cursor-pointer">
             <Plus className="w-4 h-4" />
             Добавить препятствие
           </button>
@@ -2336,7 +2336,7 @@ function RoomEditor({
                       className="flex-1 font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none"
                       placeholder="Название"
                     />
-                    <button onClick={() => removeWallSection(section.id)} className="p-1 text-gray-400 hover:text-red-500">
+                    <button onClick={() => removeWallSection(section.id)} className="p-1 text-gray-400 hover:text-red-500 cursor-pointer">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -2360,7 +2360,7 @@ function RoomEditor({
             </div>
           )}
           
-          <button onClick={addWallSection} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all">
+          <button onClick={addWallSection} className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all cursor-pointer">
             <Plus className="w-4 h-4" />
             Добавить участок
           </button>
@@ -2373,7 +2373,7 @@ function RoomEditor({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Окна</h3>
-              <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+              <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
             </div>
             {(room.windows || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет окон</div>
@@ -2386,7 +2386,7 @@ function RoomEditor({
                       <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
                       <span className="text-gray-400">×</span>
                       <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
-                      <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                      <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -2406,7 +2406,7 @@ function RoomEditor({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Двери/Проход</h3>
-              <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700">+ Добавить</button>
+              <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
             </div>
             {(room.doors || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет дверей/проходов</div>
@@ -2419,7 +2419,7 @@ function RoomEditor({
                       <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
                       <span className="text-gray-400">×</span>
                       <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
-                      <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto">
+                      <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -2705,7 +2705,7 @@ function RoomEditor({
 
         <button
           onClick={addCustomWork}
-          className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Новая работа
@@ -2714,7 +2714,7 @@ function RoomEditor({
         <button
           onClick={onOpenTemplatePicker}
           disabled={templates.length === 0}
-          className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
           title={templates.length === 0 ? 'Нет сохранённых шаблонов' : 'Загрузить из шаблона'}
         >
           <ClipboardList className="w-4 h-4" />

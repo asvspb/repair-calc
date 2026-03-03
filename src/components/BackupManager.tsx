@@ -134,7 +134,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
           <h2 className="text-xl font-semibold text-gray-900">Управление данными</h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -147,7 +147,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
             <div className="space-y-2">
               <button
                 onClick={handleExportJSON}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors cursor-pointer"
               >
                 <FileJson className="w-5 h-5" />
                 <div className="text-left">
@@ -159,7 +159,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
               <button
                 onClick={handleExportCSV}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <FileSpreadsheet className="w-5 h-5" />
                 <div className="text-left">
@@ -183,7 +183,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <Upload className="w-5 h-5" />
               <div className="text-left">
@@ -210,13 +210,13 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={handleConfirmImport}
-                        className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors"
+                        className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer"
                       >
                         Импортировать
                       </button>
                       <button
                         onClick={() => setImportStatus(null)}
-                        className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         Отмена
                       </button>
@@ -234,7 +234,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
             {!showClearConfirm ? (
               <button
                 onClick={() => setShowClearConfirm(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-5 h-5" />
                 <div className="text-left">
@@ -250,13 +250,13 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 <div className="flex gap-2">
                   <button
                     onClick={handleClearAll}
-                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                   >
                     Да, удалить все
                   </button>
                   <button
                     onClick={() => setShowClearConfirm(false)}
-                    className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     Отмена
                   </button>
