@@ -563,26 +563,26 @@ function calculateRoomCosts(room: RoomData) {
     else if (migratedWork.calculationType === 'customCount') qty = migratedWork.count || 0;
 
     // Стоимость работы
-    const wCost = qty * migratedWork.workUnitPrice;
-    
+    const wCost = roundCostUp(qty * migratedWork.workUnitPrice);
+
     // Стоимость материалов (новый способ или legacy)
     let mCost = 0;
     if (migratedWork.materials && migratedWork.materials.length > 0) {
       // Новый способ: сумма стоимости всех материалов
-      mCost = migratedWork.materials.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0);
+      mCost = roundCostUp(migratedWork.materials.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0));
     } else if (migratedWork.materialPrice) {
       // Legacy: старый способ расчёта
-      mCost = migratedWork.materialPriceType === 'per_unit' ? qty * migratedWork.materialPrice : migratedWork.materialPrice;
+      mCost = roundCostUp(migratedWork.materialPriceType === 'per_unit' ? qty * migratedWork.materialPrice : migratedWork.materialPrice);
     }
-    
+
     // Стоимость инструментов
-    const tCost = (migratedWork.tools || []).reduce((sum, t) => {
+    const tCost = roundCostUp((migratedWork.tools || []).reduce((sum, t) => {
       if (t.isRent && t.rentPeriod) {
         return sum + t.price * t.quantity * t.rentPeriod;
       }
       return sum + t.price * t.quantity;
-    }, 0);
-    
+    }, 0));
+
     costs[migratedWork.id] = { work: wCost, material: mCost, tools: tCost, total: wCost + mCost + tCost };
     totalWork += wCost;
     totalMaterial += mCost;
@@ -590,6 +590,11 @@ function calculateRoomCosts(room: RoomData) {
   });
 
   return { costs, totalWork, totalMaterial, totalTools, total: totalWork + totalMaterial + totalTools };
+}
+
+// Helper function to round cost up to nearest integer
+function roundCostUp(cost: number): number {
+  return Math.ceil(cost);
 }
 
 type NumberInputProps = {
@@ -696,7 +701,7 @@ function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { p
         </div>
         <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-md flex flex-col items-center text-center">
           <div className="text-indigo-100 text-sm mb-1">Стоимость, ₽</div>
-          <div className="text-3xl font-semibold">{grandTotal.toLocaleString('ru-RU')}</div>
+          <div className="text-3xl font-semibold">{Math.ceil(grandTotal).toLocaleString('ru-RU')}</div>
         </div>
       </div>
 
@@ -717,13 +722,13 @@ function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { p
                     {room.name}
                   </button>
                   <div className="text-sm text-gray-500 mt-1">
-                    Работы: {costs.totalWork.toLocaleString('ru-RU')} ₽ • Материалы: {costs.totalMaterial.toLocaleString('ru-RU')} ₽{costs.totalTools > 0 && (
-                      <span> • Инструменты: {costs.totalTools.toLocaleString('ru-RU')} ₽</span>
+                    Работы: {Math.ceil(costs.totalWork).toLocaleString('ru-RU')} ₽ • Материалы: {Math.ceil(costs.totalMaterial).toLocaleString('ru-RU')} ₽{Math.ceil(costs.totalTools) > 0 && (
+                      <span> • Инструменты: {Math.ceil(costs.totalTools).toLocaleString('ru-RU')} ₽</span>
                     )}
                   </div>
                 </div>
                 <div className="text-2xl font-light">
-                  {costs.total.toLocaleString('ru-RU')} ₽
+                  {Math.ceil(costs.total).toLocaleString('ru-RU')} ₽
                 </div>
               </div>
             );
@@ -1500,7 +1505,7 @@ function RoomEditor({
         </div>
         <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-indigo-600 mb-1">Стоимость, ₽</div>
-          <div className="text-xl font-semibold text-indigo-900">{total.toLocaleString('ru-RU')} <span className="text-sm text-indigo-400"></span></div>
+          <div className="text-xl font-semibold text-indigo-900">{Math.ceil(total).toLocaleString('ru-RU')} <span className="text-sm text-indigo-400"></span></div>
         </div>
       </div>
 
@@ -2509,7 +2514,7 @@ function RoomEditor({
                   </div>
                   <div className="flex items-end">
                     <div className="text-sm text-gray-600">
-                      Стоимость работы: <span className="font-semibold text-indigo-900">{(qty * work.workUnitPrice).toLocaleString('ru-RU')} ₽</span>
+                      Стоимость работы: <span className="font-semibold text-indigo-900">{Math.ceil(qty * work.workUnitPrice).toLocaleString('ru-RU')} ₽</span>
                     </div>
                   </div>
                 </div>
@@ -2521,7 +2526,7 @@ function RoomEditor({
                     <h4 className="font-medium text-gray-700">Материалы</h4>
                     {(migratedWork.materials?.length || 0) > 0 && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {migratedWork.materials!.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0).toLocaleString('ru-RU')} ₽
+                        {Math.ceil(migratedWork.materials!.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0)).toLocaleString('ru-RU')} ₽
                       </span>
                     )}
                   </div>
@@ -2564,7 +2569,7 @@ function RoomEditor({
                             <span className="text-gray-400 text-xs">₽</span>
                           </div>
                           <div className="text-sm text-gray-600 min-w-[80px] text-right">
-                            = {(material.quantity * material.pricePerUnit).toLocaleString('ru-RU')} ₽
+                            = {Math.ceil(material.quantity * material.pricePerUnit).toLocaleString('ru-RU')} ₽
                           </div>
                           <button
                             onClick={() => removeMaterial(work.id, material.id)}
@@ -2592,12 +2597,12 @@ function RoomEditor({
                     <h4 className="font-medium text-gray-700">Инструменты</h4>
                     {(migratedWork.tools?.length || 0) > 0 && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {migratedWork.tools!.reduce((sum, t) => {
+                        {Math.ceil(migratedWork.tools!.reduce((sum, t) => {
                           if (t.isRent && t.rentPeriod) {
                             return sum + t.price * t.quantity * t.rentPeriod;
                           }
                           return sum + t.price * t.quantity;
-                        }, 0).toLocaleString('ru-RU')} ₽
+                        }, 0)).toLocaleString('ru-RU')} ₽
                       </span>
                     )}
                   </div>
@@ -2660,7 +2665,7 @@ function RoomEditor({
                               )}
                             </div>
                             <div className="text-sm text-gray-600 min-w-[80px] text-right">
-                              = {toolCost.toLocaleString('ru-RU')} ₽
+                              = {Math.ceil(toolCost).toLocaleString('ru-RU')} ₽
                             </div>
                             <button
                               onClick={() => removeTool(work.id, tool.id)}

@@ -39,7 +39,7 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
     transition,
   };
 
-  const totalCost = costs.work + costs.material + costs.tools;
+  const totalCost = Math.ceil(costs.work + costs.material + costs.tools);
   const migratedWork = work.materials ? work : { ...work, materials: [], tools: [] };
   const hasMaterials = (migratedWork.materials?.length || 0) > 0;
   const hasTools = (migratedWork.tools?.length || 0) > 0;
@@ -123,13 +123,13 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
           {/* Price Section */}
           <div className="flex-shrink-0 text-right">
             <div className="text-lg font-semibold text-indigo-900">
-              {totalCost.toLocaleString('ru-RU')} ₽
+              {Math.ceil(totalCost).toLocaleString('ru-RU')} ₽
             </div>
-            {(costs.work > 0 || costs.material > 0) && (
+            {(costs.work > 0 || costs.material > 0 || costs.tools > 0) && (
               <div className="text-xs text-gray-500 mt-0.5">
                 {costs.work > 0 && (
                   <span>
-                    Р: {costs.work.toLocaleString('ru-RU')}
+                    Р: {Math.ceil(costs.work).toLocaleString('ru-RU')}
                   </span>
                 )}
                 {costs.work > 0 && costs.material > 0 && (
@@ -137,14 +137,14 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
                 )}
                 {costs.material > 0 && (
                   <span>
-                    М: {costs.material.toLocaleString('ru-RU')}
+                    М: {Math.ceil(costs.material).toLocaleString('ru-RU')}
                   </span>
                 )}
                 {costs.tools > 0 && (
                   <>
                     <span className="mx-1">•</span>
                     <span>
-                      И: {costs.tools.toLocaleString('ru-RU')}
+                      И: {Math.ceil(costs.tools).toLocaleString('ru-RU')}
                     </span>
                   </>
                 )}
