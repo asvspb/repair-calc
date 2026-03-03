@@ -1603,11 +1603,11 @@ function RoomEditor({
             <>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
-                <NumberInput value={room.length} onChange={(v: number) => updateSimpleField('length', v)} className="w-full" />
+                <NumberInput value={room.length} onChange={(v: number) => updateSimpleField('length', v)} className="w-full" step={0.1} />
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
-                <NumberInput value={room.width} onChange={(v: number) => updateSimpleField('width', v)} className="w-full" />
+                <NumberInput value={room.width} onChange={(v: number) => updateSimpleField('width', v)} className="w-full" step={0.1} />
               </div>
             </>
           )}
@@ -1620,7 +1620,7 @@ function RoomEditor({
           )}
           <div>
             <label className="block text-sm text-gray-500 mb-1">Высота (м)</label>
-            <NumberInput value={room.height} onChange={(v: number) => updateRoom({...room, height: v})} className="w-full" />
+            <NumberInput value={room.height} onChange={(v: number) => updateRoom({...room, height: v})} className="w-full" step={0.1} />
           </div>
         </div>
 
@@ -1833,6 +1833,7 @@ function RoomEditor({
                               value={subSection.length}
                               onChange={(v: number) => updateSubSection(subSection.id, 'length', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1841,6 +1842,7 @@ function RoomEditor({
                               value={subSection.width}
                               onChange={(v: number) => updateSubSection(subSection.id, 'width', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                         </div>
@@ -1853,6 +1855,7 @@ function RoomEditor({
                               value={subSection.base1 || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'base1', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1861,6 +1864,7 @@ function RoomEditor({
                               value={subSection.base2 || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'base2', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1877,6 +1881,7 @@ function RoomEditor({
                               value={subSection.depth || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1885,6 +1890,7 @@ function RoomEditor({
                               value={subSection.side1 || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'side1', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1893,6 +1899,7 @@ function RoomEditor({
                               value={subSection.side2 || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'side2', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                         </div>
@@ -1905,6 +1912,7 @@ function RoomEditor({
                               value={subSection.sideA || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'sideA', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1913,6 +1921,7 @@ function RoomEditor({
                               value={subSection.sideB || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'sideB', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1921,6 +1930,7 @@ function RoomEditor({
                               value={subSection.sideC || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'sideC', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                         </div>
@@ -1933,6 +1943,7 @@ function RoomEditor({
                               value={subSection.base || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'base', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1949,6 +1960,7 @@ function RoomEditor({
                               value={subSection.depth || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                           <div>
@@ -1957,6 +1969,7 @@ function RoomEditor({
                               value={subSection.side || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'side', v)}
                               className="w-full"
+                              step={0.1}
                             />
                           </div>
                         </div>
@@ -2154,11 +2167,11 @@ function RoomEditor({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pl-8">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
-                      <NumberInput value={segment.length} onChange={(v: number) => updateSegment(segment.id, 'length', v)} className="w-full" />
+                      <NumberInput value={segment.length} onChange={(v: number) => updateSegment(segment.id, 'length', v)} className="w-full" step={0.1} />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Ширина (м)</label>
-                      <NumberInput value={segment.width} onChange={(v: number) => updateSegment(segment.id, 'width', v)} className="w-full" />
+                      <NumberInput value={segment.width} onChange={(v: number) => updateSegment(segment.id, 'width', v)} className="w-full" step={0.1} />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Операция</label>
@@ -2313,11 +2326,11 @@ function RoomEditor({
                   <div className="grid grid-cols-3 gap-3 pl-8">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Длина (м)</label>
-                      <NumberInput value={section.length} onChange={(v: number) => updateWallSection(section.id, 'length', v)} className="w-full" />
+                      <NumberInput value={section.length} onChange={(v: number) => updateWallSection(section.id, 'length', v)} className="w-full" step={0.1} />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Высота (м)</label>
-                      <NumberInput value={section.height} onChange={(v: number) => updateWallSection(section.id, 'height', v)} className="w-full" />
+                      <NumberInput value={section.height} onChange={(v: number) => updateWallSection(section.id, 'height', v)} className="w-full" step={0.1} />
                     </div>
                     <div className="flex items-end">
                       <div className="text-sm text-gray-600">
@@ -2480,7 +2493,7 @@ function RoomEditor({
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Объем ({work.unit})</label>
                     {work.calculationType === 'customCount' ? (
-                      <NumberInput value={work.count || 0} onChange={(v: number) => handleWorkChange(work.id, 'count', v)} className="w-full" />
+                      <NumberInput value={work.count || 0} onChange={(v: number) => handleWorkChange(work.id, 'count', v)} className="w-full" step={0.1} />
                     ) : (
                       <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-700">
                         {autoQty.toFixed(2)}
@@ -2490,7 +2503,7 @@ function RoomEditor({
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Цена работы (за ед.)</label>
                     <div className="relative">
-                      <NumberInput value={work.workUnitPrice} onChange={(v: number) => handleWorkChange(work.id, 'workUnitPrice', v)} className="w-full pr-8" />
+                      <NumberInput value={work.workUnitPrice} onChange={(v: number) => handleWorkChange(work.id, 'workUnitPrice', v)} className="w-full pr-8" step={0.1} />
                       <span className="absolute right-3 top-2 text-gray-400 text-sm">₽</span>
                     </div>
                   </div>
@@ -2546,6 +2559,7 @@ function RoomEditor({
                               value={material.pricePerUnit}
                               onChange={v => handleMaterialChange(work.id, material.id, 'pricePerUnit', v)}
                               className="w-20 text-sm py-1"
+                              step={0.1}
                             />
                             <span className="text-gray-400 text-xs">₽</span>
                           </div>
