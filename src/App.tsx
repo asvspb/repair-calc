@@ -1581,7 +1581,7 @@ function RoomEditor({
         </div>
         
         {/* Warning about existing data */}
-        {room.geometryMode === 'simple' && (room.segments.length + room.obstacles.length + room.wallSections.length + room.subSections.length > 0) && (
+        {room.geometryMode === 'simple' && ((room.segments || []).length + (room.obstacles || []).length + (room.wallSections || []).length + (room.subSections || []).length > 0) && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-yellow-800">
@@ -1589,8 +1589,8 @@ function RoomEditor({
             </p>
           </div>
         )}
-        
-        {room.geometryMode === 'extended' && (room.segments.length + room.obstacles.length + room.wallSections.length > 0) && (
+
+        {room.geometryMode === 'extended' && ((room.segments || []).length + (room.obstacles || []).length + (room.wallSections || []).length > 0) && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-yellow-800">
