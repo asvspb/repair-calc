@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle, ClipboardList, HelpCircle } from 'lucide-react';
 import { WorkList } from './components/works/WorkList';
 import { RoomList } from './components/rooms/RoomList';
 import { useWorkTemplates } from './hooks/useWorkTemplates';
@@ -1864,7 +1864,15 @@ function RoomEditor({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Глубина (м)</label>
+                            <label className="block text-xs text-gray-500 mb-1 flex items-center gap-1">
+                              Глубина (м)
+                              <span className="group relative">
+                                <HelpCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                  Расстояние между основаниями
+                                </span>
+                              </span>
+                            </label>
                             <NumberInput
                               value={subSection.depth || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
@@ -1928,7 +1936,15 @@ function RoomEditor({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Глубина (м)</label>
+                            <label className="block text-xs text-gray-500 mb-1 flex items-center gap-1">
+                              Глубина (м)
+                              <span className="group relative">
+                                <HelpCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                  Высота, опущенная на основание
+                                </span>
+                              </span>
+                            </label>
                             <NumberInput
                               value={subSection.depth || 0}
                               onChange={(v: number) => updateSubSection(subSection.id, 'depth', v)}
