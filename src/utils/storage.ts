@@ -1,6 +1,8 @@
 import type { ProjectData } from '../App';
 import type { WorkTemplate } from '../types/workTemplate';
 import { TemplateStorage } from './templateStorage';
+import { calculateRoomMetrics } from './geometry';
+import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
 
 const STORAGE_KEYS = {
   PROJECTS: 'repair-calc-projects',
@@ -131,33 +133,23 @@ export class StorageManager {
   static exportToCSV(projects: ProjectData[]): string {
     const rows: string[] = [];
     
-    // Заголовки
-    rows.push(['Объект', 'Комната', 'Работа', 'Единица', 'Объем', 'Цена работы', 'Цена материалов', 'Итого'].join(';'));
+    // Заголовки — добавлена колонка для инструментов
+    rows.push(['Объект', 'Комната', 'Работа', 'Единица', 'Объем', 'Цена работы', 'Цена материалов', 'Цена инструментов', 'Итого'].join(';'));
     
     for (const project of projects) {
       for (const room of project.rooms) {
-        // Расчет метрик комнаты
-        const floorArea = room.length * room.width;
-        const perimeter = (room.length + room.width) * 2;
-        const grossWallArea = perimeter * room.height;
-        const windowsArea = room.windows.reduce((sum, w) => sum + w.width * w.height, 0);
-        const doorsArea = room.doors.reduce((sum, d) => sum + d.width * d.height, 0);
-        const doorsWidth = room.doors.reduce((sum, d) => sum + d.width, 0);
-        const netWallArea = Math.max(0, grossWallArea - windowsArea - doorsArea);
-        const skirtingLength = Math.max(0, perimeter - doorsWidth);
+        // Используем общую функцию расчёта метрик (учитывает extended/advanced режимы)
+        const metrics = calculateRoomMetrics(room);
         
         for (const work of room.works) {
           if (!work.enabled) continue;
           
-          let qty = 0;
-          if (work.calculationType === 'floorArea') qty = floorArea;
-          else if (work.calculationType === 'netWallArea') qty = netWallArea;
-          else if (work.calculationType === 'skirtingLength') qty = skirtingLength;
-          else if (work.calculationType === 'customCount') qty = work.count || 0;
+          // Мигрируем данные работы для поддержки materials[] и tools[]
+          const migratedWork = migrateWorkData(work);
           
-          const workCost = qty * work.workUnitPrice;
-          const materialCost = work.materialPriceType === 'per_unit' ? qty * work.materialPrice : work.materialPrice;
-          const total = workCost + materialCost;
+          // Используем общие функции расчёта
+          const qty = calculateWorkQuantity(migratedWork, metrics);
+          const costs = calculateWorkCosts(migratedWork, metrics);
           
           rows.push([
             project.name,
@@ -165,9 +157,10 @@ export class StorageManager {
             work.name,
             work.unit,
             qty.toFixed(2),
-            workCost.toFixed(2),
-            materialCost.toFixed(2),
-            total.toFixed(2)
+            costs.work.toFixed(2),
+            costs.material.toFixed(2),
+            costs.tools.toFixed(2),
+            costs.total.toFixed(2)
           ].join(';'));
         }
       }

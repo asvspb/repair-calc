@@ -8,13 +8,13 @@
 
 ## 🚨 Критичные (Blockers)
 
-- [ ] **Stale closure в `updateActiveProject`** — `src/hooks/useProjects.ts` строка ~80: `projects` в замыкании может быть устаревшим. При быстрых последовательных обновлениях (длина + ширина) второй вызов перезатирает первое изменение. **Исправление:** использовать функциональное обновление `setProjects(prev => ...)` и убрать `projects` из зависимостей `useCallback`.
+- [x] **Stale closure в `updateActiveProject`** — `src/hooks/useProjects.ts` строка ~80: `projects` в замыкании может быть устаревшим. При быстрых последовательных обновлениях (длина + ширина) второй вызов перезатирает первое изменение. **Исправление:** использовать функциональное обновление `setProjects(prev => ...)` и убрать `projects` из зависимостей `useCallback`. ✅ **Исправлено ранее**
 
-- [ ] **CSV-экспорт игнорирует extended/advanced режимы** — `src/utils/storage.ts`, метод `exportToCSV`: жёстко использует `room.length * room.width` для площади. Для расширенного и профессионального режимов данные в Excel будут **некорректными**. Также не учитывает `materials[]` и `tools[]` (использует legacy `materialPrice`). **Исправление:** вынести `calculateRoomMetrics`/`calculateRoomCosts` из `App.tsx` в `src/utils/calculations.ts` и переиспользовать в CSV.
+- [x] **CSV-экспорт игнорирует extended/advanced режимы** — `src/utils/storage.ts`, метод `exportToCSV`: жёстко использует `room.length * room.width` для площади. Для расширенного и профессионального режимов данные в Excel будут **некорректными**. Также не учитывает `materials[]` и `tools[]` (использует legacy `materialPrice`). **Исправление:** использовать `calculateRoomMetrics`/`calculateWorkCosts` из утилит. ✅ **Исправлено 2026-03-04**
 
-- [ ] **Расхождение портов** — `package.json` (`--port=3993`) vs `playwright.config.ts` (`baseURL: http://localhost:3995`). E2E-тесты гарантированно упадут. **Исправление:** привести к одному порту (3993).
+- [x] **Расхождение портов** — `package.json` (`--port=3993`) vs `playwright.config.ts` (`baseURL: http://localhost:3995`). E2E-тесты гарантированно упадут. **Исправление:** привести к одному порту (3993). ✅ **Исправлено ранее**
 
-- [ ] **Утечка API-ключа в клиентский бандл** — `vite.config.ts`: `process.env.GEMINI_API_KEY` встраивается в JS-бандл через `define`. Даже если AI не реализован, ключ из `.env` утечёт. **Исправление:** убрать `define` из `vite.config.ts` до реализации серверной части.
+- [x] **Утечка API-ключа в клиентский бандл** — `vite.config.ts`: `process.env.GEMINI_API_KEY` встраивается в JS-бандл через `define`. Даже если AI не реализован, ключ из `.env` утечёт. **Исправление:** убрать `define` из `vite.config.ts` до реализации серверной части. ✅ **Исправлено ранее**
 
 ---
 
@@ -80,10 +80,10 @@
 
 ### Фаза 2: Исправление багов (3-5 дней)
 
-- [ ] **2.1** Исправить stale closure в `useProjects.ts` (functional update)
-- [ ] **2.2** Исправить CSV экспорт для extended/advanced режимов
+- [x] **2.1** Исправить stale closure в `useProjects.ts` (functional update) ✅
+- [x] **2.2** Исправить CSV экспорт для extended/advanced режимов ✅
 - [ ] **2.3** Заменить все `any` на конкретные типы
-- [ ] **2.4** Унифицировать порты (playwright.config.ts → 3993)
+- [x] **2.4** Унифицировать порты (playwright.config.ts → 3993) ✅
 
 ### Фаза 3: Улучшение архитектуры (1 неделя)
 
