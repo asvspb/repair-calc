@@ -4,6 +4,26 @@ import { WorkList } from './components/works/WorkList';
 import { RoomList } from './components/rooms/RoomList';
 import { useWorkTemplates } from './hooks/useWorkTemplates';
 import { WorkTemplatePickerModal } from './components/works/WorkTemplatePickerModal';
+import type {
+  Opening,
+  CalculationType,
+  Material,
+  Tool,
+  WorkData,
+  GeometryMode,
+  SectionShape,
+  RoomSubSection,
+  RoomSegment,
+  ObstacleType,
+  Obstacle,
+  WallSection,
+  SimpleModeData,
+  ExtendedModeData,
+  AdvancedModeData,
+  RoomData,
+  ProjectData,
+  RoomMetrics,
+} from './types';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -21,155 +41,6 @@ import { useProjects } from './hooks/useProjects';
 import { ChangeEvent } from 'react';
 import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
-
-export type Opening = {
-  id: string;
-  width: number;
-  height: number;
-  comment?: string;
-};
-
-export type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
-
-// New types for materials and tools
-export type Material = {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-};
-
-export type Tool = {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  isRent: boolean;
-  rentPeriod?: number;
-};
-
-export type WorkData = {
-  id: string;
-  name: string;
-  unit: string;
-  enabled: boolean;
-  workUnitPrice: number;
-  // Legacy fields (for backward compatibility)
-  materialPriceType?: 'per_unit' | 'total';
-  materialPrice?: number;
-  // New fields
-  materials?: Material[];
-  tools?: Tool[];
-  count?: number;
-  calculationType: CalculationType;
-  isCustom?: boolean;
-  // Manual quantity override
-  useManualQty?: boolean;
-  manualQty?: number;
-};
-
-// Geometry modes: simple (rectangular), extended (subsections), advanced (professional)
-export type GeometryMode = 'simple' | 'extended' | 'advanced';
-
-// Section shapes for extended mode
-export type SectionShape = 'rectangle' | 'trapezoid' | 'triangle' | 'parallelogram';
-
-// Extended mode: sub-sections with own openings
-export type RoomSubSection = {
-  id: string;
-  name: string;
-  shape: SectionShape;
-  // Rectangle: length × width
-  length: number;
-  width: number;
-  // Trapezoid: base1, base2, depth, side1, side2
-  base1?: number;
-  base2?: number;
-  depth?: number;
-  side1?: number;
-  side2?: number;
-  // Triangle: sideA, sideB, sideC (or base + height for simple)
-  sideA?: number;
-  sideB?: number;
-  sideC?: number;
-  // Parallelogram: base, depth, side
-  base?: number;
-  side?: number;
-  // Openings
-  windows: Opening[];
-  doors: Opening[];
-};
-
-export type RoomSegment = {
-  id: string;
-  name: string;
-  length: number;
-  width: number;
-  operation: 'add' | 'subtract';
-};
-
-export type ObstacleType = 'column' | 'duct' | 'niche' | 'other';
-
-export type Obstacle = {
-  id: string;
-  name: string;
-  type: ObstacleType;
-  area: number;
-  perimeter: number;
-  operation: 'add' | 'subtract';
-};
-
-export type WallSection = {
-  id: string;
-  name: string;
-  length: number;
-  height: number;
-};
-
-// Mode-specific data storage
-export type SimpleModeData = {
-  length: number;
-  width: number;
-  windows: Opening[];
-  doors: Opening[];
-};
-
-export type ExtendedModeData = {
-  subSections: RoomSubSection[];
-};
-
-export type AdvancedModeData = {
-  segments: RoomSegment[];
-  obstacles: Obstacle[];
-  wallSections: WallSection[];
-};
-
-export type RoomData = {
-  id: string;
-  name: string;
-  geometryMode: GeometryMode;
-  length: number;
-  width: number;
-  height: number;
-  segments: RoomSegment[];
-  obstacles: Obstacle[];
-  wallSections: WallSection[];
-  subSections: RoomSubSection[];  // Extended mode: rectangular sub-rooms
-  windows: Opening[];
-  doors: Opening[];
-  works: WorkData[];
-  // Mode-specific data storage
-  simpleModeData?: SimpleModeData;
-  extendedModeData?: ExtendedModeData;
-  advancedModeData?: AdvancedModeData;
-};
-
-export type ProjectData = {
-  id: string;
-  name: string;
-  rooms: RoomData[];
-};
 
 const initialRooms: RoomData[] = [
   {

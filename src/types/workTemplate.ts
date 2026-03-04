@@ -1,4 +1,4 @@
-import type { CalculationType } from '../App';
+import type { CalculationType } from './index';
 
 export type WorkTemplateCategory = 'floor' | 'walls' | 'perimeter' | 'other';
 
