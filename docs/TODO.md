@@ -1,6 +1,7 @@
 # TODO: Замечания и задачи по проекту Repair Calculator
 
-**Дата:** 2026-03-01  
+**Дата:** 2026-03-04
+**Обновлено:** 2026-03-04
 **Источники:** [CODE_REVIEW.md](./CODE_REVIEW.md), ревью шаблонов работ, архитектурный анализ
 
 ---
@@ -65,10 +66,55 @@
 
 ---
 
-## 🔮 Будущие задачи (из ARCHITECTURE.md)
+## 🔮 Будущие задачи (из ARCHITECTURE.md и CODE_REVIEW.md)
 
-- [ ] **Фаза 1:** Исправить все блокеры выше (1–2 дня)
-- [ ] **Фаза 2:** Декомпозиция `App.tsx` (3–5 дней)
-- [ ] **Фаза 3:** Express + MySQL backend (5–7 дней)
-- [ ] **Фаза 4:** AI-интеграция Gemini + Mistral (3–4 дня)
-- [ ] **Фаза 5:** PWA с offline-first синхронизацией (2–3 дня)
+### Фаза 1: Декомпозиция App.tsx (1-2 недели) — КРИТИЧЕСКАЯ
+
+- [ ] **1.1** Вынести типы в `src/types/` (Room, Project, Work, Material, Tool, Opening, Geometry)
+- [ ] **1.2** Вынести `calculateRoomMetrics`/`calculateRoomCosts` в `src/utils/geometry.ts`, `src/utils/costs.ts`
+- [ ] **1.3** Вынести `SummaryView` в `src/components/SummaryView/`
+- [ ] **1.4** Вынести `RoomEditor` в `src/components/RoomEditor/`
+- [ ] **1.5** Вынести `GeometrySection` в `src/components/GeometrySection/`
+- [ ] **1.6** Вынести `createNewRoom`, `createNewProject`, `migrateWorkData` в `src/utils/factories.ts`
+- [ ] **1.7** Вынести начальные данные в `src/data/initialData.ts`
+
+### Фаза 2: Исправление багов (3-5 дней)
+
+- [ ] **2.1** Исправить stale closure в `useProjects.ts` (functional update)
+- [ ] **2.2** Исправить CSV экспорт для extended/advanced режимов
+- [ ] **2.3** Заменить все `any` на конкретные типы
+- [ ] **2.4** Унифицировать порты (playwright.config.ts → 3993)
+
+### Фаза 3: Улучшение архитектуры (1 неделя)
+
+- [ ] **3.1** Создать интерфейс `IStorageProvider` для абстракции storage
+- [ ] **3.2** Добавить React Error Boundaries
+- [ ] **3.3** Вынести глобальное состояние в Context API
+- [ ] **3.4** Добавить `React.memo` для тяжёлых компонентов
+
+### Фаза 4: Тестирование (1 неделя)
+
+- [ ] **4.1** Unit-тесты для utils (geometry.ts, costs.ts, storage.ts)
+- [ ] **4.2** Unit-тесты для хуков (useProjects, useWorkTemplates)
+- [ ] **4.3** Integration тесты для полного flow
+- [ ] **4.4** Расширение E2E тестов (экспорт/импорт, шаблоны)
+
+### Фаза 5: Backend + AI (из ARCHITECTURE.md)
+
+- [ ] **5.1** Express + MySQL backend (5–7 дней)
+- [ ] **5.2** AI-интеграция Gemini + Mistral (3–5 дней)
+- [ ] **5.3** PWA с offline-first синхронизацией (2–3 дня)
+
+---
+
+## 📈 Метрики успеха
+
+| Метрика | Текущее | Целевое |
+|---------|---------|---------|
+| Размер App.tsx | ~3000 строк | <300 строк |
+| Покрытие тестами | ~5% | >60% |
+| Типизация (any) | 3 места | 0 |
+
+---
+
+**См. также:** [CODE_REVIEW.md](./CODE_REVIEW.md), [ARCHITECTURE.md](./ARCHITECTURE.md)

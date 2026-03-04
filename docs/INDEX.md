@@ -1,8 +1,8 @@
 # Application Index - Repair Calculator
 
-**Last Updated:** 2026-03-01  
-**Application Name:** Мой ремонт (Repair Calculator)  
-**Version:** 0.0.0  
+**Last Updated:** 2026-03-04
+**Application Name:** Мой ремонт (Repair Calculator)
+**Version:** 0.0.0
 
 ---
 
@@ -33,7 +33,7 @@
 ### Entry Points
 - `index.html` - HTML entry point
 - `src/main.tsx` - React app bootstrap
-- `src/App.tsx` - Main application component (2755 lines)
+- `src/App.tsx` - Main application component (~3000 lines) ⚠️ Требует декомпозиции (см. [CODE_REVIEW.md](./CODE_REVIEW.md))
 
 ### Core Structure
 ```
@@ -332,7 +332,7 @@ This includes:
 
 | File | Purpose |
 |------|---------|
-| `src/App.tsx` | Main app logic, calculations, state (2755 lines) |
+| `src/App.tsx` | Main app logic, calculations, state (~3000 lines) |
 | `src/main.tsx` | React entry point |
 | `package.json` | Dependencies, scripts, port config |
 | `vite.config.ts` | Vite + Tailwind + React plugins, port 3993 |
@@ -341,6 +341,9 @@ This includes:
 | `playwright.config.ts` | E2E test config |
 | `README.md` | User documentation, dev rules |
 | `.env.example` | Environment template |
+| `docs/CODE_REVIEW.md` | Код-ревью и план улучшений |
+| `docs/ARCHITECTURE.md` | Архитектурный план (backend + AI + PWA) |
+| `docs/TODO.md` | Список задач и замечаний |
 
 ---
 
