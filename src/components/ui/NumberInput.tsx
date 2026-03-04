@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, memo } from 'react';
 
 type NumberInputProps = {
   value: number;
@@ -8,7 +8,13 @@ type NumberInputProps = {
   step?: number;
 };
 
-export function NumberInput({ value, onChange, className = '', min = 0, step = 1 }: NumberInputProps) {
+const NumberInputInternal: React.FC<NumberInputProps> = ({
+  value,
+  onChange,
+  className = '',
+  min = 0,
+  step = 1,
+}) => {
   const [str, setStr] = useState(value.toString());
   const isTypingRef = React.useRef(false);
 
@@ -52,4 +58,18 @@ export function NumberInput({ value, onChange, className = '', min = 0, step = 1
       className={`px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-text [&::-webkit-inner-spin-button]:cursor-pointer [&::-webkit-outer-spin-button]:cursor-pointer [&::-webkit-inner-spin-button]:hover:bg-indigo-50 [&::-webkit-outer-spin-button]:hover:bg-indigo-50 ${className}`}
     />
   );
-}
+};
+
+/**
+ * Экспортируемый компонент с мемоизацией.
+ * Сравниваем value и className для оптимизации.
+ * onChange не сравниваем, так как обычно это стабильная функция из родителя.
+ */
+export const NumberInput = memo(NumberInputInternal, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.className === nextProps.className &&
+    prevProps.min === nextProps.min &&
+    prevProps.step === nextProps.step
+  );
+});

@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ProjectData } from '../types';
 import { calculateRoomMetrics } from '../utils/geometry';
@@ -10,7 +11,12 @@ interface SummaryViewProps {
   onRoomClick: (roomId: string) => void;
 }
 
-export function SummaryView({ project, updateProject, deleteProject, onRoomClick }: SummaryViewProps) {
+const SummaryViewInternal: React.FC<SummaryViewProps> = ({
+  project,
+  updateProject,
+  deleteProject,
+  onRoomClick,
+}) => {
   let totalFloorArea = 0;
   let totalWallArea = 0;
   let totalVolume = 0;
@@ -101,4 +107,17 @@ export function SummaryView({ project, updateProject, deleteProject, onRoomClick
       </div>
     </div>
   );
-}
+};
+
+/**
+ * Экспортируемый компонент с мемоизацией.
+ * Сравниваем id проекта, название и количество комнат для оптимизации.
+ */
+export const SummaryView = memo(SummaryViewInternal, (prevProps, nextProps) => {
+  return (
+    prevProps.project.id === nextProps.project.id &&
+    prevProps.project.name === nextProps.project.name &&
+    prevProps.project.rooms.length === nextProps.project.rooms.length &&
+    prevProps.project.rooms === nextProps.project.rooms
+  );
+});

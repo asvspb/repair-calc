@@ -1,19 +1,37 @@
 import type { WorkTemplate } from '../types/workTemplate';
+import type { IStorageProvider } from '../types/storage';
+import { StorageProviderError } from '../types/storage';
+import { LocalStorageProvider } from './localStorageProvider';
 import { STORAGE_KEYS } from './storage';
 
 /**
- * Storage utilities for work templates
+ * Storage utilities for work templates with pluggable storage provider
  */
 export class TemplateStorage {
+  private static provider: IStorageProvider = LocalStorageProvider.getInstance();
+
   /**
-   * Load all templates from localStorage
+   * Set a custom storage provider (useful for testing or different storage backends)
+   */
+  static setProvider(provider: IStorageProvider): void {
+    TemplateStorage.provider = provider;
+  }
+
+  /**
+   * Get current storage provider
+   */
+  static getProvider(): IStorageProvider {
+    return TemplateStorage.provider;
+  }
+
+  /**
+   * Load all templates from storage
    */
   static loadTemplates(): WorkTemplate[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.WORK_TEMPLATES);
-      if (!data) return [];
+      const templates = TemplateStorage.provider.get<WorkTemplate[]>(STORAGE_KEYS.WORK_TEMPLATES);
       
-      const templates = JSON.parse(data) as WorkTemplate[];
+      if (!templates) return [];
       
       // Validate structure
       if (!Array.isArray(templates)) {
@@ -29,14 +47,13 @@ export class TemplateStorage {
   }
 
   /**
-   * Save all templates to localStorage
+   * Save all templates to storage
    */
   static saveTemplates(templates: WorkTemplate[]): void {
     try {
-      const data = JSON.stringify(templates);
-      localStorage.setItem(STORAGE_KEYS.WORK_TEMPLATES, data);
+      TemplateStorage.provider.set(STORAGE_KEYS.WORK_TEMPLATES, templates);
     } catch (error) {
-      if (error instanceof Error && error.name === 'QuotaExceededError') {
+      if (error instanceof StorageProviderError && error.type === 'quota_exceeded') {
         throw new Error('Превышен лимит хранилища. Удалите ненужные шаблоны.');
       }
       throw error;
@@ -174,6 +191,6 @@ export class TemplateStorage {
    * Clear all templates
    */
   static clearTemplates(): void {
-    localStorage.removeItem(STORAGE_KEYS.WORK_TEMPLATES);
+    TemplateStorage.provider.remove(STORAGE_KEYS.WORK_TEMPLATES);
   }
 }

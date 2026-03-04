@@ -1,5 +1,8 @@
 import type { ProjectData } from '../types';
 import type { WorkTemplate } from '../types/workTemplate';
+import type { IStorageProvider } from '../types/storage';
+import { StorageProviderError } from '../types/storage';
+import { LocalStorageProvider } from './localStorageProvider';
 import { TemplateStorage } from './templateStorage';
 import { calculateRoomMetrics } from './geometry';
 import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
@@ -27,17 +30,37 @@ export interface StorageError {
   message: string;
 }
 
+/**
+ * Storage manager with pluggable storage provider
+ */
 export class StorageManager {
+  private static provider: IStorageProvider = LocalStorageProvider.getInstance();
+
+  /**
+   * Set a custom storage provider (useful for testing or different storage backends)
+   */
+  static setProvider(provider: IStorageProvider): void {
+    StorageManager.provider = provider;
+  }
+
+  /**
+   * Get current storage provider
+   */
+  static getProvider(): IStorageProvider {
+    return StorageManager.provider;
+  }
+
   static saveProjects(projects: ProjectData[]): void {
     try {
-      const data = JSON.stringify(projects);
-      localStorage.setItem(STORAGE_KEYS.PROJECTS, data);
-      localStorage.setItem(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+      StorageManager.provider.set(STORAGE_KEYS.PROJECTS, projects);
+      // Save version separately for migration purposes
+      StorageManager.provider.set(STORAGE_KEYS.VERSION, CURRENT_VERSION);
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'QuotaExceededError') {
-          throw { type: 'quota_exceeded', message: 'Превышен лимит хранилища. Удалите старые проекты или создайте бэкап.' } as StorageError;
-        }
+      if (error instanceof StorageProviderError) {
+        throw {
+          type: error.type,
+          message: error.message
+        } as StorageError;
       }
       throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
     }
@@ -45,10 +68,9 @@ export class StorageManager {
 
   static loadProjects(): ProjectData[] | null {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-      if (!data) return null;
+      const projects = StorageManager.provider.get<ProjectData[]>(STORAGE_KEYS.PROJECTS);
       
-      const projects = JSON.parse(data) as ProjectData[];
+      if (!projects) return null;
       
       // Валидация структуры
       if (!Array.isArray(projects)) {
@@ -64,7 +86,7 @@ export class StorageManager {
 
   static saveActiveProject(projectId: string): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
+      StorageManager.provider.set(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
     } catch (error) {
       console.error('Error saving active project:', error);
     }
@@ -72,7 +94,7 @@ export class StorageManager {
 
   static loadActiveProject(): string | null {
     try {
-      return localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT);
+      return StorageManager.provider.get<string>(STORAGE_KEYS.ACTIVE_PROJECT);
     } catch (error) {
       console.error('Error loading active project:', error);
       return null;
@@ -171,10 +193,10 @@ export class StorageManager {
   }
 
   static clearAll(): void {
-    localStorage.removeItem(STORAGE_KEYS.PROJECTS);
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
-    localStorage.removeItem(STORAGE_KEYS.VERSION);
-    localStorage.removeItem(STORAGE_KEYS.WORK_TEMPLATES);
+    StorageManager.provider.remove(STORAGE_KEYS.PROJECTS);
+    StorageManager.provider.remove(STORAGE_KEYS.ACTIVE_PROJECT);
+    StorageManager.provider.remove(STORAGE_KEYS.VERSION);
+    StorageManager.provider.remove(STORAGE_KEYS.WORK_TEMPLATES);
   }
 
   static importWorkTemplates(templates: WorkTemplate[]): void {
@@ -182,18 +204,7 @@ export class StorageManager {
   }
 
   static getStorageInfo(): { used: number; total: number; percentage: number } {
-    let used = 0;
-    for (const key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        used += localStorage[key].length * 2; // UTF-16 = 2 bytes per char
-      }
-    }
-    
-    // Приблизительный лимит для localStorage (5-10 MB)
-    const total = 5 * 1024 * 1024; // 5 MB
-    const percentage = Math.min((used / total) * 100, 100);
-    
-    return { used, total, percentage };
+    return StorageManager.provider.getStorageInfo();
   }
 }
 

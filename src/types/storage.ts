@@ -1,52 +1,74 @@
 /**
- * Интерфейс для абстракции хранилища данных.
- * Позволяет переключаться между localStorage, IndexedDB, серверным API и т.д.
+ * Storage provider interface for abstracting storage mechanisms
+ * Allows easy switching between localStorage, sessionStorage, IndexedDB, or API
  */
 export interface IStorageProvider {
-  // Projects
-  saveProjects(projects: unknown[]): Promise<void>;
-  loadProjects(): Promise<unknown[] | null>;
-  
-  // Active project
-  saveActiveProject(projectId: string): Promise<void>;
-  loadActiveProject(): Promise<string | null>;
-  
-  // Work templates
-  saveWorkTemplates(templates: unknown[]): Promise<void>;
-  loadWorkTemplates(): Promise<unknown[] | null>;
-  
-  // Utility
-  clearAll(): Promise<void>;
-  getStorageInfo(): Promise<{ used: number; total: number; percentage: number }>;
+  /**
+   * Get a value from storage
+   * @param key - Storage key
+   * @returns The stored value or null if not found
+   */
+  get<T>(key: string): T | null;
+
+  /**
+   * Set a value in storage
+   * @param key - Storage key
+   * @param value - Value to store
+   * @throws StorageError if quota exceeded or other error
+   */
+  set<T>(key: string, value: T): void;
+
+  /**
+   * Remove a value from storage
+   * @param key - Storage key
+   */
+  remove(key: string): void;
+
+  /**
+   * Clear all values from storage
+   */
+  clear(): void;
+
+  /**
+   * Get storage usage information
+   * @returns Object with used bytes, total bytes, and percentage
+   */
+  getStorageInfo(): { used: number; total: number; percentage: number };
 }
 
 /**
- * Ошибка хранилища
+ * Storage error types
  */
-export interface StorageError {
-  type: 'quota_exceeded' | 'corrupted' | 'not_found' | 'unknown';
-  message: string;
-  cause?: Error;
-}
+export type StorageErrorType = 'quota_exceeded' | 'corrupted' | 'not_found' | 'unknown';
 
 /**
- * Результат импорта данных
+ * Storage error class
  */
-export interface ImportResult<T> {
-  success: true;
-  data: T;
-} | {
-  success: false;
-  error: string;
-}
+export class StorageProviderError extends Error {
+  public readonly type: StorageErrorType;
 
-/**
- * Данные бэкапа
- */
-export interface BackupData {
-  version: string;
-  exportedAt: string;
-  projects: unknown[];
-  activeProjectId: string;
-  workTemplates?: unknown[];
+  constructor(type: StorageErrorType, message: string) {
+    super(message);
+    this.name = 'StorageProviderError';
+    this.type = type;
+  }
+
+  static fromError(error: unknown): StorageProviderError {
+    if (error instanceof StorageProviderError) {
+      return error;
+    }
+    
+    if (error instanceof Error) {
+      if (error.name === 'QuotaExceededError') {
+        return new StorageProviderError(
+          'quota_exceeded',
+          'Превышен лимит хранилища. Удалите старые данные или создайте бэкап.'
+        );
+      }
+      
+      return new StorageProviderError('unknown', error.message);
+    }
+    
+    return new StorageProviderError('unknown', 'Неизвестная ошибка хранилища');
+  }
 }
