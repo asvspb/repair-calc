@@ -3,44 +3,49 @@ import { Plus, Calculator, Menu, X, LayoutDashboard, Save } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
-import { useWorkTemplates } from './hooks/useWorkTemplates';
+import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
+import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import type { ProjectData, RoomData } from './types';
 import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
-import { useProjects } from './hooks/useProjects';
 import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
 
 import { initialProjects } from './data/initialData';
 
-export default function App() {
+/**
+ * Внутренний компонент приложения, использующий контексты.
+ * Разделён для возможности использования хуков внутри провайдеров.
+ */
+function AppContent() {
   const {
     projects,
     activeProjectId,
+    activeProject,
     setActiveProjectId,
     updateProjects,
     updateActiveProject,
+    updateRoom,
+    deleteRoom,
+    addRoom,
+    reorderRooms,
     isLoading,
     lastSaved,
     saveError
-  } = useProjects(initialProjects);
+  } = useProjectContext();
 
-  // Work templates hook
   const {
     templates,
     saveTemplate,
     loadTemplate,
     deleteTemplate,
     importTemplates,
-  } = useWorkTemplates();
+  } = useWorkTemplateContext();
 
-  // Template picker modal state
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
-
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
 
   // Show loading state
   if (isLoading) {
@@ -81,31 +86,17 @@ export default function App() {
     setActiveTab('summary');
   };
 
-  const updateRoomInProject = (updatedRoom: RoomData) => {
-    const updatedProject = {
-      ...activeProject,
-      rooms: activeProject.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)
-    };
-    updateActiveProject(updatedProject);
+  const handleDeleteRoom = (roomId: string) => {
+    deleteRoom(roomId);
+    const newActiveTab = activeProject && activeProject.rooms.length > 1 
+      ? activeProject.rooms.filter(r => r.id !== roomId)[0]?.id || 'summary'
+      : 'summary';
+    setActiveTab(newActiveTab);
   };
 
-  const deleteRoomFromProject = (roomId: string) => {
-    const newRooms = activeProject.rooms.filter(r => r.id !== roomId);
-    const updatedProject = {
-      ...activeProject,
-      rooms: newRooms
-    };
-    updateActiveProject(updatedProject);
-    setActiveTab(newRooms.length > 0 ? newRooms[0].id : 'summary');
-  };
-
-  const addRoomToProject = () => {
+  const handleAddRoom = () => {
     const newRoom = createNewRoom();
-    const updatedProject = {
-      ...activeProject,
-      rooms: [...activeProject.rooms, newRoom]
-    };
-    updateActiveProject(updatedProject);
+    addRoom(newRoom);
     setActiveTab(newRoom.id);
     setIsMobileMenuOpen(false);
   };
@@ -162,26 +153,22 @@ export default function App() {
           </button>
 
           <div className="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-          <RoomList
-            rooms={activeProject.rooms}
-            activeTab={activeTab}
-            onRoomClick={(roomId) => {
-              setActiveTab(roomId);
-              setIsMobileMenuOpen(false);
-            }}
-            onReorderRooms={(newRooms) => {
-              const updatedProject = {
-                ...activeProject,
-                rooms: newRooms
-              };
-              updateActiveProject(updatedProject);
-            }}
-          />
+          {activeProject && (
+            <RoomList
+              rooms={activeProject.rooms}
+              activeTab={activeTab}
+              onRoomClick={(roomId) => {
+                setActiveTab(roomId);
+                setIsMobileMenuOpen(false);
+              }}
+              onReorderRooms={reorderRooms}
+            />
+          )}
         </div>
 
         <div className="p-4 border-t border-gray-100 space-y-3">
           <button
-            onClick={addRoomToProject}
+            onClick={handleAddRoom}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -203,7 +190,7 @@ export default function App() {
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
           <span className="font-semibold text-lg truncate flex-1">
-            {activeTab === 'summary' ? activeProject.name : activeProject.rooms.find(r => r.id === activeTab)?.name}
+            {activeTab === 'summary' ? activeProject?.name : activeProject?.rooms.find(r => r.id === activeTab)?.name}
           </span>
           <BackupManager
             projects={projects}
@@ -240,32 +227,46 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
-            {activeTab === 'summary' ? (
+            {activeTab === 'summary' && activeProject ? (
               <SummaryView
                 project={activeProject}
                 updateProject={updateActiveProject}
                 deleteProject={handleDeleteActiveProject}
                 onRoomClick={(roomId) => setActiveTab(roomId)}
               />
-            ) : (
-              activeProject.rooms.find(r => r.id === activeTab) && (
-                <RoomEditor
-                  room={activeProject.rooms.find(r => r.id === activeTab)!}
-                  updateRoom={updateRoomInProject}
-                  deleteRoom={() => deleteRoomFromProject(activeTab)}
-                  templates={templates}
-                  onSaveTemplate={saveTemplate}
-                  onLoadTemplate={loadTemplate}
-                  onDeleteTemplate={handleDeleteTemplate}
-                  isTemplatePickerOpen={isTemplatePickerOpen}
-                  onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
-                  onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}
-                />
-              )
-            )}
+            ) : activeProject?.rooms.find(r => r.id === activeTab) ? (
+              <RoomEditor
+                room={activeProject.rooms.find(r => r.id === activeTab)!}
+                updateRoom={updateRoom}
+                deleteRoom={() => handleDeleteRoom(activeTab)}
+                templates={templates}
+                onSaveTemplate={saveTemplate}
+                onLoadTemplate={loadTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
+                isTemplatePickerOpen={isTemplatePickerOpen}
+                onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
+                onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}
+              />
+            ) : null}
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+/**
+ * Корневой компонент приложения.
+ * Настраивает провайдеры контекстов и Error Boundary.
+ */
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <ProjectProvider initialProjects={initialProjects}>
+        <WorkTemplateProvider>
+          <AppContent />
+        </WorkTemplateProvider>
+      </ProjectProvider>
+    </ErrorBoundary>
   );
 }

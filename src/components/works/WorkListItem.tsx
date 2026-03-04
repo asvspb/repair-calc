@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
-import type { WorkData } from '../../App';
+import type { WorkData } from '../../types';
 import { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 
 type WorkListItemProps = {
@@ -16,7 +16,11 @@ type WorkListItemProps = {
   onSaveTemplate?: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
 };
 
-export const WorkListItem: React.FC<WorkListItemProps> = ({
+/**
+ * Элемент списка работ с поддержкой drag-and-drop.
+ * Оптимизирован с помощью React.memo для предотвращения лишних рендеров.
+ */
+const WorkListItemInternal: React.FC<WorkListItemProps> = ({
   work,
   costs,
   onToggle,
@@ -194,3 +198,17 @@ export const WorkListItem: React.FC<WorkListItemProps> = ({
     </div>
   );
 };
+
+/**
+ * Экспортируемый компонент с мемоизацией.
+ * Сравниваем id работы, enabled, costs и isExpanded для оптимизации.
+ */
+export const WorkListItem = memo(WorkListItemInternal, (prevProps, nextProps) => {
+  return (
+    prevProps.work.id === nextProps.work.id &&
+    prevProps.work.enabled === nextProps.work.enabled &&
+    prevProps.work.name === nextProps.work.name &&
+    prevProps.isExpanded === nextProps.isExpanded &&
+    prevProps.costs.total === nextProps.costs.total
+  );
+});

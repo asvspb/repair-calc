@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, ChevronRight } from 'lucide-react';
-import type { RoomData } from '../../App';
+import type { RoomData } from '../../types';
 
 type RoomListItemProps = {
   room: RoomData;
@@ -10,7 +10,11 @@ type RoomListItemProps = {
   onClick: () => void;
 };
 
-export const RoomListItem: React.FC<RoomListItemProps> = ({
+/**
+ * Элемент списка комнат с поддержкой drag-and-drop.
+ * Оптимизирован с помощью React.memo для предотвращения лишних рендеров.
+ */
+const RoomListItemInternal: React.FC<RoomListItemProps> = ({
   room,
   isActive,
   onClick,
@@ -62,3 +66,14 @@ export const RoomListItem: React.FC<RoomListItemProps> = ({
     </div>
   );
 };
+
+/**
+ * Экспортируемый компонент с мемоизацией.
+ * Сравниваем только id комнаты и activeTab для оптимизации.
+ */
+export const RoomListItem = memo(RoomListItemInternal, (prevProps, nextProps) => {
+  return (
+    prevProps.room.id === nextProps.room.id &&
+    prevProps.isActive === nextProps.isActive
+  );
+});
