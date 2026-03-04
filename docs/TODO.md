@@ -56,7 +56,7 @@
 
 - [ ] **Импорт типов `WorkData`, `RoomData` из `App.tsx`** — `WorkList.tsx`, `WorkListItem.tsx`, `RoomList.tsx`, `RoomListItem.tsx` импортируют типы из `../../App`. После декомпозиции типов — обновить импорты.
 
-- [ ] **`index.ts` бочки не обновлены** — `src/components/works/index.ts` экспортирует только `WorkList` и `WorkListItem`, но не `WorkTemplateSaveButton` и `WorkTemplatePickerModal`.
+- [x] **`index.ts` бочки не обновлены** — `src/components/works/index.ts` экспортирует только `WorkList` и `WorkListItem`, но не `WorkTemplateSaveButton` и `WorkTemplatePickerModal`. ✅ **Исправлено 2026-03-04**
 
 - [ ] **`confirm()` в модалке удаления шаблона** — использует нативный `confirm()` вместо кастомного UI. Для внутреннего инструмента допустимо, но при масштабировании стоит заменить.
 

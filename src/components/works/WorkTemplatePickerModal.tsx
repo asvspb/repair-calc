@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Trash2 } from 'lucide-react';
 import type { WorkTemplate, WorkTemplateCategory } from '../../types/workTemplate';
-import type { WorkData } from '../../App';
+import { CATEGORY_LABELS as BASE_CATEGORY_LABELS } from '../../types/workTemplate';
+import type { WorkData } from '../../types';
 
 type Props = {
   isOpen: boolean;
@@ -13,12 +14,10 @@ type Props = {
   roomMetrics?: { floorArea: number; netWallArea: number; skirtingLength: number };
 };
 
+// Расширяем базовые метки категорий опцией "all"
 const CATEGORY_LABELS: Record<WorkTemplateCategory | 'all', string> = {
+  ...BASE_CATEGORY_LABELS,
   all: 'Все',
-  floor: 'Пол',
-  walls: 'Стены',
-  ceiling: 'Потолок',
-  other: 'Другое',
 };
 
 export function WorkTemplatePickerModal({
