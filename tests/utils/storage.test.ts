@@ -98,13 +98,33 @@ describe('LocalStorageProvider', () => {
       expect(result).toEqual(data);
     });
 
-    it('should return null for corrupted data', () => {
+    it('should return null for corrupted JSON-like data', () => {
       const provider = LocalStorageProvider.getInstance();
-      localStorageMock.store['corrupted'] = 'not valid json{{{';
+      localStorageMock.store['corrupted'] = '{"broken": "not closed';
       
       const result = provider.get('corrupted');
       
       expect(result).toBeNull();
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('corrupted');
+    });
+
+    it('should return raw string for non-JSON legacy data', () => {
+      const provider = LocalStorageProvider.getInstance();
+      localStorageMock.store['legacy-key'] = 'p1'; // Raw string, not JSON
+      
+      const result = provider.get<string>('legacy-key');
+      
+      expect(result).toBe('p1');
+    });
+
+    it('should return raw string for corrupted non-JSON data', () => {
+      const provider = LocalStorageProvider.getInstance();
+      localStorageMock.store['not-json'] = 'not valid json{{{';
+      
+      const result = provider.get<string>('not-json');
+      
+      // Returns raw string since it doesn't look like JSON
+      expect(result).toBe('not valid json{{{');
     });
   });
 

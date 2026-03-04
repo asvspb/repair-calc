@@ -30,16 +30,28 @@ export class LocalStorageProvider implements IStorageProvider {
       const data = localStorage.getItem(key);
       if (!data) return null;
       
-      return JSON.parse(data) as T;
+      try {
+        return JSON.parse(data) as T;
+      } catch {
+        // Check if data looks like it should be JSON (starts with { or [)
+        // If so, it's corrupted data that should be removed
+        const trimmed = data.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          console.error(`Error reading from localStorage key "${key}": Corrupted JSON data`);
+          try {
+            localStorage.removeItem(key);
+            console.info(`Removed corrupted data from localStorage key "${key}"`);
+          } catch {
+            // Ignore removal errors
+          }
+          return null;
+        }
+        // Otherwise, return the raw string value
+        // This handles legacy data that was stored without JSON.stringify
+        return data as unknown as T;
+      }
     } catch (error) {
       console.error(`Error reading from localStorage key "${key}":`, error);
-      // Remove corrupted data to prevent repeated errors
-      try {
-        localStorage.removeItem(key);
-        console.info(`Removed corrupted data from localStorage key "${key}"`);
-      } catch {
-        // Ignore removal errors
-      }
       return null;
     }
   }
