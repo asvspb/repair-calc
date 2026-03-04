@@ -112,13 +112,16 @@ export function useProjects(initialProjects: ProjectData[]): UseProjectsReturn {
   }, [scheduleSave]);
 
   // Обновление активного проекта
+  // Используем функциональное обновление чтобы избежать stale closure
   const updateActiveProject = useCallback((updatedProject: ProjectData) => {
-    const newProjects = projects.map(p => 
-      p.id === updatedProject.id ? updatedProject : p
-    );
-    setProjects(newProjects);
-    scheduleSave(newProjects);
-  }, [projects, scheduleSave]);
+    setProjects(prevProjects => {
+      const newProjects = prevProjects.map(p => 
+        p.id === updatedProject.id ? updatedProject : p
+      );
+      scheduleSave(newProjects);
+      return newProjects;
+    });
+  }, [scheduleSave]);
 
   // Установка активного проекта с сохранением
   const setActiveProjectId = useCallback((id: string) => {
