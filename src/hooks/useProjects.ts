@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ProjectData, RoomData } from '../App';
+import type { ProjectData, RoomData } from '../types';
 import { StorageManager, StorageError } from '../utils/storage';
 
 // Миграция данных комнаты для обеспечения наличия всех полей

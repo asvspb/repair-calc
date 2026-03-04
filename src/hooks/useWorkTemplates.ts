@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { WorkTemplate, WorkTemplateCategory } from '../types/workTemplate';
-import type { WorkData, Material, Tool } from '../App';
+import type { WorkData, Material, Tool } from '../types';
 import { TemplateStorage } from '../utils/templateStorage';
 import { getTemplateCategory } from '../types/workTemplate';
 

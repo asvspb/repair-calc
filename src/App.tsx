@@ -5,6 +5,7 @@ import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
 import { useWorkTemplates } from './hooks/useWorkTemplates';
 import type { ProjectData, RoomData } from './types';
+import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
 import { useProjects } from './hooks/useProjects';
 import { BackupManager } from './components/BackupManager';
@@ -117,7 +118,7 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
-  const handleImportTemplates = (importedTemplates: any[]) => {
+  const handleImportTemplates = (importedTemplates: WorkTemplate[]) => {
     importTemplates(importedTemplates);
   };
 

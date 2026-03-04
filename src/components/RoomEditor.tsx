@@ -18,6 +18,8 @@ import type {
   RoomData,
   RoomMetrics,
 } from '../types';
+import type { WorkTemplate } from '../types/workTemplate';
+import type { SaveResult } from '../hooks/useWorkTemplates';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts, migrateWorkData } from '../utils/costs';
 import { createNewMaterial, createNewTool } from '../utils/factories';
@@ -39,9 +41,9 @@ interface RoomEditorProps {
   room: RoomData;
   updateRoom: (r: RoomData) => void;
   deleteRoom: () => void;
-  templates: any[];
-  onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => any;
-  onLoadTemplate: (template: any, metrics?: { floorArea: number; netWallArea: number; skirtingLength: number }) => WorkData;
+  templates: WorkTemplate[];
+  onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
+  onLoadTemplate: (template: WorkTemplate, metrics?: RoomMetrics) => WorkData;
   onDeleteTemplate: (id: string) => void;
   isTemplatePickerOpen: boolean;
   onOpenTemplatePicker: () => void;
@@ -267,7 +269,7 @@ export function RoomEditor({
     return onSaveTemplate(work, forceReplace, workVolume);
   };
 
-  const handleLoadTemplate = (template: any) => {
+  const handleLoadTemplate = (template: WorkTemplate) => {
     // Передаём метрики для масштабирования материалов
     const work = onLoadTemplate(template, metrics);
     updateRoom({

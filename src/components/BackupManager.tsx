@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, X, Database, Trash2 } from 'lucide-react';
-import type { ProjectData } from '../App';
+import type { ProjectData } from '../types';
+import type { WorkTemplate } from '../types/workTemplate';
 import { StorageManager } from '../utils/storage';
 
 interface BackupManagerProps {
@@ -8,13 +9,13 @@ interface BackupManagerProps {
   activeProjectId: string;
   onImport: (projects: ProjectData[], activeProjectId: string) => void;
   onClearAll: () => void;
-  onImportTemplates?: (templates: any[]) => void;
+  onImportTemplates?: (templates: WorkTemplate[]) => void;
 }
 
 type ImportStatus = {
   type: 'success' | 'error' | 'confirm';
   message: string;
-  data?: { projects: ProjectData[]; activeProjectId: string; workTemplates?: any[] };
+  data?: { projects: ProjectData[]; activeProjectId: string; workTemplates?: WorkTemplate[] };
 };
 
 export function BackupManager({ projects, activeProjectId, onImport, onClearAll, onImportTemplates }: BackupManagerProps) {

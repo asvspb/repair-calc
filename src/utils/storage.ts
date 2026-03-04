@@ -1,4 +1,4 @@
-import type { ProjectData } from '../App';
+import type { ProjectData } from '../types';
 import type { WorkTemplate } from '../types/workTemplate';
 import { TemplateStorage } from './templateStorage';
 import { calculateRoomMetrics } from './geometry';
