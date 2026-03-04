@@ -54,7 +54,7 @@
 
 ### Фаза 4: Тестирование (1 неделя)
 
-- [ ] **4.1** Unit-тесты для utils (geometry.ts, costs.ts, storage.ts)
+- [x] **4.1** Unit-тесты для utils (geometry.ts, costs.ts, storage.ts) ✅ 113 тестов
 - [ ] **4.2** Unit-тесты для хуков (useProjects, useWorkTemplates)
 - [ ] **4.3** Integration тесты для полного flow
 - [ ] **4.4** Расширение E2E тестов (экспорт/импорт, шаблоны)
