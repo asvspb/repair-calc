@@ -44,12 +44,13 @@
 
 ## 🚧 В работе / Следующие задачи
 
-### Фаза 3: Улучшение архитектуры (1 неделя)
+### Фаза 3: Улучшение архитектуры — ВЫПОЛНЕНО ✅
 
-- [ ] **3.1** Создать интерфейс `IStorageProvider` для абстракции storage
-- [ ] **3.2** Добавить React Error Boundaries
-- [ ] **3.3** Вынести глобальное состояние в Context API (решить prop drilling)
-- [ ] **3.4** Добавить `React.memo` для тяжёлых компонентов
+- [x] **3.1** Создать интерфейс `IStorageProvider` для абстракции storage ✅
+- [x] **3.2** Добавить React Error Boundaries ✅
+- [x] **3.3** Вынести глобальное состояние в Context API (решить prop drilling) ✅
+- [x] **3.4** Добавить `React.memo` для тяжёлых компонентов ✅
+  - `RoomListItem`, `WorkListItem`, `SummaryView`, `NumberInput`
 
 ### Фаза 4: Тестирование (1 неделя)
 
@@ -64,7 +65,7 @@
 
 ### Архитектура
 
-- [ ] **Prop drilling** — состояние передаётся через 3–4 уровня пропсов. **Исправление:** React Context или Zustand (включено в Фазу 3)
+- [x] **Prop drilling** — ✅ Исправлено: React Context (`ProjectProvider`, `WorkTemplateProvider`)
 
 - [ ] **Дублирование логики обновления** — `updateSimpleField`, `updateWindow`, `updateSubSection` имеют одинаковую структуру. **Исправление:** создать generic-хелпер `updateRoomField`.
 
