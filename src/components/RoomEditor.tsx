@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Menu, X, ChevronUp, LayoutDashboard, Settings2, Save, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle, ClipboardList, HelpCircle } from 'lucide-react';
-import { WorkList } from './components/works/WorkList';
-import { RoomList } from './components/rooms/RoomList';
-import { useWorkTemplates } from './hooks/useWorkTemplates';
-import { WorkTemplatePickerModal } from './components/works/WorkTemplatePickerModal';
-import { NumberInput } from './components/ui/NumberInput';
+import { Plus, Trash2, ChevronUp, AlertCircle, Layers, Box, Ruler, Wrench, Package, Square, Triangle, ClipboardList, HelpCircle, X } from 'lucide-react';
+import { WorkList } from './works/WorkList';
+import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
+import { NumberInput } from './ui/NumberInput';
 import type {
   Opening,
   CalculationType,
@@ -18,12 +16,11 @@ import type {
   Obstacle,
   WallSection,
   RoomData,
-  ProjectData,
   RoomMetrics,
-} from './types';
-import { calculateRoomMetrics } from './utils/geometry';
-import { calculateRoomCosts, migrateWorkData, roundCostUp } from './utils/costs';
-import { createNewProject, createNewRoom, createNewMaterial, createNewTool } from './utils/factories';
+} from '../types';
+import { calculateRoomMetrics } from '../utils/geometry';
+import { calculateRoomCosts, migrateWorkData } from '../utils/costs';
+import { createNewMaterial, createNewTool } from '../utils/factories';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -37,193 +34,21 @@ const Parallelogram = ({ className }: { className?: string }) => (
     <path d="M8 19 L12 5 L22 5 L18 19 Z" />
   </svg>
 );
-import { useProjects } from './hooks/useProjects';
-import { ChangeEvent } from 'react';
-import { BackupManager } from './components/BackupManager';
-import { StorageManager } from './utils/storage';
 
-const initialRooms: RoomData[] = [
-  {
-    id: '1',
-    name: 'Комната 1',
-    geometryMode: 'simple',
-    length: 3.6,
-    width: 2.9,
-    height: 2.6,
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
-    windows: [{ id: 'w1', width: 1.5, height: 1.5, comment: '' }],
-    doors: [{ id: 'd1', width: 1.0, height: 2.2, comment: '' }],
-    works: [
-      { id: 'floorLeveling', name: 'Выравнивание пола', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 400, materialPriceType: 'total', materialPrice: 2500, isCustom: true },
-      { id: 'laminate', name: 'Укладка ламината', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'skirting', name: 'Монтаж плинтусов', unit: 'пог. м', calculationType: 'skirtingLength', enabled: true, workUnitPrice: 200, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'puttying', name: 'Шпаклевание стен', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 450, materialPriceType: 'total', materialPrice: 3500, isCustom: true },
-      { id: 'wallpaper', name: 'Поклейка обоев', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 800, isCustom: true },
-      { id: 'ceiling', name: 'Натяжной потолок', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 900, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'doorInstall', name: 'Установка дверей', unit: 'шт', calculationType: 'customCount', enabled: true, workUnitPrice: 4500, materialPriceType: 'total', materialPrice: 15000, count: 1, isCustom: true },
-      { id: 'electrical', name: 'Электрика', unit: 'точек', calculationType: 'customCount', enabled: true, workUnitPrice: 300, materialPriceType: 'total', materialPrice: 4000, count: 6, isCustom: true },
-    ],
-    simpleModeData: {
-      length: 3.6,
-      width: 2.9,
-      windows: [{ id: 'w1', width: 1.5, height: 1.5, comment: '' }],
-      doors: [{ id: 'd1', width: 1.0, height: 2.2, comment: '' }]
-    },
-    extendedModeData: {
-      subSections: []
-    },
-    advancedModeData: {
-      segments: [],
-      obstacles: [],
-      wallSections: []
-    }
-  },
-  {
-    id: '2',
-    name: 'Комната 2',
-    geometryMode: 'simple',
-    length: 4.9,
-    width: 3.6,
-    height: 2.6,
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
-    windows: [{ id: 'w2', width: 1.4, height: 2.1, comment: '' }],
-    doors: [{ id: 'd2', width: 2.2, height: 2.5, comment: '' }],
-    works: [
-      { id: 'floorLeveling', name: 'Выравнивание пола', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 400, materialPriceType: 'total', materialPrice: 4500, isCustom: true },
-      { id: 'laminate', name: 'Укладка ламината', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'skirting', name: 'Монтаж плинтусов', unit: 'пог. м', calculationType: 'skirtingLength', enabled: true, workUnitPrice: 200, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'puttying', name: 'Шпаклевание стен', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 450, materialPriceType: 'total', materialPrice: 4500, isCustom: true },
-      { id: 'wallpaper', name: 'Поклейка обоев', unit: 'м²', calculationType: 'netWallArea', enabled: true, workUnitPrice: 350, materialPriceType: 'total', materialPrice: 1200, isCustom: true },
-      { id: 'ceiling', name: 'Натяжной потолок', unit: 'м²', calculationType: 'floorArea', enabled: true, workUnitPrice: 900, materialPriceType: 'total', materialPrice: 0, isCustom: true },
-      { id: 'doorInstall', name: 'Установка дверей', unit: 'шт', calculationType: 'customCount', enabled: true, workUnitPrice: 8000, materialPriceType: 'total', materialPrice: 35000, count: 1, isCustom: true },
-      { id: 'electrical', name: 'Электрика', unit: 'точек', calculationType: 'customCount', enabled: true, workUnitPrice: 300, materialPriceType: 'total', materialPrice: 6500, count: 10, isCustom: true },
-    ],
-    simpleModeData: {
-      length: 4.9,
-      width: 3.6,
-      windows: [{ id: 'w2', width: 1.4, height: 2.1, comment: '' }],
-      doors: [{ id: 'd2', width: 2.2, height: 2.5, comment: '' }]
-    },
-    extendedModeData: {
-      subSections: []
-    },
-    advancedModeData: {
-      segments: [],
-      obstacles: [],
-      wallSections: []
-    }
-  }
-];
-
-const initialProjects: ProjectData[] = [
-  {
-    id: 'p1',
-    name: 'Квартира (пример)',
-    rooms: initialRooms
-  }
-];
-
-
-function SummaryView({ project, updateProject, deleteProject, onRoomClick }: { project: ProjectData, updateProject: (p: ProjectData) => void, deleteProject: () => void, onRoomClick: (roomId: string) => void }) {
-  let totalFloorArea = 0;
-  let totalWallArea = 0;
-  let totalVolume = 0;
-  let totalWorkCost = 0;
-  let totalMaterialCost = 0;
-  let totalToolsCost = 0;
-
-  project.rooms.forEach(r => {
-    const metrics = calculateRoomMetrics(r);
-    const costs = calculateRoomCosts(r);
-    totalFloorArea += metrics.floorArea;
-    totalWallArea += metrics.netWallArea;
-    totalVolume += metrics.volume || 0;
-    totalWorkCost += costs.totalWork;
-    totalMaterialCost += costs.totalMaterial;
-    totalToolsCost += costs.totalTools;
-  });
-
-  const grandTotal = totalWorkCost + totalMaterialCost + totalToolsCost;
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <input
-          className="text-3xl font-light text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
-          value={project.name}
-          onChange={e => updateProject({...project, name: e.target.value})}
-          placeholder="Название объекта"
-        />
-        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 cursor-pointer" title="Удалить объект">
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-          <div className="text-sm text-gray-500 mb-1">Площадь пола</div>
-          <div className="text-3xl font-light">{totalFloorArea.toFixed(2)} <span className="text-lg text-gray-400">м²</span></div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-          <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
-          <div className="text-3xl font-light">{totalWallArea.toFixed(2)} <span className="text-lg text-gray-400">м²</span></div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-          <div className="text-sm text-gray-500 mb-1">Общий объем</div>
-          <div className="text-3xl font-light">{totalVolume.toFixed(2)} <span className="text-lg text-gray-400">м³</span></div>
-        </div>
-        <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-md flex flex-col items-center text-center">
-          <div className="text-indigo-100 text-sm mb-1">Стоимость, ₽</div>
-          <div className="text-3xl font-semibold">{Math.ceil(grandTotal).toLocaleString('ru-RU')}</div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h3 className="text-lg font-medium">Детализация по комнатам</h3>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {project.rooms.map(room => {
-            const costs = calculateRoomCosts(room);
-            return (
-              <div key={room.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <button
-                    onClick={() => onRoomClick(room.id)}
-                    className="font-medium text-lg text-left hover:text-indigo-600 transition-colors cursor-pointer"
-                  >
-                    {room.name}
-                  </button>
-                  <div className="text-sm text-gray-500 mt-1">
-                    Работы: {Math.ceil(costs.totalWork).toLocaleString('ru-RU')} ₽ • Материалы: {Math.ceil(costs.totalMaterial).toLocaleString('ru-RU')} ₽{Math.ceil(costs.totalTools) > 0 && (
-                      <span> • Инструменты: {Math.ceil(costs.totalTools).toLocaleString('ru-RU')} ₽</span>
-                    )}
-                  </div>
-                </div>
-                <div className="text-2xl font-light">
-                  {Math.ceil(costs.total).toLocaleString('ru-RU')} ₽
-                </div>
-              </div>
-            );
-          })}
-          {project.rooms.length === 0 && (
-            <div className="p-6 text-center text-gray-500 italic">
-              Нет добавленных комнат
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+interface RoomEditorProps {
+  room: RoomData;
+  updateRoom: (r: RoomData) => void;
+  deleteRoom: () => void;
+  templates: any[];
+  onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => any;
+  onLoadTemplate: (template: any, metrics?: { floorArea: number; netWallArea: number; skirtingLength: number }) => WorkData;
+  onDeleteTemplate: (id: string) => void;
+  isTemplatePickerOpen: boolean;
+  onOpenTemplatePicker: () => void;
+  onCloseTemplatePicker: () => void;
 }
 
-function RoomEditor({ 
+export function RoomEditor({ 
   room, 
   updateRoom, 
   deleteRoom,
@@ -234,18 +59,7 @@ function RoomEditor({
   isTemplatePickerOpen,
   onOpenTemplatePicker,
   onCloseTemplatePicker,
-}: {
-  room: RoomData,
-  updateRoom: (r: RoomData) => void,
-  deleteRoom: () => void,
-  templates: any[],
-  onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => any,
-  onLoadTemplate: (template: any, metrics?: { floorArea: number; netWallArea: number; skirtingLength: number }) => WorkData,
-  onDeleteTemplate: (id: string) => void,
-  isTemplatePickerOpen: boolean,
-  onOpenTemplatePicker: () => void,
-  onCloseTemplatePicker: () => void,
-}) {
+}: RoomEditorProps) {
   // Normalize room data to ensure all arrays exist
   const normalizedRoom = {
     ...room,
@@ -2213,264 +2027,6 @@ function RoomEditor({
         onDeleteTemplate={handleDeleteTemplate}
         roomMetrics={metrics}
       />
-    </div>
-  );
-}
-
-export default function App() {
-  const {
-    projects,
-    activeProjectId,
-    setActiveProjectId,
-    updateProjects,
-    updateActiveProject,
-    isLoading,
-    lastSaved,
-    saveError
-  } = useProjects(initialProjects);
-
-  // Work templates hook
-  const {
-    templates,
-    isLoading: templatesLoading,
-    saveTemplate,
-    loadTemplate,
-    deleteTemplate,
-    importTemplates,
-  } = useWorkTemplates();
-
-  // Template picker modal state
-  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<string>('summary');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
-
-  // Показываем загрузку
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
-        <div className="text-center">
-          <Calculator className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Загрузка проектов...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleDeleteActiveProject = () => {
-    if (projects.length === 1) {
-      const newProject = createNewProject();
-      updateProjects([newProject]);
-      setActiveProjectId(newProject.id);
-    } else {
-      const newProjects = projects.filter(p => p.id !== activeProjectId);
-      updateProjects(newProjects);
-      setActiveProjectId(newProjects[0].id);
-    }
-    setActiveTab('summary');
-  };
-
-  const handleImport = (importedProjects: ProjectData[], importedActiveId: string) => {
-    updateProjects(importedProjects);
-    setActiveProjectId(importedActiveId);
-    setActiveTab('summary');
-  };
-
-  const handleClearAll = () => {
-    StorageManager.clearAll();
-    const newProject = createNewProject();
-    updateProjects([newProject]);
-    setActiveProjectId(newProject.id);
-    setActiveTab('summary');
-  };
-
-  const updateRoomInProject = (updatedRoom: RoomData) => {
-    const updatedProject = {
-      ...activeProject,
-      rooms: activeProject.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)
-    };
-    updateActiveProject(updatedProject);
-  };
-
-  const deleteRoomFromProject = (roomId: string) => {
-    const newRooms = activeProject.rooms.filter(r => r.id !== roomId);
-    const updatedProject = {
-      ...activeProject,
-      rooms: newRooms
-    };
-    updateActiveProject(updatedProject);
-    setActiveTab(newRooms.length > 0 ? newRooms[0].id : 'summary');
-  };
-
-  const addRoomToProject = () => {
-    const newRoom = createNewRoom();
-    const updatedProject = {
-      ...activeProject,
-      rooms: [...activeProject.rooms, newRoom]
-    };
-    updateActiveProject(updatedProject);
-    setActiveTab(newRoom.id);
-    setIsMobileMenuOpen(false);
-  };
-
-  const addNewProject = () => {
-    const newProject = createNewProject();
-    updateProjects([...projects, newProject]);
-    setActiveProjectId(newProject.id);
-    setActiveTab('summary');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleImportTemplates = (importedTemplates: any[]) => {
-    importTemplates(importedTemplates);
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    deleteTemplate(id);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
-            <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <select
-            value={activeProjectId}
-            onChange={(e) => {
-              setActiveProjectId(e.target.value);
-              setActiveTab('summary');
-              setIsMobileMenuOpen(false);
-            }}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
-          >
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
-          <button
-            onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
-            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium">Общая смета</span>
-          </button>
-
-          <div className="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-          <RoomList
-            rooms={activeProject.rooms}
-            activeTab={activeTab}
-            onRoomClick={(roomId) => {
-              setActiveTab(roomId);
-              setIsMobileMenuOpen(false);
-            }}
-            onReorderRooms={(newRooms) => {
-              const updatedProject = {
-                ...activeProject,
-                rooms: newRooms
-              };
-              updateActiveProject(updatedProject);
-            }}
-          />
-        </div>
-
-        <div className="p-4 border-t border-gray-100 space-y-3">
-          <button
-            onClick={addRoomToProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Добавить комнату
-          </button>
-          <button
-            onClick={addNewProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Новый объект
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-          <button onClick={() => setIsMobileMenuOpen(true)} className="cursor-pointer">
-            <Menu className="w-6 h-6 text-gray-600" />
-          </button>
-          <span className="font-semibold text-lg truncate flex-1">
-            {activeTab === 'summary' ? activeProject.name : activeProject.rooms.find(r => r.id === activeTab)?.name}
-          </span>
-          <BackupManager
-            projects={projects}
-            activeProjectId={activeProjectId}
-            onImport={handleImport}
-            onClearAll={handleClearAll}
-            onImportTemplates={handleImportTemplates}
-          />
-        </header>
-
-        {/* Desktop header with backup manager */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 p-4 items-center justify-end">
-          <div className="flex items-center gap-4">
-            {lastSaved && (
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Save className="w-3 h-3" />
-                <span>Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            )}
-            {saveError && (
-              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                {saveError}
-              </div>
-            )}
-            <BackupManager
-              projects={projects}
-              activeProjectId={activeProjectId}
-              onImport={handleImport}
-              onClearAll={handleClearAll}
-              onImportTemplates={handleImportTemplates}
-            />
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto">
-            {activeTab === 'summary' ? (
-              <SummaryView
-                project={activeProject}
-                updateProject={updateActiveProject}
-                deleteProject={handleDeleteActiveProject}
-                onRoomClick={(roomId) => setActiveTab(roomId)}
-              />
-            ) : (
-              activeProject.rooms.find(r => r.id === activeTab) && (
-                <RoomEditor
-                  room={activeProject.rooms.find(r => r.id === activeTab)!}
-                  updateRoom={updateRoomInProject}
-                  deleteRoom={() => deleteRoomFromProject(activeTab)}
-                  templates={templates}
-                  onSaveTemplate={saveTemplate}
-                  onLoadTemplate={loadTemplate}
-                  onDeleteTemplate={deleteTemplate}
-                  isTemplatePickerOpen={isTemplatePickerOpen}
-                  onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
-                  onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}
-                />
-              )
-            )}
-          </div>
-        </div>
-      </main>
     </div>
   );
 }
