@@ -23,6 +23,15 @@ import type { SaveResult } from '../hooks/useWorkTemplates';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts, migrateWorkData } from '../utils/costs';
 import { createNewMaterial, createNewTool } from '../utils/factories';
+import {
+  updateSimpleField,
+  addWindow,
+  removeWindow,
+  updateWindow,
+  addDoor,
+  removeDoor,
+  updateDoor,
+} from '../utils/roomHelpers';
 
 // Custom SVG icons for shapes not available in lucide-react
 const Trapezoid = ({ className }: { className?: string }) => (
@@ -282,84 +291,33 @@ export function RoomEditor({
     onDeleteTemplate(id);
   };
 
-  // Simple mode handlers - update both main fields and mode-specific storage
-  const updateSimpleField = (field: 'length' | 'width', val: number) => {
-    const updatedRoom = { ...room, [field]: val };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        [field]: val
-      };
-    }
-    updateRoom(updatedRoom);
+  // Simple mode handlers - using helpers from roomHelpers.ts
+  const handleUpdateSimpleField = (field: 'length' | 'width', val: number) => {
+    updateRoom(updateSimpleField(room, field, val));
   };
 
-  const addWindow = () => {
-    const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5, comment: '' };
-    const updatedRoom = { ...room, windows: [...room.windows, newWindow] };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        windows: [...(room.simpleModeData?.windows || room.windows), newWindow]
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleAddWindow = () => {
+    updateRoom(addWindow(room));
   };
 
-  const removeWindow = (id: string) => {
-    const updatedRoom = { ...room, windows: room.windows.filter(w => w.id !== id) };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        windows: (room.simpleModeData?.windows || room.windows).filter(w => w.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleRemoveWindow = (id: string) => {
+    updateRoom(removeWindow(room, id));
   };
 
-  const updateWindow = (id: string, field: keyof Opening, val: number | string) => {
-    const updatedRoom = { ...room, windows: room.windows.map(w => w.id === id ? { ...w, [field]: val } : w) };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        windows: (room.simpleModeData?.windows || room.windows).map(w => w.id === id ? { ...w, [field]: val } : w)
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleUpdateWindow = (id: string, field: keyof Opening, val: number | string) => {
+    updateRoom(updateWindow(room, id, field, val));
   };
 
-  const addDoor = () => {
-    const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0, comment: '' };
-    const updatedRoom = { ...room, doors: [...room.doors, newDoor] };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        doors: [...(room.simpleModeData?.doors || room.doors), newDoor]
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleAddDoor = () => {
+    updateRoom(addDoor(room));
   };
 
-  const removeDoor = (id: string) => {
-    const updatedRoom = { ...room, doors: room.doors.filter(d => d.id !== id) };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        doors: (room.simpleModeData?.doors || room.doors).filter(d => d.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleRemoveDoor = (id: string) => {
+    updateRoom(removeDoor(room, id));
   };
 
-  const updateDoor = (id: string, field: keyof Opening, val: number | string) => {
-    const updatedRoom = { ...room, doors: room.doors.map(d => d.id === id ? { ...d, [field]: val } : d) };
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        ...(room.simpleModeData || { length: room.length, width: room.width, windows: [...room.windows], doors: [...room.doors] }),
-        doors: (room.simpleModeData?.doors || room.doors).map(d => d.id === id ? { ...d, [field]: val } : d)
-      };
-    }
-    updateRoom(updatedRoom);
+  const handleUpdateDoor = (id: string, field: keyof Opening, val: number | string) => {
+    updateRoom(updateDoor(room, id, field, val));
   };
 
   // Extended mode: SubSections - update both main fields and mode-specific storage
@@ -915,11 +873,11 @@ export function RoomEditor({
             <>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
-                <NumberInput value={room.length} onChange={(v: number) => updateSimpleField('length', v)} className="w-full" step={0.1} />
+                <NumberInput value={room.length} onChange={(v: number) => handleUpdateSimpleField('length', v)} className="w-full" step={0.1} />
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
-                <NumberInput value={room.width} onChange={(v: number) => updateSimpleField('width', v)} className="w-full" step={0.1} />
+                <NumberInput value={room.width} onChange={(v: number) => handleUpdateSimpleField('width', v)} className="w-full" step={0.1} />
               </div>
             </>
           )}
@@ -942,7 +900,7 @@ export function RoomEditor({
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="text-sm font-medium text-gray-700">Окна</h4>
-                <button onClick={addWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
+                <button onClick={handleAddWindow} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
               </div>
               {(room.windows || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет окон</div>
@@ -952,10 +910,10 @@ export function RoomEditor({
                     <div key={w.id} className="p-2 bg-white rounded border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
-                        <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <NumberInput value={w.width} onChange={(v: number) => handleUpdateWindow(w.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                         <span className="text-gray-400 text-xs">×</span>
-                        <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                        <button onClick={() => removeWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
+                        <NumberInput value={w.height} onChange={(v: number) => handleUpdateWindow(w.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <button onClick={() => handleRemoveWindow(w.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -963,7 +921,7 @@ export function RoomEditor({
                         type="text"
                         placeholder="Комментарий (например, балконный блок)"
                         value={w.comment || ''}
-                        onChange={(e) => updateWindow(w.id, 'comment', e.target.value)}
+                        onChange={(e) => handleUpdateWindow(w.id, 'comment', e.target.value)}
                         className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                       />
                     </div>
@@ -975,7 +933,7 @@ export function RoomEditor({
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="text-sm font-medium text-gray-700">Двери/Проход</h4>
-                <button onClick={addDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
+                <button onClick={handleAddDoor} className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
               </div>
               {(room.doors || []).length === 0 ? (
                 <div className="text-xs text-gray-400 italic">Нет дверей/проходов</div>
@@ -985,10 +943,10 @@ export function RoomEditor({
                     <div key={d.id} className="p-2 bg-white rounded border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
-                        <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <NumberInput value={d.width} onChange={(v: number) => handleUpdateDoor(d.id, 'width', v)} className="w-20 text-xs py-1" step={0.1} />
                         <span className="text-gray-400 text-xs">×</span>
-                        <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
-                        <button onClick={() => removeDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
+                        <NumberInput value={d.height} onChange={(v: number) => handleUpdateDoor(d.id, 'height', v)} className="w-20 text-xs py-1" step={0.1} />
+                        <button onClick={() => handleRemoveDoor(d.id)} className="p-0.5 text-gray-300 hover:text-red-500 ml-auto cursor-pointer">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -996,7 +954,7 @@ export function RoomEditor({
                         type="text"
                         placeholder="Комментарий (например, входная дверь)"
                         value={d.comment || ''}
-                        onChange={(e) => updateDoor(d.id, 'comment', e.target.value)}
+                        onChange={(e) => handleUpdateDoor(d.id, 'comment', e.target.value)}
                         className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                       />
                     </div>
@@ -1668,7 +1626,7 @@ export function RoomEditor({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Окна</h3>
-              <button onClick={addWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
+              <button onClick={handleAddWindow} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
             </div>
             {(room.windows || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет окон</div>
@@ -1678,10 +1636,10 @@ export function RoomEditor({
                   <div key={w.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>
-                      <NumberInput value={w.width} onChange={(v: number) => updateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
+                      <NumberInput value={w.width} onChange={(v: number) => handleUpdateWindow(w.id, 'width', v)} className="w-20" step={0.1} />
                       <span className="text-gray-400">×</span>
-                      <NumberInput value={w.height} onChange={(v: number) => updateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
-                      <button onClick={() => removeWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
+                      <NumberInput value={w.height} onChange={(v: number) => handleUpdateWindow(w.id, 'height', v)} className="w-20" step={0.1} />
+                      <button onClick={() => handleRemoveWindow(w.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1689,7 +1647,7 @@ export function RoomEditor({
                       type="text"
                       placeholder="Комментарий (например, балконный блок)"
                       value={w.comment || ''}
-                      onChange={(e) => updateWindow(w.id, 'comment', e.target.value)}
+                      onChange={(e) => handleUpdateWindow(w.id, 'comment', e.target.value)}
                       className="w-full text-sm px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                     />
                   </div>
@@ -1701,7 +1659,7 @@ export function RoomEditor({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Двери/Проход</h3>
-              <button onClick={addDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
+              <button onClick={handleAddDoor} className="text-indigo-600 text-sm font-medium hover:text-indigo-700 cursor-pointer">+ Добавить</button>
             </div>
             {(room.doors || []).length === 0 ? (
               <div className="text-sm text-gray-400 italic">Нет дверей/проходов</div>
@@ -1711,10 +1669,10 @@ export function RoomEditor({
                   <div key={d.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm text-gray-500 w-6 font-medium">{i + 1}.</span>
-                      <NumberInput value={d.width} onChange={(v: number) => updateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
+                      <NumberInput value={d.width} onChange={(v: number) => handleUpdateDoor(d.id, 'width', v)} className="w-20" step={0.1} />
                       <span className="text-gray-400">×</span>
-                      <NumberInput value={d.height} onChange={(v: number) => updateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
-                      <button onClick={() => removeDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
+                      <NumberInput value={d.height} onChange={(v: number) => handleUpdateDoor(d.id, 'height', v)} className="w-20" step={0.1} />
+                      <button onClick={() => handleRemoveDoor(d.id)} className="p-1 text-gray-400 hover:text-red-500 ml-auto cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1722,7 +1680,7 @@ export function RoomEditor({
                       type="text"
                       placeholder="Комментарий (например, входная дверь)"
                       value={d.comment || ''}
-                      onChange={(e) => updateDoor(d.id, 'comment', e.target.value)}
+                      onChange={(e) => handleUpdateDoor(d.id, 'comment', e.target.value)}
                       className="w-full text-sm px-2 py-1.5 bg-white border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
                     />
                   </div>
