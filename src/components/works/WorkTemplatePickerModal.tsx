@@ -3,6 +3,7 @@ import { X, Search, Trash2 } from 'lucide-react';
 import type { WorkTemplate, WorkTemplateCategory } from '../../types/workTemplate';
 import { CATEGORY_LABELS as BASE_CATEGORY_LABELS } from '../../types/workTemplate';
 import type { WorkData } from '../../types';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 type Props = {
   isOpen: boolean;
@@ -31,6 +32,11 @@ export function WorkTemplatePickerModal({
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<WorkTemplateCategory | 'all'>('all');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; templateId: string; templateName: string }>({
+    isOpen: false,
+    templateId: '',
+    templateName: '',
+  });
 
   // Reset search when modal opens
   useEffect(() => {
@@ -69,18 +75,30 @@ export function WorkTemplatePickerModal({
     onClose();
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, template: WorkTemplate) => {
     e.stopPropagation();
-    if (confirm('Удалить этот шаблон?')) {
-      onDeleteTemplate(id);
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      templateId: template.id,
+      templateName: template.name,
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    onDeleteTemplate(deleteConfirm.templateId);
+    setDeleteConfirm({ isOpen: false, templateId: '', templateName: '' });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, templateId: '', templateName: '' });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+    <>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-800">Шаблоны работ</h2>
@@ -157,7 +175,7 @@ export function WorkTemplatePickerModal({
                     </div>
                   </div>
                   <button
-                    onClick={(e) => handleDelete(e, template.id)}
+                    onClick={(e) => handleDeleteClick(e, template)}
                     className="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                     title="Удалить шаблон"
                   >
@@ -175,7 +193,19 @@ export function WorkTemplatePickerModal({
             Всего шаблонов: {templates.length}
           </p>
         </div>
+        </div>
       </div>
-    </div>
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Удаление шаблона"
+        message={`Вы уверены, что хотите удалить шаблон "${deleteConfirm.templateName}"?`}
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        variant="danger"
+      />
+    </>
   );
 }

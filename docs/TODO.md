@@ -79,9 +79,9 @@
 ### Мелкие улучшения (Nitpicks)
 
 - [ ] **Импорт типов из `App.tsx`** — обновить импорты в `WorkList.tsx`, `WorkListItem.tsx`, `RoomList.tsx`, `RoomListItem.tsx`
-- [ ] **`confirm()` в модалке удаления** — заменить на кастомный UI при масштабировании
-- [ ] **Отсутствие анимации модального окна** — добавить transition через CSS
-- [ ] **`sessionStorage` для `isGeometryCollapsed`** — рассмотреть React state
+- [x] **`confirm()` в модалке удаления** — ✅ Заменён на `ConfirmDialog` с анимацией
+- [x] **Отсутствие анимации модального окна** — ✅ Добавлены CSS анимации `fade-in`, `scale-in`
+- [ ] **`sessionStorage` для `isGeometryCollapsed`** — рассмотреть React state (не критично)
 
 ---
 

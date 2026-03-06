@@ -56,9 +56,9 @@
 
 1. **Дублирование логики обновления** — создать generic-хелпер `updateRoomField`
 2. **Импорт типов из `App.tsx`** — обновить импорты в компонентах
-3. **`confirm()` в модалке удаления** — заменить на кастомный UI
-4. **Анимация модального окна** — добавить transition через CSS
-5. **`sessionStorage` для `isGeometryCollapsed`** — рассмотреть React state
+3. ~~**`confirm()` в модалке удаления**~~ — ✅ Заменён на `ConfirmDialog`
+4. ~~**Анимация модального окна**~~ — ✅ Добавлены CSS анимации `fade-in`, `scale-in`
+5. **`sessionStorage` для `isGeometryCollapsed`** — рассмотреть React state (не критично)
 
 ### Фаза 5: Backend + AI (будущее)
 
@@ -99,6 +99,7 @@ src/
 │   │   ├── WorkTemplatePickerModal.tsx
 │   │   └── WorkTemplateSaveButton.tsx
 │   └── ui/
+│       ├── ConfirmDialog.tsx
 │       ├── ErrorBoundary.tsx
 │       └── NumberInput.tsx
 ├── contexts/
