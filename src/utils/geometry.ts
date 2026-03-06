@@ -3,7 +3,7 @@ import type { RoomData, RoomSubSection, RoomMetrics } from '../types';
 /**
  * Calculate metrics for a room subsection based on its shape
  */
-function calculateSectionMetrics(section: RoomSubSection): { area: number; perimeter: number } {
+export function calculateSectionMetrics(section: RoomSubSection): { area: number; perimeter: number } {
   const shape = section.shape || 'rectangle'; // Default to rectangle for backward compatibility
 
   switch (shape) {
