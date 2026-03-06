@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronUp, AlertCircle } from 'lucide-react';
-import type { RoomData, Opening, WallSection, RoomSubSection } from '../../types';
+import type { RoomData, Opening, WallSection, RoomSubSection, GeometryMode } from '../../types';
+import { NumberInput } from '../ui/NumberInput';
 import { ModeSelector } from './ModeSelector';
 import { SimpleGeometry } from './SimpleGeometry';
 import { ExtendedGeometry } from './ExtendedGeometry';
@@ -234,8 +235,6 @@ export function GeometrySection({
             <SimpleGeometry
               room={room}
               isCollapsed={isGeometryCollapsed}
-              updateRoom={updateRoom}
-              updateSimpleField={updateSimpleField}
               addWindow={addWindow}
               removeWindow={removeWindow}
               updateWindow={updateWindow}
