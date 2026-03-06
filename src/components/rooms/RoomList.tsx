@@ -13,7 +13,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { RoomListItem } from './RoomListItem';
-import type { RoomData } from '../../App';
+import type { RoomData } from '../../types';
 
 type RoomListProps = {
   rooms: RoomData[];

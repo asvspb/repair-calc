@@ -27,6 +27,7 @@ function AppContent() {
     updateProjects,
     updateActiveProject,
     updateRoom,
+    updateRoomById,
     deleteRoom,
     addRoom,
     reorderRooms,
@@ -238,6 +239,7 @@ function AppContent() {
               <RoomEditor
                 room={activeProject.rooms.find(r => r.id === activeTab)!}
                 updateRoom={updateRoom}
+                updateRoomById={updateRoomById}
                 deleteRoom={() => handleDeleteRoom(activeTab)}
                 templates={templates}
                 onSaveTemplate={saveTemplate}

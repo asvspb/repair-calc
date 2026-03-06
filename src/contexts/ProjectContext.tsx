@@ -39,6 +39,7 @@ interface ProjectContextValue {
   updateProjects: (projects: ProjectData[]) => void;
   updateActiveProject: (project: ProjectData) => void;
   updateRoom: (room: RoomData) => void;
+  updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
   deleteRoom: (roomId: string) => void;
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
@@ -144,16 +145,46 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     StorageManager.saveActiveProject(id);
   }, []);
 
-  // Обновление комнаты в активном проекте
+  // Обновление комнаты в активном проекте (прямое значение)
   const updateRoom = useCallback((updatedRoom: RoomData) => {
-    if (!activeProject) return;
-    
-    const updatedProject = {
-      ...activeProject,
-      rooms: activeProject.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)
-    };
-    updateActiveProject(updatedProject);
-  }, [activeProject, updateActiveProject]);
+    setProjects(prevProjects => {
+      const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
+      if (!prevActiveProject) {
+        return prevProjects;
+      }
+
+      const updatedProject = {
+        ...prevActiveProject,
+        rooms: prevActiveProject.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)
+      };
+
+      const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
+      scheduleSave(newProjects);
+      return newProjects;
+    });
+  }, [activeProjectId, scheduleSave]);
+
+  // Обновление комнаты по ID с функцией обновления (для корректной работы при быстрых изменениях)
+  const updateRoomById = useCallback((roomId: string, updater: (prev: RoomData) => RoomData) => {
+    setProjects(prevProjects => {
+      const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
+      if (!prevActiveProject) return prevProjects;
+      
+      const prevRoom = prevActiveProject.rooms.find(r => r.id === roomId);
+      if (!prevRoom) return prevProjects;
+      
+      const updatedRoom = updater(prevRoom);
+      
+      const updatedProject = {
+        ...prevActiveProject,
+        rooms: prevActiveProject.rooms.map(r => r.id === roomId ? updatedRoom : r)
+      };
+      
+      const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
+      scheduleSave(newProjects);
+      return newProjects;
+    });
+  }, [activeProjectId, scheduleSave]);
 
   // Удаление комнаты
   const deleteRoom = useCallback((roomId: string) => {
@@ -218,6 +249,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     updateProjects,
     updateActiveProject,
     updateRoom,
+    updateRoomById,
     deleteRoom,
     addRoom,
     reorderRooms,

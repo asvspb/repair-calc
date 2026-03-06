@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Check, X } from 'lucide-react';
-import type { WorkData } from '../../App';
+import type { WorkData } from '../../types';
 
 type Props = {
   work: WorkData;

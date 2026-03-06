@@ -49,6 +49,7 @@ const Parallelogram = ({ className }: { className?: string }) => (
 interface RoomEditorProps {
   room: RoomData;
   updateRoom: (r: RoomData) => void;
+  updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
   deleteRoom: () => void;
   templates: WorkTemplate[];
   onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
@@ -62,6 +63,7 @@ interface RoomEditorProps {
 export function RoomEditor({ 
   room, 
   updateRoom, 
+  updateRoomById,
   deleteRoom,
   templates,
   onSaveTemplate,
@@ -143,93 +145,93 @@ export function RoomEditor({
   };
 
   const handleWorkChange = (id: string, field: keyof WorkData, value: string | number | boolean) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => w.id === id ? { ...w, [field]: value } : w)
-    });
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => w.id === id ? { ...w, [field]: value } : w)
+    }));
   };
   
   // Обработчики материалов
   const handleMaterialChange = (workId: string, materialId: string, field: keyof Material, value: string | number) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           materials: (w.materials || []).map(m => m.id === materialId ? { ...m, [field]: value } : m)
         };
       })
-    });
+    }));
   };
   
   const addMaterial = (workId: string) => {
     const work = (room.works || []).find(w => w.id === workId);
     const newMaterial = createNewMaterial(work?.unit || 'м²');
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           materials: [...(w.materials || []), newMaterial]
         };
       })
-    });
+    }));
   };
   
   const removeMaterial = (workId: string, materialId: string) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           materials: (w.materials || []).filter(m => m.id !== materialId)
         };
       })
-    });
+    }));
   };
   
   // Обработчики инструментов
   const handleToolChange = (workId: string, toolId: string, field: keyof Tool, value: string | number | boolean) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           tools: (w.tools || []).map(t => t.id === toolId ? { ...t, [field]: value } : t)
         };
       })
-    });
+    }));
   };
   
   const addTool = (workId: string) => {
     const newTool = createNewTool();
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           tools: [...(w.tools || []), newTool]
         };
       })
-    });
+    }));
   };
   
   const removeTool = (workId: string, toolId: string) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).map(w => {
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).map(w => {
         if (w.id !== workId) return w;
         return {
           ...w,
           tools: (w.tools || []).filter(t => t.id !== toolId)
         };
       })
-    });
+    }));
   };
 
   const addCustomWork = () => {
@@ -246,24 +248,24 @@ export function RoomEditor({
       calculationType: 'floorArea',
       isCustom: true
     };
-    updateRoom({
-      ...room,
-      works: [...(room.works || []), newWork]
-    });
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: [...(prev.works || []), newWork]
+    }));
   };
 
   const removeWork = (id: string) => {
-    updateRoom({
-      ...room,
-      works: (room.works || []).filter(w => w.id !== id)
-    });
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      works: (prev.works || []).filter(w => w.id !== id)
+    }));
   };
 
   const reorderWorks = (newWorks: WorkData[]) => {
-    updateRoom({
-      ...room,
+    updateRoomById(room.id, prev => ({
+      ...prev,
       works: newWorks
-    });
+    }));
   };
 
   // Template handlers (v2: with workVolume for material scaling)
@@ -321,6 +323,7 @@ export function RoomEditor({
   };
 
   // Extended mode: SubSections - update both main fields and mode-specific storage
+  // Main subSections array is the single source of truth, extendedModeData is just a mirror
   const addSubSection = () => {
     const newSubSection: RoomSubSection = {
       id: Math.random().toString(36).substring(2, 11),
@@ -331,173 +334,160 @@ export function RoomEditor({
       windows: [],
       doors: []
     };
-    const updatedRoom = { ...room, subSections: [...room.subSections, newSubSection] };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: [...(room.extendedModeData?.subSections || room.subSections), newSubSection]
-      };
-    }
-    updateRoom(updatedRoom);
+    
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = [...prevRoom.subSections, newSubSection];
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const removeSubSection = (id: string) => {
-    const updatedRoom = { ...room, subSections: room.subSections.filter(s => s.id !== id) };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).filter(s => s.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.filter(s => s.id !== id);
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const updateSubSection = (id: string, field: keyof RoomSubSection, val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[]) => {
-    const updatedRoom = { ...room, subSections: room.subSections.map(s => s.id === id ? { ...s, [field]: val } : s) };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => s.id === id ? { ...s, [field]: val } : s)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => s.id === id ? { ...s, [field]: val } : s);
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const updateSubSectionWindow = (subSectionId: string, windowId: string, field: keyof Opening, val: number | string) => {
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return {
           ...s,
           windows: s.windows.map(w => w.id === windowId ? { ...w, [field]: val } : w)
         };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return {
-            ...s,
-            windows: (s.windows || []).map(w => w.id === windowId ? { ...w, [field]: val } : w)
-          };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const addSubSectionWindow = (subSectionId: string) => {
     const newWindow = { id: Math.random().toString(), width: 1.5, height: 1.5, comment: '' };
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return { ...s, windows: [...(s.windows || []), newWindow] };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return { ...s, windows: [...(s.windows || []), newWindow] };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const removeSubSectionWindow = (subSectionId: string, windowId: string) => {
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return { ...s, windows: (s.windows || []).filter(w => w.id !== windowId) };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return { ...s, windows: (s.windows || []).filter(w => w.id !== windowId) };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const updateSubSectionDoor = (subSectionId: string, doorId: string, field: keyof Opening, val: number | string) => {
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return {
           ...s,
           doors: s.doors.map(d => d.id === doorId ? { ...d, [field]: val } : d)
         };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return {
-            ...s,
-            doors: (s.doors || []).map(d => d.id === doorId ? { ...d, [field]: val } : d)
-          };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const addSubSectionDoor = (subSectionId: string) => {
     const newDoor = { id: Math.random().toString(), width: 0.9, height: 2.0, comment: '' };
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return { ...s, doors: [...(s.doors || []), newDoor] };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return { ...s, doors: [...(s.doors || []), newDoor] };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   const removeSubSectionDoor = (subSectionId: string, doorId: string) => {
-    const updatedRoom = {
-      ...room,
-      subSections: room.subSections.map(s => {
+    updateRoomById(room.id, prevRoom => {
+      const updatedSubSections = prevRoom.subSections.map(s => {
         if (s.id !== subSectionId) return s;
         return { ...s, doors: (s.doors || []).filter(d => d.id !== doorId) };
-      })
-    };
-    if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        ...(room.extendedModeData || { subSections: [...room.subSections] }),
-        subSections: (room.extendedModeData?.subSections || room.subSections).map(s => {
-          if (s.id !== subSectionId) return s;
-          return { ...s, doors: (s.doors || []).filter(d => d.id !== doorId) };
-        })
-      };
-    }
-    updateRoom(updatedRoom);
+      });
+      const updatedRoom: RoomData = { ...prevRoom, subSections: updatedSubSections };
+      if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          ...prevRoom.extendedModeData,
+          subSections: updatedSubSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   // Advanced geometry: Segments - update both main fields and mode-specific storage
+  // Main segments array is the single source of truth, advancedModeData is just a mirror
   const addSegment = () => {
     const newSegment: RoomSegment = {
       id: Math.random().toString(36).substring(2, 11),
@@ -506,34 +496,40 @@ export function RoomEditor({
       width: 0.5,
       operation: 'subtract'
     };
-    const updatedRoom = { ...room, segments: [...room.segments, newSegment] };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        segments: [...(room.advancedModeData?.segments || room.segments), newSegment]
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, segments: [...prevRoom.segments, newSegment] };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          segments: updatedRoom.segments
+        };
+      }
+      return updatedRoom;
+    });
   };
   const removeSegment = (id: string) => {
-    const updatedRoom = { ...room, segments: room.segments.filter(s => s.id !== id) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        segments: (room.advancedModeData?.segments || room.segments).filter(s => s.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, segments: prevRoom.segments.filter(s => s.id !== id) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          segments: updatedRoom.segments
+        };
+      }
+      return updatedRoom;
+    });
   };
   const updateSegment = (id: string, field: keyof RoomSegment, val: string | number) => {
-    const updatedRoom = { ...room, segments: room.segments.map(s => s.id === id ? { ...s, [field]: val } : s) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        segments: (room.advancedModeData?.segments || room.segments).map(s => s.id === id ? { ...s, [field]: val } : s)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, segments: prevRoom.segments.map(s => s.id === id ? { ...s, [field]: val } : s) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          segments: updatedRoom.segments
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   // Advanced geometry: Obstacles
@@ -546,34 +542,40 @@ export function RoomEditor({
       perimeter: 2,
       operation: 'subtract'
     };
-    const updatedRoom = { ...room, obstacles: [...room.obstacles, newObstacle] };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        obstacles: [...(room.advancedModeData?.obstacles || room.obstacles), newObstacle]
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, obstacles: [...prevRoom.obstacles, newObstacle] };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          obstacles: updatedRoom.obstacles
+        };
+      }
+      return updatedRoom;
+    });
   };
   const removeObstacle = (id: string) => {
-    const updatedRoom = { ...room, obstacles: room.obstacles.filter(o => o.id !== id) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        obstacles: (room.advancedModeData?.obstacles || room.obstacles).filter(o => o.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, obstacles: prevRoom.obstacles.filter(o => o.id !== id) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          obstacles: updatedRoom.obstacles
+        };
+      }
+      return updatedRoom;
+    });
   };
   const updateObstacle = (id: string, field: keyof Obstacle, val: string | number) => {
-    const updatedRoom = { ...room, obstacles: room.obstacles.map(o => o.id === id ? { ...o, [field]: val } : o) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        obstacles: (room.advancedModeData?.obstacles || room.obstacles).map(o => o.id === id ? { ...o, [field]: val } : o)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, obstacles: prevRoom.obstacles.map(o => o.id === id ? { ...o, [field]: val } : o) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          obstacles: updatedRoom.obstacles
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   // Advanced geometry: Wall sections
@@ -584,34 +586,40 @@ export function RoomEditor({
       length: 1,
       height: 3
     };
-    const updatedRoom = { ...room, wallSections: [...room.wallSections, newSection] };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        wallSections: [...(room.advancedModeData?.wallSections || room.wallSections), newSection]
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, wallSections: [...prevRoom.wallSections, newSection] };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          wallSections: updatedRoom.wallSections
+        };
+      }
+      return updatedRoom;
+    });
   };
   const removeWallSection = (id: string) => {
-    const updatedRoom = { ...room, wallSections: room.wallSections.filter(ws => ws.id !== id) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        wallSections: (room.advancedModeData?.wallSections || room.wallSections).filter(ws => ws.id !== id)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, wallSections: prevRoom.wallSections.filter(ws => ws.id !== id) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          wallSections: updatedRoom.wallSections
+        };
+      }
+      return updatedRoom;
+    });
   };
   const updateWallSection = (id: string, field: keyof WallSection, val: string | number) => {
-    const updatedRoom = { ...room, wallSections: room.wallSections.map(ws => ws.id === id ? { ...ws, [field]: val } : ws) };
-    if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        ...(room.advancedModeData || { segments: [...room.segments], obstacles: [...room.obstacles], wallSections: [...room.wallSections] }),
-        wallSections: (room.advancedModeData?.wallSections || room.wallSections).map(ws => ws.id === id ? { ...ws, [field]: val } : ws)
-      };
-    }
-    updateRoom(updatedRoom);
+    updateRoomById(room.id, prevRoom => {
+      const updatedRoom: RoomData = { ...prevRoom, wallSections: prevRoom.wallSections.map(ws => ws.id === id ? { ...ws, [field]: val } : ws) };
+      if (prevRoom.geometryMode === 'advanced') {
+        updatedRoom.advancedModeData = {
+          ...(prevRoom.advancedModeData || { segments: [...prevRoom.segments], obstacles: [...prevRoom.obstacles], wallSections: [...prevRoom.wallSections] }),
+          wallSections: updatedRoom.wallSections
+        };
+      }
+      return updatedRoom;
+    });
   };
 
   // Calculate advanced metrics
@@ -1739,18 +1747,21 @@ export function RoomEditor({
                       onChange={e => {
                         const val = e.target.value as CalculationType;
                         const newUnit = val === 'floorArea' || val === 'netWallArea' ? 'м²' : val === 'skirtingLength' ? 'пог. м' : 'шт';
-                        const updatedWork: WorkData = {
-                          ...work,
-                          calculationType: val,
-                          unit: newUnit,
-                        };
-                        if (val !== 'customCount') {
-                          delete updatedWork.manualQty;
-                        }
-                        updateRoom({
-                          ...room,
-                          works: (room.works || []).map(w => w.id === work.id ? updatedWork : w)
-                        });
+                        updateRoomById(room.id, prev => ({
+                          ...prev,
+                          works: (prev.works || []).map(w => {
+                            if (w.id !== work.id) return w;
+                            const updatedWork: WorkData = {
+                              ...w,
+                              calculationType: val,
+                              unit: newUnit,
+                            };
+                            if (val !== 'customCount') {
+                              delete updatedWork.manualQty;
+                            }
+                            return updatedWork;
+                          })
+                        }));
                       }}
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                     >

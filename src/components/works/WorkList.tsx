@@ -13,7 +13,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { WorkListItem } from './WorkListItem';
-import type { WorkData } from '../../App';
+import type { WorkData } from '../../types';
 
 type WorkListProps = {
   works: WorkData[];
