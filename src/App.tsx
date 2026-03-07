@@ -123,7 +123,7 @@ function AppContent() {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
         <div className="border-b border-gray-100 flex items-center justify-center bg-white">
-          <img src="/logo.svg" alt="Мой ремонт" className="h-34 w-auto" />
+          <img src="/logo.svg" alt="Мой ремонт" className="h-23 w-auto" />
         </div>
 
         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
@@ -214,7 +214,7 @@ function AppContent() {
         </header>
 
         {/* Desktop header with backup manager */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28.5px] items-center justify-end">
+        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-end">
           <div className="flex items-center gap-4">
             {lastSaved && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
