@@ -203,7 +203,7 @@ function AppContent() {
         </header>
 
         {/* Desktop header with backup manager */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 p-4 items-center justify-end">
+        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28.5px] items-center justify-end">
           <div className="flex items-center gap-4">
             {lastSaved && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
