@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, Wrench, Package, ClipboardList, X, Plus } from 'lucide-react';
+import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2 } from 'lucide-react';
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
 import { NumberInput } from './ui/NumberInput';
@@ -290,7 +290,7 @@ export function RoomEditor({
           className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
           title="Удалить комнату"
         >
-          <X className="w-5 h-5" />
+          <Trash2 className="w-5 h-5" />
         </button>
       </div>
 
