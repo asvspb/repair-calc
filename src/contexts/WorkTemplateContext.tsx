@@ -4,13 +4,14 @@ import type { RoomMetrics } from '../types';
 import type { WorkData } from '../types';
 import { TemplateStorage } from '../utils/templateStorage';
 import { migrateWorkData, calculateWorkQuantity } from '../utils/costs';
+import type { SaveResult } from '../hooks/useWorkTemplates';
 
 interface WorkTemplateContextValue {
   templates: WorkTemplate[];
   isLoading: boolean;
   
   // Actions
-  saveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => { success: boolean; error?: string };
+  saveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
   loadTemplate: (template: WorkTemplate, metrics?: RoomMetrics) => WorkData;
   deleteTemplate: (id: string) => void;
   importTemplates: (templates: WorkTemplate[]) => void;
@@ -34,7 +35,7 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
   }, []);
 
   // Сохранение шаблона
-  const saveTemplate = useCallback((work: WorkData, forceReplace: boolean, workVolume?: number): { success: boolean; error?: string } => {
+  const saveTemplate = useCallback((work: WorkData, forceReplace: boolean, workVolume?: number): SaveResult => {
     const migratedWork = migrateWorkData(work);
     
     // Масштабируем количества материалов если передан объём
@@ -65,7 +66,7 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
     const existingIndex = templates.findIndex(t => t.id === template.id);
     
     if (existingIndex >= 0 && !forceReplace) {
-      return { success: false, error: 'Шаблон с таким ID уже существует' };
+      return { success: false, error: 'Шаблон с таким ID уже существует', needsConfirm: true };
     }
 
     let newTemplates: WorkTemplate[];

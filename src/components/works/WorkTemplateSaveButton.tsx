@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Save, Check, X } from 'lucide-react';
 import type { WorkData } from '../../types';
+import type { SaveResult } from '../../hooks/useWorkTemplates';
 
 type Props = {
   work: WorkData;
-  onSave: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
+  onSave: (work: WorkData, forceReplace: boolean) => SaveResult;
   className?: string;
 };
 

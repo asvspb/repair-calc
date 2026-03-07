@@ -120,7 +120,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* Logo */}
+        <div className="border-b border-gray-100 flex items-center justify-center bg-white">
+          <img src="/logo.svg" alt="Мой ремонт" className="h-34 w-auto" />
+        </div>
+
         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex justify-between items-center mb-2">
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
@@ -143,31 +148,37 @@ function AppContent() {
           </select>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
-          <button
-            onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
-            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium">Общая смета</span>
-          </button>
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Статическая часть - Обзор */}
+          <div className="py-4 shrink-0">
+            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
+            <button
+              onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="font-medium">Общая смета</span>
+            </button>
+          </div>
 
-          <div className="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-          {activeProject && (
-            <RoomList
-              rooms={activeProject.rooms}
-              activeTab={activeTab}
-              onRoomClick={(roomId) => {
-                setActiveTab(roomId);
-                setIsMobileMenuOpen(false);
-              }}
-              onReorderRooms={reorderRooms}
-            />
-          )}
+          {/* Прокручиваемая часть - Комнаты */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
+            {activeProject && (
+              <RoomList
+                rooms={activeProject.rooms}
+                activeTab={activeTab}
+                onRoomClick={(roomId) => {
+                  setActiveTab(roomId);
+                  setIsMobileMenuOpen(false);
+                }}
+                onReorderRooms={reorderRooms}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="p-4 border-t border-gray-100 space-y-3">
+        <div className="p-4 border-t border-gray-100 space-y-3 bg-white shrink-0">
           <button
             onClick={handleAddRoom}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
