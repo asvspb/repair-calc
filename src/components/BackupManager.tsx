@@ -119,7 +119,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
         title="Управление данными"
       >
         <Database className="w-4 h-4" />

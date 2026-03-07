@@ -79,7 +79,7 @@ export const SubSectionItem = React.memo(function SubSectionItem({
         />
         <button
           onClick={() => onRemove(subSection.id)}
-          className="p-1 text-gray-400 hover:text-red-500"
+          className="p-1 text-gray-400 hover:text-red-500 cursor-pointer"
         >
           <Trash2 className="w-4 h-4" />
         </button>
