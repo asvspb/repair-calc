@@ -1,20 +1,15 @@
 import React, { memo } from 'react';
-import { Trash2 } from 'lucide-react';
 import type { ProjectData } from '../types';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts } from '../utils/costs';
 
 interface SummaryViewProps {
   project: ProjectData;
-  updateProject: (p: ProjectData) => void;
-  deleteProject: () => void;
   onRoomClick: (roomId: string) => void;
 }
 
 const SummaryViewInternal: React.FC<SummaryViewProps> = ({
   project,
-  updateProject,
-  deleteProject,
   onRoomClick,
 }) => {
   let totalFloorArea = 0;
@@ -39,16 +34,8 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <input
-          className="text-3xl font-light text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
-          value={project.name}
-          onChange={e => updateProject({...project, name: e.target.value})}
-          placeholder="Название объекта"
-        />
-        <button onClick={deleteProject} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 cursor-pointer" title="Удалить объект">
-          <Trash2 className="w-5 h-5" />
-        </button>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-2xl font-semibold">Общая смета</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

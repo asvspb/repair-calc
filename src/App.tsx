@@ -122,11 +122,11 @@ function AppContent() {
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="border-b border-gray-100 flex items-center justify-center bg-white">
-          <img src="/logo.svg" alt="Мой ремонт" className="h-23 w-auto" />
+        <div className="flex items-center justify-center bg-white p-4">
+          <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
         </div>
 
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="p-4 bg-white">
           <div className="flex justify-between items-center mb-2">
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
             <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
@@ -178,7 +178,7 @@ function AppContent() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-100 space-y-3 bg-white shrink-0">
+        <div className="p-4 space-y-3 bg-white shrink-0">
           <button
             onClick={handleAddRoom}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
@@ -214,8 +214,11 @@ function AppContent() {
         </header>
 
         {/* Desktop header with backup manager */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-end">
-          <div className="flex items-center gap-4">
+        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-center relative">
+          <div className="text-2xl font-bold text-gray-900 uppercase">
+            {activeProject?.name}
+          </div>
+          <div className="absolute right-4 flex items-center gap-4">
             {lastSaved && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <Save className="w-3 h-3" />
@@ -242,8 +245,6 @@ function AppContent() {
             {activeTab === 'summary' && activeProject ? (
               <SummaryView
                 project={activeProject}
-                updateProject={updateActiveProject}
-                deleteProject={handleDeleteActiveProject}
                 onRoomClick={(roomId) => setActiveTab(roomId)}
               />
             ) : activeProject?.rooms.find(r => r.id === activeTab) ? (
