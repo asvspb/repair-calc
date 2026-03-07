@@ -44,6 +44,15 @@
 
 ## 🚧 В работе / Следующие задачи
 
+### Фаза 2.1: Исправление критических багов (BUGFIX_EXTENDED_MODE_RESET) — ✅ ВЫПОЛНЕНО
+
+- [x] **Баг сброса данных в расширенном режиме (BUGFIX_EXTENDED_MODE_RESET.md)** — ✅ Исправлено 2026-03-07
+  - [x] Рефакторинг `handleGeometryModeChange` в `useGeometryState.ts` (functional update)
+  - [x] Защита от сохранения "нулевых" данных в `simpleModeData`
+  - [x] Рефакторинг всех хендлеров в `useGeometryState.ts` на functional updates (`updateRoomById`)
+  - [x] Исправление обновления высоты в `GeometrySection.tsx` (functional update)
+  - [x] Все существующие тесты проходят (175 тестов)
+
 ### Фаза 3: Улучшение архитектуры — ВЫПОЛНЕНО ✅
 
 - [x] **3.1** Создать интерфейс `IStorageProvider` для абстракции storage ✅

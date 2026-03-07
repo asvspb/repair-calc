@@ -99,145 +99,139 @@ export const useGeometryState = (
   const toggleExtendedGeometryCollapse = useCallback(() => setIsExtendedGeometryCollapsed(prev => !prev), []);
   const toggleSubSectionsExpand = useCallback(() => setSubSectionsExpanded(prev => !prev), []);
 
-  // Mode switching handler
+  // Mode switching handler - использует функциональное обновление для избежания stale closure
   const handleGeometryModeChange = useCallback((newMode: GeometryMode) => {
-    if (room.geometryMode === newMode) return;
+    updateRoomById(room.id, prevRoom => {
+      // Выход, если режим не изменился
+      if (prevRoom.geometryMode === newMode) return prevRoom;
 
-    let updatedRoom: RoomData = {
-      ...room,
-      geometryMode: newMode
-    };
+      let updatedRoom: RoomData = {
+        ...prevRoom,
+        geometryMode: newMode
+      };
 
-    // Save current mode data before switching (deep copy for nested arrays)
-    if (room.geometryMode === 'simple') {
-      updatedRoom.simpleModeData = {
-        length: room.length,
-        width: room.width,
-        windows: room.windows.map(w => ({ ...w })),
-        doors: room.doors.map(d => ({ ...d }))
-      };
-    } else if (room.geometryMode === 'extended') {
-      updatedRoom.extendedModeData = {
-        subSections: room.subSections.map(s => ({
-          ...s,
-          windows: (s.windows || []).map(w => ({ ...w })),
-          doors: (s.doors || []).map(d => ({ ...d }))
-        }))
-      };
-    } else if (room.geometryMode === 'advanced') {
-      updatedRoom.advancedModeData = {
-        segments: room.segments.map(s => ({ ...s })),
-        obstacles: room.obstacles.map(o => ({ ...o })),
-        wallSections: room.wallSections.map(ws => ({ ...ws }))
-      };
-    }
-
-    // Restore target mode data if it exists, otherwise initialize with defaults
-    if (newMode === 'simple') {
-      if (updatedRoom.simpleModeData) {
-        updatedRoom = {
-          ...updatedRoom,
-          length: updatedRoom.simpleModeData.length,
-          width: updatedRoom.simpleModeData.width,
-          windows: updatedRoom.simpleModeData.windows.map(w => ({ ...w })),
-          doors: updatedRoom.simpleModeData.doors.map(d => ({ ...d }))
-        };
-      } else {
-        updatedRoom = {
-          ...updatedRoom,
-          length: 0,
-          width: 0,
-          windows: [],
-          doors: []
-        };
-        updatedRoom.simpleModeData = {
-          length: 0,
-          width: 0,
-          windows: [],
-          doors: []
-        };
-      }
-    } else if (newMode === 'extended') {
-      if (updatedRoom.extendedModeData) {
-        updatedRoom = {
-          ...updatedRoom,
-          subSections: updatedRoom.extendedModeData.subSections.map(s => ({
+      // Сохранение данных текущего режима (только если есть данные или данных ещё нет)
+      if (prevRoom.geometryMode === 'simple') {
+        const hasSimpleData = prevRoom.length > 0 || prevRoom.width > 0 ||
+                             prevRoom.windows.length > 0 || prevRoom.doors.length > 0;
+        // Сохраняем только если есть данные ИЛИ simpleModeData ещё не был установлен
+        if (hasSimpleData || !prevRoom.simpleModeData) {
+          updatedRoom.simpleModeData = {
+            length: prevRoom.length,
+            width: prevRoom.width,
+            windows: prevRoom.windows.map(w => ({ ...w })),
+            doors: prevRoom.doors.map(d => ({ ...d }))
+          };
+        }
+      } else if (prevRoom.geometryMode === 'extended') {
+        updatedRoom.extendedModeData = {
+          subSections: prevRoom.subSections.map(s => ({
             ...s,
             windows: (s.windows || []).map(w => ({ ...w })),
             doors: (s.doors || []).map(d => ({ ...d }))
           }))
         };
-      } else {
-        updatedRoom = {
-          ...updatedRoom,
-          subSections: []
-        };
-        updatedRoom.extendedModeData = {
-          subSections: []
-        };
-      }
-    } else if (newMode === 'advanced') {
-      if (updatedRoom.advancedModeData) {
-        updatedRoom = {
-          ...updatedRoom,
-          segments: updatedRoom.advancedModeData.segments.map(s => ({ ...s })),
-          obstacles: updatedRoom.advancedModeData.obstacles.map(o => ({ ...o })),
-          wallSections: updatedRoom.advancedModeData.wallSections.map(ws => ({ ...ws }))
-        };
-      } else {
-        updatedRoom = {
-          ...updatedRoom,
-          segments: [],
-          obstacles: [],
-          wallSections: []
-        };
+      } else if (prevRoom.geometryMode === 'advanced') {
         updatedRoom.advancedModeData = {
-          segments: [],
-          obstacles: [],
-          wallSections: []
+          segments: prevRoom.segments.map(s => ({ ...s })),
+          obstacles: prevRoom.obstacles.map(o => ({ ...o })),
+          wallSections: prevRoom.wallSections.map(ws => ({ ...ws }))
         };
       }
-    }
 
-    updateRoom(updatedRoom);
-  }, [room, updateRoom]);
+      // Восстановление данных целевого режима
+      if (newMode === 'simple') {
+        if (updatedRoom.simpleModeData) {
+          updatedRoom = {
+            ...updatedRoom,
+            length: updatedRoom.simpleModeData.length,
+            width: updatedRoom.simpleModeData.width,
+            windows: updatedRoom.simpleModeData.windows.map(w => ({ ...w })),
+            doors: updatedRoom.simpleModeData.doors.map(d => ({ ...d }))
+          };
+        } else {
+          updatedRoom = {
+            ...updatedRoom,
+            length: 0,
+            width: 0,
+            windows: [],
+            doors: []
+          };
+        }
+      } else if (newMode === 'extended') {
+        if (updatedRoom.extendedModeData) {
+          updatedRoom = {
+            ...updatedRoom,
+            subSections: updatedRoom.extendedModeData.subSections.map(s => ({
+              ...s,
+              windows: (s.windows || []).map(w => ({ ...w })),
+              doors: (s.doors || []).map(d => ({ ...d }))
+            }))
+          };
+        } else {
+          updatedRoom = {
+            ...updatedRoom,
+            subSections: []
+          };
+        }
+      } else if (newMode === 'advanced') {
+        if (updatedRoom.advancedModeData) {
+          updatedRoom = {
+            ...updatedRoom,
+            segments: updatedRoom.advancedModeData.segments.map(s => ({ ...s })),
+            obstacles: updatedRoom.advancedModeData.obstacles.map(o => ({ ...o })),
+            wallSections: updatedRoom.advancedModeData.wallSections.map(ws => ({ ...ws }))
+          };
+        } else {
+          updatedRoom = {
+            ...updatedRoom,
+            segments: [],
+            obstacles: [],
+            wallSections: []
+          };
+        }
+      }
 
-  // Simple mode handlers
+      return updatedRoom;
+    });
+  }, [room.id, updateRoomById]);
+
+  // Simple mode handlers - используют функциональное обновление для избежания stale closure
   const updateSimpleField = useCallback((field: 'length' | 'width', val: number) => {
-    updateRoom({ ...room, [field]: val });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({ ...prev, [field]: val }));
+  }, [room.id, updateRoomById]);
 
   const addWindow = useCallback(() => {
     const newWindow: Opening = { id: Math.random().toString(36).substring(2, 11), width: 1.5, height: 1.5, comment: '' };
-    updateRoom({ ...room, windows: [...(room.windows || []), newWindow] });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({ ...prev, windows: [...(prev.windows || []), newWindow] }));
+  }, [room.id, updateRoomById]);
 
   const removeWindow = useCallback((id: string) => {
-    updateRoom({ ...room, windows: (room.windows || []).filter(w => w.id !== id) });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({ ...prev, windows: (prev.windows || []).filter(w => w.id !== id) }));
+  }, [room.id, updateRoomById]);
 
   const updateWindow = useCallback((id: string, field: keyof Opening, val: number | string) => {
-    updateRoom({
-      ...room,
-      windows: (room.windows || []).map(w => w.id === id ? { ...w, [field]: val } : w)
-    });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      windows: (prev.windows || []).map(w => w.id === id ? { ...w, [field]: val } : w)
+    }));
+  }, [room.id, updateRoomById]);
 
   const addDoor = useCallback(() => {
     const newDoor: Opening = { id: Math.random().toString(36).substring(2, 11), width: 0.9, height: 2.0, comment: '' };
-    updateRoom({ ...room, doors: [...(room.doors || []), newDoor] });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({ ...prev, doors: [...(prev.doors || []), newDoor] }));
+  }, [room.id, updateRoomById]);
 
   const removeDoor = useCallback((id: string) => {
-    updateRoom({ ...room, doors: (room.doors || []).filter(d => d.id !== id) });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({ ...prev, doors: (prev.doors || []).filter(d => d.id !== id) }));
+  }, [room.id, updateRoomById]);
 
   const updateDoor = useCallback((id: string, field: keyof Opening, val: number | string) => {
-    updateRoom({
-      ...room,
-      doors: (room.doors || []).map(d => d.id === id ? { ...d, [field]: val } : d)
-    });
-  }, [room, updateRoom]);
+    updateRoomById(room.id, prev => ({
+      ...prev,
+      doors: (prev.doors || []).map(d => d.id === id ? { ...d, [field]: val } : d)
+    }));
+  }, [room.id, updateRoomById]);
 
   // Extended mode handlers
   const addSubSection = useCallback(() => {

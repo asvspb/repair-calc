@@ -17,13 +17,24 @@ const NumberInputInternal: React.FC<NumberInputProps> = ({
 }) => {
   const [str, setStr] = useState(value.toString());
   const isTypingRef = React.useRef(false);
+  const blurTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Синхронизируем с внешним value только если пользователь не вводит данные
-    if (!isTypingRef.current) {
+    // и не находится в периоде после blur (чтобы избежать race condition)
+    if (!isTypingRef.current && !blurTimeoutRef.current) {
       setStr(value.toString());
     }
   }, [value]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleFocus = () => {
     isTypingRef.current = true;
@@ -31,8 +42,16 @@ const NumberInputInternal: React.FC<NumberInputProps> = ({
 
   const handleBlur = () => {
     isTypingRef.current = false;
-    // При потере фокуса синхронизируем с value
-    setStr(value.toString());
+    // Устанавливаем таймаут, чтобы предотвратить race condition между onChange и useEffect
+    // useEffect не будет синхронизировать str с value в течение 100мс после blur
+    blurTimeoutRef.current = setTimeout(() => {
+      blurTimeoutRef.current = null;
+      // После таймаута синхронизируем если нужно
+      const parsed = parseFloat(str);
+      if (str === '' || isNaN(parsed)) {
+        setStr(value.toString());
+      }
+    }, 100);
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {

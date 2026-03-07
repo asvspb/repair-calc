@@ -223,7 +223,7 @@ export function GeometrySection({
               <label className="block text-sm text-gray-500 mb-1">Высота (м)</label>
               <NumberInput
                 value={room.height}
-                onChange={(v: number) => updateRoom({ ...room, height: v })}
+                onChange={(v: number) => updateRoomById(room.id, prev => ({ ...prev, height: v }))}
                 className="w-full"
                 step={0.1}
               />
