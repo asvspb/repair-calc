@@ -58,6 +58,9 @@ backups/          # Local backups created by scripts
 temp/             # Temporary files
 videos/           # Browser session recordings
 tests/            # Test files
+test-results/     # Test results from CI/CD pipelines
+logs/             # Application logs
+
 
 # Docker
 .dockerenv
