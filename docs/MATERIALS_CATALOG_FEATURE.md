@@ -1,9 +1,10 @@
 # Каталог работ и материалов — Спецификация фичи
 
 **Дата создания:** 2026-03-09  
-**Статус:** Планирование  
-**Версия:** 1.0  
+**Статус:** В реализации (Этапы 1-3 выполнены)  
+**Версия:** 1.1  
 **Автор:** Repair Calculator Team  
+**Обновлено:** 2026-03-09 (ночь)  
 
 ---
 
@@ -1178,30 +1179,30 @@ src/
 
 ## ✅ Чеклист реализации
 
-### Этап 1: Типы данных и каталог (2 дня)
-- [ ] Обновить `Material` в `src/types/index.ts`
-  - [ ] Добавить `coveragePerUnit`, `consumptionRate`, `layers`, `piecesPerUnit`, `wastePercent`
-  - [ ] Добавить `calculatedQty`, `autoCalcEnabled`
-- [ ] Обновить `WorkTemplate` в `src/types/workTemplate.ts`
-  - [ ] Добавить `description`, `difficulty`, `estimatedTimePerUnit`
-- [ ] Создать `src/data/workTemplatesCatalog.ts` с типовыми работами
-  - [ ] Пол: 4 работы
-  - [ ] Стены: 6 работ
-  - [ ] Потолок: 3 работы
-  - [ ] Проёмы: 3 работы
-  - [ ] Дополнительные: 3 работы
-- [ ] Добавить поле `city` в `ProjectData`
-- [ ] Написать unit-тесты для каталога
+### Этап 1: Типы данных и каталог — ✅ ВЫПОЛНЕНО
+- [x] Обновить `Material` в `src/types/index.ts`
+  - [x] Добавить `coveragePerUnit`, `consumptionRate`, `layers`, `piecesPerUnit`, `wastePercent`
+  - [x] Добавить `calculatedQty`, `autoCalcEnabled`
+- [x] Обновить `WorkTemplate` в `src/types/workTemplate.ts`
+  - [x] Добавить `description`, `difficulty`, `estimatedTimePerUnit`
+- [x] Создать `src/data/workTemplatesCatalog.ts` с типовыми работами
+  - [x] Пол: 4 работы (ламинат, плитка, линолеум, стяжка)
+  - [x] Стены: 6 работ (обои, покраска, штукатурка, шпаклёвка, плитка, панели)
+  - [x] Потолок: 3 работы (покраска, натяжной, ГКЛ)
+  - [x] Проёмы: 3 работы (дверь, окно, откосы)
+  - [x] Дополнительные: 3 работы (демонтаж, электрика, сантехника)
+- [ ] Добавить поле `city` в `ProjectData` (отложено)
+- [x] Написать unit-тесты для каталога
 
-### Этап 2: Утилиты расчёта (1 день)
-- [ ] Создать `src/utils/materialCalculations.ts`
-  - [ ] `calculateByCoverage()` — обои, ламинат, плитка
-  - [ ] `calculateByConsumption()` — краска, клей, затирка
-  - [ ] `calculateByPerimeter()` — плинтус, профили
-  - [ ] `calculateByCount()` — крепёж, точки
-  - [ ] `calculateVolumetric()` — стяжка, штукатурка
-- [ ] Написать unit-тесты для всех формул (минимум 20 тестов)
-- [ ] Обновить `src/utils/costs.ts` — интеграция новых формул
+### Этап 2: Утилиты расчёта — ✅ ВЫПОЛНЕНО
+- [x] Создать `src/utils/materialCalculations.ts`
+  - [x] `calculateByCoverage()` — обои, ламинат, плитка
+  - [x] `calculateByConsumption()` — краска, клей, затирка
+  - [x] `calculateByPerimeter()` — плинтус, профили
+  - [x] `calculateByCount()` — крепёж, точки
+  - [x] `calculateVolumetric()` — стяжка, штукатурка
+- [x] Написать unit-тесты для всех формул (40+ тестов)
+- [ ] Обновить `src/utils/costs.ts` — интеграция новых формул (отложено до UI)
 
 ### Этап 3: UI выбора из каталога (2 дня)
 - [ ] Создать `WorkCatalogPicker.tsx`

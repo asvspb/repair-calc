@@ -1,6 +1,6 @@
 # Прогресс проекта Repair Calculator
 
-**Последнее обновление:** 2026-03-09 (финал)
+**Последнее обновление:** 2026-03-09 (ночь)
 
 ---
 
@@ -74,7 +74,38 @@
 | ~~Импорт типов из `App.tsx`~~ | ✅ Выполнено |
 | ~~`sessionStorage` для `isGeometryCollapsed`~~ | ✅ Выполнено |
 
-### Фаза 6: Backend + AI (будущее)
+### Фаза 6: Каталог материалов и расчёт — В РАБОТЕ 🚧
+
+**Цель:** Создать систему каталога типовых работ с автоматическим расчётом количества материалов.
+
+| Этап | Задача | Статус |
+|------|--------|--------|
+| 1 | Типы данных (Material, WorkTemplateCatalog) | ✅ Готово |
+| 2 | Утилиты расчёта (materialCalculations.ts) | ✅ Готово |
+| 3 | Каталог работ (workTemplatesCatalog.ts, ~19 работ) | ✅ Готово |
+| 4 | UI выбора из каталога (WorkCatalogPicker.tsx) | ⏳ Ожидает |
+| 5 | UI расчёта материалов (MaterialCalculationCard) | ⏳ Ожидает |
+| 6 | Расширенная общая смета | ⏳ Ожидает |
+| 7 | Поиск цен через Gemini AI | ⏳ Ожидает |
+
+**Реализовано (коммит 506f5a1):**
+- `src/types/workTemplate.ts` — типы MaterialTemplate, WorkTemplateCatalog, ToolTemplate
+- `src/utils/materialCalculations.ts` — 5 формул расчёта материалов
+- `src/data/workTemplatesCatalog.ts` — каталог из 19 типовых работ
+- `tests/utils/materialCalculations.test.ts` — 40+ тестов расчёта
+
+**Формулы расчёта:**
+1. `calculateByCoverage` — обои, ламинат, плитка (по площади покрытия)
+2. `calculateByConsumption` — краска, клей, затирка (по расходу на м²)
+3. `calculateByPerimeter` — плинтус, профили (по периметру)
+4. `calculateByCount` — розетки, уголки (поштучно)
+5. `calculateVolumetric` — стяжка, штукатурка (объёмные)
+
+**Следующий шаг:** UI выбора работ из каталога (WorkCatalogPicker.tsx)
+
+---
+
+### Фаза 7: Backend + AI (будущее)
 
 | Задача | Оценка |
 |--------|--------|
