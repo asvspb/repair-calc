@@ -122,7 +122,7 @@ function AppContent() {
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="flex items-center justify-center bg-white p-4">
+        <div className="flex items-center justify-center bg-white p-4 border-b border-gray-200" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
           <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
         </div>
 
