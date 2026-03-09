@@ -8,8 +8,6 @@ import type {
   WallSection,
   GeometryMode,
 } from '../types';
-// Note: roomHelpers exports pure functions, but this hook uses functional updates via updateRoomById.
-// The helpers are available for use in other contexts where pure functions are needed.
 
 interface UseGeometryStateReturn {
   // UI State

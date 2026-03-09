@@ -80,7 +80,7 @@
 
 - [x] **Prop drilling** — ✅ Исправлено: React Context (`ProjectProvider`, `WorkTemplateProvider`)
 
-- [ ] **Дублирование логики обновления** — `updateSimpleField`, `updateWindow`, `updateSubSection` имеют одинаковую структуру. **Исправление:** создать generic-хелпер `updateRoomField`.
+- [x] **Дублирование логики обновления** — ✅ Исправлено: созданы generic-хелперы в `src/utils/roomHelpers.ts`. Хук `useGeometryState` использует чистые функции для обновления данных.
 
 ### Типизация
 
@@ -133,10 +133,10 @@
 
 ### Статистика тестов:
 - **Unit тесты (utils):** 151 тест (включая roomHelpers: 38)
-- **Unit тесты (hooks):** 33 теста
+- **Unit тесты (hooks):** 72 теста (включая useGeometryState: 39)
 - **Integration тесты:** 4 теста
 - **E2E тесты:** 16 тестов
-- **Итого:** 213 тестов ✅
+- **Итого:** 252 теста ✅
 
 ---
 
