@@ -50,6 +50,34 @@ function AppContent() {
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
+  // Track room header visibility - must be called before any early returns
+  useEffect(() => {
+    if (activeTab === 'summary' || !activeProject) {
+      setShowRoomNameInHeader(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowRoomNameInHeader(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '-100px 0px 0px 0px',
+        threshold: 0,
+      }
+    );
+
+    const roomHeaderElement = document.getElementById('room-header-title');
+    if (roomHeaderElement) {
+      observer.observe(roomHeaderElement);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeTab, activeProject]);
+
   // Show loading state
   if (isLoading) {
     return (
@@ -103,34 +131,6 @@ function AppContent() {
     setActiveTab(newRoom.id);
     setIsMobileMenuOpen(false);
   };
-
-  // Track room header visibility
-  useEffect(() => {
-    if (activeTab === 'summary' || !activeProject) {
-      setShowRoomNameInHeader(false);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowRoomNameInHeader(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        rootMargin: '-100px 0px 0px 0px',
-        threshold: 0,
-      }
-    );
-
-    const roomHeaderElement = document.getElementById('room-header-title');
-    if (roomHeaderElement) {
-      observer.observe(roomHeaderElement);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [activeTab, activeProject]);
 
   const addNewProject = () => {
     const newProject = createNewProject();
