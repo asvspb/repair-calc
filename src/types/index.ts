@@ -70,6 +70,18 @@ export type Material = {
   quantity: number;
   unit: string;
   pricePerUnit: number;
+
+  // Параметры для расчёта (опционально)
+  coveragePerUnit?: number;     // м² в упаковке/рулоне
+  consumptionRate?: number;      // расход на м² (л/м², кг/м², шт/м²)
+  layers?: number;               // количество слоёв (для краски)
+  piecesPerUnit?: number;        // штук в упаковке (саморезы)
+  wastePercent?: number;         // запас на подрезку %
+  packageSize?: number;          // размер упаковки (л, кг) для подбора
+
+  // Вычисляемые
+  calculatedQty?: number;        // рекомендованное количество
+  autoCalcEnabled?: boolean;     // использовать авторасчёт
 };
 
 export type Tool = {
@@ -146,6 +158,10 @@ export type ProjectData = {
   id: string;
   name: string;
   rooms: RoomData[];
+  // Дополнительно
+  city?: string;                // Город для поиска цен
+  useAiPricing?: boolean;       // Использовать ИИ для цен
+  lastAiPriceUpdate?: string;   // Дата последнего обновления цен через ИИ
 };
 
 // Room metrics (calculated)
