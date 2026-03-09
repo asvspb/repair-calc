@@ -279,7 +279,7 @@ export function RoomEditor({
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto">
       {/* Room header */}
-      <div className="group flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div id="room-header-title" className="group flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <input
           className="text-2xl font-semibold bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
           value={room.name}

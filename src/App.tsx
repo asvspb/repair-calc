@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Calculator, Menu, X, LayoutDashboard, Save } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
@@ -47,6 +47,8 @@ function AppContent() {
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
+  const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Show loading state
   if (isLoading) {
@@ -101,6 +103,34 @@ function AppContent() {
     setActiveTab(newRoom.id);
     setIsMobileMenuOpen(false);
   };
+
+  // Track room header visibility
+  useEffect(() => {
+    if (activeTab === 'summary' || !activeProject) {
+      setShowRoomNameInHeader(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowRoomNameInHeader(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '-100px 0px 0px 0px',
+        threshold: 0,
+      }
+    );
+
+    const roomHeaderElement = document.getElementById('room-header-title');
+    if (roomHeaderElement) {
+      observer.observe(roomHeaderElement);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeTab, activeProject]);
 
   const addNewProject = () => {
     const newProject = createNewProject();
@@ -217,6 +247,9 @@ function AppContent() {
         <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-center relative">
           <div className="text-2xl font-bold text-gray-900 uppercase">
             {activeProject?.name}
+            {activeTab !== 'summary' && showRoomNameInHeader && (
+              <span className="text-gray-400 font-normal"> / {activeProject.rooms.find(r => r.id === activeTab)?.name}</span>
+            )}
           </div>
           <div className="absolute right-4 flex items-center gap-4">
             {lastSaved && (
