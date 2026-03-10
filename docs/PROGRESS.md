@@ -83,16 +83,40 @@
 | 1 | Типы данных (Material, WorkTemplateCatalog) | ✅ Готово |
 | 2 | Утилиты расчёта (materialCalculations.ts) | ✅ Готово |
 | 3 | Каталог работ (workTemplatesCatalog.ts, ~19 работ) | ✅ Готово |
-| 4 | UI выбора из каталога (WorkCatalogPicker.tsx) | ⏳ Ожидает |
-| 5 | UI расчёта материалов (MaterialCalculationCard) | ⏳ Ожидает |
-| 6 | Расширенная общая смета | ⏳ Ожидает |
+| 4 | UI выбора из каталога (WorkCatalogPicker.tsx) | ✅ Готово (15 тестов) |
+| 5 | UI расчёта материалов (MaterialCalculationCard) | ✅ Готово (12 тестов) |
+| 6 | Расширенная общая смета | ✅ Готово |
 | 7 | Поиск цен через Gemini AI | ⏳ Ожидает |
 
-**Реализовано (коммит 506f5a1):**
+**Реализовано:**
+
+*Этапы 1-3 (коммит 506f5a1):*
 - `src/types/workTemplate.ts` — типы MaterialTemplate, WorkTemplateCatalog, ToolTemplate
 - `src/utils/materialCalculations.ts` — 5 формул расчёта материалов
 - `src/data/workTemplatesCatalog.ts` — каталог из 19 типовых работ
 - `tests/utils/materialCalculations.test.ts` — 40+ тестов расчёта
+
+*Этап 4 (WorkCatalogPicker):*
+- `src/components/works/WorkCatalogPicker.tsx` — модальное окно выбора из каталога
+- Фильтр по категориям, поиск по названию
+- Превью материалов и инструментов
+- Интеграция в RoomEditor
+- `tests/components/WorkCatalogPicker.test.tsx` — 15 тестов
+
+*Этап 5 (UI расчёта материалов):*
+- `src/hooks/useMaterialCalculation.ts` — хук для авто-расчёта
+- `src/components/works/MaterialCalculationCard.tsx` — универсальная карточка
+- `src/components/works/PaintMaterialCard.tsx` — карточка для краски (слои)
+- `src/components/works/TileMaterialCard.tsx` — карточка для плитки (размеры)
+- `tests/hooks/useMaterialCalculation.test.ts` — 12 тестов
+
+*Этап 6 (Расширенная общая смета):*
+- `src/components/summary/SummaryMaterials.tsx` — сводка по материалам
+- `src/components/summary/SummaryTools.tsx` — сводка по инструментам (аренда/покупка)
+- `src/components/summary/SummaryWorks.tsx` — сводка по работам с детализацией по комнатам
+- `src/components/summary/index.ts` — barrel export
+- Интеграция в `SummaryView.tsx`
+- 356 тестов (было 329)
 
 **Формулы расчёта:**
 1. `calculateByCoverage` — обои, ламинат, плитка (по площади покрытия)
@@ -101,7 +125,7 @@
 4. `calculateByCount` — розетки, уголки (поштучно)
 5. `calculateVolumetric` — стяжка, штукатурка (объёмные)
 
-**Следующий шаг:** UI выбора работ из каталога (WorkCatalogPicker.tsx)
+**Следующий шаг:** Расширенная общая смета (SummaryMaterials, SummaryTools, SummaryWorks)
 
 ---
 
