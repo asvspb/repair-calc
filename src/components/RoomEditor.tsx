@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2 } from 'lucide-react';
+import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen, Droplet, Grid3X3 } from 'lucide-react';
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
+import { WorkCatalogPicker } from './works/WorkCatalogPicker';
+import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard } from './works';
 import { NumberInput } from './ui/NumberInput';
 import type {
   Opening,
@@ -67,6 +69,9 @@ export function RoomEditor({
 
   // Works collapse state
   const [isWorksCollapsed, setIsWorksCollapsed] = useState(false);
+
+  // Catalog picker state
+  const [isCatalogPickerOpen, setIsCatalogPickerOpen] = useState(false);
 
   // Load saved collapse states on mount
   useEffect(() => {
@@ -812,6 +817,14 @@ export function RoomEditor({
             </button>
 
             <button
+              onClick={() => setIsCatalogPickerOpen(true)}
+              className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-medium hover:bg-emerald-100 hover:border-emerald-200 transition-all cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4" />
+              Из каталога работ
+            </button>
+
+            <button
               onClick={onOpenTemplatePicker}
               disabled={templates.length === 0}
               className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
@@ -827,6 +840,19 @@ export function RoomEditor({
           </>
         )}
       </div>
+
+      {/* Catalog Picker Modal */}
+      <WorkCatalogPicker
+        isOpen={isCatalogPickerOpen}
+        onClose={() => setIsCatalogPickerOpen(false)}
+        onSelect={(work) => {
+          updateRoom({
+            ...room,
+            works: [...(room.works || []), work],
+          });
+        }}
+        roomMetrics={metrics}
+      />
 
       {/* Template Picker Modal */}
       <WorkTemplatePickerModal

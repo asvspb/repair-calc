@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import type { ProjectData } from '../types';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts } from '../utils/costs';
+import { SummaryMaterials, SummaryTools, SummaryWorks } from './summary';
 
 interface SummaryViewProps {
   project: ProjectData;
@@ -92,6 +93,11 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Расширенная детализация: работы, материалы, инструменты */}
+      <SummaryWorks project={project} onRoomClick={onRoomClick} />
+      <SummaryMaterials project={project} />
+      <SummaryTools project={project} />
     </div>
   );
 };

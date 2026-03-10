@@ -2,3 +2,7 @@ export { WorkList } from './WorkList';
 export { WorkListItem } from './WorkListItem';
 export { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 export { WorkTemplatePickerModal } from './WorkTemplatePickerModal';
+export { WorkCatalogPicker, catalogToWorkData } from './WorkCatalogPicker';
+export { MaterialCalculationCard } from './MaterialCalculationCard';
+export { PaintMaterialCard } from './PaintMaterialCard';
+export { TileMaterialCard } from './TileMaterialCard';

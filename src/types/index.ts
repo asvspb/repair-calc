@@ -78,6 +78,8 @@ export type Material = {
   piecesPerUnit?: number;        // штук в упаковке (саморезы)
   wastePercent?: number;         // запас на подрезку %
   packageSize?: number;          // размер упаковки (л, кг) для подбора
+  isPerimeter?: boolean;         // расчёт по периметру
+  multiplier?: number;           // множитель для периметра/количества
 
   // Вычисляемые
   calculatedQty?: number;        // рекомендованное количество
