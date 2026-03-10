@@ -93,10 +93,10 @@ describe('catalogToWorkData', () => {
   it('should calculate materials by coverage correctly', () => {
     const workData = catalogToWorkData(mockWorkTemplate, mockMetrics);
 
-    // Ламинат: 20 м² / 2.0 м² в упак * 1.05 (5% запас) = 10.5 упак
+    // Ламинат: 20 м² / 2.0 м² в упак * 1.05 (5% запас) = 10.5 → Math.ceil = 11 упак
     const laminate = workData.materials.find((m) => m.name === 'Ламинат');
     expect(laminate).toBeDefined();
-    expect(laminate!.quantity).toBeCloseTo(10.5, 1);
+    expect(laminate!.quantity).toBe(11);
     expect(laminate!.unit).toBe('упак');
     expect(laminate!.pricePerUnit).toBe(1200);
   });
@@ -149,10 +149,10 @@ describe('catalogToWorkData', () => {
 
     const workData = catalogToWorkData(wallTemplate, mockMetrics);
 
-    // Обои: 50 м² / 5.3 * 1.10 = 10.38 рулонов
+    // Обои: 50 м² / 5.3 * 1.10 = 10.38 → Math.ceil = 11 рулонов
     const wallpaper = workData.materials.find((m) => m.name === 'Обои');
     expect(wallpaper).toBeDefined();
-    expect(wallpaper!.quantity).toBeCloseTo(10.38, 0);
+    expect(wallpaper!.quantity).toBe(11);
   });
 
   it('should handle consumption rate materials', () => {
@@ -178,10 +178,10 @@ describe('catalogToWorkData', () => {
 
     const workData = catalogToWorkData(paintTemplate, mockMetrics);
 
-    // Краска: 50 * 0.006 * 2 * 1.05 = 0.63 л
+    // Краска: 50 * 0.006 * 2 * 1.05 = 0.63 → Math.ceil = 1 л
     const paint = workData.materials.find((m) => m.name === 'Краска');
     expect(paint).toBeDefined();
-    expect(paint!.quantity).toBeCloseTo(0.63, 2);
+    expect(paint!.quantity).toBe(1);
   });
 
   it('should handle custom count calculation type', () => {

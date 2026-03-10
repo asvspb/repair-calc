@@ -91,7 +91,7 @@ describe('useMaterialCalculation', () => {
 
     expect(result.current.isCalculated).toBe(true);
     expect(result.current.canAutoCalculate).toBe(true);
-    // 50 м² / 5.3 м² * 1.10 = 10.38 рулонов
+    // 50 м² / 5.3 м² * 1.10 = 10.38 рулонов → Math.ceil = 11
     expect(result.current.recommendedQty).toBeCloseTo(11, 0);
   });
 
@@ -117,8 +117,8 @@ describe('useMaterialCalculation', () => {
     );
 
     expect(result.current.isCalculated).toBe(true);
-    // 20 м² * 0.006 * 2 * 1.05 = 0.252 л
-    expect(result.current.total).toBeCloseTo(0.26, 1);
+    // 20 м² * 0.006 * 2 * 1.05 = 0.252 л → Math.ceil = 1
+    expect(result.current.total).toBe(1);
   });
 
   it('should calculate perimeter material', () => {
@@ -193,7 +193,8 @@ describe('useMaterialCalculation', () => {
 
     expect(result.current.formula).toContain('20');
     expect(result.current.formula).toContain('2');
-    expect(result.current.formula).toContain('10.5');
+    // 20 / 2.0 * 1.05 = 10.5 → Math.ceil = 11
+    expect(result.current.formula).toContain('11');
   });
 
   it('should use floorArea for floorArea calculationType', () => {
@@ -240,8 +241,8 @@ describe('useMaterialCalculation', () => {
       })
     );
 
-    // 50 м² / 5.3 = 9.43 рулона (без запаса)
-    expect(result.current.total).toBeCloseTo(9.43, 1);
+    // 50 м² / 5.3 = 9.43 рулона (без запаса) → Math.ceil = 10
+    expect(result.current.total).toBe(10);
   });
 
   it('should handle customCount calculationType', () => {

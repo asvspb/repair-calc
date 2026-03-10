@@ -70,13 +70,15 @@ export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMe
       // Расчёт по площади покрытия (обои, ламинат, плитка)
       const area = template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
       const rawQty = area / mat.coveragePerUnit;
-      quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100) * 100) / 100;
+      // Округляем до целого числа в сторону увеличения
+      quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100));
     } else if (mat.consumptionRate) {
       // Расчёт по расходу на м² (краска, клей, затирка)
       const area = template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
       const layers = mat.layers || 1;
       const rawQty = area * mat.consumptionRate * layers;
-      quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100) * 100) / 100;
+      // Округляем до целого числа в сторону увеличения
+      quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100));
     } else if (mat.isPerimeter && mat.multiplier) {
       // Расчёт по периметру (плинтус, профили)
       const rawQty = perimeter * mat.multiplier;
@@ -84,7 +86,8 @@ export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMe
         // Если указана длина одной штуки
         quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100) / mat.packageSize);
       } else {
-        quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100) * 100) / 100;
+        // Округляем до целого числа в сторону увеличения
+        quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100));
       }
     } else if (mat.piecesPerUnit && mat.consumptionRate) {
       // Крепёж и т.п.

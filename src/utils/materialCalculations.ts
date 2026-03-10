@@ -52,13 +52,12 @@ export function calculateByCoverage(
   const rawQty = area / coveragePerUnit;
   const withWaste = rawQty * (1 + wastePercent / 100);
   
-  const total = roundUp 
-    ? Math.ceil(withWaste * 100) / 100 
-    : Math.round(withWaste * 100) / 100;
+  // Округляем до целого числа в сторону увеличения
+  const total = Math.ceil(withWaste);
 
   return {
     total,
-    displayQty: Math.ceil(total),
+    displayQty: total,
     displayUnit: 'упак',
     formula: `${area} м² ÷ ${coveragePerUnit} м² × ${(1 + wastePercent / 100).toFixed(2)} = ${total.toFixed(2)}`,
   };
@@ -93,19 +92,20 @@ export function calculateByConsumption(
 
   const rawQty = area * consumptionRate * layers;
   const withWaste = rawQty * (1 + wastePercent / 100);
-  const total = Math.ceil(withWaste * 100) / 100;
+  // Округляем до целого числа в сторону увеличения
+  const total = Math.ceil(withWaste);
   
   const packages = packageSize 
     ? Math.ceil(total / packageSize)
     : undefined;
 
   const layersText = layers > 1 ? ` × ${layers} слоёв` : '';
-  const formula = `${area} м² × ${consumptionRate}${layersText} × ${(1 + wastePercent / 100).toFixed(2)} = ${total.toFixed(2)}`;
+  const formula = `${area} м² × ${consumptionRate}${layersText} × ${(1 + wastePercent / 100).toFixed(2)} = ${total}`;
 
   return {
     total,
     packages,
-    displayQty: packages || Math.ceil(total),
+    displayQty: packages || total,
     displayUnit: packageSize ? 'упак' : 'ед',
     formula,
   };
@@ -135,10 +135,11 @@ export function calculateByPerimeter(
   const rawQty = perimeter * multiplier;
   const withWaste = rawQty * (1 + wastePercent / 100);
   
+  // Округляем до целого числа в сторону увеличения
   // Если указана длина штуки — считаем количество штук
   const total = pieceLength 
     ? Math.ceil(withWaste / pieceLength)
-    : Math.ceil(withWaste * 100) / 100;
+    : Math.ceil(withWaste);
 
   const formula = pieceLength
     ? `${perimeter} пог.м × ${multiplier} × ${(1 + wastePercent / 100).toFixed(2)} ÷ ${pieceLength} м = ${total} шт`

@@ -38,8 +38,9 @@ describe('calculateByCoverage', () => {
   });
 
   it('should calculate laminate quantity', () => {
+    // 45 / 2.0 * 1.05 = 23.625 → Math.ceil = 24
     const result = calculateByCoverage(45, 2.0, 5);
-    expect(result.total).toBeCloseTo(23.63, 1);
+    expect(result.total).toBe(24);
   });
 
   it('should calculate tile quantity', () => {
@@ -70,9 +71,9 @@ describe('calculateByCoverage', () => {
 
 describe('calculateByConsumption', () => {
   it('should calculate paint quantity with layers', () => {
-    // 24 * 0.006 * 2 * 1.05 = 0.3024 → Math.ceil(30.24)/100 = 0.31
+    // 24 * 0.006 * 2 * 1.05 = 0.3024 → Math.ceil = 1
     const result = calculateByConsumption(24, 0.006, 2, 5);
-    expect(result.total).toBeCloseTo(0.31, 2);
+    expect(result.total).toBe(1);
   });
 
   it('should calculate package count', () => {
@@ -91,11 +92,13 @@ describe('calculateByConsumption', () => {
   });
 
   it('should handle multiple layers correctly', () => {
-    // result1: 10 * 0.01 * 1 = 0.1 → Math.ceil(10)/100 = 0.1
-    // result3: 10 * 0.01 * 3 = 0.3 → Math.ceil(30)/100 = 0.3
+    // result1: 10 * 0.01 * 1 = 0.1 → Math.ceil = 1
+    // result3: 10 * 0.01 * 3 = 0.3 → Math.ceil = 1
+    // При округлении до целых чисел пропорция не сохраняется
     const result1 = calculateByConsumption(10, 0.01, 1, 0);
     const result3 = calculateByConsumption(10, 0.01, 3, 0);
-    expect(result3.total).toBeCloseTo(result1.total * 3, 1);
+    expect(result1.total).toBe(1);
+    expect(result3.total).toBe(1);
   });
 
   it('should include layers in formula for 2+ layers', () => {
@@ -112,16 +115,16 @@ describe('calculateByPerimeter', () => {
   });
 
   it('should calculate perimeter without pieceLength', () => {
-    // 18 * 1.0 * 1.05 = 18.9 (with floating point rounding)
+    // 18 * 1.0 * 1.05 = 18.9 → Math.ceil = 19
     const result = calculateByPerimeter(18, 1.0, undefined, 5);
-    expect(result.total).toBeCloseTo(18.9, 1);
+    expect(result.total).toBe(19);
     expect(result.displayUnit).toBe('пог. м');
   });
 
   it('should apply multiplier correctly', () => {
-    // 18 * 2.5 * 1.10 = 49.5 → Math.ceil(49.5 * 100) / 100 = 49.5 (но floating point даст 49.51)
+    // 18 * 2.5 * 1.10 = 49.5 → Math.ceil = 50
     const result = calculateByPerimeter(18, 2.5, undefined, 10);
-    expect(result.total).toBeCloseTo(49.5, 1);
+    expect(result.total).toBe(50);
   });
 
   it('should use default multiplier = 1.0', () => {
