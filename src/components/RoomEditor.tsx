@@ -3,7 +3,7 @@ import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen, D
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
 import { WorkCatalogPicker } from './works/WorkCatalogPicker';
-import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard } from './works';
+import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard, MaterialPriceSearch } from './works';
 import { NumberInput } from './ui/NumberInput';
 import type {
   Opening,
@@ -24,6 +24,7 @@ import { useGeometryState } from '../hooks/useGeometryState';
 
 interface RoomEditorProps {
   room: RoomData;
+  city?: string;
   updateRoom: (r: RoomData) => void;
   updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
   deleteRoom: () => void;
@@ -38,6 +39,7 @@ interface RoomEditorProps {
 
 export function RoomEditor({
   room,
+  city,
   updateRoom,
   updateRoomById,
   deleteRoom,
@@ -627,6 +629,18 @@ export function RoomEditor({
                                   ).toLocaleString('ru-RU')}{' '}
                                   ₽
                                 </div>
+                                <MaterialPriceSearch
+                                  materialName={material.name}
+                                  city={city}
+                                  onPriceFound={(price) =>
+                                    handleMaterialChange(
+                                      work.id,
+                                      material.id,
+                                      'pricePerUnit',
+                                      price
+                                    )
+                                  }
+                                />
                                 <button
                                   onClick={() =>
                                     removeMaterial(work.id, material.id)

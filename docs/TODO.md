@@ -148,19 +148,22 @@
 - [x] **5.5** Интеграция в RoomEditor (импорты добавлены) ✅
 - [x] **5.6** Unit-тесты для компонентов ✅ (12 тестов)
 
-### Этап 6: Расширенная общая смета — ⏳ ОЖИДАЕТ
+### Этап 6: Расширенная общая смета — ✅ ВЫПОЛНЕНО
 
-- [ ] **6.1** Создать `src/components/summary/SummaryMaterials.tsx`
-- [ ] **6.2** Создать `src/components/summary/SummaryTools.tsx`
-- [ ] **6.3** Создать `src/components/summary/SummaryWorks.tsx`
-- [ ] **6.4** Обновить `SummaryView.tsx`
+- [x] **6.1** Создать `src/components/summary/SummaryMaterials.tsx` ✅
+- [x] **6.2** Создать `src/components/summary/SummaryTools.tsx` ✅
+- [x] **6.3** Создать `src/components/summary/SummaryWorks.tsx` ✅
+- [x] **6.4** Обновить `SummaryView.tsx` ✅
 
-### Этап 7: Поиск цен через Gemini — ⏳ ОЖИДАЕТ
+### Этап 7: Поиск цен через Gemini — 🚧 В РАБОТЕ
 
-- [ ] **7.1** Создать `src/api/prices/geminiPriceSearch.ts`
-- [ ] **7.2** Кэширование цен в localStorage
-- [ ] **7.3** UI кнопки "Найти цену" в MaterialCalculationCard
-- [ ] **7.4** Добавить поле `city` в настройки проекта
+- [x] **7.1** Создать `src/api/prices/types.ts` ✅
+- [x] **7.2** Создать `src/api/prices/priceCache.ts` ✅
+- [x] **7.3** Создать `src/api/prices/geminiPriceSearch.ts` ✅
+- [x] **7.4** Создать `src/api/prices/index.ts` ✅
+- [x] **7.5** Тесты для API (22 теста) ✅
+- [ ] **7.6** UI кнопки "Найти цену" в MaterialCalculationCard
+- [ ] **7.7** Добавить поле `city` в настройки проекта
 
 ---
 

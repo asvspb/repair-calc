@@ -156,7 +156,7 @@ function AppContent() {
           <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
         </div>
 
-        <div className="p-4 bg-white">
+        <div className="p-4 bg-white space-y-3">
           <div className="flex justify-between items-center mb-2">
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
             <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
@@ -176,6 +176,21 @@ function AppContent() {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          {/* Город для поиска цен */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Город</label>
+            <input
+              type="text"
+              value={activeProject?.city || ''}
+              onChange={(e) => {
+                if (activeProject) {
+                  updateActiveProject({ ...activeProject, city: e.target.value });
+                }
+              }}
+              placeholder="Для поиска цен"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
@@ -283,6 +298,7 @@ function AppContent() {
             ) : activeProject?.rooms.find(r => r.id === activeTab) ? (
               <RoomEditor
                 room={activeProject.rooms.find(r => r.id === activeTab)!}
+                city={activeProject.city}
                 updateRoom={updateRoom}
                 updateRoomById={updateRoomById}
                 deleteRoom={() => handleDeleteRoom(activeTab)}
