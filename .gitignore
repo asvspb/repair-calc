@@ -102,6 +102,9 @@ secret.*
 .travis.yml
 .gitlab-ci.yml
 
+# Database
+database/
+
 # AI/Editor specific
 .blackbox/
 .blackboxcli/
