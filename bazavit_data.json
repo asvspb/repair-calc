@@ -1,0 +1,1857 @@
+{
+  "categories": [
+    {
+      "id": "ventilyatsiya",
+      "name": "Вентиляция",
+      "href": "https://bazavit.ru/catalog/ventilyatsiya/"
+    },
+    {
+      "id": "anemostaty",
+      "name": "Анемостаты",
+      "href": "https://bazavit.ru/catalog/anemostaty/"
+    },
+    {
+      "id": "ventilyatory",
+      "name": "Вентиляторы",
+      "href": "https://bazavit.ru/catalog/ventilyatory/"
+    },
+    {
+      "id": "reshetki",
+      "name": "Решетки",
+      "href": "https://bazavit.ru/catalog/reshetki/"
+    },
+    {
+      "id": "sistema_ventilyatsii",
+      "name": "Система вентиляции",
+      "href": "https://bazavit.ru/catalog/sistema_ventilyatsii/"
+    },
+    {
+      "id": "truba_vytyazhnaya",
+      "name": "Труба вытяжная",
+      "href": "https://bazavit.ru/catalog/truba_vytyazhnaya/"
+    },
+    {
+      "id": "vodo_gazosnabzhenie_i_santekhnika",
+      "name": "Водо-, газоснабжение и сантехника",
+      "href": "https://bazavit.ru/catalog/vodo_gazosnabzhenie_i_santekhnika/"
+    },
+    {
+      "id": "stantsii_vodosnabzheniya",
+      "name": "Станции водоснабжения",
+      "href": "https://bazavit.ru/catalog/stantsii_vodosnabzheniya/"
+    },
+    {
+      "id": "uplotnitelnye_materialy",
+      "name": "Уплотнительные материалы",
+      "href": "https://bazavit.ru/catalog/uplotnitelnye_materialy/"
+    },
+    {
+      "id": "aksessuary_dlya_vannoy_komnaty",
+      "name": "Аксессуары для ванной комнаты",
+      "href": "https://bazavit.ru/catalog/aksessuary_dlya_vannoy_komnaty/"
+    },
+    {
+      "id": "vanny_poddony",
+      "name": "Ванны, поддоны",
+      "href": "https://bazavit.ru/catalog/vanny_poddony/"
+    },
+    {
+      "id": "vodonagrevateli_elektricheskie",
+      "name": "Водонагреватели электрические",
+      "href": "https://bazavit.ru/catalog/vodonagrevateli_elektricheskie/"
+    },
+    {
+      "id": "vodosnabzhenie",
+      "name": "Водоснабжение",
+      "href": "https://bazavit.ru/catalog/vodosnabzhenie/"
+    },
+    {
+      "id": "gazovye_kolonki",
+      "name": "Газовые колонки",
+      "href": "https://bazavit.ru/catalog/gazovye_kolonki/"
+    },
+    {
+      "id": "gidroakkumulyatory",
+      "name": "Гидроаккумуляторы",
+      "href": "https://bazavit.ru/catalog/gidroakkumulyatory/"
+    },
+    {
+      "id": "izmeritelnoe_oborudovanie",
+      "name": "Измерительное оборудование",
+      "href": "https://bazavit.ru/catalog/izmeritelnoe_oborudovanie/"
+    },
+    {
+      "id": "kanalizatsiya",
+      "name": "Канализация",
+      "href": "https://bazavit.ru/catalog/kanalizatsiya/"
+    },
+    {
+      "id": "lenty_bordyurnye",
+      "name": "Ленты бордюрные",
+      "href": "https://bazavit.ru/catalog/lenty_bordyurnye/"
+    },
+    {
+      "id": "lyuki_revizionnye",
+      "name": "Люки ревизионные",
+      "href": "https://bazavit.ru/catalog/lyuki_revizionnye/"
+    },
+    {
+      "id": "mebel_dlya_vannoy_komnaty",
+      "name": "Мебель для ванной комнаты",
+      "href": "https://bazavit.ru/catalog/mebel_dlya_vannoy_komnaty/"
+    },
+    {
+      "id": "moyki_umyvalniki",
+      "name": "Мойки, умывальники",
+      "href": "https://bazavit.ru/catalog/moyki_umyvalniki/"
+    },
+    {
+      "id": "nasosy_nasosnye_stantsii",
+      "name": "Насосы, насосные станции",
+      "href": "https://bazavit.ru/catalog/nasosy_nasosnye_stantsii/"
+    },
+    {
+      "id": "sanfayans",
+      "name": "Санфаянс",
+      "href": "https://bazavit.ru/catalog/sanfayans/"
+    },
+    {
+      "id": "smesiteli_komplektuyushchie",
+      "name": "Смесители, комплектующие",
+      "href": "https://bazavit.ru/catalog/smesiteli_komplektuyushchie/"
+    },
+    {
+      "id": "dveri_i_skobyanye_izdeliya_furnitura",
+      "name": "Двери и скобяные изделия,фурнитура",
+      "href": "https://bazavit.ru/catalog/dveri_i_skobyanye_izdeliya_furnitura/"
+    },
+    {
+      "id": "upory_dvernye",
+      "name": "Упоры дверные",
+      "href": "https://bazavit.ru/catalog/upory_dvernye/"
+    },
+    {
+      "id": "shpingalety_zasovy_kryuchki",
+      "name": "Шпингалеты, засовы, крючки",
+      "href": "https://bazavit.ru/catalog/shpingalety_zasovy_kryuchki/"
+    },
+    {
+      "id": "dveri_massiv_1",
+      "name": "Двери массив",
+      "href": "https://bazavit.ru/catalog/dveri_massiv_1/"
+    },
+    {
+      "id": "dveri_metallicheskie",
+      "name": "Двери металлические",
+      "href": "https://bazavit.ru/catalog/dveri_metallicheskie/"
+    },
+    {
+      "id": "dveri_oblitsovannye_plenkoy_pvkh",
+      "name": "Двери облицованные пленкой ПВХ",
+      "href": "https://bazavit.ru/catalog/dveri_oblitsovannye_plenkoy_pvkh/"
+    },
+    {
+      "id": "dveri_razdvizhnye",
+      "name": "Двери раздвижные",
+      "href": "https://bazavit.ru/catalog/dveri_razdvizhnye/"
+    },
+    {
+      "id": "dveri_ekoshpon",
+      "name": "Двери экошпон",
+      "href": "https://bazavit.ru/catalog/dveri_ekoshpon/"
+    },
+    {
+      "id": "dvernye_nalichniki_komplektuyushchie",
+      "name": "Дверные наличники, комплектующие",
+      "href": "https://bazavit.ru/catalog/dvernye_nalichniki_komplektuyushchie/"
+    },
+    {
+      "id": "dovodchiki",
+      "name": "Доводчики",
+      "href": "https://bazavit.ru/catalog/dovodchiki/"
+    },
+    {
+      "id": "zavertki_fiksatory",
+      "name": "Завертки, фиксаторы",
+      "href": "https://bazavit.ru/catalog/zavertki_fiksatory/"
+    },
+    {
+      "id": "zamki",
+      "name": "Замки",
+      "href": "https://bazavit.ru/catalog/zamki/"
+    },
+    {
+      "id": "zashchelki",
+      "name": "Защелки",
+      "href": "https://bazavit.ru/catalog/zashchelki/"
+    },
+    {
+      "id": "komplektuyushchie_k_plastikovym_oknam",
+      "name": "Комплектующие к пластиковым окнам",
+      "href": "https://bazavit.ru/catalog/komplektuyushchie_k_plastikovym_oknam/"
+    },
+    {
+      "id": "kronshteyny",
+      "name": "Кронштейны",
+      "href": "https://bazavit.ru/catalog/kronshteyny/"
+    },
+    {
+      "id": "kryuchki_1",
+      "name": "Крючки",
+      "href": "https://bazavit.ru/catalog/kryuchki_1/"
+    },
+    {
+      "id": "magnity_dlya_mebeli",
+      "name": "Магниты для мебели",
+      "href": "https://bazavit.ru/catalog/magnity_dlya_mebeli/"
+    },
+    {
+      "id": "nomerki",
+      "name": "Номерки",
+      "href": "https://bazavit.ru/catalog/nomerki/"
+    },
+    {
+      "id": "obivochnye_materialy",
+      "name": "Обивочные материалы",
+      "href": "https://bazavit.ru/catalog/obivochnye_materialy/"
+    },
+    {
+      "id": "petli",
+      "name": "Петли",
+      "href": "https://bazavit.ru/catalog/petli/"
+    },
+    {
+      "id": "prochaya_furnitura_1",
+      "name": "Прочая фурнитура",
+      "href": "https://bazavit.ru/catalog/prochaya_furnitura_1/"
+    },
+    {
+      "id": "pruzhiny",
+      "name": "Пружины",
+      "href": "https://bazavit.ru/catalog/pruzhiny/"
+    },
+    {
+      "id": "ruchki_dvernye_mebelnye",
+      "name": "Ручки дверные, мебельные",
+      "href": "https://bazavit.ru/catalog/ruchki_dvernye_mebelnye/"
+    },
+    {
+      "id": "izolyatsionnye_materialy",
+      "name": "Изоляционные материалы",
+      "href": "https://bazavit.ru/catalog/izolyatsionnye_materialy/"
+    },
+    {
+      "id": "bitumnaya_izolyatsiya",
+      "name": "Битумная изоляция",
+      "href": "https://bazavit.ru/catalog/bitumnaya_izolyatsiya/"
+    },
+    {
+      "id": "vetro_gidro_paroizolyatsiya",
+      "name": "Ветро-, гидро-,пароизоляция",
+      "href": "https://bazavit.ru/catalog/vetro_gidro_paroizolyatsiya/"
+    },
+    {
+      "id": "podlozhki",
+      "name": "Подложки",
+      "href": "https://bazavit.ru/catalog/podlozhki/"
+    },
+    {
+      "id": "teploizolyatsiya",
+      "name": "Теплоизоляция",
+      "href": "https://bazavit.ru/catalog/teploizolyatsiya/"
+    },
+    {
+      "id": "instrument_oborudovanie",
+      "name": "Инструмент, оборудование",
+      "href": "https://bazavit.ru/catalog/instrument_oborudovanie/"
+    },
+    {
+      "id": "rezhushchiy_instrument",
+      "name": "Режущий инструмент",
+      "href": "https://bazavit.ru/catalog/rezhushchiy_instrument/"
+    },
+    {
+      "id": "sredstva_zashchity",
+      "name": "Средства защиты",
+      "href": "https://bazavit.ru/catalog/sredstva_zashchity/"
+    },
+    {
+      "id": "stolyarno_slesarnyy_instrument",
+      "name": "Столярно-слесарный инструмент",
+      "href": "https://bazavit.ru/catalog/stolyarno_slesarnyy_instrument/"
+    },
+    {
+      "id": "khranenie_instrumenta",
+      "name": "Хранение инструмента",
+      "href": "https://bazavit.ru/catalog/khranenie_instrumenta/"
+    },
+    {
+      "id": "elektro_i_benzoinstrument",
+      "name": "Электро- и бензоинструмент",
+      "href": "https://bazavit.ru/catalog/elektro_i_benzoinstrument/"
+    },
+    {
+      "id": "avtomobilnaya_tematika",
+      "name": "Автомобильная тематика",
+      "href": "https://bazavit.ru/catalog/avtomobilnaya_tematika/"
+    },
+    {
+      "id": "betonosmesiteli",
+      "name": "Бетоносмесители",
+      "href": "https://bazavit.ru/catalog/betonosmesiteli/"
+    },
+    {
+      "id": "gazovoe_i_svarochnoe_oborudovanie",
+      "name": "Газовое и сварочное оборудование",
+      "href": "https://bazavit.ru/catalog/gazovoe_i_svarochnoe_oborudovanie/"
+    },
+    {
+      "id": "gruzopodemnoe_oborudovanie",
+      "name": "Грузоподъемное оборудование",
+      "href": "https://bazavit.ru/catalog/gruzopodemnoe_oborudovanie/"
+    },
+    {
+      "id": "emkosti_stroitelnye",
+      "name": "Емкости строительные",
+      "href": "https://bazavit.ru/catalog/emkosti_stroitelnye/"
+    },
+    {
+      "id": "izmeritelnyy_instrument",
+      "name": "Измерительный инструмент",
+      "href": "https://bazavit.ru/catalog/izmeritelnyy_instrument/"
+    },
+    {
+      "id": "lenty_skotchi_plenki",
+      "name": "Ленты, скотчи, пленки",
+      "href": "https://bazavit.ru/catalog/lenty_skotchi_plenki/"
+    },
+    {
+      "id": "lestnitsy_stremyanki",
+      "name": "Лестницы, стремянки",
+      "href": "https://bazavit.ru/catalog/lestnitsy_stremyanki/"
+    },
+    {
+      "id": "malyarno_shtukaturnyy_instrument",
+      "name": "Малярно-штукатурный инструмент",
+      "href": "https://bazavit.ru/catalog/malyarno_shtukaturnyy_instrument/"
+    },
+    {
+      "id": "raskhodnye_materialy",
+      "name": "Расходные материалы",
+      "href": "https://bazavit.ru/catalog/raskhodnye_materialy/"
+    },
+    {
+      "id": "krepezh",
+      "name": "Крепеж",
+      "href": "https://bazavit.ru/catalog/krepezh/"
+    },
+    {
+      "id": "shurupy_shpilki",
+      "name": "Шурупы, шпильки",
+      "href": "https://bazavit.ru/catalog/shurupy_shpilki/"
+    },
+    {
+      "id": "ankera",
+      "name": "Анкера",
+      "href": "https://bazavit.ru/catalog/ankera/"
+    },
+    {
+      "id": "bolty",
+      "name": "Болты",
+      "href": "https://bazavit.ru/catalog/bolty/"
+    },
+    {
+      "id": "vinty",
+      "name": "Винты",
+      "href": "https://bazavit.ru/catalog/vinty/"
+    },
+    {
+      "id": "gayki",
+      "name": "Гайки",
+      "href": "https://bazavit.ru/catalog/gayki/"
+    },
+    {
+      "id": "gvozdi",
+      "name": "Гвозди",
+      "href": "https://bazavit.ru/catalog/gvozdi/"
+    },
+    {
+      "id": "dyubel_dyubel_gvozdi",
+      "name": "Дюбель, дюбель-гвозди",
+      "href": "https://bazavit.ru/catalog/dyubel_dyubel_gvozdi/"
+    },
+    {
+      "id": "zaklepki_vytyazhnye",
+      "name": "Заклепки вытяжные",
+      "href": "https://bazavit.ru/catalog/zaklepki_vytyazhnye/"
+    },
+    {
+      "id": "perforirovannyy_krepezh",
+      "name": "Перфорированный крепеж",
+      "href": "https://bazavit.ru/catalog/perforirovannyy_krepezh/"
+    },
+    {
+      "id": "samorezy",
+      "name": "Саморезы",
+      "href": "https://bazavit.ru/catalog/samorezy/"
+    },
+    {
+      "id": "takelazh",
+      "name": "Такелаж",
+      "href": "https://bazavit.ru/catalog/takelazh/"
+    },
+    {
+      "id": "trosa_tsepi",
+      "name": "Троса, цепи",
+      "href": "https://bazavit.ru/catalog/trosa_tsepi/"
+    },
+    {
+      "id": "shayby",
+      "name": "Шайбы",
+      "href": "https://bazavit.ru/catalog/shayby/"
+    },
+    {
+      "id": "lakokrasochnaya_produktsiya",
+      "name": "Лакокрасочная продукция",
+      "href": "https://bazavit.ru/catalog/lakokrasochnaya_produktsiya/"
+    },
+    {
+      "id": "shpatlevki_zamazki",
+      "name": "Шпатлевки, замазки",
+      "href": "https://bazavit.ru/catalog/shpatlevki_zamazki/"
+    },
+    {
+      "id": "emali",
+      "name": "Эмали",
+      "href": "https://bazavit.ru/catalog/emali/"
+    },
+    {
+      "id": "aerozoli",
+      "name": "Аэрозоли",
+      "href": "https://bazavit.ru/catalog/aerozoli/"
+    },
+    {
+      "id": "grunty",
+      "name": "Грунты",
+      "href": "https://bazavit.ru/catalog/grunty/"
+    },
+    {
+      "id": "kolerovochnye_pasty",
+      "name": "Колеровочные пасты",
+      "href": "https://bazavit.ru/catalog/kolerovochnye_pasty/"
+    },
+    {
+      "id": "kraski_vodnye",
+      "name": "Краски водные",
+      "href": "https://bazavit.ru/catalog/kraski_vodnye/"
+    },
+    {
+      "id": "kraski_maslyanye",
+      "name": "Краски масляные",
+      "href": "https://bazavit.ru/catalog/kraski_maslyanye/"
+    },
+    {
+      "id": "laki",
+      "name": "Лаки",
+      "href": "https://bazavit.ru/catalog/laki/"
+    },
+    {
+      "id": "poroshki",
+      "name": "Порошки",
+      "href": "https://bazavit.ru/catalog/poroshki/"
+    },
+    {
+      "id": "propitki_dlya_dereva",
+      "name": "Пропитки для дерева",
+      "href": "https://bazavit.ru/catalog/propitki_dlya_dereva/"
+    },
+    {
+      "id": "rastvoriteli_ochistiteli",
+      "name": "Растворители, очистители",
+      "href": "https://bazavit.ru/catalog/rastvoriteli_ochistiteli/"
+    },
+    {
+      "id": "spetsemali_i_kraski",
+      "name": "Спецэмали и краски",
+      "href": "https://bazavit.ru/catalog/spetsemali_i_kraski/"
+    },
+    {
+      "id": "materialy_dlya_vnutrenney_otdelki",
+      "name": "Материалы для внутренней отделки",
+      "href": "https://bazavit.ru/catalog/materialy_dlya_vnutrenney_otdelki/"
+    },
+    {
+      "id": "paneli_pvkh",
+      "name": "Панели ПВХ",
+      "href": "https://bazavit.ru/catalog/paneli_pvkh/"
+    },
+    {
+      "id": "plintusy_porozhki",
+      "name": "Плинтусы, порожки",
+      "href": "https://bazavit.ru/catalog/plintusy_porozhki/"
+    },
+    {
+      "id": "plitka_keramicheskaya_keramogranit",
+      "name": "Плитка керамическая, керамогранит",
+      "href": "https://bazavit.ru/catalog/plitka_keramicheskaya_keramogranit/"
+    },
+    {
+      "id": "sendvich_panel_1",
+      "name": "Сэндвич-панель",
+      "href": "https://bazavit.ru/catalog/sendvich_panel_1/"
+    },
+    {
+      "id": "linoleum_",
+      "name": "Линолеум",
+      "href": "https://bazavit.ru/catalog/linoleum_/"
+    },
+    {
+      "id": "oboi",
+      "name": "Обои",
+      "href": "https://bazavit.ru/catalog/oboi/"
+    },
+    {
+      "id": "otdelka_potolka",
+      "name": "Отделка потолка",
+      "href": "https://bazavit.ru/catalog/otdelka_potolka/"
+    },
+    {
+      "id": "otdelochnye_profili_pvkh",
+      "name": "Отделочные профили ПВХ",
+      "href": "https://bazavit.ru/catalog/otdelochnye_profili_pvkh/"
+    },
+    {
+      "id": "paneli_mdf_komplektuyushchie_1",
+      "name": "Панели МДФ",
+      "href": "https://bazavit.ru/catalog/paneli_mdf_komplektuyushchie_1/"
+    },
+    {
+      "id": "metalloprokat",
+      "name": "Металлопрокат",
+      "href": "https://bazavit.ru/catalog/metalloprokat/"
+    },
+    {
+      "id": "provoloka",
+      "name": "Проволока",
+      "href": "https://bazavit.ru/catalog/provoloka/"
+    },
+    {
+      "id": "profilnaya_truba",
+      "name": "Профильная труба",
+      "href": "https://bazavit.ru/catalog/profilnaya_truba/"
+    },
+    {
+      "id": "ugolok",
+      "name": "Уголок",
+      "href": "https://bazavit.ru/catalog/ugolok/"
+    },
+    {
+      "id": "armatura",
+      "name": "Арматура",
+      "href": "https://bazavit.ru/catalog/armatura/"
+    },
+    {
+      "id": "zaglushki_dlya_prof_truby",
+      "name": "Заглушки для проф. трубы",
+      "href": "https://bazavit.ru/catalog/zaglushki_dlya_prof_truby/"
+    },
+    {
+      "id": "katanka",
+      "name": "Катанка",
+      "href": "https://bazavit.ru/catalog/katanka/"
+    },
+    {
+      "id": "komplektuyushchie_dlya_ukladki_armatury",
+      "name": "Комплектующие для укладки арматуры",
+      "href": "https://bazavit.ru/catalog/komplektuyushchie_dlya_ukladki_armatury/"
+    },
+    {
+      "id": "kompozitnaya_armatura",
+      "name": "Композитная арматура",
+      "href": "https://bazavit.ru/catalog/kompozitnaya_armatura/"
+    },
+    {
+      "id": "polosa",
+      "name": "Полоса",
+      "href": "https://bazavit.ru/catalog/polosa/"
+    },
+    {
+      "id": "otopitelnoe_oborudovanie",
+      "name": "Отопительное оборудование",
+      "href": "https://bazavit.ru/catalog/otopitelnoe_oborudovanie/"
+    },
+    {
+      "id": "sistema_vodyanogo_teplogo_pola",
+      "name": "Система водяного теплого пола",
+      "href": "https://bazavit.ru/catalog/sistema_vodyanogo_teplogo_pola/"
+    },
+    {
+      "id": "teplonositeli_dlya_sistem_otopleniya",
+      "name": "Теплоносители для систем отопления",
+      "href": "https://bazavit.ru/catalog/teplonositeli_dlya_sistem_otopleniya/"
+    },
+    {
+      "id": "baki_rasshiritelnye",
+      "name": "Баки расширительные",
+      "href": "https://bazavit.ru/catalog/baki_rasshiritelnye/"
+    },
+    {
+      "id": "dymokhody",
+      "name": "Дымоходы",
+      "href": "https://bazavit.ru/catalog/dymokhody/"
+    },
+    {
+      "id": "obogrevateli_teplovye_pushki",
+      "name": "Обогреватели, тепловые пушки",
+      "href": "https://bazavit.ru/catalog/obogrevateli_teplovye_pushki/"
+    },
+    {
+      "id": "pechnoe_lite",
+      "name": "Печное литье",
+      "href": "https://bazavit.ru/catalog/pechnoe_lite/"
+    },
+    {
+      "id": "radiatory",
+      "name": "Радиаторы",
+      "href": "https://bazavit.ru/catalog/radiatory/"
+    },
+    {
+      "id": "peny_germetiki_klei",
+      "name": "Пены, герметики, клеи",
+      "href": "https://bazavit.ru/catalog/peny_germetiki_klei/"
+    },
+    {
+      "id": "pena",
+      "name": "Пена",
+      "href": "https://bazavit.ru/catalog/pena/"
+    },
+    {
+      "id": "prochee",
+      "name": "Прочее",
+      "href": "https://bazavit.ru/catalog/prochee/"
+    },
+    {
+      "id": "germetik",
+      "name": "Герметик",
+      "href": "https://bazavit.ru/catalog/germetik/"
+    },
+    {
+      "id": "kley",
+      "name": "Клей",
+      "href": "https://bazavit.ru/catalog/kley/"
+    },
+    {
+      "id": "kley_germetik",
+      "name": "Клей-герметик",
+      "href": "https://bazavit.ru/catalog/kley_germetik/"
+    },
+    {
+      "id": "kley_pena",
+      "name": "Клей-пена",
+      "href": "https://bazavit.ru/catalog/kley_pena/"
+    },
+    {
+      "id": "ochistitel",
+      "name": "Очиститель",
+      "href": "https://bazavit.ru/catalog/ochistitel/"
+    },
+    {
+      "id": "stroitelnye_materialy",
+      "name": "Строительные материалы",
+      "href": "https://bazavit.ru/catalog/stroitelnye_materialy/"
+    },
+    {
+      "id": "krovlya_profnastil",
+      "name": "Кровля, профнастил",
+      "href": "https://bazavit.ru/catalog/krovlya_profnastil/"
+    },
+    {
+      "id": "otdelka_fasada",
+      "name": "Отделка фасада",
+      "href": "https://bazavit.ru/catalog/otdelka_fasada/"
+    },
+    {
+      "id": "pilomaterialy",
+      "name": "Пиломатериалы",
+      "href": "https://bazavit.ru/catalog/pilomaterialy/"
+    },
+    {
+      "id": "setki_malyarnye_i_shtukaturnye",
+      "name": "Сетки малярные и штукатурные",
+      "href": "https://bazavit.ru/catalog/setki_malyarnye_i_shtukaturnye/"
+    },
+    {
+      "id": "setki_svarnye_rabitsa",
+      "name": "Сетки сварные, рабица",
+      "href": "https://bazavit.ru/catalog/setki_svarnye_rabitsa/"
+    },
+    {
+      "id": "asbestotsementnye_truby",
+      "name": "Асбестоцементные трубы",
+      "href": "https://bazavit.ru/catalog/asbestotsementnye_truby/"
+    },
+    {
+      "id": "vodostochnye_sistemy",
+      "name": "Водосточные системы",
+      "href": "https://bazavit.ru/catalog/vodostochnye_sistemy/"
+    },
+    {
+      "id": "gipsokarton_listovye_materialy",
+      "name": "Гипсокартон, листовые материалы",
+      "href": "https://bazavit.ru/catalog/gipsokarton_listovye_materialy/"
+    },
+    {
+      "id": "drevesno_plitnye_materialy",
+      "name": "Древесно-плитные материалы",
+      "href": "https://bazavit.ru/catalog/drevesno_plitnye_materialy/"
+    },
+    {
+      "id": "kirpich_bloki_plity",
+      "name": "Кирпич, блоки, плиты",
+      "href": "https://bazavit.ru/catalog/kirpich_bloki_plity/"
+    },
+    {
+      "id": "sukhie_stroitelnye_smesi",
+      "name": "Сухие строительные смеси",
+      "href": "https://bazavit.ru/catalog/sukhie_stroitelnye_smesi/"
+    },
+    {
+      "id": "shtukaturki",
+      "name": "Штукатурки",
+      "href": "https://bazavit.ru/catalog/shtukaturki/"
+    },
+    {
+      "id": "alebastr_izvest_mel",
+      "name": "Алебастр, известь, мел",
+      "href": "https://bazavit.ru/catalog/alebastr_izvest_mel/"
+    },
+    {
+      "id": "dobavki_v_smesi",
+      "name": "Добавки в смеси",
+      "href": "https://bazavit.ru/catalog/dobavki_v_smesi/"
+    },
+    {
+      "id": "zatirka_dlya_shvov_plitki",
+      "name": "Затирка для швов плитки",
+      "href": "https://bazavit.ru/catalog/zatirka_dlya_shvov_plitki/"
+    },
+    {
+      "id": "kley_dlya_plitki_i_keramogranita",
+      "name": "Клей для плитки и керамогранита",
+      "href": "https://bazavit.ru/catalog/kley_dlya_plitki_i_keramogranita/"
+    },
+    {
+      "id": "kley_montazhnye",
+      "name": "Клей монтажные",
+      "href": "https://bazavit.ru/catalog/kley_montazhnye/"
+    },
+    {
+      "id": "smesi_gidroizolyatsionnye",
+      "name": "Смеси гидроизоляционные",
+      "href": "https://bazavit.ru/catalog/smesi_gidroizolyatsionnye/"
+    },
+    {
+      "id": "smesi_dlya_pechey",
+      "name": "Смеси для печей",
+      "href": "https://bazavit.ru/catalog/smesi_dlya_pechey/"
+    },
+    {
+      "id": "smesi_dlya_pola",
+      "name": "Смеси для пола",
+      "href": "https://bazavit.ru/catalog/smesi_dlya_pola/"
+    },
+    {
+      "id": "tsement_smes_kladochnaya_peskobeton",
+      "name": "Цемент, смесь кладочная, пескобетон",
+      "href": "https://bazavit.ru/catalog/tsement_smes_kladochnaya_peskobeton/"
+    },
+    {
+      "id": "shpatlevki",
+      "name": "Шпатлевки",
+      "href": "https://bazavit.ru/catalog/shpatlevki/"
+    },
+    {
+      "id": "tovary_dlya_doma",
+      "name": "Товары для дома",
+      "href": "https://bazavit.ru/catalog/tovary_dlya_doma/"
+    },
+    {
+      "id": "sumki_telezhki",
+      "name": "Сумки, тележки",
+      "href": "https://bazavit.ru/catalog/sumki_telezhki/"
+    },
+    {
+      "id": "termometry",
+      "name": "Термометры",
+      "href": "https://bazavit.ru/catalog/termometry/"
+    },
+    {
+      "id": "termosumki",
+      "name": "Термосумки",
+      "href": "https://bazavit.ru/catalog/termosumki/"
+    },
+    {
+      "id": "tovary_dlya_detey",
+      "name": "Товары для детей",
+      "href": "https://bazavit.ru/catalog/tovary_dlya_detey/"
+    },
+    {
+      "id": "shnury_shpagaty_verevki",
+      "name": "Шнуры, шпагаты, веревки",
+      "href": "https://bazavit.ru/catalog/shnury_shpagaty_verevki/"
+    },
+    {
+      "id": "yashchiki_pochtovye",
+      "name": "Ящики почтовые",
+      "href": "https://bazavit.ru/catalog/yashchiki_pochtovye/"
+    },
+    {
+      "id": "aksessuary_dlya_obuvi",
+      "name": "Аксессуары для обуви",
+      "href": "https://bazavit.ru/catalog/aksessuary_dlya_obuvi/"
+    },
+    {
+      "id": "bytovaya_tekhnika",
+      "name": "Бытовая техника",
+      "href": "https://bazavit.ru/catalog/bytovaya_tekhnika/"
+    },
+    {
+      "id": "bytovaya_khimiya",
+      "name": "Бытовая химия",
+      "href": "https://bazavit.ru/catalog/bytovaya_khimiya/"
+    },
+    {
+      "id": "vse_dlya_bani",
+      "name": "Все для бани",
+      "href": "https://bazavit.ru/catalog/vse_dlya_bani/"
+    },
+    {
+      "id": "emkosti",
+      "name": "Емкости",
+      "href": "https://bazavit.ru/catalog/emkosti/"
+    },
+    {
+      "id": "kleenka",
+      "name": "Клеенка",
+      "href": "https://bazavit.ru/catalog/kleenka/"
+    },
+    {
+      "id": "kovriki_napolnye_pokrytiya",
+      "name": "Коврики, напольные покрытия",
+      "href": "https://bazavit.ru/catalog/kovriki_napolnye_pokrytiya/"
+    },
+    {
+      "id": "mebel_i_interer",
+      "name": "Мебель и интерьер",
+      "href": "https://bazavit.ru/catalog/mebel_i_interer/"
+    },
+    {
+      "id": "moskitnye_setki",
+      "name": "Москитные сетки",
+      "href": "https://bazavit.ru/catalog/moskitnye_setki/"
+    },
+    {
+      "id": "poleznye_melochi",
+      "name": "Полезные мелочи",
+      "href": "https://bazavit.ru/catalog/poleznye_melochi/"
+    },
+    {
+      "id": "poryadok_i_uborka",
+      "name": "Порядок и уборка",
+      "href": "https://bazavit.ru/catalog/poryadok_i_uborka/"
+    },
+    {
+      "id": "posuda_kukhonnyy_inventar",
+      "name": "Посуда, кухонный инвентарь",
+      "href": "https://bazavit.ru/catalog/posuda_kukhonnyy_inventar/"
+    },
+    {
+      "id": "tovary_dlya_sada_i_ogoroda",
+      "name": "Товары для сада и огорода",
+      "href": "https://bazavit.ru/catalog/tovary_dlya_sada_i_ogoroda/"
+    },
+    {
+      "id": "umyvalniki_dachnye",
+      "name": "Умывальники дачные",
+      "href": "https://bazavit.ru/catalog/umyvalniki_dachnye/"
+    },
+    {
+      "id": "shlangi_i_aksessuary",
+      "name": "Шланги и аксессуары",
+      "href": "https://bazavit.ru/catalog/shlangi_i_aksessuary/"
+    },
+    {
+      "id": "basseyny_i_sredstva_po_ukhodu",
+      "name": "Бассейны и средства по уходу",
+      "href": "https://bazavit.ru/catalog/basseyny_i_sredstva_po_ukhodu/"
+    },
+    {
+      "id": "gorshki_vazony_tsvetochnye",
+      "name": "Горшки, вазоны цветочные",
+      "href": "https://bazavit.ru/catalog/gorshki_vazony_tsvetochnye/"
+    },
+    {
+      "id": "kormovye_dobavki_dlya_s_kh_ptits",
+      "name": "Кормовые добавки для с/х птиц",
+      "href": "https://bazavit.ru/catalog/kormovye_dobavki_dlya_s_kh_ptits/"
+    },
+    {
+      "id": "leyki",
+      "name": "Лейки",
+      "href": "https://bazavit.ru/catalog/leyki/"
+    },
+    {
+      "id": "ograzhdeniya_reshetki_setki",
+      "name": "Ограждения, решетки, сетки",
+      "href": "https://bazavit.ru/catalog/ograzhdeniya_reshetki_setki/"
+    },
+    {
+      "id": "opryskivateli_raspyliteli",
+      "name": "Опрыскиватели, распылители",
+      "href": "https://bazavit.ru/catalog/opryskivateli_raspyliteli/"
+    },
+    {
+      "id": "plenka_ukryvnoy_material_parniki",
+      "name": "Пленка, укрывной материал, парники",
+      "href": "https://bazavit.ru/catalog/plenka_ukryvnoy_material_parniki/"
+    },
+    {
+      "id": "pobelka_sadovaya",
+      "name": "Побелка садовая",
+      "href": "https://bazavit.ru/catalog/pobelka_sadovaya/"
+    },
+    {
+      "id": "pochvoobrabatyvayushchiy_instrument_1",
+      "name": "Почвообрабатывающий инструмент",
+      "href": "https://bazavit.ru/catalog/pochvoobrabatyvayushchiy_instrument_1/"
+    },
+    {
+      "id": "sadovaya_tekhnika",
+      "name": "Садовая техника",
+      "href": "https://bazavit.ru/catalog/sadovaya_tekhnika/"
+    },
+    {
+      "id": "sekatory_nozhnitsy_sadovye",
+      "name": "Секаторы, ножницы садовые",
+      "href": "https://bazavit.ru/catalog/sekatory_nozhnitsy_sadovye/"
+    },
+    {
+      "id": "semena",
+      "name": "Семена",
+      "href": "https://bazavit.ru/catalog/semena/"
+    },
+    {
+      "id": "serpy_kosy",
+      "name": "Серпы, косы",
+      "href": "https://bazavit.ru/catalog/serpy_kosy/"
+    },
+    {
+      "id": "snegouborochnyy_inventar",
+      "name": "Снегоуборочный инвентарь",
+      "href": "https://bazavit.ru/catalog/snegouborochnyy_inventar/"
+    },
+    {
+      "id": "sredstva_ot_nasekomykh_i_yadokhimikaty",
+      "name": "Средства от насекомых и ядохимикаты",
+      "href": "https://bazavit.ru/catalog/sredstva_ot_nasekomykh_i_yadokhimikaty/"
+    },
+    {
+      "id": "tachki_i_komplektuyushchie",
+      "name": "Тачки и комплектующие",
+      "href": "https://bazavit.ru/catalog/tachki_i_komplektuyushchie/"
+    },
+    {
+      "id": "tenty",
+      "name": "Тенты",
+      "href": "https://bazavit.ru/catalog/tenty/"
+    },
+    {
+      "id": "tovary_dlya_zhivotnykh",
+      "name": "Товары для животных",
+      "href": "https://bazavit.ru/catalog/tovary_dlya_zhivotnykh/"
+    },
+    {
+      "id": "tovary_dlya_otdykha",
+      "name": "Товары для отдыха",
+      "href": "https://bazavit.ru/catalog/tovary_dlya_otdykha/"
+    },
+    {
+      "id": "udobreniya_grunt_sadovyy",
+      "name": "Удобрения, грунт садовый",
+      "href": "https://bazavit.ru/catalog/udobreniya_grunt_sadovyy/"
+    },
+    {
+      "id": "elektrotekhnicheskaya_i_kabelnaya_produktsiya",
+      "name": "Электротехническая и кабельная продукция",
+      "href": "https://bazavit.ru/catalog/elektrotekhnicheskaya_i_kabelnaya_produktsiya/"
+    },
+    {
+      "id": "troyniki_perekhodniki",
+      "name": "Тройники, переходники",
+      "href": "https://bazavit.ru/catalog/troyniki_perekhodniki/"
+    },
+    {
+      "id": "udliniteli_komplektuyushchie",
+      "name": "Удлинители, комплектующие",
+      "href": "https://bazavit.ru/catalog/udliniteli_komplektuyushchie/"
+    },
+    {
+      "id": "elementy_pitaniya",
+      "name": "Элементы питания",
+      "href": "https://bazavit.ru/catalog/elementy_pitaniya/"
+    },
+    {
+      "id": "avtomaticheskie_vyklyuchateli",
+      "name": "Автоматические выключатели",
+      "href": "https://bazavit.ru/catalog/avtomaticheskie_vyklyuchateli/"
+    },
+    {
+      "id": "boksy",
+      "name": "Боксы",
+      "href": "https://bazavit.ru/catalog/boksy/"
+    },
+    {
+      "id": "vse_dlya_elektromontazha",
+      "name": "Все для электромонтажа",
+      "href": "https://bazavit.ru/catalog/vse_dlya_elektromontazha/"
+    },
+    {
+      "id": "datchiki_dvizheniya",
+      "name": "Датчики движения",
+      "href": "https://bazavit.ru/catalog/datchiki_dvizheniya/"
+    },
+    {
+      "id": "zaryadnye_ustroystva",
+      "name": "Зарядные устройства",
+      "href": "https://bazavit.ru/catalog/zaryadnye_ustroystva/"
+    },
+    {
+      "id": "zvonok",
+      "name": "Звонок",
+      "href": "https://bazavit.ru/catalog/zvonok/"
+    },
+    {
+      "id": "kabel_kanal_gofra_komplektuyushchie",
+      "name": "Кабель-канал, гофра, комплектующие",
+      "href": "https://bazavit.ru/catalog/kabel_kanal_gofra_komplektuyushchie/"
+    },
+    {
+      "id": "kabelnaya_produktsiya",
+      "name": "Кабельная продукция",
+      "href": "https://bazavit.ru/catalog/kabelnaya_produktsiya/"
+    },
+    {
+      "id": "korobki_montazhnye_i_raspredelitelnye",
+      "name": "Коробки монтажные и распределительные",
+      "href": "https://bazavit.ru/catalog/korobki_montazhnye_i_raspredelitelnye/"
+    },
+    {
+      "id": "lampy_svetilniki_fonari_komplektuyushchie",
+      "name": "Лампы, светильники, фонари, комплектующие",
+      "href": "https://bazavit.ru/catalog/lampy_svetilniki_fonari_komplektuyushchie/"
+    },
+    {
+      "id": "patrony_vilki",
+      "name": "Патроны",
+      "href": "https://bazavit.ru/catalog/patrony_vilki/"
+    },
+    {
+      "id": "rozetki_vyklyuchateli_ramki",
+      "name": "Розетки, выключатели, рамки",
+      "href": "https://bazavit.ru/catalog/rozetki_vyklyuchateli_ramki/"
+    },
+    {
+      "id": "stabilizatory",
+      "name": "Стабилизаторы",
+      "href": "https://bazavit.ru/catalog/stabilizatory/"
+    },
+    {
+      "id": "schetchiki_elektricheskie",
+      "name": "Счетчики электрические",
+      "href": "https://bazavit.ru/catalog/schetchiki_elektricheskie/"
+    },
+    {
+      "id": "transformatory",
+      "name": "Трансформаторы",
+      "href": "https://bazavit.ru/catalog/transformatory/"
+    }
+  ],
+  "products": [
+    {
+      "id": "169161",
+      "category_id": "ventilyatsiya",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d100 А100Ф",
+      "price": 266,
+      "raw_price": "266 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169161.prod"
+    },
+    {
+      "id": "169162",
+      "category_id": "ventilyatsiya",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d125 А125Ф",
+      "price": 343,
+      "raw_price": "343 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169162.prod"
+    },
+    {
+      "id": "159329",
+      "category_id": "ventilyatsiya",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d150 А150Ф",
+      "price": 461,
+      "raw_price": "461 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159329.prod"
+    },
+    {
+      "id": "180685",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор Эвент 150С",
+      "price": 1970,
+      "raw_price": "1 970 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180685.prod"
+    },
+    {
+      "id": "154601",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 100С Волна 13Вт, производительность 130м3/ч стандарт",
+      "price": 1485,
+      "raw_price": "1 485 ₽/шт",
+      "url": "https://bazavit.ru/catalog/154601.prod"
+    },
+    {
+      "id": "173627",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 100С Эвент 13Вт, производительность 130м3/ч стандарт",
+      "price": 1392,
+      "raw_price": "1 392 ₽/шт",
+      "url": "https://bazavit.ru/catalog/173627.prod"
+    },
+    {
+      "id": "174417",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 100СВ Волна Эвент 13Вт со шнурковым выключателем",
+      "price": 1677,
+      "raw_price": "1 677 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174417.prod"
+    },
+    {
+      "id": "174418",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 100СВ Эвент 13Вт со шнурковым выключателем",
+      "price": 1609,
+      "raw_price": "1 609 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174418.prod"
+    },
+    {
+      "id": "173628",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 120С Эвент 18Вт, производительность 240м3/ч",
+      "price": 1600,
+      "raw_price": "1 600 ₽/шт",
+      "url": "https://bazavit.ru/catalog/173628.prod"
+    },
+    {
+      "id": "174420",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 120СВ Волна Эвент 18Вт со шнурковым выключателем",
+      "price": 1941,
+      "raw_price": "1 941 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174420.prod"
+    },
+    {
+      "id": "174421",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 120Сок Эвент 18Вт с обратным клапаном",
+      "price": 1790,
+      "raw_price": "1 790 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174421.prod"
+    },
+    {
+      "id": "172349",
+      "category_id": "ventilyatsiya",
+      "name": "Вентилятор 150С Волна 22Вт, производительность 320м3/ч стандарт",
+      "price": 2294,
+      "raw_price": "2 294 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172349.prod"
+    },
+    {
+      "id": "178931",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=100, 3м Э",
+      "price": 450,
+      "raw_price": "450 ₽/шт",
+      "url": "https://bazavit.ru/catalog/178931.prod"
+    },
+    {
+      "id": "178932",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=110, 3м Э",
+      "price": 480,
+      "raw_price": "480 ₽/шт",
+      "url": "https://bazavit.ru/catalog/178932.prod"
+    },
+    {
+      "id": "180687",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=115, 3м Э",
+      "price": 485,
+      "raw_price": "485 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180687.prod"
+    },
+    {
+      "id": "178933",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=120, до 3м Э",
+      "price": 490,
+      "raw_price": "490 ₽/шт",
+      "url": "https://bazavit.ru/catalog/178933.prod"
+    },
+    {
+      "id": "180688",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=130, 3м Э",
+      "price": 536,
+      "raw_price": "536 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180688.prod"
+    },
+    {
+      "id": "180689",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=140, 3м Э",
+      "price": 580,
+      "raw_price": "580 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180689.prod"
+    },
+    {
+      "id": "178934",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=150, 3м Э",
+      "price": 616,
+      "raw_price": "616 ₽/шт",
+      "url": "https://bazavit.ru/catalog/178934.prod"
+    },
+    {
+      "id": "181066",
+      "category_id": "ventilyatsiya",
+      "name": "Воздуховод алюм.гофрир., д=160, 3м Э",
+      "price": 694,
+      "raw_price": "694 ₽/шт",
+      "url": "https://bazavit.ru/catalog/181066.prod"
+    },
+    {
+      "id": "179135",
+      "category_id": "ventilyatsiya",
+      "name": "Держатель прямоугольного канала 612ДКП (2шт)",
+      "price": 112,
+      "raw_price": "112 ₽/шт",
+      "url": "https://bazavit.ru/catalog/179135.prod"
+    },
+    {
+      "id": "180690",
+      "category_id": "ventilyatsiya",
+      "name": "Держатель универсальный d100/125/150/160мм",
+      "price": 84,
+      "raw_price": "84 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180690.prod"
+    },
+    {
+      "id": "180691",
+      "category_id": "ventilyatsiya",
+      "name": "Канал вентиляционный круглый 100мм х 0,5м",
+      "price": 197,
+      "raw_price": "197 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180691.prod"
+    },
+    {
+      "id": "180692",
+      "category_id": "ventilyatsiya",
+      "name": "Канал вентиляционный круглый 100мм х 1,5м",
+      "price": 584,
+      "raw_price": "584 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180692.prod"
+    },
+    {
+      "id": "180693",
+      "category_id": "ventilyatsiya",
+      "name": "Канал вентиляционный прямоугольный 120х60мм х 1,5м",
+      "price": 698,
+      "raw_price": "698 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180693.prod"
+    },
+    {
+      "id": "177970",
+      "category_id": "ventilyatsiya",
+      "name": "Канал круглый 1,0м 10ВП1",
+      "price": 382,
+      "raw_price": "382 ₽/шт",
+      "url": "https://bazavit.ru/catalog/177970.prod"
+    },
+    {
+      "id": "159013",
+      "category_id": "ventilyatsiya",
+      "name": "Канал круглый 1,0м 12,5ВП1",
+      "price": 527,
+      "raw_price": "527 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159013.prod"
+    },
+    {
+      "id": "159011",
+      "category_id": "ventilyatsiya",
+      "name": "Канал круглый 1,5м 125ВП1,5",
+      "price": 803,
+      "raw_price": "803 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159011.prod"
+    },
+    {
+      "id": "171216",
+      "category_id": "ventilyatsiya",
+      "name": "Канал прямоугольный 612ВП (0,5м)",
+      "price": 261,
+      "raw_price": "261 ₽/шт",
+      "url": "https://bazavit.ru/catalog/171216.prod"
+    },
+    {
+      "id": "159006",
+      "category_id": "ventilyatsiya",
+      "name": "Канал прямоугольный 612ВП (1,0м)",
+      "price": 474,
+      "raw_price": "474 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159006.prod"
+    },
+    {
+      "id": "163285",
+      "category_id": "ventilyatsiya",
+      "name": "Канал прямоугольный 612ВП (2,0м)",
+      "price": 933,
+      "raw_price": "933 ₽/шт",
+      "url": "https://bazavit.ru/catalog/163285.prod"
+    },
+    {
+      "id": "186087",
+      "category_id": "ventilyatsiya",
+      "name": "Клапан обратный 125 RSK125",
+      "price": 682,
+      "raw_price": "682 ₽/шт",
+      "url": "https://bazavit.ru/catalog/186087.prod"
+    },
+    {
+      "id": "180720",
+      "category_id": "ventilyatsiya",
+      "name": "Клапан обратный Эвент 120",
+      "price": 421,
+      "raw_price": "421 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180720.prod"
+    },
+    {
+      "id": "180694",
+      "category_id": "ventilyatsiya",
+      "name": "Колено круглое 125 ККП",
+      "price": 258,
+      "raw_price": "258 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180694.prod"
+    },
+    {
+      "id": "159008",
+      "category_id": "ventilyatsiya",
+      "name": "Колено плоское вертикальное 612КВП",
+      "price": 194,
+      "raw_price": "194 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159008.prod"
+    },
+    {
+      "id": "180695",
+      "category_id": "ventilyatsiya",
+      "name": "Колено плоское горизонтальное 60120 КГП",
+      "price": 220,
+      "raw_price": "220 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180695.prod"
+    },
+    {
+      "id": "158998",
+      "category_id": "ventilyatsiya",
+      "name": "Колено плоское разноугловое 612КРП",
+      "price": 243,
+      "raw_price": "243 ₽/шт",
+      "url": "https://bazavit.ru/catalog/158998.prod"
+    },
+    {
+      "id": "172431",
+      "category_id": "ventilyatsiya",
+      "name": "Площадка торцевая 100мм ТП100",
+      "price": 296,
+      "raw_price": "296 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172431.prod"
+    },
+    {
+      "id": "172432",
+      "category_id": "ventilyatsiya",
+      "name": "Площадка торцевая 125мм ТП125",
+      "price": 296,
+      "raw_price": "296 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172432.prod"
+    },
+    {
+      "id": "158995",
+      "category_id": "ventilyatsiya",
+      "name": "Площадка торцевая 150мм ТП150",
+      "price": 287,
+      "raw_price": "287 ₽/шт",
+      "url": "https://bazavit.ru/catalog/158995.prod"
+    },
+    {
+      "id": "180699",
+      "category_id": "ventilyatsiya",
+      "name": "Редуктор круглый 150/125/120/100/80",
+      "price": 154,
+      "raw_price": "154 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180699.prod"
+    },
+    {
+      "id": "179584",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. круглая Э50",
+      "price": 41,
+      "raw_price": "41 ₽/шт",
+      "url": "https://bazavit.ru/catalog/179584.prod"
+    },
+    {
+      "id": "180700",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 150х150мм разъемная П1515Р",
+      "price": 158,
+      "raw_price": "158 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180700.prod"
+    },
+    {
+      "id": "172437",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 150х150мм разъемная с моск. сеткой П1515М",
+      "price": 142,
+      "raw_price": "142 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172437.prod"
+    },
+    {
+      "id": "172438",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 150х200мм разъемная с моск. сеткой П1520Р",
+      "price": 209,
+      "raw_price": "209 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172438.prod"
+    },
+    {
+      "id": "157889",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 170х170мм МД1717",
+      "price": 348,
+      "raw_price": "348 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157889.prod"
+    },
+    {
+      "id": "180701",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 180х250мм разъемная П1825Р",
+      "price": 242,
+      "raw_price": "242 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180701.prod"
+    },
+    {
+      "id": "169267",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 183х253мм разъемная с моск. сеткой 1825М",
+      "price": 237,
+      "raw_price": "237 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169267.prod"
+    },
+    {
+      "id": "172439",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 200х300мм разъемная с моск. сеткой П2030М",
+      "price": 287,
+      "raw_price": "287 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172439.prod"
+    },
+    {
+      "id": "169268",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 210х210мм разъемная П2121Р",
+      "price": 219,
+      "raw_price": "219 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169268.prod"
+    },
+    {
+      "id": "157896",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 220х220мм МД2222",
+      "price": 420,
+      "raw_price": "420 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157896.prod"
+    },
+    {
+      "id": "157890",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 220х320мм МД2232",
+      "price": 462,
+      "raw_price": "462 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157890.prod"
+    },
+    {
+      "id": "180702",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 250х250мм металлич. оцинк. П250МЦ",
+      "price": 449,
+      "raw_price": "449 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180702.prod"
+    },
+    {
+      "id": "180703",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 250х250мм разъемная П2525Р",
+      "price": 384,
+      "raw_price": "384 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180703.prod"
+    },
+    {
+      "id": "157899",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 270х270мм МД2727",
+      "price": 489,
+      "raw_price": "489 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157899.prod"
+    },
+    {
+      "id": "157897",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. 320х320мм МД3232",
+      "price": 547,
+      "raw_price": "547 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157897.prod"
+    },
+    {
+      "id": "157877",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. дверная 450х130мм белая П4513ДП",
+      "price": 382,
+      "raw_price": "382 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157877.prod"
+    },
+    {
+      "id": "172440",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. металлическая оцинк. 200х200мм",
+      "price": 450,
+      "raw_price": "450 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172440.prod"
+    },
+    {
+      "id": "169270",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. регулируемая 170х170мм МД1717Р",
+      "price": 387,
+      "raw_price": "387 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169270.prod"
+    },
+    {
+      "id": "157878",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. регулируемая 220х320мм МД2232Р",
+      "price": 543,
+      "raw_price": "543 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157878.prod"
+    },
+    {
+      "id": "157902",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. регулируемая 270х270мм МД2727Р",
+      "price": 578,
+      "raw_price": "578 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157902.prod"
+    },
+    {
+      "id": "169271",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент. регулируемая 320х320мм МД3232Р",
+      "price": 770,
+      "raw_price": "770 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169271.prod"
+    },
+    {
+      "id": "180704",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.130х130мм с моск. сеткой П1313С",
+      "price": 83,
+      "raw_price": "83 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180704.prod"
+    },
+    {
+      "id": "172442",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.175х175мм разъемная с моск. сеткой Э1717Р",
+      "price": 161,
+      "raw_price": "161 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172442.prod"
+    },
+    {
+      "id": "172443",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.175х240мм разъемная с моск. сеткой Э1724Р",
+      "price": 178,
+      "raw_price": "178 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172443.prod"
+    },
+    {
+      "id": "177600",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.180х180мм разъемная с моск. сеткой Э1818Р",
+      "price": 132,
+      "raw_price": "132 ₽/шт",
+      "url": "https://bazavit.ru/catalog/177600.prod"
+    },
+    {
+      "id": "180705",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.190х190мм с моск. сеткой накл.жал. Э1919Н",
+      "price": 132,
+      "raw_price": "132 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180705.prod"
+    },
+    {
+      "id": "169273",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.203х203мм разъемная с моск. сеткой Э2020Р",
+      "price": 204,
+      "raw_price": "204 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169273.prod"
+    },
+    {
+      "id": "157884",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.218х295мм разъемная с моск. сеткой Э2030Р",
+      "price": 290,
+      "raw_price": "290 ₽/шт",
+      "url": "https://bazavit.ru/catalog/157884.prod"
+    },
+    {
+      "id": "172444",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.250х250мм не разъемная с моск. сеткой Э2525Н",
+      "price": 186,
+      "raw_price": "186 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172444.prod"
+    },
+    {
+      "id": "172445",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.300х200мм разъемная с моск. сеткой Э3020Р",
+      "price": 192,
+      "raw_price": "192 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172445.prod"
+    },
+    {
+      "id": "172447",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.375х375мм не разъемная с моск. сеткой Э3737Н",
+      "price": 326,
+      "raw_price": "326 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172447.prod"
+    },
+    {
+      "id": "186061",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка вент.круглая с фланцем d150 ПКР195/150",
+      "price": 270,
+      "raw_price": "270 ₽/шт",
+      "url": "https://bazavit.ru/catalog/186061.prod"
+    },
+    {
+      "id": "180706",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка с москитной сеткой П1724Г",
+      "price": 207,
+      "raw_price": "207 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180706.prod"
+    },
+    {
+      "id": "174415",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка-дверца 150х150мм П1515ДФ",
+      "price": 269,
+      "raw_price": "269 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174415.prod"
+    },
+    {
+      "id": "173692",
+      "category_id": "ventilyatsiya",
+      "name": "Решетка-дверца 300х300мм П3030ДФ",
+      "price": 496,
+      "raw_price": "496 ₽/шт",
+      "url": "https://bazavit.ru/catalog/173692.prod"
+    },
+    {
+      "id": "183747",
+      "category_id": "ventilyatsiya",
+      "name": "Соединитель канала 12,5СКП",
+      "price": 91,
+      "raw_price": "91 ₽/шт",
+      "url": "https://bazavit.ru/catalog/183747.prod"
+    },
+    {
+      "id": "180707",
+      "category_id": "ventilyatsiya",
+      "name": "Соединитель круглый 100 СКП",
+      "price": 80,
+      "raw_price": "80 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180707.prod"
+    },
+    {
+      "id": "159004",
+      "category_id": "ventilyatsiya",
+      "name": "Соединитель плоских каналов с обр.кл. 612СКПО",
+      "price": 162,
+      "raw_price": "162 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159004.prod"
+    },
+    {
+      "id": "158996",
+      "category_id": "ventilyatsiya",
+      "name": "Соединитель прямоугольного канала 612СКП",
+      "price": 102,
+      "raw_price": "102 ₽/шт",
+      "url": "https://bazavit.ru/catalog/158996.prod"
+    },
+    {
+      "id": "159014",
+      "category_id": "ventilyatsiya",
+      "name": "Соединитель угловой 612СК10ФП",
+      "price": 211,
+      "raw_price": "211 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159014.prod"
+    },
+    {
+      "id": "183749",
+      "category_id": "ventilyatsiya",
+      "name": "Тройник круглый 10ТП",
+      "price": 229,
+      "raw_price": "229 ₽/шт",
+      "url": "https://bazavit.ru/catalog/183749.prod"
+    },
+    {
+      "id": "159022",
+      "category_id": "ventilyatsiya",
+      "name": "Тройник круглый 12,5ТП",
+      "price": 306,
+      "raw_price": "306 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159022.prod"
+    },
+    {
+      "id": "159023",
+      "category_id": "ventilyatsiya",
+      "name": "Тройник плоский 612ТПП",
+      "price": 235,
+      "raw_price": "235 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159023.prod"
+    },
+    {
+      "id": "159005",
+      "category_id": "ventilyatsiya",
+      "name": "Тройник с выходом на фитинг 612ТФ10П",
+      "price": 438,
+      "raw_price": "438 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159005.prod"
+    },
+    {
+      "id": "169161",
+      "category_id": "anemostaty",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d100 А100Ф",
+      "price": 266,
+      "raw_price": "266 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169161.prod"
+    },
+    {
+      "id": "169162",
+      "category_id": "anemostaty",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d125 А125Ф",
+      "price": 343,
+      "raw_price": "343 ₽/шт",
+      "url": "https://bazavit.ru/catalog/169162.prod"
+    },
+    {
+      "id": "159329",
+      "category_id": "anemostaty",
+      "name": "Анемостат приточно-вытяжной регулируемый с фланцем d150 А150Ф",
+      "price": 461,
+      "raw_price": "461 ₽/шт",
+      "url": "https://bazavit.ru/catalog/159329.prod"
+    },
+    {
+      "id": "180685",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор Эвент 150С",
+      "price": 1970,
+      "raw_price": "1 970 ₽/шт",
+      "url": "https://bazavit.ru/catalog/180685.prod"
+    },
+    {
+      "id": "154601",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 100С Волна 13Вт, производительность 130м3/ч стандарт",
+      "price": 1485,
+      "raw_price": "1 485 ₽/шт",
+      "url": "https://bazavit.ru/catalog/154601.prod"
+    },
+    {
+      "id": "173627",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 100С Эвент 13Вт, производительность 130м3/ч стандарт",
+      "price": 1392,
+      "raw_price": "1 392 ₽/шт",
+      "url": "https://bazavit.ru/catalog/173627.prod"
+    },
+    {
+      "id": "174417",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 100СВ Волна Эвент 13Вт со шнурковым выключателем",
+      "price": 1677,
+      "raw_price": "1 677 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174417.prod"
+    },
+    {
+      "id": "174418",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 100СВ Эвент 13Вт со шнурковым выключателем",
+      "price": 1609,
+      "raw_price": "1 609 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174418.prod"
+    },
+    {
+      "id": "173628",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 120С Эвент 18Вт, производительность 240м3/ч",
+      "price": 1600,
+      "raw_price": "1 600 ₽/шт",
+      "url": "https://bazavit.ru/catalog/173628.prod"
+    },
+    {
+      "id": "174420",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 120СВ Волна Эвент 18Вт со шнурковым выключателем",
+      "price": 1941,
+      "raw_price": "1 941 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174420.prod"
+    },
+    {
+      "id": "174421",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 120Сок Эвент 18Вт с обратным клапаном",
+      "price": 1790,
+      "raw_price": "1 790 ₽/шт",
+      "url": "https://bazavit.ru/catalog/174421.prod"
+    },
+    {
+      "id": "172349",
+      "category_id": "ventilyatory",
+      "name": "Вентилятор 150С Волна 22Вт, производительность 320м3/ч стандарт",
+      "price": 2294,
+      "raw_price": "2 294 ₽/шт",
+      "url": "https://bazavit.ru/catalog/172349.prod"
+    }
+  ]
+}
