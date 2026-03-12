@@ -1,0 +1,3485 @@
+{
+  "categories": [
+    {
+      "id": "sad",
+      "name": "Сад",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sad/"
+    },
+    {
+      "id": "seychas-v-sezone",
+      "name": "Сейчас в сезоне",
+      "href": "https://volgograd.lemanapro.ru/catalogue/seychas-v-sezone/"
+    },
+    {
+      "id": "sadovaya-tehnika",
+      "name": "Садовая техника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sadovaya-tehnika/"
+    },
+    {
+      "id": "sadovaya-mebel",
+      "name": "Садовая мебель",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sadovaya-mebel/"
+    },
+    {
+      "id": "tovary-dlya-uborki-snega",
+      "name": "Товары для уборки снега",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-uborki-snega/"
+    },
+    {
+      "id": "nasosy-dlya-doma-i-dachi",
+      "name": "Насосы для дома и дачи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/nasosy-dlya-doma-i-dachi/"
+    },
+    {
+      "id": "sadovyy-inventar",
+      "name": "Садовый инвентарь",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sadovyy-inventar/"
+    },
+    {
+      "id": "sazhency-i-rassada",
+      "name": "Саженцы и рассада",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sazhency-i-rassada/"
+    },
+    {
+      "id": "uhod-za-rasteniyami",
+      "name": "Уход за растениями",
+      "href": "https://volgograd.lemanapro.ru/catalogue/uhod-za-rasteniyami/"
+    },
+    {
+      "id": "vyrashchivanie-rassady",
+      "name": "Выращивания рассады",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vyrashchivanie-rassady/"
+    },
+    {
+      "id": "semena",
+      "name": "Семена",
+      "href": "https://volgograd.lemanapro.ru/catalogue/semena/"
+    },
+    {
+      "id": "obustroystvo-sada-i-ogoroda",
+      "name": "Обустройство сада и огорода",
+      "href": "https://volgograd.lemanapro.ru/catalogue/obustroystvo-sada-i-ogoroda/"
+    },
+    {
+      "id": "komnatnye-rasteniya-i-cvety",
+      "name": "Комнатные растения и цветы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/komnatnye-rasteniya-i-cvety/"
+    },
+    {
+      "id": "gorshki-i-podstavki-dlya-rasteniy",
+      "name": "Горшки и подставки для растений",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gorshki-i-podstavki-dlya-rasteniy/"
+    },
+    {
+      "id": "barbekyu-dlya-dachi",
+      "name": "Барбекю для дачи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/barbekyu-dlya-dachi/"
+    },
+    {
+      "id": "basseyny-dlya-dachi",
+      "name": "Бассейны для дачи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/basseyny-dlya-dachi/"
+    },
+    {
+      "id": "tovary-dlya-poliva",
+      "name": "Товары для полива",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-poliva/"
+    },
+    {
+      "id": "dachnaya-santehnika",
+      "name": "Дачная сантехника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dachnaya-santehnika/"
+    },
+    {
+      "id": "sadovaya-obuv",
+      "name": "Садовая обувь",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sadovaya-obuv/"
+    },
+    {
+      "id": "sadovyy-dekor",
+      "name": "Садовый декор",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sadovyy-dekor/"
+    },
+    {
+      "id": "zashchita-pri-rabote-v-sadu-i-ogorode",
+      "name": "Защита при работе в саду и огороде",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zashchita-pri-rabote-v-sadu-i-ogorode/"
+    },
+    {
+      "id": "tovary-dlya-konservirovaniya-i-vinodeliya",
+      "name": "Товары для консервирования и виноделия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-konservirovaniya-i-vinodeliya/"
+    },
+    {
+      "id": "sredstva-zashchity-ot-nasekomyh-i-gryzunov",
+      "name": "Средства защиты от насекомых и грызунов",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sredstva-zashchity-ot-nasekomyh-i-gryzunov/"
+    },
+    {
+      "id": "detskie-tovary-dlya-igr-i-otdyha",
+      "name": "Детские товары для игр и отдыха",
+      "href": "https://volgograd.lemanapro.ru/catalogue/detskie-tovary-dlya-igr-i-otdyha/"
+    },
+    {
+      "id": "tovary-dlya-turizma-i-aktivnogo-otdyha",
+      "name": "Товары для туризма и активного отдыха",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-turizma-i-aktivnogo-otdyha/"
+    },
+    {
+      "id": "sportivnye-tovary",
+      "name": "Спортивные товары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sportivnye-tovary/"
+    },
+    {
+      "id": "zapchasti-i-aksessuary-dlya-sadovoy-tehniki",
+      "name": "Запчасти, аксессуары для садовой техники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zapchasti-i-aksessuary-dlya-sadovoy-tehniki/"
+    },
+    {
+      "id": "zabory",
+      "name": "Заборы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zabory/"
+    },
+    {
+      "id": "proekty-dlya-dachnogo-uchastka",
+      "name": "Проекты для дачного участка",
+      "href": "https://volgograd.lemanapro.ru/catalogue/proekty-dlya-dachnogo-uchastka/"
+    },
+    {
+      "id": "tekstil",
+      "name": "Текстиль",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tekstil/"
+    },
+    {
+      "id": "dekor-po-stilyam",
+      "name": "Декор по стилям",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-po-stilyam/"
+    },
+    {
+      "id": "oformlenie-okna",
+      "name": "Шторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oformlenie-okna/"
+    },
+    {
+      "id": "gotovye-shtory-i-tyuli",
+      "name": "Готовые шторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gotovye-shtory-i-tyuli/"
+    },
+    {
+      "id": "tyul",
+      "name": "Тюль",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tyul/"
+    },
+    {
+      "id": "gotovye-shtory-i-tyuli",
+      "name": "Комплекты штор",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gotovye-shtory-i-tyuli/komplekty/"
+    },
+    {
+      "id": "tkan-dlya-dekora",
+      "name": "Ткани",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tkan-dlya-dekora/"
+    },
+    {
+      "id": "tekstil-dlya-doma",
+      "name": "Домашний текстиль",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tekstil-dlya-doma/"
+    },
+    {
+      "id": "dekorativnye-podushki",
+      "name": "Декоративные подушки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-podushki/"
+    },
+    {
+      "id": "pokryvala",
+      "name": "Покрывала",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pokryvala/"
+    },
+    {
+      "id": "pledy",
+      "name": "Пледы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pledy/"
+    },
+    {
+      "id": "rulonnye-shtory",
+      "name": "Рулонные шторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/rulonnye-shtory/"
+    },
+    {
+      "id": "rimskie-shtory",
+      "name": "Римские шторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/rimskie-shtory/"
+    },
+    {
+      "id": "zhalyuzi",
+      "name": "Жалюзи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zhalyuzi/"
+    },
+    {
+      "id": "vertikalnye-zhalyuzi",
+      "name": "Комплекты вертикальных жалюзи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vertikalnye-zhalyuzi/komplekt/"
+    },
+    {
+      "id": "karnizy-dlya-shtor",
+      "name": "Карнизы для штор",
+      "href": "https://volgograd.lemanapro.ru/catalogue/karnizy-dlya-shtor/"
+    },
+    {
+      "id": "elektrokarnizy",
+      "name": "Электрокарнизы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektrokarnizy/"
+    },
+    {
+      "id": "postelnoe-bele",
+      "name": "Постельное бельё",
+      "href": "https://volgograd.lemanapro.ru/catalogue/postelnoe-bele/"
+    },
+    {
+      "id": "komplekty-postelnogo-belya",
+      "name": "Комплекты постельного белья",
+      "href": "https://volgograd.lemanapro.ru/catalogue/komplekty-postelnogo-belya/"
+    },
+    {
+      "id": "prostyni",
+      "name": "Простыни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/prostyni/"
+    },
+    {
+      "id": "pododeyalniki",
+      "name": "Пододеяльники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pododeyalniki/"
+    },
+    {
+      "id": "navolochki",
+      "name": "Наволочки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/navolochki/"
+    },
+    {
+      "id": "postelnye-prinadlezhnosti",
+      "name": "Постельные принадлежности",
+      "href": "https://volgograd.lemanapro.ru/catalogue/postelnye-prinadlezhnosti/"
+    },
+    {
+      "id": "matrasy",
+      "name": "Матрасы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/matrasy/"
+    },
+    {
+      "id": "matrasy",
+      "name": "Топперы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/matrasy/toppery/"
+    },
+    {
+      "id": "namatrasniki",
+      "name": "Наматрасники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/namatrasniki/"
+    },
+    {
+      "id": "odeyala",
+      "name": "Одеяла",
+      "href": "https://volgograd.lemanapro.ru/catalogue/odeyala/"
+    },
+    {
+      "id": "podushki",
+      "name": "Подушки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/podushki/"
+    },
+    {
+      "id": "sidushki-na-stulya",
+      "name": "Сидушки на стулья",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sidushki-na-stulya/"
+    },
+    {
+      "id": "samokleyashchayasya-plenka",
+      "name": "Пленка для окон",
+      "href": "https://volgograd.lemanapro.ru/catalogue/samokleyashchayasya-plenka/plenka-dlya-okon/"
+    },
+    {
+      "id": "kovry-i-kovriki-dlya-interera",
+      "name": "Ковры и коврики для интерьера",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kovry-i-kovriki-dlya-interera/"
+    },
+    {
+      "id": "tekstil-i-shtangi-dlya-vannoy-komnaty",
+      "name": "Текстиль и штанги для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tekstil-i-shtangi-dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "dekor",
+      "name": "Декор",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor/"
+    },
+    {
+      "id": "oboi-dlya-sten-i-potolka",
+      "name": "Обои",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oboi-dlya-sten-i-potolka/"
+    },
+    {
+      "id": "dekorativnye-oboi",
+      "name": "Декоративные обои",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-oboi/"
+    },
+    {
+      "id": "oboi-pod-pokrasku",
+      "name": "Обои под покраску",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oboi-pod-pokrasku/"
+    },
+    {
+      "id": "fotooboi",
+      "name": "Фотообои",
+      "href": "https://volgograd.lemanapro.ru/catalogue/fotooboi/"
+    },
+    {
+      "id": "oboi-po-stilyam",
+      "name": "Обои по стилям",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oboi-po-stilyam/"
+    },
+    {
+      "id": "novinki-dekora-sten",
+      "name": "Новинки обоев",
+      "href": "https://volgograd.lemanapro.ru/catalogue/novinki-dekora-sten/oboi/"
+    },
+    {
+      "id": "kley-dlya-oboev",
+      "name": "Клей для обоев",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kley-dlya-oboev/"
+    },
+    {
+      "id": "dekor-dlya-sten",
+      "name": "Декор для стен",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-dlya-sten/"
+    },
+    {
+      "id": "zerkala",
+      "name": "Зеркала",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zerkala/"
+    },
+    {
+      "id": "postery",
+      "name": "Постеры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/postery/"
+    },
+    {
+      "id": "chasy-i-budilniki",
+      "name": "Часы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/chasy-i-budilniki/"
+    },
+    {
+      "id": "dekor-potolka-i-lepnina",
+      "name": "Декор потолка и лепнина",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-potolka-i-lepnina/"
+    },
+    {
+      "id": "potolochnye-plintusy",
+      "name": "Потолочные плинтусы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/potolochnye-plintusy/"
+    },
+    {
+      "id": "dekorativnye-paneli",
+      "name": "Декоративные панели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-paneli/"
+    },
+    {
+      "id": "moldingi",
+      "name": "Молдинги",
+      "href": "https://volgograd.lemanapro.ru/catalogue/moldingi/"
+    },
+    {
+      "id": "gipsovye-paneli",
+      "name": "Панели для отделки стен",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gipsovye-paneli/"
+    },
+    {
+      "id": "kapsulnye-kollekcii",
+      "name": "Капсульные коллекции",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kapsulnye-kollekcii/"
+    },
+    {
+      "id": "dekorativnaya-mebel",
+      "name": "Декоративная мебель",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnaya-mebel/"
+    },
+    {
+      "id": "kofeynye-stoliki",
+      "name": "Кофейные столики",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kofeynye-stoliki/"
+    },
+    {
+      "id": "myagkie-pufiki",
+      "name": "Пуфики",
+      "href": "https://volgograd.lemanapro.ru/catalogue/myagkie-pufiki/"
+    },
+    {
+      "id": "oformlenie-interera",
+      "name": "Товары для оформления интерьера",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oformlenie-interera/"
+    },
+    {
+      "id": "aromaty-dlya-doma",
+      "name": "Ароматы для дома",
+      "href": "https://volgograd.lemanapro.ru/catalogue/aromaty-dlya-doma/"
+    },
+    {
+      "id": "predmety-interera",
+      "name": "Предметы интерьера",
+      "href": "https://volgograd.lemanapro.ru/catalogue/predmety-interera/"
+    },
+    {
+      "id": "modnyy-interer",
+      "name": "Модный интерьер",
+      "href": "https://volgograd.lemanapro.ru/catalogue/modnyy-interer/"
+    },
+    {
+      "id": "tovary-dlya-tvorchestva",
+      "name": "Товары для творчества",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-tvorchestva/"
+    },
+    {
+      "id": "prazdnichnyy-dekor-i-podarki",
+      "name": "Праздничный декор и подарки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/prazdnichnyy-dekor-i-podarki/"
+    },
+    {
+      "id": "dekor-dlya-detskoy",
+      "name": "Декор для детской",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-dlya-detskoy/"
+    },
+    {
+      "id": "dekor-dlya-kuhni",
+      "name": "Декор для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-dlya-kuhni/"
+    },
+    {
+      "id": "dekor-dlya-spalni",
+      "name": "Декор для спальни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-dlya-spalni/"
+    },
+    {
+      "id": "dekor-dlya-nezhilyh-i-kommercheskih-pomeshcheniy",
+      "name": "Декор для нежилых и коммерческих помещений",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekor-dlya-nezhilyh-i-kommercheskih-pomeshcheniy/"
+    },
+    {
+      "id": "osveshchenie",
+      "name": "Освещение",
+      "href": "https://volgograd.lemanapro.ru/catalogue/osveshchenie/"
+    },
+    {
+      "id": "osveshchenie-zhilyh-pomeshcheniy",
+      "name": "Освещение жилых помещений",
+      "href": "https://volgograd.lemanapro.ru/catalogue/osveshchenie-zhilyh-pomeshcheniy/"
+    },
+    {
+      "id": "tehnicheskie-svetilniki",
+      "name": "Технические светильники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tehnicheskie-svetilniki/"
+    },
+    {
+      "id": "ulichnye-svetilniki",
+      "name": "Уличные светильники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ulichnye-svetilniki/"
+    },
+    {
+      "id": "svetodiodnoe-osveshchenie",
+      "name": "Светодиодное освещение",
+      "href": "https://volgograd.lemanapro.ru/catalogue/svetodiodnoe-osveshchenie/"
+    },
+    {
+      "id": "proekty-osveshcheniya",
+      "name": "Проекты освещения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/proekty-osveshcheniya/"
+    },
+    {
+      "id": "stili-svetilnikov",
+      "name": "Стилевые коллекции светильников",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stili-svetilnikov/"
+    },
+    {
+      "id": "lyustry",
+      "name": "Люстры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lyustry/"
+    },
+    {
+      "id": "lyustry-podvesnye",
+      "name": "Светильники подвесные",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lyustry-podvesnye/"
+    },
+    {
+      "id": "svetilniki-potolochnye",
+      "name": "Потолочные светильники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/svetilniki-potolochnye/"
+    },
+    {
+      "id": "nastenno-potolochnye-svetilniki",
+      "name": "Настенно-потолочные светильники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/nastenno-potolochnye-svetilniki/"
+    },
+    {
+      "id": "nastennye-svetilniki",
+      "name": "Настенные светильники и бра",
+      "href": "https://volgograd.lemanapro.ru/catalogue/nastennye-svetilniki/"
+    },
+    {
+      "id": "trekovye-sistemy-osveshcheniya",
+      "name": "Трековые системы освещения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/trekovye-sistemy-osveshcheniya/"
+    },
+    {
+      "id": "lenty-svetodiodnye",
+      "name": "Ленты светодиодные",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lenty-svetodiodnye/"
+    },
+    {
+      "id": "tochechnye-svetilniki",
+      "name": "Точечные светильники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tochechnye-svetilniki/"
+    },
+    {
+      "id": "svetodiodnye-paneli",
+      "name": "Светодиодные панели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/svetodiodnye-paneli/"
+    },
+    {
+      "id": "prozhektory",
+      "name": "Прожекторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/prozhektory/"
+    },
+    {
+      "id": "svetilniki-lineynye",
+      "name": "Светильники линейные",
+      "href": "https://volgograd.lemanapro.ru/catalogue/svetilniki-lineynye/"
+    },
+    {
+      "id": "fonari",
+      "name": "Фонари ручные",
+      "href": "https://volgograd.lemanapro.ru/catalogue/fonari/"
+    },
+    {
+      "id": "lampochki",
+      "name": "Лампочки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lampochki/"
+    },
+    {
+      "id": "komplektuyushchie-dlya-svetilnikov",
+      "name": "Комплектующие для светильников",
+      "href": "https://volgograd.lemanapro.ru/catalogue/komplektuyushchie-dlya-svetilnikov/"
+    },
+    {
+      "id": "kuhni",
+      "name": "Кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kuhni/"
+    },
+    {
+      "id": "mebel-dlya-kuhni",
+      "name": "Мебель для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-kuhni/"
+    },
+    {
+      "id": "bytovaya-tehnika-dlya-kuhni",
+      "name": "Бытовая техника для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bytovaya-tehnika-dlya-kuhni/"
+    },
+    {
+      "id": "stoleshnicy-i-stenovye-paneli",
+      "name": "Столешницы и стеновые панели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stoleshnicy-i-stenovye-paneli/"
+    },
+    {
+      "id": "stoly-i-stulya",
+      "name": "Столы и стулья",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stoly-i-stulya/"
+    },
+    {
+      "id": "moyki-i-smesiteli-dlya-kuhni",
+      "name": "Мойки и смесители для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/moyki-i-smesiteli-dlya-kuhni/"
+    },
+    {
+      "id": "vstraivaemaya-bytovaya-tehnika",
+      "name": "Встраиваемая бытовая техника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vstraivaemaya-bytovaya-tehnika/"
+    },
+    {
+      "id": "melkaya-bytovaya-tehnika",
+      "name": "Мелкая бытовая техника для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/melkaya-bytovaya-tehnika/"
+    },
+    {
+      "id": "organizaciya-hraneniya-na-kuhne",
+      "name": "Организация хранения на кухне",
+      "href": "https://volgograd.lemanapro.ru/catalogue/organizaciya-hraneniya-na-kuhne/"
+    },
+    {
+      "id": "kuhonnye-aksessuary",
+      "name": "Кухонные аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kuhonnye-aksessuary/"
+    },
+    {
+      "id": "barnye-stoyki-i-aksessuary",
+      "name": "Барные стойки и аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/barnye-stoyki-i-aksessuary/"
+    },
+    {
+      "id": "posuda-dlya-prigotovleniya-blyud",
+      "name": "Посуда для приготовления блюд",
+      "href": "https://volgograd.lemanapro.ru/catalogue/posuda-dlya-prigotovleniya-blyud/"
+    },
+    {
+      "id": "posuda-dlya-servirovki",
+      "name": "Посуда для сервировки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/posuda-dlya-servirovki/"
+    },
+    {
+      "id": "termoposuda",
+      "name": "Термопосуда",
+      "href": "https://volgograd.lemanapro.ru/catalogue/termoposuda/"
+    },
+    {
+      "id": "obustroystvo-zon-obshchestvennogo-pitaniya",
+      "name": "Обустройство зон общественного питания",
+      "href": "https://volgograd.lemanapro.ru/catalogue/obustroystvo-zon-obshchestvennogo-pitaniya/"
+    },
+    {
+      "id": "dispensery-dlya-butilirovannoy-vody",
+      "name": "Диспенсеры для бутилированной воды",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dispensery-dlya-butilirovannoy-vody/"
+    },
+    {
+      "id": "osveshchenie-na-kuhne",
+      "name": "Освещение на кухне",
+      "href": "https://volgograd.lemanapro.ru/catalogue/osveshchenie-na-kuhne/"
+    },
+    {
+      "id": "stoleshnicy-i-komplektuyushchie",
+      "name": "Столешницы и комплектующие",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stoleshnicy-i-komplektuyushchie/"
+    },
+    {
+      "id": "stenovye-paneli",
+      "name": "Стеновые панели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stenovye-paneli/"
+    },
+    {
+      "id": "chistyashchie-sredstva",
+      "name": "Бытовая химия для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/chistyashchie-sredstva/dlya-kuhni/"
+    },
+    {
+      "id": "plitka-dlya-kuhni",
+      "name": "Плитка для кухни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka-dlya-kuhni/"
+    },
+    {
+      "id": "posuda",
+      "name": "Посуда",
+      "href": "https://volgograd.lemanapro.ru/catalogue/posuda/"
+    },
+    {
+      "id": "bytovaya-tehnika",
+      "name": "Бытовая техника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bytovaya-tehnika/"
+    },
+    {
+      "id": "bytovaya-tehnika-dlya-vannoy",
+      "name": "Бытовая техника для ванной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bytovaya-tehnika-dlya-vannoy/"
+    },
+    {
+      "id": "krasota-i-zdorove",
+      "name": "Техника для красоты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krasota-i-zdorove/"
+    },
+    {
+      "id": "tehnika-dlya-doma",
+      "name": "Техника для дома",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tehnika-dlya-doma/"
+    },
+    {
+      "id": "mebel-dlya-doma",
+      "name": "Мебель",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-doma/"
+    },
+    {
+      "id": "shkafy",
+      "name": "Шкафы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/shkafy/"
+    },
+    {
+      "id": "komody-i-tumby",
+      "name": "Комоды и тумбы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/komody-i-tumby/"
+    },
+    {
+      "id": "myagkaya-mebel",
+      "name": "Мягкая мебель",
+      "href": "https://volgograd.lemanapro.ru/catalogue/myagkaya-mebel/"
+    },
+    {
+      "id": "stellazhi",
+      "name": "Стеллажи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stellazhi/"
+    },
+    {
+      "id": "modulnye-sistemy-lion",
+      "name": "Модульные системы Лион",
+      "href": "https://volgograd.lemanapro.ru/catalogue/modulnye-sistemy-lion/"
+    },
+    {
+      "id": "krovati",
+      "name": "Кровати",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krovati/"
+    },
+    {
+      "id": "stoly",
+      "name": "Столы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stoly/"
+    },
+    {
+      "id": "stulya",
+      "name": "Стулья",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stulya/"
+    },
+    {
+      "id": "garderobnye-sistemy",
+      "name": "Гардеробные системы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/garderobnye-sistemy/"
+    },
+    {
+      "id": "dveri-kupe",
+      "name": "Двери-купе",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dveri-kupe/"
+    },
+    {
+      "id": "obuvnicy-i-banketki",
+      "name": "Обувницы и банкетки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/obuvnicy-i-banketki/"
+    },
+    {
+      "id": "stoliki",
+      "name": "Столики",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stoliki/"
+    },
+    {
+      "id": "veshalki",
+      "name": "Вешалки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/veshalki/"
+    },
+    {
+      "id": "polki-i-kronshteyny",
+      "name": "Полки и кронштейны",
+      "href": "https://volgograd.lemanapro.ru/catalogue/polki-i-kronshteyny/"
+    },
+    {
+      "id": "mebel-dlya-detskoy",
+      "name": "Мебель для детской",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-detskoy/"
+    },
+    {
+      "id": "domashniy-ofis",
+      "name": "Мебель для домашнего офиса",
+      "href": "https://volgograd.lemanapro.ru/catalogue/domashniy-ofis/"
+    },
+    {
+      "id": "kompyuternye-kresla",
+      "name": "Компьютерные кресла",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kompyuternye-kresla/"
+    },
+    {
+      "id": "mebelnye-garnitury",
+      "name": "Мебельные гарнитуры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebelnye-garnitury/"
+    },
+    {
+      "id": "shirmy",
+      "name": "Ширмы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/shirmy/"
+    },
+    {
+      "id": "mebel-dlya-gostinoy",
+      "name": "Мебель для гостиной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-gostinoy/"
+    },
+    {
+      "id": "mebel-dlya-spalni",
+      "name": "Мебель для спальни",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-spalni/"
+    },
+    {
+      "id": "mebel-dlya-prihozhey",
+      "name": "Мебель для прихожей",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-prihozhey/"
+    },
+    {
+      "id": "mebel",
+      "name": "Домашняя мебель",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel/"
+    },
+    {
+      "id": "mebel-dlya-vannoy-komnaty",
+      "name": "Мебель для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebel-dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "mebelnaya-furnitura",
+      "name": "Мебельная фурнитура",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebelnaya-furnitura/"
+    },
+    {
+      "id": "santehnika",
+      "name": "Сантехника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/santehnika/"
+    },
+    {
+      "id": "smesiteli-dlya-vannoy-komnaty",
+      "name": "Смесители для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/smesiteli-dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "unitazy-i-bide",
+      "name": "Унитазы и биде",
+      "href": "https://volgograd.lemanapro.ru/catalogue/unitazy-i-bide/"
+    },
+    {
+      "id": "vanny-i-komplektuyushchie",
+      "name": "Ванны и комплектующие",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vanny-i-komplektuyushchie/"
+    },
+    {
+      "id": "dushevye-kabiny-i-shirmy",
+      "name": "Душевые кабины и ширмы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dushevye-kabiny-i-shirmy/"
+    },
+    {
+      "id": "rakoviny-v-vannuyu-komnatu",
+      "name": "Раковины",
+      "href": "https://volgograd.lemanapro.ru/catalogue/rakoviny-v-vannuyu-komnatu/"
+    },
+    {
+      "id": "dushevoe-oborudovanie",
+      "name": "Душевое оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dushevoe-oborudovanie/"
+    },
+    {
+      "id": "zerkala-i-polki-v-vannuyu",
+      "name": "Зеркала и полки в ванную",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zerkala-i-polki-v-vannuyu/"
+    },
+    {
+      "id": "polotencesushiteli",
+      "name": "Полотенцесушители",
+      "href": "https://volgograd.lemanapro.ru/catalogue/polotencesushiteli/"
+    },
+    {
+      "id": "hranenie-v-vannoy",
+      "name": "Хранение в ванной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/hranenie-v-vannoy/"
+    },
+    {
+      "id": "aksessuary-dlya-vannoy-komnaty",
+      "name": "Аксессуары для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/aksessuary-dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "sushilki-i-gladilnye-doski",
+      "name": "Сушилки и гладильные доски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sushilki-i-gladilnye-doski/"
+    },
+    {
+      "id": "detskie-tovary-dlya-vannoy",
+      "name": "Детские товары для ванной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/detskie-tovary-dlya-vannoy/"
+    },
+    {
+      "id": "biotualety-i-aksessuary",
+      "name": "Биотуалеты и аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/biotualety-i-aksessuary/"
+    },
+    {
+      "id": "banya-i-sauna",
+      "name": "Товары для бани и сауны",
+      "href": "https://volgograd.lemanapro.ru/catalogue/banya-i-sauna/"
+    },
+    {
+      "id": "vodonagrevateli",
+      "name": "Водонагреватели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vodonagrevateli/"
+    },
+    {
+      "id": "mezhkomnatnye-dveri-po-tipam-pomeshcheniya",
+      "name": "Двери для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mezhkomnatnye-dveri-po-tipam-pomeshcheniya/dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "plitka-dlya-vannoy-komnaty",
+      "name": "Плитка для ванной комнаты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka-dlya-vannoy-komnaty/"
+    },
+    {
+      "id": "osveshchenie-v-vannoy",
+      "name": "Освещение в ванной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/osveshchenie-v-vannoy/"
+    },
+    {
+      "id": "laminat",
+      "name": "Ламинат для ванной",
+      "href": "https://volgograd.lemanapro.ru/catalogue/laminat/laminat-dlya-vannoy/"
+    },
+    {
+      "id": "plitka",
+      "name": "Плитка",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka/"
+    },
+    {
+      "id": "plitka-keramogranit-i-mozaika",
+      "name": "Плитка, керамогранит и мозаика",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka-keramogranit-i-mozaika/"
+    },
+    {
+      "id": "klei-i-sredstva-dlya-ukladki-plitki",
+      "name": "Клеи и средства для укладки плитки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/klei-i-sredstva-dlya-ukladki-plitki/"
+    },
+    {
+      "id": "zatirki-dlya-shvov-plitki",
+      "name": "Затирки для швов плитки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zatirki-dlya-shvov-plitki/"
+    },
+    {
+      "id": "instrumenty-dlya-plitochnyh-rabot",
+      "name": "Инструменты для плиточных работ",
+      "href": "https://volgograd.lemanapro.ru/catalogue/instrumenty-dlya-plitochnyh-rabot/"
+    },
+    {
+      "id": "plitka-dlya-kommercheskih-i-obshchestvennyh-pomeshcheniy",
+      "name": "Плитка для коммерческих и общественных помещений",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka-dlya-kommercheskih-i-obshchestvennyh-pomeshcheniy/"
+    },
+    {
+      "id": "plitka-dlya-stupeney-i-fasadov",
+      "name": "Плитка для ступеней и фасадов",
+      "href": "https://volgograd.lemanapro.ru/catalogue/plitka-dlya-stupeney-i-fasadov/"
+    },
+    {
+      "id": "pvh-plitka",
+      "name": "Кварцвиниловая плитка",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pvh-plitka/"
+    },
+    {
+      "id": "lyuki-pod-plitku",
+      "name": "Люки под плитку",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lyuki-pod-plitku/"
+    },
+    {
+      "id": "krestiki-i-svp-dlya-plitki",
+      "name": "Крестики и СВП",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krestiki-i-svp-dlya-plitki/"
+    },
+    {
+      "id": "elektricheskie-teplye-poly",
+      "name": "Теплые полы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektricheskie-teplye-poly/"
+    },
+    {
+      "id": "otdelka-i-obnovlenie-krylca",
+      "name": "Отделка и обновление крыльца",
+      "href": "https://volgograd.lemanapro.ru/catalogue/otdelka-i-obnovlenie-krylca/"
+    },
+    {
+      "id": "instrumenty",
+      "name": "Инструменты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/instrumenty/"
+    },
+    {
+      "id": "elektroinstrumenty",
+      "name": "Электроинструменты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektroinstrumenty/"
+    },
+    {
+      "id": "aksessuary-dlya-elektroinstrumenta",
+      "name": "Аксессуары для электроинструмента",
+      "href": "https://volgograd.lemanapro.ru/catalogue/aksessuary-dlya-elektroinstrumenta/"
+    },
+    {
+      "id": "ruchnoy-instrument",
+      "name": "Ручной инструмент",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ruchnoy-instrument/"
+    },
+    {
+      "id": "generatory",
+      "name": "Генераторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/generatory/"
+    },
+    {
+      "id": "minimoyki-i-stroitelnye-pylesosy",
+      "name": "Минимойки и строительные пылесосы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/minimoyki-i-stroitelnye-pylesosy/"
+    },
+    {
+      "id": "oborudovanie-dlya-masterskoy",
+      "name": "Оборудование для мастерской",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oborudovanie-dlya-masterskoy/"
+    },
+    {
+      "id": "elektricheskie-pily",
+      "name": "Электрические пилы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektricheskie-pily/"
+    },
+    {
+      "id": "svarochnoe-oborudovanie",
+      "name": "Сварочное оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/svarochnoe-oborudovanie/"
+    },
+    {
+      "id": "stanki",
+      "name": "Станки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stanki/"
+    },
+    {
+      "id": "izmeritelno-razmetochnyy-instrument",
+      "name": "Измерительно-разметочный инструмент",
+      "href": "https://volgograd.lemanapro.ru/catalogue/izmeritelno-razmetochnyy-instrument/"
+    },
+    {
+      "id": "benzinovaya-tehnika",
+      "name": "Бензиновая техника",
+      "href": "https://volgograd.lemanapro.ru/catalogue/benzinovaya-tehnika/"
+    },
+    {
+      "id": "organizaciya-rabochego-mesta",
+      "name": "Организация рабочего места",
+      "href": "https://volgograd.lemanapro.ru/catalogue/organizaciya-rabochego-mesta/"
+    },
+    {
+      "id": "fiksiruyushchiy-instrument",
+      "name": "Фиксирующий инструмент",
+      "href": "https://volgograd.lemanapro.ru/catalogue/fiksiruyushchiy-instrument/"
+    },
+    {
+      "id": "shtukaturno-otdelochnye-instrumenty",
+      "name": "Штукатурно-отделочный инструмент",
+      "href": "https://volgograd.lemanapro.ru/catalogue/shtukaturno-otdelochnye-instrumenty/"
+    },
+    {
+      "id": "specinstrumenty-dlya-remonta",
+      "name": "Специализированный инструмент для ремонта",
+      "href": "https://volgograd.lemanapro.ru/catalogue/specinstrumenty-dlya-remonta/"
+    },
+    {
+      "id": "professionalnye-instrumenty-i-krepezh",
+      "name": "Профессиональные инструменты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/professionalnye-instrumenty-i-krepezh/"
+    },
+    {
+      "id": "avtotovary",
+      "name": "Автотовары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/avtotovary/"
+    },
+    {
+      "id": "oborudovanie-dlya-rabot-na-vysote",
+      "name": "Оборудование для работ на высоте",
+      "href": "https://volgograd.lemanapro.ru/catalogue/oborudovanie-dlya-rabot-na-vysote/"
+    },
+    {
+      "id": "stroitelnoe-oborudovanie",
+      "name": "Строительное оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stroitelnoe-oborudovanie/"
+    },
+    {
+      "id": "hranenie",
+      "name": "Хранение",
+      "href": "https://volgograd.lemanapro.ru/catalogue/hranenie/"
+    },
+    {
+      "id": "stellazhnye-sistemy-hraneniya",
+      "name": "Стеллажные системы хранения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stellazhnye-sistemy-hraneniya/"
+    },
+    {
+      "id": "mebelnye-detali-i-komplektuyushchie",
+      "name": "Мебельные детали и комплектующие",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebelnye-detali-i-komplektuyushchie/"
+    },
+    {
+      "id": "emkosti-dlya-hraneniya",
+      "name": "Ёмкости для хранения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/emkosti-dlya-hraneniya/"
+    },
+    {
+      "id": "hranenie-v-garazhe-i-masterskoy",
+      "name": "Хранение в гараже и мастерской",
+      "href": "https://volgograd.lemanapro.ru/catalogue/hranenie-v-garazhe-i-masterskoy/"
+    },
+    {
+      "id": "aksessuary-dlya-hraneniya",
+      "name": "Аксессуары для хранения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/aksessuary-dlya-hraneniya/"
+    },
+    {
+      "id": "korobki-i-upakovochnye-materialy",
+      "name": "Коробки и упаковочные материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/korobki-i-upakovochnye-materialy/"
+    },
+    {
+      "id": "sumki-i-chemodany",
+      "name": "Сумки и чемоданы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sumki-i-chemodany/"
+    },
+    {
+      "id": "uhod-za-odezhdoy",
+      "name": "Уход за одеждой",
+      "href": "https://volgograd.lemanapro.ru/catalogue/uhod-za-odezhdoy/"
+    },
+    {
+      "id": "napolnye-pokrytiya",
+      "name": "Напольные покрытия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/napolnye-pokrytiya/"
+    },
+    {
+      "id": "otdelochnye-pokrytiya-dlya-pola",
+      "name": "Ламинат, линолеум, кварцвинил и другие напольные покрытия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/otdelochnye-pokrytiya-dlya-pola/"
+    },
+    {
+      "id": "napolnye-plintusy-porogi-i-aksessuary",
+      "name": "Напольные плинтусы, пороги и аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/napolnye-plintusy-porogi-i-aksessuary/"
+    },
+    {
+      "id": "podlozhka-i-sredstva-dlya-ukladki-napolnyh-pokrytiy",
+      "name": "Подложка и средства для укладки напольных покрытий",
+      "href": "https://volgograd.lemanapro.ru/catalogue/podlozhka-i-sredstva-dlya-ukladki-napolnyh-pokrytiy/"
+    },
+    {
+      "id": "proekty-po-ukladke-napolnyh-pokrytiy",
+      "name": "Проекты по укладке напольных покрытий",
+      "href": "https://volgograd.lemanapro.ru/catalogue/proekty-po-ukladke-napolnyh-pokrytiy/"
+    },
+    {
+      "id": "pridvernye-kovriki",
+      "name": "Придверные коврики",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pridvernye-kovriki/"
+    },
+    {
+      "id": "sredstva-po-uhodu-za-napolnymi-pokrytiyami",
+      "name": "Средства по уходу за напольными покрытиями",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sredstva-po-uhodu-za-napolnymi-pokrytiyami/"
+    },
+    {
+      "id": "stolyarnye-izdeliya",
+      "name": "Столярные изделия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stolyarnye-izdeliya/"
+    },
+    {
+      "id": "drevesno-plitnye-materialy",
+      "name": "Древесно-плитные материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/drevesno-plitnye-materialy/"
+    },
+    {
+      "id": "pilomaterialy",
+      "name": "Пиломатериалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pilomaterialy/"
+    },
+    {
+      "id": "otdelka-derevom",
+      "name": "Отделка деревом",
+      "href": "https://volgograd.lemanapro.ru/catalogue/otdelka-derevom/"
+    },
+    {
+      "id": "terrasnaya-doska-i-deking",
+      "name": "Террасная доска и декинг",
+      "href": "https://volgograd.lemanapro.ru/catalogue/terrasnaya-doska-i-deking/"
+    },
+    {
+      "id": "dekorativnye-elementy-dlya-doma",
+      "name": "Жалюзийные двери и экраны для радиаторов",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-elementy-dlya-doma/"
+    },
+    {
+      "id": "lestnicy",
+      "name": "Лестницы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lestnicy/"
+    },
+    {
+      "id": "lestnichnye-elementy",
+      "name": "Лестничные элементы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/lestnichnye-elementy/"
+    },
+    {
+      "id": "zonirovanie",
+      "name": "Товары для зонирования помещений",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zonirovanie/"
+    },
+    {
+      "id": "ograzhdeniya",
+      "name": "Ограждения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ograzhdeniya/"
+    },
+    {
+      "id": "skobyanye-izdeliya",
+      "name": "Скобяные изделия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/skobyanye-izdeliya/"
+    },
+    {
+      "id": "krepezh",
+      "name": "Крепеж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krepezh/"
+    },
+    {
+      "id": "perforirovannye-krepezhnye-elementy",
+      "name": "Перфорированные крепежные элементы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/perforirovannye-krepezhnye-elementy/"
+    },
+    {
+      "id": "specialnyy-krepezh",
+      "name": "Специальный крепеж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/specialnyy-krepezh/"
+    },
+    {
+      "id": "mebelnyy-krepezh",
+      "name": "Мебельный крепеж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mebelnyy-krepezh/"
+    },
+    {
+      "id": "takelazh",
+      "name": "Такелаж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/takelazh/"
+    },
+    {
+      "id": "profili-i-listy",
+      "name": "Профили и листы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/profili-i-listy/"
+    },
+    {
+      "id": "tovary-dlya-bezopasnosti",
+      "name": "Товары для безопасности",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-bezopasnosti/"
+    },
+    {
+      "id": "ruchki-dlya-dverey",
+      "name": "Дверные ручки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ruchki-dlya-dverey/"
+    },
+    {
+      "id": "furnitura-dlya-dverey",
+      "name": "Фурнитура для дверей",
+      "href": "https://volgograd.lemanapro.ru/catalogue/furnitura-dlya-dverey/"
+    },
+    {
+      "id": "zamki-komplektuyushchie-i-aksessuary",
+      "name": "Замки, комплектующие и аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zamki-komplektuyushchie-i-aksessuary/"
+    },
+    {
+      "id": "furnitura-dlya-vorot-ograzhdeniy-i-peril",
+      "name": "Фурнитура для ворот, ограждений и перил",
+      "href": "https://volgograd.lemanapro.ru/catalogue/furnitura-dlya-vorot-ograzhdeniy-i-peril/"
+    },
+    {
+      "id": "pochtovye-yashchiki-i-dekorativnye-elementy-dlya-zdaniy",
+      "name": "Почтовые ящики и декоративные элементы для зданий",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pochtovye-yashchiki-i-dekorativnye-elementy-dlya-zdaniy/"
+    },
+    {
+      "id": "smazochnye-materialy",
+      "name": "Смазочные материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/smazochnye-materialy/"
+    },
+    {
+      "id": "professionalnyy-krepezh",
+      "name": "Профессиональный крепеж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/professionalnyy-krepezh/"
+    },
+    {
+      "id": "okna",
+      "name": "Окна",
+      "href": "https://volgograd.lemanapro.ru/catalogue/okna/"
+    },
+    {
+      "id": "gotovye-okna",
+      "name": "Готовые окна",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gotovye-okna/"
+    },
+    {
+      "id": "okna-na-zakaz",
+      "name": "Окна на заказ",
+      "href": "https://volgograd.lemanapro.ru/catalogue/okna-na-zakaz/"
+    },
+    {
+      "id": "myagkie-okna",
+      "name": "Мягкие окна",
+      "href": "https://volgograd.lemanapro.ru/catalogue/myagkie-okna/"
+    },
+    {
+      "id": "podokonniki",
+      "name": "Подоконники",
+      "href": "https://volgograd.lemanapro.ru/catalogue/podokonniki/"
+    },
+    {
+      "id": "moskitnye-setki-i-komplektuyushchie",
+      "name": "Москитные сетки и комплектующие",
+      "href": "https://volgograd.lemanapro.ru/catalogue/moskitnye-setki-i-komplektuyushchie/"
+    },
+    {
+      "id": "balkonnye-dveri",
+      "name": "Балконные двери",
+      "href": "https://volgograd.lemanapro.ru/catalogue/balkonnye-dveri/"
+    },
+    {
+      "id": "tovary-dlya-otdelki-okon",
+      "name": "Товары для отделки окон",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-otdelki-okon/"
+    },
+    {
+      "id": "komplektuyushchie-dlya-okon",
+      "name": "Комплектующие для окон",
+      "href": "https://volgograd.lemanapro.ru/catalogue/komplektuyushchie-dlya-okon/"
+    },
+    {
+      "id": "zashchita-na-okna",
+      "name": "Защита на окна",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zashchita-na-okna/"
+    },
+    {
+      "id": "dveri",
+      "name": "Двери",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dveri/"
+    },
+    {
+      "id": "mezhkomnatnye-dveri",
+      "name": "Межкомнатные двери",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mezhkomnatnye-dveri/"
+    },
+    {
+      "id": "raspashnye-mezhkomnatnye-dveri",
+      "name": "Комплекты межкомнатных дверей",
+      "href": "https://volgograd.lemanapro.ru/catalogue/raspashnye-mezhkomnatnye-dveri/komplekt/"
+    },
+    {
+      "id": "dvernye-korobki-nalichniki-i-dobory",
+      "name": "Дверные коробки, наличники и доборы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dvernye-korobki-nalichniki-i-dobory/"
+    },
+    {
+      "id": "metallicheskie-dveri",
+      "name": "Входные металлические двери",
+      "href": "https://volgograd.lemanapro.ru/catalogue/metallicheskie-dveri/"
+    },
+    {
+      "id": "specialnye-i-tehnicheskie-dveri",
+      "name": "Специальные и технические двери",
+      "href": "https://volgograd.lemanapro.ru/catalogue/specialnye-i-tehnicheskie-dveri/"
+    },
+    {
+      "id": "dveri-dlya-bani",
+      "name": "Двери для бани",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dveri-dlya-bani/"
+    },
+    {
+      "id": "pena-montazhnaya",
+      "name": "Пена монтажная",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pena-montazhnaya/"
+    },
+    {
+      "id": "stroymaterialy",
+      "name": "Стройматериалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stroymaterialy/"
+    },
+    {
+      "id": "listovye-materialy",
+      "name": "Листовые материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/listovye-materialy/"
+    },
+    {
+      "id": "suhie-smesi-i-gruntovki",
+      "name": "Сухие смеси и грунтовки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/suhie-smesi-i-gruntovki/"
+    },
+    {
+      "id": "teploizolyaciya",
+      "name": "Теплоизоляция",
+      "href": "https://volgograd.lemanapro.ru/catalogue/teploizolyaciya/"
+    },
+    {
+      "id": "bloki-dlya-stroitelstva",
+      "name": "Блоки для строительства",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bloki-dlya-stroitelstva/"
+    },
+    {
+      "id": "metalloprokat",
+      "name": "Металлопрокат",
+      "href": "https://volgograd.lemanapro.ru/catalogue/metalloprokat/"
+    },
+    {
+      "id": "krovlya",
+      "name": "Кровля",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krovlya/"
+    },
+    {
+      "id": "fasadnye-materialy",
+      "name": "Фасадные материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/fasadnye-materialy/"
+    },
+    {
+      "id": "profil-dlya-gipsokartona-i-aksessuary",
+      "name": "Профиль для гипсокартона и аксессуары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/profil-dlya-gipsokartona-i-aksessuary/"
+    },
+    {
+      "id": "stroitelnye-rashodnye-materialy",
+      "name": "Строительные расходные материалы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stroitelnye-rashodnye-materialy/"
+    },
+    {
+      "id": "shumoizolyaciya",
+      "name": "Шумоизоляция",
+      "href": "https://volgograd.lemanapro.ru/catalogue/shumoizolyaciya/"
+    },
+    {
+      "id": "vetro-vlagozashchita-i-paroizolyaciya-krovli-i-fasadov",
+      "name": "Ветро-влагозащита и пароизоляция кровли и фасадов",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vetro-vlagozashchita-i-paroizolyaciya-krovli-i-fasadov/"
+    },
+    {
+      "id": "gidroizolyaciya",
+      "name": "Гидроизоляция",
+      "href": "https://volgograd.lemanapro.ru/catalogue/gidroizolyaciya/"
+    },
+    {
+      "id": "stroymaterialy-optom",
+      "name": "Товары оптом",
+      "href": "https://volgograd.lemanapro.ru/catalogue/stroymaterialy-optom/"
+    },
+    {
+      "id": "dorozhnye-pokrytiya",
+      "name": "Дорожные покрытия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dorozhnye-pokrytiya/"
+    },
+    {
+      "id": "sistemy-otvedeniya-vody-s-uchastka",
+      "name": "Системы отведения воды с участка",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sistemy-otvedeniya-vody-s-uchastka/"
+    },
+    {
+      "id": "naruzhnaya-kanalizaciya",
+      "name": "Наружная канализация",
+      "href": "https://volgograd.lemanapro.ru/catalogue/naruzhnaya-kanalizaciya/"
+    },
+    {
+      "id": "podvesnye-potolki",
+      "name": "Подвесные потолки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/podvesnye-potolki/"
+    },
+    {
+      "id": "zapchasti-i-komplektuyushchie-dlya-promyshlennogo-oborudovaniya",
+      "name": "Запчасти и комплектующие для промышленного оборудования",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zapchasti-i-komplektuyushchie-dlya-promyshlennogo-oborudovaniya/"
+    },
+    {
+      "id": "kraski",
+      "name": "Краски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kraski/"
+    },
+    {
+      "id": "kraski-dlya-vnutrennih-rabot",
+      "name": "Краски для внутренних работ",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kraski-dlya-vnutrennih-rabot/"
+    },
+    {
+      "id": "kraski-dlya-naruzhnyh-rabot",
+      "name": "Краски для наружных работ",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kraski-dlya-naruzhnyh-rabot/"
+    },
+    {
+      "id": "emali",
+      "name": "Эмали",
+      "href": "https://volgograd.lemanapro.ru/catalogue/emali/"
+    },
+    {
+      "id": "pokrytiya-dlya-dereva",
+      "name": "Покрытия для дерева",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pokrytiya-dlya-dereva/"
+    },
+    {
+      "id": "laki",
+      "name": "Лаки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/laki/"
+    },
+    {
+      "id": "instrumenty-dlya-pokraski",
+      "name": "Инструменты для покраски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/instrumenty-dlya-pokraski/"
+    },
+    {
+      "id": "peny-germetiki-i-uplotniteli",
+      "name": "Пены, герметики и уплотнители",
+      "href": "https://volgograd.lemanapro.ru/catalogue/peny-germetiki-i-uplotniteli/"
+    },
+    {
+      "id": "klei",
+      "name": "Клеи",
+      "href": "https://volgograd.lemanapro.ru/catalogue/klei/"
+    },
+    {
+      "id": "malyarnye-i-upakovochnye-lenty",
+      "name": "Стрейч-пленка, малярные и упаковочные ленты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/malyarnye-i-upakovochnye-lenty/"
+    },
+    {
+      "id": "podgotovka-poverhnosti-k-pokraske-i-shtukaturke",
+      "name": "Товары для подготовки поверхности к покраске и штукатурке",
+      "href": "https://volgograd.lemanapro.ru/catalogue/podgotovka-poverhnosti-k-pokraske-i-shtukaturke/"
+    },
+    {
+      "id": "proekty-po-pokraske",
+      "name": "Товары для проектов по покраске",
+      "href": "https://volgograd.lemanapro.ru/catalogue/proekty-po-pokraske/"
+    },
+    {
+      "id": "kolery-dlya-kraski",
+      "name": "Красители для красок и штукатурок",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kolery-dlya-kraski/"
+    },
+    {
+      "id": "epoksidnye-smoly",
+      "name": "Эпоксидные смолы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/epoksidnye-smoly/"
+    },
+    {
+      "id": "rastvoriteli-i-ochistiteli-dlya-kraski",
+      "name": "Растворители и очистители",
+      "href": "https://volgograd.lemanapro.ru/catalogue/rastvoriteli-i-ochistiteli-dlya-kraski/"
+    },
+    {
+      "id": "dekorativnye-shtukaturki",
+      "name": "Декоративные штукатурки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-shtukaturki/"
+    },
+    {
+      "id": "dekorativnye-kraski",
+      "name": "Декоративные краски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dekorativnye-kraski/"
+    },
+    {
+      "id": "aerozolnye-kraski",
+      "name": "Аэрозольные краски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/aerozolnye-kraski/"
+    },
+    {
+      "id": "elektrotovary",
+      "name": "Электротовары",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektrotovary/"
+    },
+    {
+      "id": "rozetki-vyklyuchateli-i-ramki",
+      "name": "Розетки и выключатели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/rozetki-vyklyuchateli-i-ramki/"
+    },
+    {
+      "id": "kabel-i-montazh",
+      "name": "Кабель и монтаж",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kabel-i-montazh/"
+    },
+    {
+      "id": "elektroshchitovoe-oborudovanie",
+      "name": "Электрощитовое оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektroshchitovoe-oborudovanie/"
+    },
+    {
+      "id": "elektromontazhnyy-instrument",
+      "name": "Электромонтажный инструмент",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektromontazhnyy-instrument/"
+    },
+    {
+      "id": "udliniteli-i-setevye-filtry",
+      "name": "Удлинители и сетевые фильтры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/udliniteli-i-setevye-filtry/"
+    },
+    {
+      "id": "dvernye-zvonki-i-domofony",
+      "name": "Дверные звонки и домофоны",
+      "href": "https://volgograd.lemanapro.ru/catalogue/dvernye-zvonki-i-domofony/"
+    },
+    {
+      "id": "sistemy-bezopasnosti-i-nablyudeniya",
+      "name": "Системы безопасности и наблюдения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sistemy-bezopasnosti-i-nablyudeniya/"
+    },
+    {
+      "id": "telekommunikacii",
+      "name": "Сетевое оборудование и СКС",
+      "href": "https://volgograd.lemanapro.ru/catalogue/telekommunikacii/"
+    },
+    {
+      "id": "elementy-pitaniya-i-zaryadnye-ustroystva",
+      "name": "Элементы питания и зарядные устройства",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elementy-pitaniya-i-zaryadnye-ustroystva/"
+    },
+    {
+      "id": "umnyy-dom",
+      "name": "Умный дом",
+      "href": "https://volgograd.lemanapro.ru/catalogue/umnyy-dom/"
+    },
+    {
+      "id": "ognetushiteli",
+      "name": "Огнетушители",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ognetushiteli/"
+    },
+    {
+      "id": "otopitelnoe-oborudovanie",
+      "name": "Отопительное оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/otopitelnoe-oborudovanie/"
+    },
+    {
+      "id": "radiatory-otopleniya",
+      "name": "Радиаторы отопления",
+      "href": "https://volgograd.lemanapro.ru/catalogue/radiatory-otopleniya/"
+    },
+    {
+      "id": "obogrevateli",
+      "name": "Обогреватели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/obogrevateli/"
+    },
+    {
+      "id": "teplyy-vodyanoy-pol",
+      "name": "Водяные теплые полы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/teplyy-vodyanoy-pol/"
+    },
+    {
+      "id": "otopitelnye-kotly",
+      "name": "Отопительные котлы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/otopitelnye-kotly/"
+    },
+    {
+      "id": "teplovye-pushki-i-nagrevateli",
+      "name": "Тепловые пушки и нагреватели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/teplovye-pushki-i-nagrevateli/"
+    },
+    {
+      "id": "greyushchie-kabeli",
+      "name": "Греющие кабели",
+      "href": "https://volgograd.lemanapro.ru/catalogue/greyushchie-kabeli/"
+    },
+    {
+      "id": "elektricheskiy-obogrev-doma-i-kvartiry",
+      "name": "Электрический обогрев дома и квартиры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/elektricheskiy-obogrev-doma-i-kvartiry/"
+    },
+    {
+      "id": "pechi-i-kaminy",
+      "name": "Печи и камины",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pechi-i-kaminy/"
+    },
+    {
+      "id": "vodosnabzhenie",
+      "name": "Водоснабжение",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vodosnabzhenie/"
+    },
+    {
+      "id": "truboprovod",
+      "name": "Трубопровод",
+      "href": "https://volgograd.lemanapro.ru/catalogue/truboprovod/"
+    },
+    {
+      "id": "predohranitelnaya-armatura",
+      "name": "Предохранительная арматура",
+      "href": "https://volgograd.lemanapro.ru/catalogue/predohranitelnaya-armatura/"
+    },
+    {
+      "id": "zapornaya-armatura",
+      "name": "Запорно-регулирующая арматура",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zapornaya-armatura/"
+    },
+    {
+      "id": "vodootvedenie",
+      "name": "Канализация",
+      "href": "https://volgograd.lemanapro.ru/catalogue/vodootvedenie/"
+    },
+    {
+      "id": "sistemy-sliva",
+      "name": "Системы слива",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sistemy-sliva/"
+    },
+    {
+      "id": "filtry-dlya-pitevoy-vody",
+      "name": "Фильтры для питьевой воды",
+      "href": "https://volgograd.lemanapro.ru/catalogue/filtry-dlya-pitevoy-vody/"
+    },
+    {
+      "id": "magistralnye-filtry-dlya-vody",
+      "name": "Магистральные фильтры для воды",
+      "href": "https://volgograd.lemanapro.ru/catalogue/magistralnye-filtry-dlya-vody/"
+    },
+    {
+      "id": "kottedzhnye-sistemy-ochistki-vody",
+      "name": "Фильтры для коттеджей",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kottedzhnye-sistemy-ochistki-vody/"
+    },
+    {
+      "id": "nasosy",
+      "name": "Насосы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/nasosy/"
+    },
+    {
+      "id": "sifony",
+      "name": "Сифоны",
+      "href": "https://volgograd.lemanapro.ru/catalogue/sifony/"
+    },
+    {
+      "id": "instrumenty-i-aksessuary-dlya-trub",
+      "name": "Инструменты и аксессуары для труб",
+      "href": "https://volgograd.lemanapro.ru/catalogue/instrumenty-i-aksessuary-dlya-trub/"
+    },
+    {
+      "id": "pribory-ucheta-i-izmereniy",
+      "name": "Контрольно-измерительные приборы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pribory-ucheta-i-izmereniy/"
+    },
+    {
+      "id": "prokladki-i-komplektuyushchie",
+      "name": "Прокладки и комплектующие",
+      "href": "https://volgograd.lemanapro.ru/catalogue/prokladki-i-komplektuyushchie/"
+    },
+    {
+      "id": "krepezh-dlya-montazha-trub",
+      "name": "Крепеж для монтажа труб",
+      "href": "https://volgograd.lemanapro.ru/catalogue/krepezh-dlya-montazha-trub/"
+    },
+    {
+      "id": "proekty-po-vodosnabzheniyu-i-otopleniyu",
+      "name": "Проекты по водоснабжению и отоплению",
+      "href": "https://volgograd.lemanapro.ru/catalogue/proekty-po-vodosnabzheniyu-i-otopleniyu/"
+    },
+    {
+      "id": "pozharnoe-oborudovanie",
+      "name": "Пожарное оборудование",
+      "href": "https://volgograd.lemanapro.ru/catalogue/pozharnoe-oborudovanie/"
+    },
+    {
+      "id": "klimaticheskaya-tehnika-i-ventilyaciya",
+      "name": "Климат и вентиляция",
+      "href": "https://volgograd.lemanapro.ru/catalogue/klimaticheskaya-tehnika-i-ventilyaciya/"
+    },
+    {
+      "id": "kondicionery",
+      "name": "Кондиционеры",
+      "href": "https://volgograd.lemanapro.ru/catalogue/kondicionery/"
+    },
+    {
+      "id": "ventilyatory",
+      "name": "Вентиляторы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ventilyatory/"
+    },
+    {
+      "id": "ventilyaciya",
+      "name": "Вентиляция",
+      "href": "https://volgograd.lemanapro.ru/catalogue/ventilyaciya/"
+    },
+    {
+      "id": "mikroklimat",
+      "name": "Системы микроклимата",
+      "href": "https://volgograd.lemanapro.ru/catalogue/mikroklimat/"
+    },
+    {
+      "id": "specodezhda-i-sredstva-zashchity",
+      "name": "Спецодежда и средства защиты",
+      "href": "https://volgograd.lemanapro.ru/catalogue/specodezhda-i-sredstva-zashchity/"
+    },
+    {
+      "id": "specodezhda",
+      "name": "Спецодежда",
+      "href": "https://volgograd.lemanapro.ru/catalogue/specodezhda/"
+    },
+    {
+      "id": "obuv-rabochaya",
+      "name": "Обувь рабочая",
+      "href": "https://volgograd.lemanapro.ru/catalogue/obuv-rabochaya/"
+    },
+    {
+      "id": "perchatki",
+      "name": "Перчатки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/perchatki/"
+    },
+    {
+      "id": "zashchita-zreniya",
+      "name": "Защита зрения",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zashchita-zreniya/"
+    },
+    {
+      "id": "zashchita-sluha",
+      "name": "Защита слуха",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zashchita-sluha/"
+    },
+    {
+      "id": "zashchita-golovy",
+      "name": "Защита головы",
+      "href": "https://volgograd.lemanapro.ru/catalogue/zashchita-golovy/"
+    },
+    {
+      "id": "medicinskie-aptechki-i-antiseptiki",
+      "name": "Медицинские аптечки и антисептики",
+      "href": "https://volgograd.lemanapro.ru/catalogue/medicinskie-aptechki-i-antiseptiki/"
+    },
+    {
+      "id": "bezopasnost-rabot",
+      "name": "Безопасность работ",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bezopasnost-rabot/"
+    },
+    {
+      "id": "respiratory-i-zashchitnye-maski",
+      "name": "Респираторы и защитные маски",
+      "href": "https://volgograd.lemanapro.ru/catalogue/respiratory-i-zashchitnye-maski/"
+    },
+    {
+      "id": "tovary-dlya-uborki",
+      "name": "Товары для уборки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-uborki/"
+    },
+    {
+      "id": "inventar-dlya-uborki",
+      "name": "Инвентарь для уборки",
+      "href": "https://volgograd.lemanapro.ru/catalogue/inventar-dlya-uborki/"
+    },
+    {
+      "id": "bytovaya-himiya",
+      "name": "Бытовая химия",
+      "href": "https://volgograd.lemanapro.ru/catalogue/bytovaya-himiya/"
+    },
+    {
+      "id": "tovary-dlya-professionalnogo-klininga",
+      "name": "Товары для профессионального клининга",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-professionalnogo-klininga/"
+    },
+    {
+      "id": "tovary-dlya-lichnoy-gigieny",
+      "name": "Товары для личной гигиены",
+      "href": "https://volgograd.lemanapro.ru/catalogue/tovary-dlya-lichnoy-gigieny/"
+    }
+  ],
+  "products": [
+    {
+      "id": "83338207",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды Makita PF0410, 8400 л/ч",
+      "price": 6690,
+      "raw_price": "6 690 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-makita-pf0410-83338207/"
+    },
+    {
+      "id": "85033950",
+      "category_id": "sad",
+      "name": "Дрова берёзовые сухие Supergrill 10 кг",
+      "price": 530,
+      "raw_price": "530 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/drova-berezovye-suhie-supergrill-10-kg-85033950/"
+    },
+    {
+      "id": "90078268",
+      "category_id": "sad",
+      "name": "Тачка садовая PALISAD 90 Л 4606800052285",
+      "price": 2890,
+      "raw_price": "2 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/tachka-sadovaya-palisad-90-l-4606800052285-90078268/"
+    },
+    {
+      "id": "15510302",
+      "category_id": "sad",
+      "name": "Топливные брикеты береза 10 кг",
+      "price": 184,
+      "raw_price": "184 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/toplivnye-brikety-bereza-10-kg-15510302/"
+    },
+    {
+      "id": "83338207",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды Makita PF0410, 8400 л/ч",
+      "price": 6690,
+      "raw_price": "6 690 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-makita-pf0410-83338207/"
+    },
+    {
+      "id": "85033950",
+      "category_id": "sad",
+      "name": "Дрова берёзовые сухие Supergrill 10 кг",
+      "price": 530,
+      "raw_price": "530 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/drova-berezovye-suhie-supergrill-10-kg-85033950/"
+    },
+    {
+      "id": "90078268",
+      "category_id": "sad",
+      "name": "Тачка садовая PALISAD 90 Л 4606800052285",
+      "price": 2890,
+      "raw_price": "2 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/tachka-sadovaya-palisad-90-l-4606800052285-90078268/"
+    },
+    {
+      "id": "15510302",
+      "category_id": "sad",
+      "name": "Топливные брикеты береза 10 кг",
+      "price": 184,
+      "raw_price": "184 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/toplivnye-brikety-bereza-10-kg-15510302/"
+    },
+    {
+      "id": "92299154",
+      "category_id": "sad",
+      "name": "Скребок для уборки снега с крыши Infild 117 см алюминий",
+      "price": 8999,
+      "raw_price": "8 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skrebok-dlya-uborki-snega-s-kryshi-infild-117-sm-alyuminiy-92299154/"
+    },
+    {
+      "id": "92585053",
+      "category_id": "sad",
+      "name": "Снегоуборщик бензиновый Зубр СМБ-7-66 66 см 7 л.с.",
+      "price": 48951,
+      "raw_price": "48 951 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-zubr-smb-7-66-66-sm-7-ls-92585053/"
+    },
+    {
+      "id": "89373879",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды Elitech 750-35П 13500 л/ч",
+      "price": 3790,
+      "raw_price": "3 790 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-elitech-750-35p-13500-l-ch-89373879/"
+    },
+    {
+      "id": "89349092",
+      "category_id": "sad",
+      "name": "Насосная станция Oasis S-600C/3000-19 3000 л/ч",
+      "price": 7207,
+      "raw_price": "7 207 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasosnaya-stanciya-oasis-s-600c-3000-19-3000-l-ch-89349092/"
+    },
+    {
+      "id": "18585692",
+      "category_id": "sad",
+      "name": "Бак садовый для мусора 240 л",
+      "price": 7622,
+      "raw_price": "7 622 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/bak-sadovyy-dlya-musora-240-l-18585692/"
+    },
+    {
+      "id": "90737357",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный Зубр Нпг-м3-1400-с грязная вода расход 24960 л/ч",
+      "price": 7990,
+      "raw_price": "7 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npg-m3-1400-s-gryaznaya-voda-rashod-24960-l-ch-90737357/"
+    },
+    {
+      "id": "82111707",
+      "category_id": "sad",
+      "name": "Набор горшков для рассады 200 мл, 12 шт.",
+      "price": 392,
+      "raw_price": "392 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-gorshkov-dlya-rassady-200-ml-82111707/"
+    },
+    {
+      "id": "82147545",
+      "category_id": "sad",
+      "name": "Грунт «Агрикола» универсальный 50 л",
+      "price": 385,
+      "raw_price": "385 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-agrikola-universalnyy-50-l-82147545/"
+    },
+    {
+      "id": "15187373",
+      "category_id": "sad",
+      "name": "Средство от болезней Avgust садовых растений «Бордоская жидкость» 500 мл",
+      "price": 570,
+      "raw_price": "570 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/sredstvo-ot-bolezney-avgust-sadovyh-rasteniy-bordoskaya-zhidkost-500-ml-15187373/"
+    },
+    {
+      "id": "90822230",
+      "category_id": "sad",
+      "name": "Ограждение для грядки ENO ДПК 0.8x3 м высота 27 см",
+      "price": 8599,
+      "raw_price": "8 599 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/ograzhdenie-dlya-gryadki-eno-dpk-08x3-m-vysota-27-sm-90822230/"
+    },
+    {
+      "id": "83963825",
+      "category_id": "sad",
+      "name": "Стол садовый складной 180x73.5x74 см сталь/пластик цвет белый",
+      "price": 4990,
+      "raw_price": "4 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/stol-sadovyy-skladnoy-180x735x74-sm-stal-plastik-cvet-belyy-83963825/"
+    },
+    {
+      "id": "83963823",
+      "category_id": "sad",
+      "name": "Скамья складная 183x43x28 см сталь/пластик цвет белый",
+      "price": 3490,
+      "raw_price": "3 490 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skamya-skladnaya-183x43x28-sm-stal-plastik-cvet-belyy-83963823/"
+    },
+    {
+      "id": "92404864",
+      "category_id": "sad",
+      "name": "Кресло подвесное M-group 11450201 2-х местное до 160 кг коричневый",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kreslo-podvesnoe-m-group-11450201-2-h-mestnoe-do-160-kg-korichnevyy-92404864/"
+    },
+    {
+      "id": "89447114",
+      "category_id": "sad",
+      "name": "Фаленопсис ø12 h50 см",
+      "price": 1198,
+      "raw_price": "1 198 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/falenopsis-12-h50-sm-89447114/"
+    },
+    {
+      "id": "85516114",
+      "category_id": "sad",
+      "name": "Грунт цветочный универсальный Terra Vita 50 л",
+      "price": 702,
+      "raw_price": "702 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-cvetochnyy-universalnyy-terra-vita-50-l-85516114/"
+    },
+    {
+      "id": "82895031",
+      "category_id": "sad",
+      "name": "Роза горшечная Кордана микс 10.5x10.5 см",
+      "price": 398,
+      "raw_price": "398 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/roza-gorshechnaya-kordana-miks-105x105-sm-82895031/"
+    },
+    {
+      "id": "89452779",
+      "category_id": "sad",
+      "name": "Горшок для цветов Ingreen Wood Ø20 h19 см v4 л пластик тайга",
+      "price": 380,
+      "raw_price": "380 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/gorshok-dlya-cvetov-ingreen-wood-20-h19-sm-v4-l-plastik-tayga-89452779/"
+    },
+    {
+      "id": "82147545",
+      "category_id": "sad",
+      "name": "Грунт «Агрикола» универсальный 50 л",
+      "price": 385,
+      "raw_price": "385 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-agrikola-universalnyy-50-l-82147545/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "90822230",
+      "category_id": "sad",
+      "name": "Ограждение для грядки ENO ДПК 0.8x3 м высота 27 см",
+      "price": 8599,
+      "raw_price": "8 599 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/ograzhdenie-dlya-gryadki-eno-dpk-08x3-m-vysota-27-sm-90822230/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "sad",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "82147545",
+      "category_id": "sad",
+      "name": "Грунт «Агрикола» универсальный 50 л",
+      "price": 385,
+      "raw_price": "385 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-agrikola-universalnyy-50-l-82147545/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "90822230",
+      "category_id": "sad",
+      "name": "Ограждение для грядки ENO ДПК 0.8x3 м высота 27 см",
+      "price": 8599,
+      "raw_price": "8 599 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/ograzhdenie-dlya-gryadki-eno-dpk-08x3-m-vysota-27-sm-90822230/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "sad",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "89363012",
+      "category_id": "sad",
+      "name": "Пила аккумуляторная Deko DKCHS20V 20 В 23.8 см",
+      "price": 5435,
+      "raw_price": "5 435 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-deko-dkchs20v-20-v-238-sm-89363012/"
+    },
+    {
+      "id": "90737357",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный Зубр Нпг-м3-1400-с грязная вода расход 24960 л/ч",
+      "price": 7990,
+      "raw_price": "7 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npg-m3-1400-s-gryaznaya-voda-rashod-24960-l-ch-90737357/"
+    },
+    {
+      "id": "85516111",
+      "category_id": "sad",
+      "name": "Грунт для рассады Terra Vita 50 л.",
+      "price": 646,
+      "raw_price": "646 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dlya-rassady-terra-vita-50-l-85516111/"
+    },
+    {
+      "id": "82743344",
+      "category_id": "sad",
+      "name": "Вермикулит агротехнический Cemmix 10 л",
+      "price": 278,
+      "raw_price": "278 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vermikulit-agrotehnicheskiy-cemmix-10-l-82743344/"
+    },
+    {
+      "id": "18513488",
+      "category_id": "sad",
+      "name": "Ведро оцинкованное 12 литров",
+      "price": 426,
+      "raw_price": "426 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vedro-ocinkovannoe-12-litrov-18513488/"
+    },
+    {
+      "id": "92404864",
+      "category_id": "sad",
+      "name": "Кресло подвесное M-group 11450201 2-х местное до 160 кг коричневый",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kreslo-podvesnoe-m-group-11450201-2-h-mestnoe-do-160-kg-korichnevyy-92404864/"
+    },
+    {
+      "id": "18422842",
+      "category_id": "sad",
+      "name": "Удобрение Монокалийфосфат 0.5 кг",
+      "price": 248,
+      "raw_price": "248 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-monokaliyfosfat-05-kg-18422842/"
+    },
+    {
+      "id": "89306376",
+      "category_id": "sad",
+      "name": "Пила цепная аккумуляторная Greenworks G24MCS10, 24 В Li-Ion 1x2 Ач",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-cepnaya-akkumulyatornaya-greenworks-g24mcs10-89306376/"
+    },
+    {
+      "id": "80172915",
+      "category_id": "sad",
+      "name": "Аккумулятор Greenworks G24B4 4 Ач 24 В 2926807",
+      "price": 4890,
+      "raw_price": "4 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/akkumulyator-greenworks-g24b4-4-ach-24-v-2926807-80172915/"
+    },
+    {
+      "id": "92653300",
+      "category_id": "sad",
+      "name": "Мотопомпа Stavr SMP 80DW для грязной воды расход 66000 л/ч",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/motopompa-stavr-smp-80dw-dlya-gryaznoy-vody-rashod-66000-l-ch-92653300/"
+    },
+    {
+      "id": "89448263",
+      "category_id": "sad",
+      "name": "Сапоги унисекс DILWIS размер 43",
+      "price": 431525,
+      "raw_price": "43 1 525 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/sapogi-uniseks-dilwis-razmer-43-89448263/"
+    },
+    {
+      "id": "85094348",
+      "category_id": "sad",
+      "name": "Пылесос воздуходувка электрическая Greenworks BL3000 3000 Вт",
+      "price": 8074,
+      "raw_price": "8 074 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pylesos-vozduhoduvka-elektricheskaya-greenworks-bl3000-3000-vt-85094348/"
+    },
+    {
+      "id": "91342870",
+      "category_id": "sad",
+      "name": "Снегоуборщик бензиновый Steher GST-756 56 см 7 л.с.",
+      "price": 39990,
+      "raw_price": "39 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-steher-gst-756-56-sm-7-ls-91342870/"
+    },
+    {
+      "id": "82147545",
+      "category_id": "sad",
+      "name": "Грунт «Агрикола» универсальный 50 л",
+      "price": 385,
+      "raw_price": "385 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-agrikola-universalnyy-50-l-82147545/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "90737357",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный Зубр Нпг-м3-1400-с грязная вода расход 24960 л/ч",
+      "price": 7990,
+      "raw_price": "7 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npg-m3-1400-s-gryaznaya-voda-rashod-24960-l-ch-90737357/"
+    },
+    {
+      "id": "15510302",
+      "category_id": "sad",
+      "name": "Топливные брикеты береза 10 кг",
+      "price": 184,
+      "raw_price": "184 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/toplivnye-brikety-bereza-10-kg-15510302/"
+    },
+    {
+      "id": "92664891",
+      "category_id": "sad",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1 28 см 18 В 1x3 Ач АКБ и ЗУ в комплекте",
+      "price": 4999,
+      "raw_price": "4 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-28-sm-18-v-1x3-ach-akb-i-zu-v-komplekte-92664891/"
+    },
+    {
+      "id": "85516111",
+      "category_id": "sad",
+      "name": "Грунт для рассады Terra Vita 50 л.",
+      "price": 646,
+      "raw_price": "646 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dlya-rassady-terra-vita-50-l-85516111/"
+    },
+    {
+      "id": "90615818",
+      "category_id": "sad",
+      "name": "Снегоуборщик бензиновый Daewoo S 6060 SET 56 см 4410 Вт и срезные болты Dast 4В",
+      "price": 49990,
+      "raw_price": "49 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-daewoo-s-6060-set-56-sm-4410-vt-i-sreznye-bolty-dast-4v-90615818/"
+    },
+    {
+      "id": "89421944",
+      "category_id": "sad",
+      "name": "Стрелиция Николая ø32 h120 см",
+      "price": 6550,
+      "raw_price": "6 550 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/streliciya-nikolaya-32-h120-sm-89421944/"
+    },
+    {
+      "id": "82743344",
+      "category_id": "sad",
+      "name": "Вермикулит агротехнический Cemmix 10 л",
+      "price": 278,
+      "raw_price": "278 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vermikulit-agrotehnicheskiy-cemmix-10-l-82743344/"
+    },
+    {
+      "id": "92404864",
+      "category_id": "sad",
+      "name": "Кресло подвесное M-group 11450201 2-х местное до 160 кг коричневый",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kreslo-podvesnoe-m-group-11450201-2-h-mestnoe-do-160-kg-korichnevyy-92404864/"
+    },
+    {
+      "id": "82111707",
+      "category_id": "sad",
+      "name": "Набор горшков для рассады 200 мл, 12 шт.",
+      "price": 392,
+      "raw_price": "392 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-gorshkov-dlya-rassady-200-ml-82111707/"
+    },
+    {
+      "id": "91342870",
+      "category_id": "sad",
+      "name": "Снегоуборщик бензиновый Steher GST-756 56 см 7 л.с.",
+      "price": 39990,
+      "raw_price": "39 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-steher-gst-756-56-sm-7-ls-91342870/"
+    },
+    {
+      "id": "89306376",
+      "category_id": "sad",
+      "name": "Пила цепная аккумуляторная Greenworks G24MCS10, 24 В Li-Ion 1x2 Ач",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-cepnaya-akkumulyatornaya-greenworks-g24mcs10-89306376/"
+    },
+    {
+      "id": "85033950",
+      "category_id": "sad",
+      "name": "Дрова берёзовые сухие Supergrill 10 кг",
+      "price": 530,
+      "raw_price": "530 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/drova-berezovye-suhie-supergrill-10-kg-85033950/"
+    },
+    {
+      "id": "90114277",
+      "category_id": "sad",
+      "name": "Насос садовый поверхностный Зубр НС-М1-400-Ч расход 2100 л/ч",
+      "price": 3290,
+      "raw_price": "3 290 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-sadovyy-poverhnostnyy-zubr-ns-m1-400-ch-rashod-2100-l-ch-90114277/"
+    },
+    {
+      "id": "18858443",
+      "category_id": "sad",
+      "name": "Снегоуборщик аккумуляторный GREENWORKS Бесщёточный GD40ST 51 см 40 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 35615,
+      "raw_price": "35 615 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-greenworks-besshchetochnyy-gd40st-51-sm-40-v-1x4-ach-akb-i-zu-v-komplekte-18858443/"
+    },
+    {
+      "id": "82895031",
+      "category_id": "sad",
+      "name": "Роза горшечная Кордана микс 10.5x10.5 см",
+      "price": 398,
+      "raw_price": "398 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/roza-gorshechnaya-kordana-miks-105x105-sm-82895031/"
+    },
+    {
+      "id": "18463935",
+      "category_id": "sad",
+      "name": "Удобрение Классика дачника Карбамид мочевина 1 кг",
+      "price": 120,
+      "raw_price": "120 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-klassika-dachnika-karbamid-mochevina-1-kg-18463935/"
+    },
+    {
+      "id": "90080972",
+      "category_id": "sad",
+      "name": "Насос погружной дренажный Зубр Нпч-т7-550 чистая вода расход 9960 л/ч",
+      "price": 6590,
+      "raw_price": "6 590 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npch-t7-550-chistaya-voda-rashod-9960-l-ch-90080972/"
+    },
+    {
+      "id": "89363012",
+      "category_id": "sad",
+      "name": "Пила аккумуляторная Deko DKCHS20V 20 В 23.8 см",
+      "price": 5435,
+      "raw_price": "5 435 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-deko-dkchs20v-20-v-238-sm-89363012/"
+    },
+    {
+      "id": "12290690",
+      "category_id": "sad",
+      "name": "Стимулятор Эпин-Экстра 1 мл",
+      "price": 43,
+      "raw_price": "43 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/stimulyator-epin-ekstra-1-ml-12290690/"
+    },
+    {
+      "id": "91342718",
+      "category_id": "sad",
+      "name": "Лопата для уборки снега Grinda 40 см x 142.5 см пластик с черенком пластик",
+      "price": 875,
+      "raw_price": "875 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/lopata-dlya-uborki-snega-grinda-40-sm-x-1425-sm-plastik-s-cherenkom-plastik-91342718/"
+    },
+    {
+      "id": "82206745",
+      "category_id": "sad",
+      "name": "Удобрение ОМУ весеннее 1 кг",
+      "price": 138,
+      "raw_price": "138 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-omu-vesennee-1-kg-82206745/"
+    },
+    {
+      "id": "83742325",
+      "category_id": "sad",
+      "name": "Грунт Сто пудов универсальный 50л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-sto-pudov-universalnyy-50l-83742325/"
+    },
+    {
+      "id": "83584141",
+      "category_id": "sad",
+      "name": "Ведро оцинкованное 15 л",
+      "price": 468,
+      "raw_price": "468 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vedro-ocinkovannoe-15-l-83584141/"
+    },
+    {
+      "id": "18422842",
+      "category_id": "sad",
+      "name": "Удобрение Монокалийфосфат 0.5 кг",
+      "price": 248,
+      "raw_price": "248 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-monokaliyfosfat-05-kg-18422842/"
+    },
+    {
+      "id": "17728508",
+      "category_id": "sad",
+      "name": "Мини парник 18 ячеек 3 вставки зелёный",
+      "price": 132,
+      "raw_price": "132 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/mini-parnik-18-yacheek-3-vstavki-zelenyy-17728508/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "sad",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "14388245",
+      "category_id": "sad",
+      "name": "Семена Огурец Кураж F1 Гавриш",
+      "price": 78,
+      "raw_price": "78 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/semena-ogurec-kurazh-f1-gavrish-14388245/"
+    },
+    {
+      "id": "82743346",
+      "category_id": "sad",
+      "name": "Перлит агротехнический Cemmix 10 л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/perlit-agrotehnicheskiy-cemmix-10-l-82743346/"
+    },
+    {
+      "id": "92299154",
+      "category_id": "seychas-v-sezone",
+      "name": "Скребок для уборки снега с крыши Infild 117 см алюминий",
+      "price": 8999,
+      "raw_price": "8 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skrebok-dlya-uborki-snega-s-kryshi-infild-117-sm-alyuminiy-92299154/"
+    },
+    {
+      "id": "92664891",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1 28 см 18 В 1x3 Ач АКБ и ЗУ в комплекте",
+      "price": 4999,
+      "raw_price": "4 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-28-sm-18-v-1x3-ach-akb-i-zu-v-komplekte-92664891/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "seychas-v-sezone",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "92299154",
+      "category_id": "seychas-v-sezone",
+      "name": "Скребок для уборки снега с крыши Infild 117 см алюминий",
+      "price": 8999,
+      "raw_price": "8 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skrebok-dlya-uborki-snega-s-kryshi-infild-117-sm-alyuminiy-92299154/"
+    },
+    {
+      "id": "92664891",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1 28 см 18 В 1x3 Ач АКБ и ЗУ в комплекте",
+      "price": 4999,
+      "raw_price": "4 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-28-sm-18-v-1x3-ach-akb-i-zu-v-komplekte-92664891/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "seychas-v-sezone",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "90737356",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный Зубр Нпг-м3-1100-с грязная вода расход 15000 л/ч",
+      "price": 5690,
+      "raw_price": "5 690 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npg-m3-1100-s-gryaznaya-voda-rashod-15000-l-ch-90737356/"
+    },
+    {
+      "id": "89363012",
+      "category_id": "seychas-v-sezone",
+      "name": "Пила аккумуляторная Deko DKCHS20V 20 В 23.8 см",
+      "price": 5435,
+      "raw_price": "5 435 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-deko-dkchs20v-20-v-238-sm-89363012/"
+    },
+    {
+      "id": "87886396",
+      "category_id": "seychas-v-sezone",
+      "name": "Секатор Finland 1611 20 мм",
+      "price": 1422,
+      "raw_price": "1 422 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/sekator-finland-1611-20-mm-87886396/"
+    },
+    {
+      "id": "91271410",
+      "category_id": "seychas-v-sezone",
+      "name": "Бензопила Зубр ПБЦ-М62-50 Мастер 4.80 л.с. шина 50 см",
+      "price": 11290,
+      "raw_price": "11 290 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/benzopila-zubr-pbc-m62-50-master-480-ls-shina-50-sm-91271410/"
+    },
+    {
+      "id": "84953705",
+      "category_id": "seychas-v-sezone",
+      "name": "Лопата штыковая Plantic Terra 116 см 11005-01",
+      "price": 1682,
+      "raw_price": "1 682 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/lopata-shtykovaya-plantic-terra-116-sm-11005-01-84953705/"
+    },
+    {
+      "id": "91078877",
+      "category_id": "seychas-v-sezone",
+      "name": "Мотоблок бензиновый Зубр МТУ-450 7 л.с.",
+      "price": 47368,
+      "raw_price": "47 368 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/motoblok-benzinovyy-zubr-mtu-450-7-ls-91078877/"
+    },
+    {
+      "id": "86421500",
+      "category_id": "seychas-v-sezone",
+      "name": "Компостер Geolia 800 л с крышкой с дном",
+      "price": 9238,
+      "raw_price": "9 238 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/komposter-geolia-800-l-s-kryshkoy-s-dnom-86421500/"
+    },
+    {
+      "id": "82167374",
+      "category_id": "seychas-v-sezone",
+      "name": "Грабли витые ПАВЛОВСКАЯ ЗАРЯ 12 зубьев 110 см сталь, с черенком",
+      "price": 345,
+      "raw_price": "345 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grabli-vitye-pavlovskaya-zarya-12-zubev-110-sm-stal-82167374/"
+    },
+    {
+      "id": "18585692",
+      "category_id": "seychas-v-sezone",
+      "name": "Бак садовый для мусора 240 л",
+      "price": 7622,
+      "raw_price": "7 622 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/bak-sadovyy-dlya-musora-240-l-18585692/"
+    },
+    {
+      "id": "92127277",
+      "category_id": "seychas-v-sezone",
+      "name": "Грабли витые Вихрь 14 зубьев 185 см металл с черенком",
+      "price": 1057,
+      "raw_price": "1 057 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grabli-vitye-vihr-14-zubev-185-sm-metall-s-cherenkom-92127277/"
+    },
+    {
+      "id": "92664891",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1 28 см 18 В 1x3 Ач АКБ и ЗУ в комплекте",
+      "price": 4999,
+      "raw_price": "4 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-28-sm-18-v-1x3-ach-akb-i-zu-v-komplekte-92664891/"
+    },
+    {
+      "id": "91342870",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик бензиновый Steher GST-756 56 см 7 л.с.",
+      "price": 39990,
+      "raw_price": "39 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-steher-gst-756-56-sm-7-ls-91342870/"
+    },
+    {
+      "id": "85415859",
+      "category_id": "seychas-v-sezone",
+      "name": "Воздуходувка электрическая Daewoo DABL 3000E 3100 Вт",
+      "price": 7998,
+      "raw_price": "7 998 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vozduhoduvka-elektricheskaya-daewoo-dabl-3000e-3100-vt-85415859/"
+    },
+    {
+      "id": "18422842",
+      "category_id": "seychas-v-sezone",
+      "name": "Удобрение Монокалийфосфат 0.5 кг",
+      "price": 248,
+      "raw_price": "248 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-monokaliyfosfat-05-kg-18422842/"
+    },
+    {
+      "id": "82111707",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор горшков для рассады 200 мл, 12 шт.",
+      "price": 392,
+      "raw_price": "392 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-gorshkov-dlya-rassady-200-ml-82111707/"
+    },
+    {
+      "id": "83742325",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт Сто пудов универсальный 50л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-sto-pudov-universalnyy-50l-83742325/"
+    },
+    {
+      "id": "82110726",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор для рассады с торфяными таблетками 24 шт",
+      "price": 275,
+      "raw_price": "275 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-dlya-rassady-s-torfyanymi-tabletkami-24-sht-82110726/"
+    },
+    {
+      "id": "18422842",
+      "category_id": "seychas-v-sezone",
+      "name": "Удобрение Монокалийфосфат 0.5 кг",
+      "price": 248,
+      "raw_price": "248 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-monokaliyfosfat-05-kg-18422842/"
+    },
+    {
+      "id": "82111707",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор горшков для рассады 200 мл, 12 шт.",
+      "price": 392,
+      "raw_price": "392 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-gorshkov-dlya-rassady-200-ml-82111707/"
+    },
+    {
+      "id": "83742325",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт Сто пудов универсальный 50л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-sto-pudov-universalnyy-50l-83742325/"
+    },
+    {
+      "id": "82110726",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор для рассады с торфяными таблетками 24 шт",
+      "price": 275,
+      "raw_price": "275 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-dlya-rassady-s-torfyanymi-tabletkami-24-sht-82110726/"
+    },
+    {
+      "id": "82743344",
+      "category_id": "seychas-v-sezone",
+      "name": "Вермикулит агротехнический Cemmix 10 л",
+      "price": 278,
+      "raw_price": "278 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vermikulit-agrotehnicheskiy-cemmix-10-l-82743344/"
+    },
+    {
+      "id": "18463935",
+      "category_id": "seychas-v-sezone",
+      "name": "Удобрение Классика дачника Карбамид мочевина 1 кг",
+      "price": 120,
+      "raw_price": "120 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-klassika-dachnika-karbamid-mochevina-1-kg-18463935/"
+    },
+    {
+      "id": "85516111",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт для рассады Terra Vita 50 л.",
+      "price": 646,
+      "raw_price": "646 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dlya-rassady-terra-vita-50-l-85516111/"
+    },
+    {
+      "id": "89344245",
+      "category_id": "seychas-v-sezone",
+      "name": "Горшок для растений Газонcity бумага 20 шт.",
+      "price": 135,
+      "raw_price": "135 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/gorshok-dlya-rasteniy-gazoncity-bumaga-20-sht-89344245/"
+    },
+    {
+      "id": "85246273",
+      "category_id": "seychas-v-sezone",
+      "name": "Органическое удобрение Органик Микс для пересадки и рассады 850 г",
+      "price": 531,
+      "raw_price": "531 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/organicheskoe-udobrenie-organik-miks-dlya-peresadki-i-rassady-850-g-85246273/"
+    },
+    {
+      "id": "89362804",
+      "category_id": "seychas-v-sezone",
+      "name": "Бордоская жидкость Avgust От болезней 1 л",
+      "price": 725,
+      "raw_price": "725 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/bordoskaya-zhidkost-avgust-ot-bolezney-1-l-89362804/"
+    },
+    {
+      "id": "82016383",
+      "category_id": "seychas-v-sezone",
+      "name": "Торф верховой нейтрализованный 150 л",
+      "price": 1680,
+      "raw_price": "1 680 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/torf-verhovoy-neytralizovannyy-150-l-82016383/"
+    },
+    {
+      "id": "89344568",
+      "category_id": "seychas-v-sezone",
+      "name": "Удобрение Органик Микс Эликсир для рассады 0.9 л",
+      "price": 733,
+      "raw_price": "733 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-organik-miks-eliksir-dlya-rassady-09-l-89344568/"
+    },
+    {
+      "id": "12290703",
+      "category_id": "seychas-v-sezone",
+      "name": "Регулятор роста «Циркон» 1 мл",
+      "price": 38,
+      "raw_price": "38 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/regulyator-rosta-cirkon-1-ml-12290703/"
+    },
+    {
+      "id": "82499792",
+      "category_id": "seychas-v-sezone",
+      "name": "Почвобрикет Крепкая рассада 10 л",
+      "price": 155,
+      "raw_price": "155 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pochvobriket-krepkaya-rassada-10-l-82499792/"
+    },
+    {
+      "id": "83433675",
+      "category_id": "seychas-v-sezone",
+      "name": "Ящик для рассады «Урожай-5» 50x15x10 см, 5 л",
+      "price": 137,
+      "raw_price": "137 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/yashchik-dlya-rassady-urozhay-5-50x15x10-sm-83433675/"
+    },
+    {
+      "id": "82743346",
+      "category_id": "seychas-v-sezone",
+      "name": "Перлит агротехнический Cemmix 10 л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/perlit-agrotehnicheskiy-cemmix-10-l-82743346/"
+    },
+    {
+      "id": "89410424",
+      "category_id": "seychas-v-sezone",
+      "name": "Краска для деревьев Green Belt 4 кг",
+      "price": 334,
+      "raw_price": "334 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kraska-dlya-derevev-green-belt-4-kg-89410424/"
+    },
+    {
+      "id": "89445012",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт Доброгряд для рассады 10 л",
+      "price": 225,
+      "raw_price": "225 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dobrogryad-dlya-rassady-10-l-89445012/"
+    },
+    {
+      "id": "81951937",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор совков для посадки растений, 2 предмета",
+      "price": 210,
+      "raw_price": "210 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-sovkov-dlya-posadki-rasteniy-81951937/"
+    },
+    {
+      "id": "82147545",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт «Агрикола» универсальный 50 л",
+      "price": 385,
+      "raw_price": "385 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-agrikola-universalnyy-50-l-82147545/"
+    },
+    {
+      "id": "14147003",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный для грязной воды OASIS DN 250/10м, 15000 л/час.",
+      "price": 3890,
+      "raw_price": "3 890 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-oasis-dn-250-10m-14147003/"
+    },
+    {
+      "id": "15510302",
+      "category_id": "seychas-v-sezone",
+      "name": "Топливные брикеты береза 10 кг",
+      "price": 184,
+      "raw_price": "184 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/toplivnye-brikety-bereza-10-kg-15510302/"
+    },
+    {
+      "id": "85516111",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт для рассады Terra Vita 50 л.",
+      "price": 646,
+      "raw_price": "646 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dlya-rassady-terra-vita-50-l-85516111/"
+    },
+    {
+      "id": "92664891",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1 28 см 18 В 1x3 Ач АКБ и ЗУ в комплекте",
+      "price": 4999,
+      "raw_price": "4 999 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-28-sm-18-v-1x3-ach-akb-i-zu-v-komplekte-92664891/"
+    },
+    {
+      "id": "90737357",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный Зубр Нпг-м3-1400-с грязная вода расход 24960 л/ч",
+      "price": 7990,
+      "raw_price": "7 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-zubr-npg-m3-1400-s-gryaznaya-voda-rashod-24960-l-ch-90737357/"
+    },
+    {
+      "id": "83742325",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт Сто пудов универсальный 50л",
+      "price": 258,
+      "raw_price": "258 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-sto-pudov-universalnyy-50l-83742325/"
+    },
+    {
+      "id": "82499792",
+      "category_id": "seychas-v-sezone",
+      "name": "Почвобрикет Крепкая рассада 10 л",
+      "price": 155,
+      "raw_price": "155 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pochvobriket-krepkaya-rassada-10-l-82499792/"
+    },
+    {
+      "id": "91342870",
+      "category_id": "seychas-v-sezone",
+      "name": "Снегоуборщик бензиновый Steher GST-756 56 см 7 л.с.",
+      "price": 39990,
+      "raw_price": "39 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-steher-gst-756-56-sm-7-ls-91342870/"
+    },
+    {
+      "id": "82743344",
+      "category_id": "seychas-v-sezone",
+      "name": "Вермикулит агротехнический Cemmix 10 л",
+      "price": 278,
+      "raw_price": "278 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vermikulit-agrotehnicheskiy-cemmix-10-l-82743344/"
+    },
+    {
+      "id": "92404864",
+      "category_id": "seychas-v-sezone",
+      "name": "Кресло подвесное M-group 11450201 2-х местное до 160 кг коричневый",
+      "price": 9990,
+      "raw_price": "9 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kreslo-podvesnoe-m-group-11450201-2-h-mestnoe-do-160-kg-korichnevyy-92404864/"
+    },
+    {
+      "id": "85516114",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт цветочный универсальный Terra Vita 50 л",
+      "price": 702,
+      "raw_price": "702 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-cvetochnyy-universalnyy-terra-vita-50-l-85516114/"
+    },
+    {
+      "id": "90114277",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос садовый поверхностный Зубр НС-М1-400-Ч расход 2100 л/ч",
+      "price": 3290,
+      "raw_price": "3 290 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-sadovyy-poverhnostnyy-zubr-ns-m1-400-ch-rashod-2100-l-ch-90114277/"
+    },
+    {
+      "id": "82375669",
+      "category_id": "seychas-v-sezone",
+      "name": "Почвобрикет БиоМастер Универсальный, 10 л",
+      "price": 146,
+      "raw_price": "146 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pochvobriket-biomaster-universalnyy-82375669/"
+    },
+    {
+      "id": "89344078",
+      "category_id": "seychas-v-sezone",
+      "name": "Качели садовые NATERIAL Aniva 3-х местные до 250 кг коричневый",
+      "price": 26770,
+      "raw_price": "26 770 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kacheli-sadovye-naterial-aniva-3-h-mestnye-do-250-kg-korichnevyy-89344078/"
+    },
+    {
+      "id": "12290690",
+      "category_id": "seychas-v-sezone",
+      "name": "Стимулятор Эпин-Экстра 1 мл",
+      "price": 43,
+      "raw_price": "43 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/stimulyator-epin-ekstra-1-ml-12290690/"
+    },
+    {
+      "id": "91342718",
+      "category_id": "seychas-v-sezone",
+      "name": "Лопата для уборки снега Grinda 40 см x 142.5 см пластик с черенком пластик",
+      "price": 875,
+      "raw_price": "875 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/lopata-dlya-uborki-snega-grinda-40-sm-x-1425-sm-plastik-s-cherenkom-plastik-91342718/"
+    },
+    {
+      "id": "89897078",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт универсальный Агрикола 25 л",
+      "price": 302,
+      "raw_price": "302 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-universalnyy-agrikola-25-l-89897078/"
+    },
+    {
+      "id": "83963825",
+      "category_id": "seychas-v-sezone",
+      "name": "Стол садовый складной 180x73.5x74 см сталь/пластик цвет белый",
+      "price": 4990,
+      "raw_price": "4 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/stol-sadovyy-skladnoy-180x735x74-sm-stal-plastik-cvet-belyy-83963825/"
+    },
+    {
+      "id": "84855722",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор обеденной мебели Naterial Compass сталь/пластик темно-серый: стол и 4 стула",
+      "price": 36911,
+      "raw_price": "36 911 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-obedennoy-mebeli-naterial-compass-stal-plastik-temno-seryy-stol-i-4-stula-84855722/"
+    },
+    {
+      "id": "18463935",
+      "category_id": "seychas-v-sezone",
+      "name": "Удобрение Классика дачника Карбамид мочевина 1 кг",
+      "price": 120,
+      "raw_price": "120 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/udobrenie-klassika-dachnika-karbamid-mochevina-1-kg-18463935/"
+    },
+    {
+      "id": "84494096",
+      "category_id": "seychas-v-sezone",
+      "name": "Шезлонг Naterial Lyra II 207x63x95 см алюминий/текстилен серый",
+      "price": 9742,
+      "raw_price": "9 742 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/shezlong-naterial-lyra-ii-207x63x95-sm-alyuminiy-tekstilen-seryy-84494096/"
+    },
+    {
+      "id": "89414091",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный для грязной воды ЛЦ 400/8000/6, 7980 л/ч",
+      "price": 2547,
+      "raw_price": "2 547 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-lc-400-8000-6-89414091/"
+    },
+    {
+      "id": "83742484",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт Фаско Малышок для томатов и перцев 25л",
+      "price": 440,
+      "raw_price": "440 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-fasko-malyshok-dlya-tomatov-i-percev-25l-83742484/"
+    },
+    {
+      "id": "89407426",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор садовой мебели BEGINIA Basegi пластик темно-серый стол 1 шт диван 1 шт кресло 2 шт подушки 4 шт",
+      "price": 24990,
+      "raw_price": "24 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-sadovoy-mebeli-beginia-basegi-plastik-temno-seryy-stol-1-sht-divan-1-sht-kreslo-2-sht-podushki-4-sht-89407426/"
+    },
+    {
+      "id": "12290703",
+      "category_id": "seychas-v-sezone",
+      "name": "Регулятор роста «Циркон» 1 мл",
+      "price": 38,
+      "raw_price": "38 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/regulyator-rosta-cirkon-1-ml-12290703/"
+    },
+    {
+      "id": "82134506",
+      "category_id": "seychas-v-sezone",
+      "name": "Набор горшков для рассады 400 мл 6 шт.",
+      "price": 284,
+      "raw_price": "284 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nabor-gorshkov-dlya-rassady-400-ml-6-sht-82134506/"
+    },
+    {
+      "id": "82147544",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт для рассады Агрикола, 25 л",
+      "price": 298,
+      "raw_price": "298 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-dlya-rassady-agrikola-82147544/"
+    },
+    {
+      "id": "89373879",
+      "category_id": "seychas-v-sezone",
+      "name": "Насос погружной дренажный для грязной воды Elitech 750-35П 13500 л/ч",
+      "price": 3790,
+      "raw_price": "3 790 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nasos-pogruzhnoy-drenazhnyy-dlya-gryaznoy-vody-elitech-750-35p-13500-l-ch-89373879/"
+    },
+    {
+      "id": "15604368",
+      "category_id": "seychas-v-sezone",
+      "name": "Грунт универсальный «Просто» 10 л",
+      "price": 14.5,
+      "raw_price": "14, 50 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/grunt-universalnyy-prosto-10-l-15604368/"
+    },
+    {
+      "id": "92664889",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-250-1 25 см 18 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 5962,
+      "raw_price": "5 962 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-250-1-25-sm-18-v-1x4-ach-akb-i-zu-v-komplekte-92664889/"
+    },
+    {
+      "id": "86837016",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Бесщеточная Greenworks 2005707UA 40 В 35 см АКБ и ЗУ в комплекте",
+      "price": 16990,
+      "raw_price": "16 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-besshchetochnaya-greenworks-2005707ua-40-v-35-sm-akb-i-zu-v-komplekte-86837016/"
+    },
+    {
+      "id": "86370264",
+      "category_id": "sadovaya-tehnika",
+      "name": "Мотоблок бензиновый Победа ЛМ 24 7 л/с красный",
+      "price": 31935,
+      "raw_price": "31 935 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/motoblok-benzinovyy-pobeda-lm-24-7-l-s-krasnyy-86370264/"
+    },
+    {
+      "id": "92749037",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1-1 28 см 18 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 7490,
+      "raw_price": "7 490 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-1-28-sm-18-v-1x4-ach-akb-i-zu-v-komplekte-92749037/"
+    },
+    {
+      "id": "92664889",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-250-1 25 см 18 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 5962,
+      "raw_price": "5 962 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-250-1-25-sm-18-v-1x4-ach-akb-i-zu-v-komplekte-92664889/"
+    },
+    {
+      "id": "86837016",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Бесщеточная Greenworks 2005707UA 40 В 35 см АКБ и ЗУ в комплекте",
+      "price": 16990,
+      "raw_price": "16 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-besshchetochnaya-greenworks-2005707ua-40-v-35-sm-akb-i-zu-v-komplekte-86837016/"
+    },
+    {
+      "id": "86370264",
+      "category_id": "sadovaya-tehnika",
+      "name": "Мотоблок бензиновый Победа ЛМ 24 7 л/с красный",
+      "price": 31935,
+      "raw_price": "31 935 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/motoblok-benzinovyy-pobeda-lm-24-7-l-s-krasnyy-86370264/"
+    },
+    {
+      "id": "92749037",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик аккумуляторный Kolner KST 18-280-1-1 28 см 18 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 7490,
+      "raw_price": "7 490 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-kolner-kst-18-280-1-1-28-sm-18-v-1x4-ach-akb-i-zu-v-komplekte-92749037/"
+    },
+    {
+      "id": "82745989",
+      "category_id": "sadovaya-tehnika",
+      "name": "Воздуходувка бензиновая Huter GB-7V 710 м³/ч 1. л.с.",
+      "price": 10277,
+      "raw_price": "10 277 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vozduhoduvka-benzinovaya-huter-gb-7v-710-m-ch-1-ls-82745989/"
+    },
+    {
+      "id": "91119643",
+      "category_id": "sadovaya-tehnika",
+      "name": "Культиватор электрический Steher EK-1700 Вт",
+      "price": 11612,
+      "raw_price": "11 612 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/kultivator-elektricheskiy-steher-ek-1700-vt-91119643/"
+    },
+    {
+      "id": "89418739",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер электрический Patriot ET1402 1200 Вт",
+      "price": 6658,
+      "raw_price": "6 658 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-elektricheskiy-patriot-et1402-1200-vt-89418739/"
+    },
+    {
+      "id": "89361532",
+      "category_id": "sadovaya-tehnika",
+      "name": "Мотокоса электрическая Oasis Garden Tools TE-35 350 Вт",
+      "price": 1225,
+      "raw_price": "1 225 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/motokosa-elektricheskaya-oasis-garden-tools-te-35-350-vt-89361532/"
+    },
+    {
+      "id": "82549769",
+      "category_id": "sadovaya-tehnika",
+      "name": "Ножницы аккумуляторные Patriot CSH364 3.6 В 1x1.3 Ач АКБ и ЗУ входит в комплект",
+      "price": 3781,
+      "raw_price": "3 781 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/nozhnicy-akkumulyatornye-patriot-csh364-36-v-1x13-ach-akb-i-zu-vhodit-v-komplekt-82549769/"
+    },
+    {
+      "id": "92088814",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик электрический Elitech Смэ 2200 (e1609.019.00) 55.9 см 2000 Вт",
+      "price": 20990,
+      "raw_price": "20 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-elektricheskiy-elitech-sme-2200-e160901900-559-sm-2000-vt-92088814/"
+    },
+    {
+      "id": "89440957",
+      "category_id": "sadovaya-tehnika",
+      "name": "Противогололедные реагенты Alaskamelt Strong комбинированные 20 кг",
+      "price": 1190,
+      "raw_price": "1 190 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/protivogololednye-reagenty-alaskamelt-strong-kombinirovannye-20-kg-89440957/"
+    },
+    {
+      "id": "92704446",
+      "category_id": "sadovaya-tehnika",
+      "name": "Лопата снеговая Cycle Крепыш без черенка",
+      "price": 1274.1,
+      "raw_price": "1 274, 10 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/lopata-snegovaya-cycle-krepysh-bez-cherenka-92704446/"
+    },
+    {
+      "id": "85373902",
+      "category_id": "sadovaya-tehnika",
+      "name": "Скребок для снега и льда сталь 120 см",
+      "price": 524,
+      "raw_price": "524 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skrebok-dlya-snega-i-lda-stal-120-sm-85373902/"
+    },
+    {
+      "id": "92088814",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик электрический Elitech Смэ 2200 (e1609.019.00) 55.9 см 2000 Вт",
+      "price": 20990,
+      "raw_price": "20 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-elektricheskiy-elitech-sme-2200-e160901900-559-sm-2000-vt-92088814/"
+    },
+    {
+      "id": "89440957",
+      "category_id": "sadovaya-tehnika",
+      "name": "Противогололедные реагенты Alaskamelt Strong комбинированные 20 кг",
+      "price": 1190,
+      "raw_price": "1 190 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/protivogololednye-reagenty-alaskamelt-strong-kombinirovannye-20-kg-89440957/"
+    },
+    {
+      "id": "92704446",
+      "category_id": "sadovaya-tehnika",
+      "name": "Лопата снеговая Cycle Крепыш без черенка",
+      "price": 1274.1,
+      "raw_price": "1 274, 10 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/lopata-snegovaya-cycle-krepysh-bez-cherenka-92704446/"
+    },
+    {
+      "id": "85373902",
+      "category_id": "sadovaya-tehnika",
+      "name": "Скребок для снега и льда сталь 120 см",
+      "price": 524,
+      "raw_price": "524 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/skrebok-dlya-snega-i-lda-stal-120-sm-85373902/"
+    },
+    {
+      "id": "90564442",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый RedVerg RD-SB76/13E 13 л.с.",
+      "price": 125990,
+      "raw_price": "125 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-redverg-rd-sb76-13e-13-ls-90564442/"
+    },
+    {
+      "id": "90674417",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый RedVerg RD-SB56/7EB 7 л.с.",
+      "price": 58790,
+      "raw_price": "58 790 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-redverg-rd-sb56-7eb-7-ls-90674417/"
+    },
+    {
+      "id": "87231937",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер аккумуляторный GreenWorks 2107207SA 24 В 1x2 Ач АКБ и ЗУ входит в комплект",
+      "price": 5318,
+      "raw_price": "5 318 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-akkumulyatornyy-greenworks-2107207sa-24-v-1x2-ach-akb-i-zu-vhodit-v-komplekt-87231937/"
+    },
+    {
+      "id": "91342870",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый Steher GST-756 56 см 7 л.с.",
+      "price": 39990,
+      "raw_price": "39 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-steher-gst-756-56-sm-7-ls-91342870/"
+    },
+    {
+      "id": "86489456",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Deko DKCHS 20-6 20 В 15.25 см",
+      "price": 2612,
+      "raw_price": "2 612 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-deko-dkchs-20-6-20-v-1525-sm-86489456/"
+    },
+    {
+      "id": "89363012",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Deko DKCHS20V 20 В 23.8 см",
+      "price": 5435,
+      "raw_price": "5 435 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-deko-dkchs20v-20-v-238-sm-89363012/"
+    },
+    {
+      "id": "89390155",
+      "category_id": "sadovaya-tehnika",
+      "name": "Измельчитель садовый электрический Greenworks 2800 Вт",
+      "price": 18990,
+      "raw_price": "18 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/izmelchitel-sadovyy-elektricheskiy-greenworks-2800-vt-89390155/"
+    },
+    {
+      "id": "82770991",
+      "category_id": "sadovaya-tehnika",
+      "name": "Бензопила Huter BS-2.8/50RS. 3.8 л.с шина 50 см",
+      "price": 10687,
+      "raw_price": "10 687 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/benzopila-huter-bs-28-50rs-38-ls-shina-50-sm-82770991/"
+    },
+    {
+      "id": "90615818",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый Daewoo S 6060 SET 56 см 4410 Вт и срезные болты Dast 4В",
+      "price": 49990,
+      "raw_price": "49 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-daewoo-s-6060-set-56-sm-4410-vt-i-sreznye-bolty-dast-4v-90615818/"
+    },
+    {
+      "id": "91953352",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная бесщёточная Rokodil Cutter pro 18 В шина 15 см 2x2 Ач АКБ и ЗУ в комплекте",
+      "price": 6650,
+      "raw_price": "6 650 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-besshchetochnaya-rokodil-cutter-pro-18-v-shina-15-sm-2x2-ach-akb-i-zu-v-komplekte-91953352/"
+    },
+    {
+      "id": "84340597",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер бензиновый Patriot PT 552 3 л.с",
+      "price": 10970,
+      "raw_price": "10 970 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-benzinovyy-patriot-pt-552-3-ls-84340597/"
+    },
+    {
+      "id": "18858443",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик аккумуляторный GREENWORKS Бесщёточный GD40ST 51 см 40 В 1x4 Ач АКБ и ЗУ в комплекте",
+      "price": 35615,
+      "raw_price": "35 615 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-akkumulyatornyy-greenworks-besshchetochnyy-gd40st-51-sm-40-v-1x4-ach-akb-i-zu-v-komplekte-18858443/"
+    },
+    {
+      "id": "83139707",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер электрический Greenworks 1301807 1200 Вт",
+      "price": 9274,
+      "raw_price": "9 274 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-elektricheskiy-greenworks-1301807-1200-vt-83139707/"
+    },
+    {
+      "id": "89415150",
+      "category_id": "sadovaya-tehnika",
+      "name": "Цепная пила аккумуляторная бесщеточная Elitech HD CS2008BLK 20 В 20 см 2 Ач АКБ и ЗУ входит в комплект",
+      "price": 9490,
+      "raw_price": "9 490 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/cepnaya-pila-akkumulyatornaya-besshchetochnaya-elitech-hd-cs2008blk-20-v-20-sm-2-ach-akb-i-zu-vhodit-v-komplekt-89415150/"
+    },
+    {
+      "id": "82610289",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер бензиновый Huter GGT-520Т 3.4 л.с",
+      "price": 9775,
+      "raw_price": "9 775 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-benzinovyy-huter-ggt-520t-34-ls-82610289/"
+    },
+    {
+      "id": "18802773",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер аккумуляторный GreenWorks G40LTK2 40 В 1x2 Ач АКБ и ЗУ входит в комплект",
+      "price": 14058,
+      "raw_price": "14 058 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-akkumulyatornyy-greenworks-g40ltk2-40-v-1x2-ach-akb-i-zu-vhodit-v-komplekt-18802773/"
+    },
+    {
+      "id": "86837016",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Бесщеточная Greenworks 2005707UA 40 В 35 см АКБ и ЗУ в комплекте",
+      "price": 16990,
+      "raw_price": "16 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-besshchetochnaya-greenworks-2005707ua-40-v-35-sm-akb-i-zu-v-komplekte-86837016/"
+    },
+    {
+      "id": "85415559",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила электрическая Daewoo DACS 1900E 1850 Вт 35 см",
+      "price": 5698,
+      "raw_price": "5 698 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-elektricheskaya-daewoo-dacs-1900e-1850-vt-35-sm-85415559/"
+    },
+    {
+      "id": "85415859",
+      "category_id": "sadovaya-tehnika",
+      "name": "Воздуходувка электрическая Daewoo DABL 3000E 3100 Вт",
+      "price": 7998,
+      "raw_price": "7 998 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vozduhoduvka-elektricheskaya-daewoo-dabl-3000e-3100-vt-85415859/"
+    },
+    {
+      "id": "87956010",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила аккумуляторная Daewoo DACS 821LiSET 20 В 20 см",
+      "price": 13990,
+      "raw_price": "13 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-akkumulyatornaya-daewoo-dacs-821liset-20-v-20-sm-87956010/"
+    },
+    {
+      "id": "87468786",
+      "category_id": "sadovaya-tehnika",
+      "name": "Газонокосилка электрическая Daewoo LE 1300 Вт 33 см",
+      "price": 8990,
+      "raw_price": "8 990 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/gazonokosilka-elektricheskaya-daewoo-le-1300-vt-33-sm-87468786/"
+    },
+    {
+      "id": "82770992",
+      "category_id": "sadovaya-tehnika",
+      "name": "Бензопила Huter BS-2.3/40RS, 3 л.с шина 40 см",
+      "price": 7563,
+      "raw_price": "7 563 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/benzopila-huter-bs-23-40rs-82770992/"
+    },
+    {
+      "id": "91706800",
+      "category_id": "sadovaya-tehnika",
+      "name": "Газонокосилка бензиновая самоходная Daewoo L 43sp 4 л.с. 42 см",
+      "price": 25993,
+      "raw_price": "25 993 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/gazonokosilka-benzinovaya-samohodnaya-daewoo-l-43sp-4-ls-42-sm-91706800/"
+    },
+    {
+      "id": "98268111",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый Huter SGC 4800B 56 см 7 л.с.",
+      "price": 41499,
+      "raw_price": "41 499 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-huter-sgc-4800b-56-sm-7-ls-98268111/"
+    },
+    {
+      "id": "84134062",
+      "category_id": "sadovaya-tehnika",
+      "name": "Аккумуляторная пила Greenworks 24 В шина 25 см АКБ и ЗУ в комплекте",
+      "price": 10902,
+      "raw_price": "10 902 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/akkumulyatornaya-pila-greenworks-24-v-shina-25-sm-akb-i-zu-v-komplekte-84134062/"
+    },
+    {
+      "id": "18272371",
+      "category_id": "sadovaya-tehnika",
+      "name": "Бензопила Carver Hobby HSG 152-18, 2.6 л.с шина 45 см",
+      "price": 5776,
+      "raw_price": "5 776 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/benzopila-carver-hobby-hsg-152-18-18272371/"
+    },
+    {
+      "id": "83235306",
+      "category_id": "sadovaya-tehnika",
+      "name": "Бензопила Patriot GS 152 3 л.с шина 45 см",
+      "price": 10496,
+      "raw_price": "10 496 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/benzopila-patriot-gs-152-3-ls-shina-45-sm-83235306/"
+    },
+    {
+      "id": "86489459",
+      "category_id": "sadovaya-tehnika",
+      "name": "Воздуходувка садовая аккумуляторная Deko DKBL20 20 В АКБ и ЗУ в комплекте",
+      "price": 4057,
+      "raw_price": "4 057 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/vozduhoduvka-sadovaya-akkumulyatornaya-deko-dkbl20-20-v-akb-i-zu-v-komplekte-86489459/"
+    },
+    {
+      "id": "90074280",
+      "category_id": "sadovaya-tehnika",
+      "name": "Триммер бензиновый Eurolux TR-4000T 5.4 л.с.",
+      "price": 8752,
+      "raw_price": "8 752 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/trimmer-benzinovyy-eurolux-tr-4000t-54-ls-90074280/"
+    },
+    {
+      "id": "85429192",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила бензиновая Daewoo DACS5820XT 4.5 л.с. 50 см",
+      "price": 13586,
+      "raw_price": "13 586 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-benzinovaya-daewoo-dacs5820xt-45-ls-50-sm-85429192/"
+    },
+    {
+      "id": "92585053",
+      "category_id": "sadovaya-tehnika",
+      "name": "Снегоуборщик бензиновый Зубр СМБ-7-66 66 см 7 л.с.",
+      "price": 48951,
+      "raw_price": "48 951 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/snegouborshchik-benzinovyy-zubr-smb-7-66-66-sm-7-ls-92585053/"
+    },
+    {
+      "id": "87234079",
+      "category_id": "sadovaya-tehnika",
+      "name": "Пила электрическая Deko DKEC12 1600 Вт 30.4 см",
+      "price": 3348,
+      "raw_price": "3 348 ₽",
+      "url": "https://volgograd.lemanapro.ru/product/pila-elektricheskaya-deko-dkec12-1600-vt-304-sm-87234079/"
+    }
+  ]
+}
