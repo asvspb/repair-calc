@@ -111,6 +111,7 @@ export function reorderWorksInRoom(room: RoomData, works: WorkData[]): RoomData 
 export const createNewProject = (): ProjectData => ({
   id: Math.random().toString(36).substring(2, 11),
   name: 'Новый объект',
+  city: 'Москва',
   rooms: []
 });
 

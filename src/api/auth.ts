@@ -92,9 +92,35 @@ export async function refreshToken(refreshToken: string): Promise<RefreshRespons
 
 /**
  * Получение информации о текущем пользователе
+ * Возвращает null при 401 (ожидаемая ситуация для неавторизованных пользователей)
  */
 export async function getCurrentUser(): Promise<{ status: string; data: User }> {
-  return fetchJson<{ status: string; data: User }>('/api/auth/me');
+  const url = `${API_BASE}/api/auth/me`;
+
+  const defaultHeaders: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  const token = localStorage.getItem('token');
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    headers: defaultHeaders,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new AuthApiError(
+      data.message || 'Произошла ошибка',
+      response.status,
+      data.errors
+    );
+  }
+
+  return data;
 }
 
 /**

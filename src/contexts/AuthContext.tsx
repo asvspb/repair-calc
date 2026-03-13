@@ -69,38 +69,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
+      let userData = null;
+      let shouldRefresh = false;
+
+      // Пробуем получить информацию о пользователе
       try {
-        // Пробуем получить информацию о пользователе
         const response = await authApi.getCurrentUser();
-        setState({
-          user: response.data,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
+        userData = response.data;
       } catch (error) {
-        // Если токен истёк, пробуем обновить
-        try {
-          const refreshResponse = await authApi.refreshToken(refreshToken);
-          authApi.saveTokens(refreshResponse.data);
-          
-          const userResponse = await authApi.getCurrentUser();
-          setState({
-            user: userResponse.data,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-        } catch {
-          // При любой ошибке очищаем токены
+        // 401 означает что токен истёк - пробуем обновить
+        if (error instanceof authApi.AuthApiError && error.statusCode === 401) {
+          shouldRefresh = true;
+        } else {
+          // Другие ошибки - просто очищаем токены
           authApi.clearTokens();
-          setState({
+          setState(prev => ({
+            ...prev,
             user: null,
             isAuthenticated: false,
             isLoading: false,
             error: null,
-          });
+          }));
+          return;
         }
+      }
+
+      if (shouldRefresh) {
+        // Пробуем обновить токен
+        try {
+          const refreshResponse = await authApi.refreshToken(refreshToken);
+          authApi.saveTokens(refreshResponse.data);
+
+          const userResponse = await authApi.getCurrentUser();
+          userData = userResponse.data;
+        } catch {
+          // При любой ошибке очищаем токены
+          authApi.clearTokens();
+          setState(prev => ({
+            ...prev,
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          }));
+          return;
+        }
+      }
+
+      if (userData) {
+        setState({
+          user: userData,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
       }
     };
 
