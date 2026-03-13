@@ -96,7 +96,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
                 <p className="mt-2 text-sm text-gray-500">
-                  {provider === 'gemini' ? 'Gemini' : 'Mistral'} ищет цены...
+                  Обработка информации искуственным интеллектом...
                 </p>
               </div>
             )}
