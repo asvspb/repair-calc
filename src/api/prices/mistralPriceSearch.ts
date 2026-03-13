@@ -1,34 +1,40 @@
 /**
- * Поиск цен через Gemini AI
- * Использует Gemini API для поиска ориентировочных цен на стройматериалы
+ * Поиск цен через Mistral AI
+ * Использует Mistral API для поиска ориентировочных цен на стройматериалы
  */
 
 import React from 'react';
 import type { PriceSearchRequest, PriceSearchResult, PriceSearchError } from './types';
 import { buildCacheKey, getCachedPrice, setCachedPrice } from './priceCache';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+
+/**
+ * Получает имя модели из переменных окружения или возвращает значение по умолчанию
+ */
+function getModelName(): string {
+  return import.meta.env.VITE_MISTRAL_MODEL_NAME || 'mistral-small-latest';
+}
 
 /**
  * Получает API ключ из переменных окружения
  */
 function getApiKey(): string | null {
-  // В Vite переменные окружения доступны через import.meta.env
-  return import.meta.env.VITE_GEMINI_API_KEY || null;
+  return import.meta.env.VITE_MISTRAL_API_KEY || null;
 }
 
 /**
- * Проверяет, включён ли Gemini через переменную окружения
+ * Проверяет, включён ли Mistral через переменную окружения
  */
 function isEnabled(): boolean {
-  const enabled = import.meta.env.VITE_GEMINI_ENABLED;
+  const enabled = import.meta.env.VITE_MISTRAL_ENABLED;
   // Если переменная не задана, считаем что включён (для обратной совместимости)
   if (enabled === undefined) return true;
   return enabled === 'true' || enabled === '1';
 }
 
 /**
- * Строит промпт для Gemini
+ * Строит промпт для Mistral
  */
 function buildPriceSearchPrompt(request: PriceSearchRequest): string {
   return `Найди средние цены на "${request.productName}" в городе ${request.city}.
@@ -62,20 +68,20 @@ ${request.category ? `Категория: ${request.category}.` : ''}
 }
 
 /**
- * Парсит ответ от Gemini
+ * Парсит ответ от Mistral
  */
-function parseGeminiResponse(response: unknown): PriceSearchResult {
+function parseMistralResponse(response: unknown): PriceSearchResult {
   try {
-    // Gemini возвращает { candidates: [{ content: { parts: [{ text: "..." }] } }] }
-    const candidates = (response as { candidates?: unknown[] })?.candidates;
-    const text = (candidates?.[0] as { content?: { parts?: { text?: string }[] } })?.content?.parts?.[0]?.text;
+    // Mistral возвращает { choices: [{ message: { content: "..." } }] }
+    const choices = (response as { choices?: unknown[] })?.choices;
+    const content = (choices?.[0] as { message?: { content?: string } })?.message?.content;
     
-    if (!text) {
-      throw new Error('Пустой ответ от Gemini');
+    if (!content) {
+      throw new Error('Пустой ответ от Mistral');
     }
     
     // Удаляем markdown-форматирование если есть
-    const jsonText = text
+    const jsonText = content
       .replace(/^```json\s*/i, '')
       .replace(/^```\s*/i, '')
       .replace(/\s*```$/i, '')
@@ -113,10 +119,10 @@ function parseGeminiResponse(response: unknown): PriceSearchResult {
 function mapToPriceSearchError(error: unknown): PriceSearchError {
   if (error instanceof Error) {
     // API key ошибки
-    if (error.message.includes('API key') || error.message.includes('401') || error.message.includes('403')) {
+    if (error.message.includes('API key') || error.message.includes('401') || error.message.includes('403') || error.message.includes('Unauthorized')) {
       return {
         type: 'invalidKey',
-        message: 'Неверный или отсутствующий API ключ Gemini',
+        message: 'Неверный или отсутствующий API ключ Mistral',
         retryable: false,
       };
     }
@@ -125,7 +131,7 @@ function mapToPriceSearchError(error: unknown): PriceSearchError {
     if (error.message.includes('429') || error.message.includes('rate limit') || error.message.includes('quota')) {
       return {
         type: 'rateLimit',
-        message: 'Превышен лимит запросов к Gemini API',
+        message: 'Превышен лимит запросов к Mistral API',
         retryable: true,
       };
     }
@@ -134,7 +140,7 @@ function mapToPriceSearchError(error: unknown): PriceSearchError {
     if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
       return {
         type: 'network',
-        message: 'Ошибка сети при обращении к Gemini API',
+        message: 'Ошибка сети при обращении к Mistral API',
         retryable: true,
       };
     }
@@ -170,34 +176,36 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Выполняет запрос к Gemini API
+ * Выполняет запрос к Mistral API
  */
-async function callGemini(prompt: string, apiKey: string): Promise<PriceSearchResult> {
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+async function callMistral(prompt: string, apiKey: string): Promise<PriceSearchResult> {
+  const model = getModelName();
+  const response = await fetch(MISTRAL_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      contents: [
+      model,
+      messages: [
         {
-          parts: [{ text: prompt }],
+          role: 'user',
+          content: prompt,
         },
       ],
-      generationConfig: {
-        temperature: 0.2, // Низкая температура для более точных ответов
-        maxOutputTokens: 1024,
-      },
+      temperature: 0.2, // Низкая температура для более точных ответов
+      max_tokens: 1024,
     }),
   });
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    throw new Error(`Mistral API error: ${response.status} - ${errorText}`);
   }
   
   const data = await response.json();
-  return parseGeminiResponse(data);
+  return parseMistralResponse(data);
 }
 
 /**
@@ -223,7 +231,7 @@ export async function searchPrice(
   if (!apiKey) {
     throw {
       type: 'invalidKey',
-      message: 'API ключ Gemini не настроен. Добавьте VITE_GEMINI_API_KEY в .env',
+      message: 'API ключ Mistral не настроен. Добавьте VITE_MISTRAL_API_KEY в .env',
       retryable: false,
     } as PriceSearchError;
   }
@@ -236,7 +244,7 @@ export async function searchPrice(
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const result = await callGemini(prompt, apiKey);
+      const result = await callMistral(prompt, apiKey);
       
       // Сохраняем в кэш
       setCachedPrice(cacheKey, result);
@@ -258,23 +266,30 @@ export async function searchPrice(
 }
 
 /**
- * Проверяет, включён ли Gemini
+ * Проверяет, включён ли Mistral
  */
-export function isGeminiEnabled(): boolean {
+export function isMistralEnabled(): boolean {
   return isEnabled() && !!getApiKey();
 }
 
 /**
  * Проверяет, настроен ли API ключ (для обратной совместимости)
  */
-export function isGeminiConfigured(): boolean {
-  return isGeminiEnabled();
+export function isMistralConfigured(): boolean {
+  return isMistralEnabled();
+}
+
+/**
+ * Возвращает имя используемой модели
+ */
+export function getMistralModel(): string {
+  return getModelName();
 }
 
 /**
  * Хук для использования в React компонентах
  */
-export function useGeminiPriceSearch() {
+export function useMistralPriceSearch() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [result, setResult] = React.useState<PriceSearchResult | null>(null);
   const [error, setError] = React.useState<PriceSearchError | null>(null);
@@ -308,7 +323,6 @@ export function useGeminiPriceSearch() {
     result,
     error,
     reset,
-    isConfigured: isGeminiConfigured(),
+    isConfigured: isMistralConfigured(),
   };
 }
-

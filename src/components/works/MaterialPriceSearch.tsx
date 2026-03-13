@@ -1,10 +1,10 @@
 /**
- * MaterialPriceSearch - кнопка и модальное окно для поиска цен через Gemini AI
+ * MaterialPriceSearch - кнопка и модальное окно для поиска цен через AI (Gemini/Mistral)
  */
 
 import React, { memo, useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Check, RefreshCw } from 'lucide-react';
-import { useGeminiPriceSearch, isGeminiConfigured } from '../../api/prices';
+import { usePriceSearch } from '../../api/prices';
 import type { PriceSearchResult, PriceSearchError } from '../../api/prices';
 
 type Props = {
@@ -24,7 +24,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
   disabled = false,
 }) => {
   const [showModal, setShowModal] = useState(false);
-  const { search, isLoading, result, error, reset, isConfigured } = useGeminiPriceSearch();
+  const { search, isLoading, result, error, reset, isConfigured, provider } = usePriceSearch();
 
   // Обработчик поиска
   const handleSearch = useCallback(() => {
@@ -96,7 +96,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
                 <p className="mt-2 text-sm text-gray-500">
-                  Gemini ищет цены...
+                  {provider === 'gemini' ? 'Gemini' : 'Mistral'} ищет цены...
                 </p>
               </div>
             )}
