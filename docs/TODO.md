@@ -173,23 +173,23 @@
 
 **Полное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
 
-#### Фаза 7.1: Подготовка сервера (3-4 дня)
+#### Фаза 7.1: Подготовка сервера (3-4 дня) — ✅ ВЫПОЛНЕНО
 
-- [ ] **7.1.1** Создать структуру `server/` с TypeScript
-- [ ] **7.1.2** Настроить Express + middleware (cors, errorHandler)
-- [ ] **7.1.3** Настроить MySQL connection pool (mysql2/promise)
-- [ ] **7.1.4** Создать Knex-миграции для всех таблиц (14 таблиц)
-- [ ] **7.1.5** Написать репозитории (UserRepository, ProjectRepository, RoomRepository, WorkRepository)
-- [ ] **7.1.6** Добавить zod-схемы валидации для всех входных данных
+- [x] **7.1.1** Создать структуру `server/` с TypeScript
+- [x] **7.1.2** Настроить Express + middleware (cors, errorHandler)
+- [x] **7.1.3** Настроить MySQL connection pool (mysql2/promise)
+- [x] **7.1.4** Создать Knex-миграции для всех таблиц (14 таблиц)
+- [x] **7.1.5** Написать репозитории (UserRepository, ProjectRepository, RoomRepository, WorkRepository)
+- [x] **7.1.6** Добавить zod-схемы валидации для всех входных данных
 
-#### Фаза 7.2: Аутентификация (2-3 дня)
+#### Фаза 7.2: Аутентификация (2-3 дня) — ✅ ВЫПОЛНЕНО
 
-- [ ] **7.2.1** Реализовать регистрацию (POST /api/auth/register)
-- [ ] **7.2.2** Реализовать вход (POST /api/auth/login)
-- [ ] **7.2.3** Реализовать JWT middleware
-- [ ] **7.2.4** Создать AuthContext на клиенте
-- [ ] **7.2.5** Создать страницы Login/Register
-- [ ] **7.2.6** Добавить защиту роутов (PrivateRoute)
+- [x] **7.2.1** Реализовать регистрацию (POST /api/auth/register)
+- [x] **7.2.2** Реализовать вход (POST /api/auth/login)
+- [x] **7.2.3** Реализовать JWT middleware
+- [x] **7.2.4** Создать AuthContext на клиенте
+- [x] **7.2.5** Создать страницы Login/Register
+- [x] **7.2.6** Добавить защиту роутов (PrivateRoute)
 
 #### Фаза 7.3: CRUD для проектов (3-4 дня)
 

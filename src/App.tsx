@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Calculator, Menu, X, LayoutDashboard, Save } from 'lucide-react';
+import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
 import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
 import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { LoginPage, RegisterPage, ProtectedRoute } from './components/auth';
 import type { ProjectData, RoomData } from './types';
 import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
@@ -13,6 +15,71 @@ import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
 
 import { initialProjects } from './data/initialData';
+
+/**
+ * Страниццы аутентификации
+ */
+function AuthPages() {
+  const [isLogin, setIsLogin] = useState(true);
+
+  return isLogin ? (
+    <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
+  ) : (
+    <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />
+  );
+}
+
+/**
+ * Компонент с пользователем в сайдбаре
+ */
+function UserSection() {
+  const { user, logout } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+
+  if (!user) return null;
+
+  return (
+    <div className="p-4 border-t border-gray-200 bg-white shrink-0 relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+      >
+        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+          <User className="w-4 h-4 text-indigo-600" />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <div className="text-sm font-medium text-gray-900 truncate">
+            {user.name || 'Пользователь'}
+          </div>
+          <div className="text-xs text-gray-500 truncate">
+            {user.email}
+          </div>
+        </div>
+      </button>
+      
+      {showMenu && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setShowMenu(false)}
+          />
+          <div className="absolute bottom-full left-4 right-4 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <button
+              onClick={async () => {
+                setShowMenu(false);
+                await logout();
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Выйти</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 /**
  * Внутренний компонент приложения, использующий контексты.
@@ -239,6 +306,9 @@ function AppContent() {
             Новый объект
           </button>
         </div>
+
+        {/* User section */}
+        <UserSection />
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
@@ -319,17 +389,48 @@ function AppContent() {
 }
 
 /**
+ * Корневой компонент приложения с роутингом аутентификации
+ */
+function AppWithAuth() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Показываем загрузку пока проверяем авторизацию
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
+        <div className="text-center">
+          <Calculator className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Если не авторизован — показываем страницы аутентификации
+  if (!isAuthenticated) {
+    return <AuthPages />;
+  }
+
+  // Если авторизован — показываем основное приложение
+  return (
+    <ProjectProvider initialProjects={initialProjects}>
+      <WorkTemplateProvider>
+        <AppContent />
+      </WorkTemplateProvider>
+    </ProjectProvider>
+  );
+}
+
+/**
  * Корневой компонент приложения.
  * Настраивает провайдеры контекстов и Error Boundary.
  */
 export default function App() {
   return (
     <ErrorBoundary>
-      <ProjectProvider initialProjects={initialProjects}>
-        <WorkTemplateProvider>
-          <AppContent />
-        </WorkTemplateProvider>
-      </ProjectProvider>
+      <AuthProvider>
+        <AppWithAuth />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
