@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import React from 'react';
 import { ProjectProvider, useProjectContext } from '../../src/contexts/ProjectContext';
 import { WorkTemplateProvider } from '../../src/contexts/WorkTemplateContext';
+import { AuthContext } from '../../src/contexts/AuthContext';
 import type { RoomData, RoomSubSection } from '../../src/types';
+import type { AuthContextValue } from '../../src/types/auth';
 import { createNewProject, createNewRoom } from '../../src/utils/factories';
 
 const TEST_PROJECTS = [
@@ -12,13 +15,27 @@ const TEST_PROJECTS = [
   }
 ];
 
+// Mock AuthContext value
+const mockAuthValue: AuthContextValue = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  clearError: vi.fn(),
+};
+
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <ProjectProvider initialProjects={TEST_PROJECTS}>
-      <WorkTemplateProvider>
-        {children}
-      </WorkTemplateProvider>
-    </ProjectProvider>
+    <AuthContext.Provider value={mockAuthValue}>
+      <ProjectProvider initialProjects={TEST_PROJECTS}>
+        <WorkTemplateProvider>
+          {children}
+        </WorkTemplateProvider>
+      </ProjectProvider>
+    </AuthContext.Provider>
   );
 }
 

@@ -4,7 +4,9 @@ import { act } from '@testing-library/react';
 import React from 'react';
 import { ProjectProvider, useProjectContext } from '../../src/contexts/ProjectContext';
 import { WorkTemplateProvider } from '../../src/contexts/WorkTemplateContext';
+import { AuthContext } from '../../src/contexts/AuthContext';
 import type { ProjectData, RoomData, WorkData } from '../../src/types';
+import type { AuthContextValue } from '../../src/types/auth';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -31,6 +33,27 @@ let uuidIndex = 0;
 vi.stubGlobal('crypto', {
   randomUUID: () => mockUUIDs[uuidIndex++ % mockUUIDs.length],
 });
+
+// Mock AuthContext value
+const mockAuthValue: AuthContextValue = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  clearError: vi.fn(),
+};
+
+// Wrapper component with AuthContext
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <AuthContext.Provider value={mockAuthValue}>
+    <ProjectProvider initialProjects={[]}>
+      {children}
+    </ProjectProvider>
+  </AuthContext.Provider>
+);
 
 // Test component that uses the context
 const TestComponent: React.FC<{
@@ -98,9 +121,9 @@ describe('Project-Work Integration', () => {
   describe('Project Management', () => {
     it('should create and persist a new project', async () => {
       render(
-        <ProjectProvider initialProjects={[]}>
+        <TestWrapper>
           <TestComponent />
-        </ProjectProvider>
+        </TestWrapper>
       );
 
       // Wait for loading to complete
@@ -120,9 +143,9 @@ describe('Project-Work Integration', () => {
 
     it('should add room to current project', async () => {
       render(
-        <ProjectProvider initialProjects={[]}>
+        <TestWrapper>
           <TestComponent />
-        </ProjectProvider>
+        </TestWrapper>
       );
 
       await waitFor(() => {
@@ -146,9 +169,9 @@ describe('Project-Work Integration', () => {
   describe('Room Calculations', () => {
     it('should calculate room properties correctly', async () => {
       render(
-        <ProjectProvider initialProjects={[]}>
+        <TestWrapper>
           <TestComponent />
-        </ProjectProvider>
+        </TestWrapper>
       );
 
       await waitFor(() => {
@@ -177,11 +200,13 @@ describe('Template Integration', () => {
 
   it('should render with template provider', async () => {
     const { container } = render(
-      <ProjectProvider initialProjects={[]}>
-        <WorkTemplateProvider>
-          <TestComponent />
-        </WorkTemplateProvider>
-      </ProjectProvider>
+      <AuthContext.Provider value={mockAuthValue}>
+        <ProjectProvider initialProjects={[]}>
+          <WorkTemplateProvider>
+            <TestComponent />
+          </WorkTemplateProvider>
+        </ProjectProvider>
+      </AuthContext.Provider>
     );
 
     await waitFor(() => {

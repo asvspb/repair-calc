@@ -657,7 +657,7 @@ export function RoomEditor({
                                   onClick={() =>
                                     removeMaterial(work.id, material.id)
                                   }
-                                  className="p-1 text-gray-300 hover:text-red-500"
+                                  className="p-1 text-gray-300 hover:text-red-500 cursor-pointer"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
@@ -812,7 +812,7 @@ export function RoomEditor({
                                 </div>
                                 <button
                                   onClick={() => removeTool(work.id, tool.id)}
-                                  className="p-1 text-gray-300 hover:text-red-500"
+                                  className="p-1 text-gray-300 hover:text-red-500 cursor-pointer"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>

@@ -18,7 +18,7 @@ import type { CalculationType } from '../types/index';
 
 const tools = {
   // Пол
-  podboyka: { id: 'tool-podboyka', name: 'Подбойка для ламината', isRentDefault: false, defaultPrice: 500 } as ToolTemplate,
+  подбойка: { id: 'tool-podboyka', name: 'Подбойка для ламината', isRentDefault: false, defaultPrice: 500 } as ToolTemplate,
   клинья: { id: 'tool-wedges', name: 'Клинья распорные', isRentDefault: false, defaultPrice: 150 } as ToolTemplate,
   лобзик: { id: 'tool-jigsaw', name: 'Электролобзик', isRentDefault: true, defaultPrice: 500, defaultRentPeriod: 1 } as ToolTemplate,
   плиткорез: { id: 'tool-tile-cutter', name: 'Плиткорез', isRentDefault: true, defaultPrice: 800, defaultRentPeriod: 1 } as ToolTemplate,

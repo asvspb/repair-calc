@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useCallback, useRef, useState, useEffect, type ReactNode } from 'react';
 import type { ProjectData, RoomData } from '../types';
 import { StorageManager, StorageError } from '../utils/storage';
+import { useAuth } from './AuthContext';
+import { ApiStorageProvider } from '../api/storage';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -43,6 +45,10 @@ interface ProjectContextValue {
   deleteRoom: (roomId: string) => void;
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
+  // Project management
+  createProject: (data: { name: string; city?: string }) => Promise<ProjectData>;
+  deleteProject: (projectId: string) => Promise<void>;
+  isSyncing: boolean;
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
@@ -53,6 +59,9 @@ interface ProjectProviderProps {
 }
 
 export function ProjectProvider({ children, initialProjects }: ProjectProviderProps) {
+  // Получаем состояние авторизации
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  
   // Миграция начальных данных
   const migratedInitial = initialProjects.map(migrateProject);
   const [projects, setProjects] = useState<ProjectData[]>(migratedInitial);
@@ -64,26 +73,71 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<ProjectData[] | null>(null);
+  const apiProviderRef = useRef<ApiStorageProvider | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Вычисляем активный проект
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
-  // Загрузка данных при монтировании
+  // Получение API провайдера
+  const getApiProvider = useCallback((): ApiStorageProvider => {
+    if (!apiProviderRef.current) {
+      apiProviderRef.current = ApiStorageProvider.getInstance();
+    }
+    return apiProviderRef.current;
+  }, []);
+
+  // Загрузка данных при монтировании или изменении авторизации
   useEffect(() => {
-    const loadData = () => {
+    // Ждем завершения проверки авторизации
+    if (authLoading) return;
+    
+    const loadData = async () => {
       try {
-        const savedProjects = StorageManager.loadProjects();
-        const savedActiveProject = StorageManager.loadActiveProject();
-
-        if (savedProjects && savedProjects.length > 0) {
-          const migratedProjects = savedProjects.map(migrateProject);
-          setProjects(migratedProjects);
-
-          const activeExists = savedProjects.some(p => p.id === savedActiveProject);
-          if (savedActiveProject && activeExists) {
-            setActiveProjectIdState(savedActiveProject);
+        // Если пользователь авторизован, загружаем с сервера
+        if (isAuthenticated) {
+          const apiProvider = getApiProvider();
+          const serverProjects = await apiProvider.loadProjectsAsync();
+          
+          if (serverProjects.length > 0) {
+            const migratedProjects = serverProjects.map(migrateProject);
+            setProjects(migratedProjects);
+            
+            // Загружаем активный проект из localStorage
+            const savedActiveProject = StorageManager.loadActiveProject();
+            const activeExists = migratedProjects.some(p => p.id === savedActiveProject);
+            
+            if (savedActiveProject && activeExists) {
+              setActiveProjectIdState(savedActiveProject);
+            } else {
+              setActiveProjectIdState(migratedProjects[0].id);
+            }
           } else {
-            setActiveProjectIdState(savedProjects[0].id);
+            // На сервере нет проектов, пробуем загрузить из localStorage и синхронизировать
+            const localProjects = StorageManager.loadProjects();
+            if (localProjects && localProjects.length > 0) {
+              const migratedProjects = localProjects.map(migrateProject);
+              setProjects(migratedProjects);
+              setActiveProjectIdState(migratedProjects[0].id);
+              
+              // TODO: Синхронизировать локальные проекты с сервером
+            }
+          }
+        } else {
+          // Не авторизован — используем localStorage
+          const savedProjects = StorageManager.loadProjects();
+          const savedActiveProject = StorageManager.loadActiveProject();
+
+          if (savedProjects && savedProjects.length > 0) {
+            const migratedProjects = savedProjects.map(migrateProject);
+            setProjects(migratedProjects);
+
+            const activeExists = savedProjects.some(p => p.id === savedActiveProject);
+            if (savedActiveProject && activeExists) {
+              setActiveProjectIdState(savedActiveProject);
+            } else {
+              setActiveProjectIdState(savedProjects[0].id);
+            }
           }
         }
         
@@ -96,7 +150,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     };
 
     loadData();
-  }, []);
+  }, [isAuthenticated, authLoading, getApiProvider]);
 
   // Автосохранение с debounce
   const scheduleSave = useCallback((newProjects: ProjectData[]) => {
@@ -220,6 +274,85 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     updateActiveProject(updatedProject);
   }, [activeProject, updateActiveProject]);
 
+  // Создание нового проекта
+  const createProject = useCallback(async (data: { name: string; city?: string }): Promise<ProjectData> => {
+    setIsSyncing(true);
+    
+    try {
+      if (isAuthenticated) {
+        // Создаем на сервере
+        const apiProvider = getApiProvider();
+        const newProject = await apiProvider.createProjectAsync(data);
+        
+        setProjects(prev => {
+          const updated = [...prev, newProject];
+          scheduleSave(updated);
+          return updated;
+        });
+        
+        setActiveProjectIdState(newProject.id);
+        StorageManager.saveActiveProject(newProject.id);
+        
+        return newProject;
+      } else {
+        // Создаем локально
+        const newProject: ProjectData = {
+          id: `local-${Date.now()}`,
+          name: data.name,
+          city: data.city,
+          rooms: [],
+        };
+        
+        setProjects(prev => {
+          const updated = [...prev, newProject];
+          scheduleSave(updated);
+          return updated;
+        });
+        
+        setActiveProjectIdState(newProject.id);
+        StorageManager.saveActiveProject(newProject.id);
+        
+        return newProject;
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAuthenticated, getApiProvider, scheduleSave]);
+
+  // Удаление проекта
+  const deleteProject = useCallback(async (projectId: string): Promise<void> => {
+    setIsSyncing(true);
+    
+    try {
+      if (isAuthenticated) {
+        // Удаляем на сервере
+        const apiProvider = getApiProvider();
+        await apiProvider.deleteProjectAsync(projectId);
+      }
+      
+      // Удаляем локально
+      setProjects(prev => {
+        const updated = prev.filter(p => p.id !== projectId);
+        scheduleSave(updated);
+        return updated;
+      });
+      
+      // Если удалили активный проект, переключаемся на первый доступный
+      if (activeProjectId === projectId) {
+        const remaining = projects.filter(p => p.id !== projectId);
+        if (remaining.length > 0) {
+          setActiveProjectIdState(remaining[0].id);
+          StorageManager.saveActiveProject(remaining[0].id);
+        } else {
+          setActiveProjectIdState('');
+          localStorage.removeItem('repair-calc-active-project');
+        }
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAuthenticated, getApiProvider, scheduleSave, activeProjectId, projects]);
+
   // Сохранение перед закрытием страницы
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -253,6 +386,9 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     deleteRoom,
     addRoom,
     reorderRooms,
+    createProject,
+    deleteProject,
+    isSyncing,
   };
 
   return (

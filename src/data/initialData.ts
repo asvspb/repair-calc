@@ -14,34 +14,38 @@ function createWorkFromTemplate(
     throw new Error(`Template not found: ${templateId}`);
   }
 
-  // Преобразуем материалы из шаблона
-  const materials: Material[] = template.materials.map(mat => ({
-    id: mat.id,
-    name: mat.name,
-    unit: mat.unit,
-    quantity: 0,
-    pricePerUnit: mat.defaultPrice || 0,
-    coveragePerUnit: mat.coveragePerUnit,
-    consumptionRate: mat.consumptionRate,
-    layers: mat.layers,
-    piecesPerUnit: mat.piecesPerUnit,
-    wastePercent: mat.wastePercent,
-    packageSize: mat.packageSize,
-    isPerimeter: mat.isPerimeter,
-    multiplier: mat.multiplier,
-    calculatedQty: 0,
-    autoCalcEnabled: true,
-  }));
+  // Преобразуем материалы из шаблона (фильтруем undefined)
+  const materials: Material[] = (template.materials || [])
+    .filter((mat): mat is NonNullable<typeof mat> => mat != null)
+    .map(mat => ({
+      id: mat.id,
+      name: mat.name,
+      unit: mat.unit,
+      quantity: 0,
+      pricePerUnit: mat.defaultPrice || 0,
+      coveragePerUnit: mat.coveragePerUnit,
+      consumptionRate: mat.consumptionRate,
+      layers: mat.layers,
+      piecesPerUnit: mat.piecesPerUnit,
+      wastePercent: mat.wastePercent,
+      packageSize: mat.packageSize,
+      isPerimeter: mat.isPerimeter,
+      multiplier: mat.multiplier,
+      calculatedQty: 0,
+      autoCalcEnabled: true,
+    }));
 
-  // Преобразуем инструменты из шаблона
-  const tools: Tool[] = template.tools.map(tool => ({
-    id: tool.id,
-    name: tool.name,
-    quantity: 1,
-    price: tool.defaultPrice || 0,
-    isRent: tool.isRentDefault,
-    rentPeriod: tool.defaultRentPeriod,
-  }));
+  // Преобразуем инструменты из шаблона (фильтруем undefined)
+  const tools: Tool[] = (template.tools || [])
+    .filter((tool): tool is NonNullable<typeof tool> => tool != null)
+    .map(tool => ({
+      id: tool.id,
+      name: tool.name,
+      quantity: 1,
+      price: tool.defaultPrice || 0,
+      isRent: tool.isRentDefault,
+      rentPeriod: tool.defaultRentPeriod,
+    }));
 
   return {
     id: templateId,
