@@ -167,13 +167,75 @@
 
 ---
 
-## 🔮 Будущие задачи (из ARCHITECTURE.md)
+## 🔮 Будущие задачи
 
-### Фаза 7: Backend + AI
+### Фаза 7: Миграция на базу данных — ПОДРОБНОЕ ТЗ
 
-- [ ] **7.1** Express + MySQL backend (5–7 дней)
-- [ ] **7.2** AI-интеграция Gemini + Mistral (3–5 дней)
-- [ ] **7.3** PWA с offline-first синхронизацией (2–3 дня)
+**Полное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+
+#### Фаза 7.1: Подготовка сервера (3-4 дня)
+
+- [ ] **7.1.1** Создать структуру `server/` с TypeScript
+- [ ] **7.1.2** Настроить Express + middleware (cors, errorHandler)
+- [ ] **7.1.3** Настроить MySQL connection pool (mysql2/promise)
+- [ ] **7.1.4** Создать Knex-миграции для всех таблиц (14 таблиц)
+- [ ] **7.1.5** Написать репозитории (UserRepository, ProjectRepository, RoomRepository, WorkRepository)
+- [ ] **7.1.6** Добавить zod-схемы валидации для всех входных данных
+
+#### Фаза 7.2: Аутентификация (2-3 дня)
+
+- [ ] **7.2.1** Реализовать регистрацию (POST /api/auth/register)
+- [ ] **7.2.2** Реализовать вход (POST /api/auth/login)
+- [ ] **7.2.3** Реализовать JWT middleware
+- [ ] **7.2.4** Создать AuthContext на клиенте
+- [ ] **7.2.5** Создать страницы Login/Register
+- [ ] **7.2.6** Добавить защиту роутов (PrivateRoute)
+
+#### Фаза 7.3: CRUD для проектов (3-4 дня)
+
+- [ ] **7.3.1** GET /api/projects — список проектов пользователя
+- [ ] **7.3.2** POST /api/projects — создать проект
+- [ ] **7.3.3** GET /api/projects/:id — получить проект с вложениями
+- [ ] **7.3.4** PUT /api/projects/:id — обновить проект
+- [ ] **7.3.5** DELETE /api/projects/:id — удалить проект
+- [ ] **7.3.6** Реализовать ApiStorageProvider на клиенте
+- [ ] **7.3.7** Интегрировать в ProjectContext
+
+#### Фаза 7.4: CRUD для комнат и работ (2-3 дня)
+
+- [ ] **7.4.1** Все CRUD для rooms
+- [ ] **7.4.2** Все CRUD для works, materials, tools
+- [ ] **7.4.3** Все CRUD для геометрии (openings, subsections, segments, obstacles, wall_sections)
+- [ ] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order)
+
+#### Фаза 7.5: Offline-first (2-3 дня)
+
+- [ ] **7.5.1** Установить idb (IndexedDB wrapper)
+- [ ] **7.5.2** Реализовать OfflineQueue для хранения изменений
+- [ ] **7.5.3** Реализовать POST /api/sync/push
+- [ ] **7.5.4** Реализовать GET /api/sync/pull
+- [ ] **7.5.5** Добавить детекцию online/offline статуса
+- [ ] **7.5.6** UI-индикатор синхронизации
+
+#### Фаза 7.6: AI-интеграция (3-4 дня)
+
+- [ ] **7.6.1** Абстрактный AIProvider интерфейс
+- [ ] **7.6.2** GeminiProvider (@google/genai)
+- [ ] **7.6.3** MistralProvider (@mistralai/mistralai)
+- [ ] **7.6.4** POST /api/ai/estimate
+- [ ] **7.6.5** POST /api/ai/suggest-materials
+- [ ] **7.6.6** Кэширование ответов в ai_requests
+
+#### Фаза 7.7: Тестирование и PWA (2-3 дня)
+
+- [ ] **7.7.1** Unit-тесты для сервера (Jest + Supertest)
+- [ ] **7.7.2** Integration-тесты API
+- [ ] **7.7.3** Установить vite-plugin-pwa
+- [ ] **7.7.4** Настроить service worker
+- [ ] **7.7.5** Создать иконки (192, 512, maskable)
+- [ ] **7.7.6** Протестировать offline-режим
+
+**Итого: 15-20 рабочих дней**
 
 ---
 

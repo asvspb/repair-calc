@@ -1,187 +1,178 @@
 # Прогресс проекта Repair Calculator
 
-**Последнее обновление:** 2026-03-10 (утро)
+**Последнее обновление:** 2026-03-13
 
 ---
 
 ## ✅ Завершённые фазы
 
 ### Фаза 1: Декомпозиция App.tsx — ВЫПОЛНЕНО
-*... (без изменений) ...*
 
-### Фаза 2: Исправление багов — ВЫПОЛНЕНО
-*... (без изменений) ...*
-
-### Фаза 3: Улучшение архитектуры — ВЫПОЛНЕНО
-*... (без изменений) ...*
-
-### Фаза 4: Тестирование — ВЫПОЛНЕНО
-*... (без изменений) ...*
-
-### Фаза 5: Рефакторинг блока геометрии (Geometry Block) — ВЫПОЛНЕНО
-
-**Проблема:** Блок геометрии в `RoomEditor.tsx` был монолитным, фрагментированным в разных режимах и раздувал компонент до ~2000 строк.
+**Проблема:** App.tsx был "God Component" на ~2700 строк.
 
 **Решение:**
-- Создан кастомный хук `useGeometryState` для изоляции логики.
-- Проведена глубокая декомпозиция на атомарные компоненты в `src/components/geometry/`.
-- Внедрен паттерн композиции: `GeometrySection` -> `ModeSelector`, `SimpleGeometry`, `ExtendedGeometry`, `AdvancedGeometry`.
-- Реализованы переиспользуемые UI-элементы: `OpeningList`, `GeometryMetrics`.
-- Оптимизация производительности: `SubSectionItem` обернут в `React.memo`.
-- Покрытие тестами: Добавлены Unit-тесты для расширенных расчетов геометрии.
+- Типы вынесены в `src/types/`
+- Утилиты вынесены в `src/utils/` (geometry.ts, costs.ts, factories.ts, storage.ts)
+- Компоненты вынесены: `SummaryView`, `RoomEditor`, `BackupManager`, `RoomList`, `WorkList`, `NumberInput`
+- Хуки вынесены: `useProjects`, `useWorkTemplates`
+- Начальные данные в `src/data/initialData.ts`
 
-**Результат:**
-- `RoomEditor.tsx` сокращен с **2003** до **843** строк (-58%).
-- Улучшен UX: все настройки габаритов теперь в одном сворачиваемом блоке.
-- Архитектура соответствует SOLID и лучшим мировым практикам.
+**Результат:** App.tsx сокращён с ~2700 до ~170 строк.
 
----
+### Фаза 2: Исправление багов — ВЫПОЛНЕНО
 
-## 🚧 Текущий план работ (2026-03-09)
+- [x] Stale closure в `updateActiveProject`
+- [x] CSV-экспорт игнорирует extended/advanced режимы
+- [x] Расхождение портов
+- [x] Утечка API-ключа в клиентский бандл
+- [x] Rules of Hooks в `App.tsx`
+- [x] Удаление мёртвых зависимостей
 
-### ✅ Вариант А: Технический долг — ВЫПОЛНЕНО
+### Фаза 3: Улучшение архитектуры — ВЫПОЛНЕНО
 
-| Задача | Статус |
-|--------|--------|
-| Создать `src/utils/roomHelpers.ts` с generic-хелперами | ✅ Уже существует |
-| Рефакторинг `useGeometryState.ts` | ⚠️ Не требуется (архитектура функциональных обновлений несовместима с чистыми функциями) |
+- [x] `IStorageProvider` для абстракции storage
+- [x] React Error Boundaries
+- [x] React Context (`ProjectProvider`, `WorkTemplateProvider`)
+- [x] `React.memo` для тяжёлых компонентов
 
-**Решение:** Хелперы в `roomHelpers.ts` доступны как чистые функции для других контекстов. Хук `useGeometryState` использует функциональные обновления для избежания stale closures.
+### Фаза 4: Тестирование — ВЫПОЛНЕНО
 
-### ✅ Вариант Б: Улучшение покрытия тестами — ВЫПОЛНЕНО
+| Категория | Количество |
+|-----------|------------|
+| Unit тесты (utils) | 220 |
+| Unit тесты (hooks) | 72 |
+| Integration тесты | 7 |
+| API тесты | 22 |
+| E2E тесты | 16 |
+| **Итого** | **402** |
 
-| Компонент | Тестов | Статус |
-|-----------|--------|--------|
-| `roomHelpers.test.ts` | 38 | ✅ |
-| Существующие тесты | 175 | ✅ |
-| **Итого** | **213** | ✅ |
+### Фаза 5: Рефакторинг геометрии — ВЫПОЛНЕНО
 
-**Результат:** Покрытие тестами улучшено. Добавлены 38 новых тестов для `roomHelpers.ts`.
+**Проблема:** Блок геометрии в `RoomEditor.tsx` был монолитным (~2000 строк).
 
-### ✅ Исправление багов — ВЫПОЛНЕНО
+**Решение:**
+- Кастомный хук `useGeometryState` для изоляции логики
+- Декомпозиция на компоненты: `GeometrySection`, `ModeSelector`, `SimpleGeometry`, `ExtendedGeometry`, `AdvancedGeometry`
+- Переиспользуемые UI-элементы: `OpeningList`, `GeometryMetrics`
+- `React.memo` для `SubSectionItem`
 
-| Баг | Описание | Статус |
-|-----|----------|--------|
-| Rules of Hooks | `useEffect` вызывался после условного возврата `if (isLoading)` | ✅ Исправлено |
+**Результат:** RoomEditor.tsx сокращён с 2003 до 843 строк.
 
-**Решение:** `useEffect` перемещён выше блока `if (isLoading)`, чтобы порядок хуков был постоянным на каждом рендере.
+### Фаза 6: Каталог материалов и расчёт — ВЫПОЛНЕНО
 
-### Выполненные Nitpicks
+**Компоненты:**
+- `WorkCatalogPicker.tsx` — выбор из каталога (19 типовых работ)
+- `MaterialCalculationCard.tsx` — универсальная карточка материала
+- `PaintMaterialCard.tsx` — карточка для краски (слои)
+- `TileMaterialCard.tsx` — карточка для плитки (размеры)
+- `SummaryMaterials.tsx`, `SummaryTools.tsx`, `SummaryWorks.tsx` — сводки
 
-| Задача | Статус |
-|--------|--------|
-| ~~Дублирование логики обновления~~ | ✅ Хелперы созданы |
-| ~~Импорт типов из `App.tsx`~~ | ✅ Выполнено |
-| ~~`sessionStorage` для `isGeometryCollapsed`~~ | ✅ Выполнено |
+**Утилиты:**
+- `materialCalculations.ts` — 5 формул расчёта материалов
+- `useMaterialCalculation.ts` — хук для авто-расчёта
 
-### Фаза 6: Каталог материалов и расчёт — В РАБОТЕ 🚧
-
-**Цель:** Создать систему каталога типовых работ с автоматическим расчётом количества материалов.
-
-| Этап | Задача | Статус |
-|------|--------|--------|
-| 1 | Типы данных (Material, WorkTemplateCatalog) | ✅ Готово |
-| 2 | Утилиты расчёта (materialCalculations.ts) | ✅ Готово |
-| 3 | Каталог работ (workTemplatesCatalog.ts, ~19 работ) | ✅ Готово |
-| 4 | UI выбора из каталога (WorkCatalogPicker.tsx) | ✅ Готово (15 тестов) |
-| 5 | UI расчёта материалов (MaterialCalculationCard) | ✅ Готово (12 тестов) |
-| 6 | Расширенная общая смета | ✅ Готово |
-| 7 | Поиск цен через Gemini AI | 🚧 В работе |
-
-**Реализовано:**
-
-*Этапы 1-3 (коммит 506f5a1):*
-- `src/types/workTemplate.ts` — типы MaterialTemplate, WorkTemplateCatalog, ToolTemplate
-- `src/utils/materialCalculations.ts` — 5 формул расчёта материалов
-- `src/data/workTemplatesCatalog.ts` — каталог из 19 типовых работ
-- `tests/utils/materialCalculations.test.ts` — 40+ тестов расчёта
-
-*Этап 4 (WorkCatalogPicker):*
-- `src/components/works/WorkCatalogPicker.tsx` — модальное окно выбора из каталога
-- Фильтр по категориям, поиск по названию
-- Превью материалов и инструментов
-- Интеграция в RoomEditor
-- `tests/components/WorkCatalogPicker.test.tsx` — 15 тестов
-
-*Этап 5 (UI расчёта материалов):*
-- `src/hooks/useMaterialCalculation.ts` — хук для авто-расчёта
-- `src/components/works/MaterialCalculationCard.tsx` — универсальная карточка
-- `src/components/works/PaintMaterialCard.tsx` — карточка для краски (слои)
-- `src/components/works/TileMaterialCard.tsx` — карточка для плитки (размеры)
-- `tests/hooks/useMaterialCalculation.test.ts` — 12 тестов
-
-*Этап 6 (Расширенная общая смета):*
-- `src/components/summary/SummaryMaterials.tsx` — сводка по материалам
-- `src/components/summary/SummaryTools.tsx` — сводка по инструментам (аренда/покупка)
-- `src/components/summary/SummaryWorks.tsx` — сводка по работам с детализацией по комнатам
-- `src/components/summary/index.ts` — barrel export
-- Интеграция в `SummaryView.tsx`
-- 356 тестов (было 329)
-
-**Формулы расчёта:**
-1. `calculateByCoverage` — обои, ламинат, плитка (по площади покрытия)
-2. `calculateByConsumption` — краска, клей, затирка (по расходу на м²)
-3. `calculateByPerimeter` — плинтус, профили (по периметру)
-4. `calculateByCount` — розетки, уголки (поштучно)
-5. `calculateVolumetric` — стяжка, штукатурка (объёмные)
-
-**Следующий шаг:** Расширенная общая смета (SummaryMaterials, SummaryTools, SummaryWorks)
+**AI:**
+- `geminiPriceSearch.ts` — поиск цен через Gemini
+- `priceCache.ts` — кэширование ответов
 
 ---
 
-### Фаза 7: Backend + AI (будущее)
-
-| Задача | Оценка |
-|--------|--------|
-| Express + MySQL backend | 5–7 дней |
-| AI-интеграция Gemini + Mistral | 3–5 дней |
-| PWA с offline-first синхронизацией | 2–3 дня |
-
----
-
-## 📈 Метрики успеха
+## 📊 Метрики
 
 | Метрика | Было | Стало | Целевое | Статус |
 |---------|------|-------|---------|--------|
 | Размер App.tsx | ~2700 строк | ~170 строк | <300 строк | ✅ |
 | Размер RoomEditor.tsx | ~2000 строк | ~843 строки | <1000 строк | ✅ |
-| Покрытие тестами | ~25% | ~40% | >60% | 🟡 |
+| Покрытие тестами | ~5% | ~50% | >60% | 🟡 |
 | Типизация (any) | 3 места | 0 | 0 | ✅ |
-| Тесты | 166 | 213 | — | ✅ |
+| Количество тестов | 166 | 402 | — | ✅ |
 
 ---
 
-## 📁 Структура проекта (Обновленная)
+## 🔮 Следующие шаги
+
+### Фаза 7: Миграция на базу данных
+
+**Подробное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+
+**Оценка:** 15-20 рабочих дней
+
+**Цели:**
+1. Многопользовательский режим
+2. Надёжное хранение в MySQL
+3. Синхронизация между устройствами
+4. AI-интеграция через сервер
+
+**Ключевые задачи:**
+- [ ] Создать сервер на Express + TypeScript
+- [ ] Настроить MySQL с миграциями Knex
+- [ ] Реализовать JWT-аутентификацию
+- [ ] Создать REST API для всех сущностей
+- [ ] Реализовать ApiStorageProvider на клиенте
+- [ ] Добавить offline-first синхронизацию
+
+---
+
+## 📁 Текущая структура проекта
 
 ```
 src/
+├── App.tsx                    # Главный компонент (~170 строк)
+├── main.tsx                   # Entry point
+├── index.css                  # TailwindCSS
+│
+├── api/prices/                # AI-поиск цен
+│   ├── geminiPriceSearch.ts
+│   ├── mistralPriceSearch.ts
+│   ├── priceCache.ts
+│   ├── unifiedSearch.ts
+│   └── types.ts
+│
 ├── components/
-│   ├── geometry/        # НОВОЕ: Модуль геометрии
-│   │   ├── index.ts
-│   │   ├── GeometrySection.tsx
-│   │   ├── ModeSelector.tsx
-│   │   ├── SimpleGeometry.tsx
-│   │   ├── ExtendedGeometry.tsx
-│   │   ├── AdvancedGeometry.tsx
-│   │   ├── SubSectionItem.tsx
-│   │   ├── OpeningList.tsx
-│   │   └── GeometryMetrics.tsx
-│   ├── rooms/ ...
-│   ├── works/ ...
-│   ├── ui/ ...
-│   └── RoomEditor.tsx    # Сокращен до 843 строк
+│   ├── geometry/              # Модуль геометрии (8 файлов)
+│   ├── rooms/                 # Список комнат (3 файла)
+│   ├── works/                 # Работы и материалы (10 файлов)
+│   ├── summary/               # Сводки (4 файла)
+│   └── ui/                    # UI-компоненты (3 файла)
+│
+├── contexts/
+│   ├── ProjectContext.tsx     # Состояние проекта
+│   └── WorkTemplateContext.tsx
+│
+├── data/
+│   ├── initialData.ts
+│   └── workTemplatesCatalog.ts
+│
 ├── hooks/
-│   ├── useGeometryState.ts # НОВОЕ: Логика геометрии
+│   ├── useGeometryState.ts
+│   ├── useMaterialCalculation.ts
 │   ├── useProjects.ts
 │   └── useWorkTemplates.ts
-...
+│
+├── types/
+│   ├── index.ts
+│   ├── storage.ts
+│   └── workTemplate.ts
+│
+└── utils/
+    ├── costs.ts
+    ├── factories.ts
+    ├── geometry.ts
+    ├── localStorageProvider.ts
+    ├── materialCalculations.ts
+    ├── roomHelpers.ts
+    ├── storage.ts
+    └── templateStorage.ts
 ```
 
 ---
 
 ## 🔗 Связанные документы
 
-- [TODO.md](./TODO.md) — актуальные задачи
-- [REFACTORING_GEOMETRY_BLOCK.md](./REFACTORING_GEOMETRY_BLOCK.md) — ТЗ на рефакторинг (выполнено)
-- [CODE_REVIEW.md](./CODE_REVIEW.md) — результаты ревью кода
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — архитектура проекта
+| Документ | Описание |
+|----------|----------|
+| [TODO.md](./TODO.md) | Актуальные задачи |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
+| [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md) | ТЗ миграции на БД |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью |
+| [MATERIALS_CATALOG_FEATURE.md](./MATERIALS_CATALOG_FEATURE.md) | Каталог материалов |

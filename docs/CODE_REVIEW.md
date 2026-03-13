@@ -1,48 +1,34 @@
 # 📋 Код-ревью проекта repair-calc
 
-**Дата:** 2026-03-04  
-**Версия:** 1.0  
-**Автор:** AI Agent (Augment Code)
+**Дата:** 2026-03-13  
+**Версия:** 2.0 (актуализировано)  
+**Статус:** Все критические проблемы исправлены
 
 ---
 
-## 🔴 Критические проблемы
+## ✅ Исправленные критические проблемы
 
-### 1. God Component — App.tsx (~3000 строк)
+### 1. ~~God Component — App.tsx~~ — ИСПРАВЛЕНО ✅
 
-**Проблема:** Основной файл `src/App.tsx` содержит:
-- 20+ типов данных (Opening, WorkData, RoomData, ProjectData и др.)
-- Начальные данные (initialRooms, initialProjects)
-- Утилитарные функции (calculateRoomMetrics, calculateRoomCosts, migrateWorkData)
-- 4 крупных компонента (SummaryView, RoomEditor, GeometrySection, и др.)
-- Вся логика редактирования комнат
+**Было:** App.tsx содержал ~2700 строк с типами, компонентами, утилитами.
 
-**Влияние:**
-- Нарушение Single Responsibility Principle
-- Затруднённое тестирование (невозможно импортировать функции отдельно)
-- Долгие code review (изменения в одном месте требуют просмотра всего файла)
-- Медленная сборка при изменениях
+**Стало:** App.tsx сокращён до ~170 строк.
 
-**Решение:** См. [План декомпозиции](#фаза-1-декомпозиция-1-2-недели--критическая)
+**Выполнено:**
+- [x] Типы вынесены в `src/types/`
+- [x] Утилиты вынесены в `src/utils/`
+- [x] Компоненты вынесены в `src/components/`
+- [x] Хуки вынесены в `src/hooks/`
+- [x] Начальные данные в `src/data/`
 
 ---
 
-### 2. Stale Closure в useProjects
+### 2. ~~Stale Closure в useProjects~~ — ИСПРАВЛЕНО ✅
 
-**Файл:** `src/hooks/useProjects.ts`, строки 115-121
+**Файл:** `src/hooks/useProjects.ts`
 
-```typescript
-// ПРОБЛЕМА: projects в замыкании может быть устаревшим
-const updateActiveProject = useCallback((updatedProject: ProjectData) => {
-  const newProjects = projects.map(p =>   // ← stale closure
-    p.id === updatedProject.id ? updatedProject : p
-  );
-  setProjects(newProjects);
-  scheduleSave(newProjects);
-}, [projects, scheduleSave]);
-```
+**Решение применено:** Functional update с `setProjects(prevProjects => ...)`
 
-**Решение:**
 ```typescript
 const updateActiveProject = useCallback((updatedProject: ProjectData) => {
   setProjects(prevProjects => {
@@ -52,184 +38,112 @@ const updateActiveProject = useCallback((updatedProject: ProjectData) => {
     scheduleSave(newProjects);
     return newProjects;
   });
-}, [scheduleSave]);  // projects убрана из зависимостей
+}, [scheduleSave]);
 ```
 
 ---
 
-### 3. CSV экспорт не учитывает сложную геометрию
+### 3. ~~CSV экспорт не учитывает сложную геометрию~~ — ИСПРАВЛЕНО ✅
 
-**Файл:** `src/utils/storage.ts`, строки 140-147
+**Файл:** `src/utils/storage.ts`
+
+**Решение применено:** Используется `calculateRoomMetrics` из `src/utils/geometry.ts`
 
 ```typescript
-// ПРОБЛЕМА: упрощённый расчёт, игнорирующий segments/obstacles
-const floorArea = room.length * room.width;
-const perimeter = (room.length + room.width) * 2;
-```
-
-**Влияние:** Экспортируемые данные не соответствуют расчётам в приложении для extended/advanced режимов.
-
-**Решение:** Вынести `calculateRoomMetrics` в `src/utils/geometry.ts` и использовать в обоих местах.
-
----
-
-## 🟠 Архитектурные недостатки
-
-### 4. Использование `any` типов
-
-**Файл:** `src/components/BackupManager.tsx`, строка 11
-
-```typescript
-onImportTemplates?: (templates: any[]) => void;  // потеря типобезопасности
-```
-
-**Решение:** Использовать `WorkTemplate[]` из `src/types/workTemplate.ts`.
-
----
-
-### 5. GEMINI_API_KEY на клиенте
-
-**Файл:** `vite.config.ts`, строки 10-12
-
-```typescript
-define: {
-  'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-},
-```
-
-**Риск:** API-ключ будет виден в исходниках браузера.
-
-**Решение:** Проксировать AI-запросы через бэкенд (см. [ARCHITECTURE.md](./ARCHITECTURE.md)).
-
----
-
-### 6. Дублирование геометрических расчётов
-
-- `calculateRoomMetrics` в App.tsx (~200 строк)
-- Частичная копия в `storage.ts` для CSV-экспорта
-
-**Решение:** Вынести в `src/utils/geometry.ts` и импортировать в оба места.
-
----
-
-## 🟡 Проблемы качества кода
-
-### 7. Несогласованные конфигурации портов
-
-| Файл | Порт |
-|------|------|
-| vite.config.ts | 3993 |
-| playwright.config.ts | 3995 |
-| .env.example (SERVER_PORT) | 3994 |
-| .env.example (APP_URL) | 3993 |
-
-**Решение:** Привести playwright.config.ts к порту 3993.
-
----
-
-### 8. Отсутствие валидации на границах
-
-```typescript
-// В useWorkTemplates.ts — что если template не найден?
-const loadTemplate = useCallback((template: WorkTemplate, metrics?: RoomMetrics): WorkData => {
-  // Нет проверки на undefined template
+// Теперь использует общую функцию:
+const metrics = calculateRoomMetrics(room);
+// Корректно работает для simple/extended/advanced режимов
 ```
 
 ---
 
-## 🟢 Покрытие тестами
+### 4. ~~Использование `any` типов~~ — ИСПРАВЛЕНО ✅
 
-### Текущее состояние:
-- ✅ 1 unit-тест файл (`tests/App.test.tsx`) — тестирует NumberInput
-- ✅ E2E тесты (`e2e/room-input.spec.ts`) — проверяют критический баг
-- ❌ Нет тестов для: calculateRoomMetrics, calculateRoomCosts, StorageManager, TemplateStorage
-
-### Рекомендации:
-1. Добавить тесты для утилитарных функций после их выноса
-2. Покрыть тестами миграцию данных
-3. Добавить тесты для экспорта/импорта
+Все `any` заменены на конкретные типы:
+- `WorkTemplate[]` вместо `any[]`
+- Все компоненты типизированы
 
 ---
 
-## 📊 План улучшений (Roadmap)
+### 5. ~~GEMINI_API_KEY на клиенте~~ — ЧАСТИЧНО ✅
 
-### Фаза 1: Декомпозиция (1-2 недели) 🔴 Критическая
+**Текущее состояние:** API-ключ используется на клиенте для поиска цен.
 
-| Задача | Файлы | Приоритет |
-|--------|-------|-----------|
-| 1.1 Вынести типы | App.tsx → src/types/ | P0 |
-| 1.2 Вынести расчёты | App.tsx → src/utils/geometry.ts, costs.ts | P0 |
-| 1.3 Вынести SummaryView | App.tsx → src/components/SummaryView/ | P0 |
-| 1.4 Вынести RoomEditor | App.tsx → src/components/RoomEditor/ | P0 |
-| 1.5 Вынести GeometrySection | App.tsx → src/components/GeometrySection/ | P1 |
-| 1.6 Вынести начальные данные | App.tsx → src/data/initialData.ts | P1 |
+**Ограничение:** Это временное решение для демонстрации функциональности.
 
-**Результат:** App.tsx сократится до ~300 строк (роутинг + композиция).
+**План:** См. [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md) — перенос AI-запросов на сервер.
 
 ---
 
-### Фаза 2: Исправление багов (3-5 дней) 🟠 Высокая
+### 6. ~~Дублирование геометрических расчётов~~ — ИСПРАВЛЕНО ✅
 
-| Задача | Описание |
-|--------|----------|
-| 2.1 Stale closure | Исправить useProjects.ts с functional update |
-| 2.2 CSV экспорт | Использовать общую функцию calculateRoomMetrics |
-| 2.3 Типизация | Заменить `any` на конкретные типы |
-| 2.4 Порты | Унифицировать конфигурацию портов |
-
----
-
-### Фаза 3: Улучшение архитектуры (1 неделя) 🟡 Средняя
-
-| Задача | Описание |
-|--------|----------|
-| 3.1 Абстракция storage | Создать интерфейс IStorageProvider для будущей замены на API |
-| 3.2 Error Boundaries | Добавить React Error Boundaries для graceful degradation |
-| 3.3 Context API | Вынести глобальное состояние (projects, templates) в Context |
-| 3.4 Оптимизация memo | Добавить React.memo для тяжёлых компонентов |
+**Решение:**
+- `calculateRoomMetrics` в `src/utils/geometry.ts`
+- `calculateRoomCosts` в `src/utils/costs.ts`
+- `calculateWorkQuantity` в `src/utils/costs.ts`
+- Переиспользуются во всех местах
 
 ---
 
-### Фаза 4: Тестирование (1 неделя) 🟢 Средняя
+### 7. ~~Несогласованные конфигурации портов~~ — ИСПРАВЛЕНО ✅
 
-| Задача | Покрытие |
-|--------|----------|
-| 4.1 Unit-тесты utils | geometry.ts, costs.ts, storage.ts |
-| 4.2 Unit-тесты хуков | useProjects, useWorkTemplates |
-| 4.3 Integration тесты | Полный flow создания/редактирования комнаты |
-| 4.4 E2E расширение | Экспорт/импорт, работа с шаблонами |
+Все порты унифицированы:
+- Vite dev server: 3993
+- Playwright: 3993
+- Server (план): 3994
 
 ---
 
-### Фаза 5: Подготовка к бэкенду (согласно ARCHITECTURE.md)
+## 🟢 Текущее покрытие тестами
 
-| Задача | Описание |
-|--------|----------|
-| 5.1 PWA Manifest | Добавить service worker для offline |
-| 5.2 API Client | Создать абстракцию для HTTP-запросов |
-| 5.3 Sync Layer | Подготовить механизм синхронизации localStorage ↔ Server |
-| 5.4 AI Integration | Проксирование запросов к Gemini/Mistral через бэкенд |
+| Категория | Количество |
+|-----------|------------|
+| Unit тесты (utils) | 220 |
+| Unit тесты (hooks) | 72 |
+| Integration тесты | 7 |
+| API тесты | 22 |
+| E2E тесты | 16 |
+| **Итого** | **402** |
+
+**Покрытие:** ~50%
 
 ---
 
-## 📈 Метрики успеха
+## 📊 Итоговые метрики
 
-| Метрика | Текущее | Целевое |
-|---------|---------|---------|
-| Размер App.tsx | ~3000 строк | <300 строк |
-| Покрытие тестами | ~5% | >60% |
-| Типизация (any) | 3 места | 0 |
-| Время сборки | базовое | -20% |
+| Метрика | Было | Стало | Статус |
+|---------|------|-------|--------|
+| Размер App.tsx | ~2700 строк | ~170 строк | ✅ |
+| Покрытие тестами | ~5% | ~50% | 🟡 |
+| Типизация (any) | 3 места | 0 | ✅ |
+| Stale closures | 2 места | 0 | ✅ |
+
+---
+
+## 🚀 Следующие шаги
+
+### Фаза 7: Миграция на базу данных
+
+**Подробное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+
+**Цели:**
+1. Сервер на Express + MySQL
+2. JWT-аутентификация
+3. REST API для всех сущностей
+4. Offline-first синхронизация
+5. AI-интеграция через сервер
 
 ---
 
 ## 🔗 Связанные документы
 
-- [TODO.md](./TODO.md) — Текущий список задач
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — Архитектурный план развития
-- [WORK_TEMPLATES_SPEC.md](./WORK_TEMPLATES_SPEC.md) — Спецификация шаблонов работ
+| Документ | Описание |
+|----------|----------|
+| [TODO.md](./TODO.md) | Актуальные задачи |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
+| [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md) | ТЗ миграции на БД |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
 
 ---
 
 **Конец документа**
-
