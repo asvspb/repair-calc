@@ -3,7 +3,7 @@ import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen, D
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
 import { WorkCatalogPicker } from './works/WorkCatalogPicker';
-import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard, MaterialPriceSearch } from './works';
+import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard, MaterialPriceSearch, WorkPriceSearch } from './works';
 import { NumberInput } from './ui/NumberInput';
 import type {
   Opening,
@@ -500,18 +500,28 @@ export function RoomEditor({
                         <label className="block text-xs text-gray-500 mb-1">
                           Цена работы (за ед.)
                         </label>
-                        <div className="relative">
-                          <NumberInput
-                            value={work.workUnitPrice}
-                            onChange={(v: number) =>
-                              handleWorkChange(work.id, 'workUnitPrice', v)
+                        <div className="flex items-center gap-1">
+                          <div className="relative flex-1">
+                            <NumberInput
+                              value={work.workUnitPrice}
+                              onChange={(v: number) =>
+                                handleWorkChange(work.id, 'workUnitPrice', v)
+                              }
+                              className="w-full pr-8"
+                              step={0.1}
+                            />
+                            <span className="absolute right-3 top-2 text-gray-400 text-sm">
+                              ₽
+                            </span>
+                          </div>
+                          <WorkPriceSearch
+                            workName={work.name}
+                            unit={work.unit}
+                            city={city}
+                            onPriceFound={(price) =>
+                              handleWorkChange(work.id, 'workUnitPrice', price)
                             }
-                            className="w-full pr-8"
-                            step={0.1}
                           />
-                          <span className="absolute right-3 top-2 text-gray-400 text-sm">
-                            ₽
-                          </span>
                         </div>
                       </div>
                       <div className="flex items-end">
@@ -605,22 +615,36 @@ export function RoomEditor({
                                   <span className="text-gray-400 text-xs">
                                     ×
                                   </span>
-                                  <NumberInput
-                                    value={material.pricePerUnit}
-                                    onChange={(v) =>
+                                  <div className="relative">
+                                    <NumberInput
+                                      value={material.pricePerUnit}
+                                      onChange={(v) =>
+                                        handleMaterialChange(
+                                          work.id,
+                                          material.id,
+                                          'pricePerUnit',
+                                          v
+                                        )
+                                      }
+                                      className="w-24 pr-7 text-sm py-1.5"
+                                      step={0.1}
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                                      ₽
+                                    </span>
+                                  </div>
+                                  <MaterialPriceSearch
+                                    materialName={material.name}
+                                    city={city}
+                                    onPriceFound={(price) =>
                                       handleMaterialChange(
                                         work.id,
                                         material.id,
                                         'pricePerUnit',
-                                        v
+                                        price
                                       )
                                     }
-                                    className="w-20 text-sm py-1"
-                                    step={0.1}
                                   />
-                                  <span className="text-gray-400 text-xs">
-                                    ₽
-                                  </span>
                                 </div>
                                 <div className="text-sm text-gray-600 min-w-[80px] text-right">
                                   ={' '}
@@ -629,18 +653,6 @@ export function RoomEditor({
                                   ).toLocaleString('ru-RU')}{' '}
                                   ₽
                                 </div>
-                                <MaterialPriceSearch
-                                  materialName={material.name}
-                                  city={city}
-                                  onPriceFound={(price) =>
-                                    handleMaterialChange(
-                                      work.id,
-                                      material.id,
-                                      'pricePerUnit',
-                                      price
-                                    )
-                                  }
-                                />
                                 <button
                                   onClick={() =>
                                     removeMaterial(work.id, material.id)

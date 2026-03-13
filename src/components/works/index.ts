@@ -7,3 +7,4 @@ export { MaterialCalculationCard } from './MaterialCalculationCard';
 export { PaintMaterialCard } from './PaintMaterialCard';
 export { TileMaterialCard } from './TileMaterialCard';
 export { MaterialPriceSearch } from './MaterialPriceSearch';
+export { WorkPriceSearch } from './WorkPriceSearch';
