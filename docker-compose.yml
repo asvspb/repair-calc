@@ -1,0 +1,87 @@
+services:
+  # MySQL база данных
+  db:
+    image: mysql:8.0
+    container_name: repair-calc-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: repair_calc
+      MYSQL_USER: repair_user
+      MYSQL_PASSWORD: secure_password
+    # ports:
+    #   - "3307:3306"  # Раскомментировать если нужен внешний доступ к БД
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Миграции базы данных
+  migrate:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: repair-calc-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3994
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: repair_user
+      DB_PASSWORD: secure_password
+      DB_NAME: repair_calc
+      DB_POOL_LIMIT: 10
+    command: npx tsx node_modules/.bin/knex migrate:latest --knexfile knexfile.ts
+    restart: "no"
+
+  # Backend сервер
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: repair-calc-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: 3994
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: repair_user
+      DB_PASSWORD: secure_password
+      DB_NAME: repair_calc
+      DB_POOL_LIMIT: 10
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-token-secret-change-in-production}
+      JWT_REFRESH_EXPIRES_IN: 7d
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      LOG_LEVEL: info
+    ports:
+      - "3994:3994"
+
+  # Frontend клиент
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repair-calc-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3980:3980"
+
+volumes:
+  mysql_data:

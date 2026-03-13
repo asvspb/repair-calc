@@ -10,10 +10,25 @@ export function createApp(): express.Application {
   const app = express();
 
   // Middleware
+  const allowedOrigins = [
+    'http://localhost:3993',
+    'http://127.0.0.1:3993',
+    'http://localhost:3980',
+    'http://127.0.0.1:3980',
+  ];
+  
   app.use(cors({
     origin: config.nodeEnv === 'development' 
-      ? ['http://localhost:3993', 'http://127.0.0.1:3993']
-      : false,
+      ? allowedOrigins
+      : (origin, callback) => {
+          // Разрешаем запросы без origin (например, от мобильных приложений)
+          // или от разрешённых origins
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
     credentials: true,
   }));
   
