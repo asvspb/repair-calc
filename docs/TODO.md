@@ -169,6 +169,94 @@
 
 ## 🔮 Будущие задачи
 
+### Фаза 8: Служба обновления баз данных (Update Service) — НОВАЯ
+
+**Спецификация:** [UPDATE_SERVICE_SPEC.md](./UPDATE_SERVICE_SPEC.md)
+
+#### Этап 8.1: Основа (Фаза 1 спецификации) — ❌ Не начато
+
+- [ ] **8.1.1** Создать миграцию для таблиц Update Service
+  - [ ] `price_sources` — источники цен (AI, web scrapers, API)
+  - [ ] `price_catalog` — каталог цен с индексами
+  - [ ] `price_history` — история изменений цен
+  - [ ] `update_jobs` — задачи обновления
+  - [ ] `update_job_items` — детализация по элементам
+  - [ ] `update_job_params` — параметры задач
+  - [ ] `update_job_locks` — блокировки для конкурентности
+- [ ] **8.1.2** Создать репозитории
+  - [ ] `server/src/db/repositories/priceCatalog.repo.ts`
+  - [ ] `server/src/db/repositories/priceHistory.repo.ts`
+  - [ ] `server/src/db/repositories/updateJob.repo.ts`
+- [ ] **8.1.3** Реализовать базовый Runner (`runner.ts`)
+- [ ] **8.1.4** Реализовать API endpoints (`routes/update.ts`)
+  - [ ] `POST /api/update/run` — запуск обновления
+  - [ ] `GET /api/update/status/:jobId` — статус задачи
+  - [ ] `GET /api/update/jobs` — история задач
+  - [ ] `POST /api/update/cancel/:jobId` — отмена задачи
+  - [ ] `POST /api/update/retry/:jobId` — повтор задачи
+- [ ] **8.1.5** Реализовать блокировки (`update_job_locks`)
+
+#### Этап 8.2: AI-парсеры (Фаза 2 спецификации) — ❌ Не начато
+
+- [ ] **8.2.1** Gemini Parser (`gemini.ts`) — адаптация клиентского кода
+- [ ] **8.2.2** Mistral Parser (`mistral.ts`)
+- [ ] **8.2.3** Parser Manager (`parserManager.ts`) — выбор провайдера
+- [ ] **8.2.4** Интеграция Circuit Breaker (уже готов в `parsers/circuitBreaker.ts`)
+- [ ] **8.2.5** Интеграция Rate Limiter (уже готов в `parsers/rateLimiter.ts`)
+
+#### Этап 8.3: Web Scraper парсеры — ✅ Частично выполнено
+
+- [x] **8.3.1** Types & Interfaces (`parsers/types.ts`) ✅
+- [x] **8.3.2** Circuit Breaker (`parsers/circuitBreaker.ts`) ✅
+- [x] **8.3.3** Rate Limiter (`parsers/rateLimiter.ts`) ✅
+- [x] **8.3.4** Bazavit Parser (`parsers/bazavitParser.ts`) ✅
+- [x] **8.3.5** Lemana Parser (`parsers/lemanaParser.ts`) ✅
+- [ ] **8.3.6** Web Scraper Aggregator (`webScraper.ts`) — объединение источников
+
+#### Этап 8.4: Оптимизации (Фаза 3 спецификации) — ❌ Не начато
+
+- [ ] **8.4.1** Кэширование результатов (Redis/in-memory)
+- [ ] **8.4.2** Batch-обработка для параллелизма
+- [ ] **8.4.3** Валидация аномалий цен
+- [ ] **8.4.4** Приоритетная очередь задач
+
+#### Этап 8.5: Scheduler (Фаза 4 спецификации) — ❌ Не начато
+
+- [ ] **8.5.1** Интеграция node-cron
+- [ ] **8.5.2** Конфигурация через env переменные
+- [ ] **8.5.3** Обработка retry при сбоях
+- [ ] **8.5.4** Circuit Breaker для планировщика
+
+#### Этап 8.6: Мониторинг (Фаза 5 спецификации) — ❌ Не начато
+
+- [ ] **8.6.1** Health check endpoint (`GET /api/update/health`)
+- [ ] **8.6.2** Метрики (`GET /api/update/metrics`)
+- [ ] **8.6.3** Логирование в БД
+- [ ] **8.6.4** Dashboard (Grafana, опционально)
+
+#### Этап 8.7: Дополнительные возможности (Фаза 6 спецификации) — ❌ Не начато
+
+- [ ] **8.7.1** Вебхуки для уведомлений
+- [ ] **8.7.2** Экспорт цен (CSV/XLSX/JSON)
+- [ ] **8.7.3** Импорт цен из файла
+- [ ] **8.7.4** A/B тестирование парсеров
+- [ ] **8.7.5** Аудит действий администраторов
+
+#### Оценка времени
+
+| Этап | Часы | Дни (8ч) | Статус |
+|------|------|----------|--------|
+| 8.1 Основа | 15 | ~2 | ❌ |
+| 8.2 AI-парсеры | 15 | ~2 | ❌ |
+| 8.3 Web Scrapers | 8 | ~1 | 🟡 70% |
+| 8.4 Оптимизации | 12 | ~1.5 | ❌ |
+| 8.5 Scheduler | 7 | ~1 | ❌ |
+| 8.6 Мониторинг | 11 | ~1.5 | ❌ |
+| 8.7 Дополнительно | 16 | ~2 | ❌ |
+| **Всего** | **84** | **~11** | **~15%** |
+
+---
+
 ### Фаза 7: Миграция на базу данных — ПОДРОБНОЕ ТЗ
 
 **Полное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
