@@ -10,7 +10,6 @@ export * from './rateLimiter';
 export * from './lemanaParser';
 export * from './bazavitParser';
 
-// AI-парсеры (будут реализованы)
-// export * from './geminiParser';
-// export * from './mistralParser';
-// export * from './webScraperParser';
+// AI-парсеры
+export * from './gemini.js';
+export * from './mistral.js';
