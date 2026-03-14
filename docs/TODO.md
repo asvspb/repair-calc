@@ -296,30 +296,47 @@
 - [ ] **7.4.3** Все CRUD для геометрии (openings, subsections, segments, obstacles, wall_sections)
 - [ ] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order)
 
-#### Фаза 7.5: Offline-first (2-3 дня)
+#### Фаза 7.5: AI-интеграция (3-4 дня)
 
-- [ ] **7.5.1** Установить idb (IndexedDB wrapper)
-- [ ] **7.5.2** Реализовать OfflineQueue для хранения изменений
-- [ ] **7.5.3** Реализовать POST /api/sync/push
-- [ ] **7.5.4** Реализовать GET /api/sync/pull
-- [ ] **7.5.5** Добавить детекцию online/offline статуса
-- [ ] **7.5.6** UI-индикатор синхронизации
+- [ ] **7.5.1** Абстрактный AIProvider интерфейс
+- [ ] **7.5.2** GeminiProvider (@google/genai)
+- [ ] **7.5.3** MistralProvider (@mistralai/mistralai)
+- [ ] **7.5.4** POST /api/ai/estimate
+- [ ] **7.5.5** POST /api/ai/suggest-materials
+- [ ] **7.5.6** Кэширование ответов в ai_requests
 
-#### Фаза 7.6: AI-интеграция (3-4 дня)
+#### Фаза 7.6: Тестирование (2-3 дня)
 
-- [ ] **7.6.1** Абстрактный AIProvider интерфейс
-- [ ] **7.6.2** GeminiProvider (@google/genai)
-- [ ] **7.6.3** MistralProvider (@mistralai/mistralai)
-- [ ] **7.6.4** POST /api/ai/estimate
-- [ ] **7.6.5** POST /api/ai/suggest-materials
-- [ ] **7.6.6** Кэширование ответов в ai_requests
+- [ ] **7.6.1** Unit-тесты для сервера (Jest + Supertest)
+- [ ] **7.6.2** Integration-тесты API
 
-#### Фаза 7.7: Тестирование (2-3 дня)
+**Итого: 12-17 рабочих дней**
 
-- [ ] **7.7.1** Unit-тесты для сервера (Jest + Supertest)
-- [ ] **7.7.2** Integration-тесты API
+---
 
-**Итого: 15-20 рабочих дней**
+### Фаза 10: Offline-first (Опционально) — 2-3 дня
+
+**Цель:** Обеспечить работу приложения без интернета с последующей синхронизацией
+
+#### Компоненты:
+- **IndexedDB (idb)** — локальное хранилище для очереди изменений и кэша проектов
+- **OfflineQueue** — очередь изменений для синхронизации
+- **Sync API** — push/pull изменений между клиентом и сервером
+- **Online/Offline Detection** — детекция статуса подключения
+- **UI-индикатор** — отображение статуса синхронизации
+
+#### Задачи:
+
+- [ ] **10.1** Установить idb (IndexedDB wrapper)
+- [ ] **10.2** Реализовать OfflineQueue для хранения изменений
+- [ ] **10.3** Реализовать POST /api/sync/push
+- [ ] **10.4** Реализовать GET /api/sync/pull
+- [ ] **10.5** Добавить детекцию online/offline статуса
+- [ ] **10.6** UI-индикатор синхронизации
+
+#### Риски:
+- Конфликты синхронизации — решается optimistic locking (version) + timestamp
+- Ограничения IndexedDB — ~50MB в большинстве браузеров
 
 ---
 
