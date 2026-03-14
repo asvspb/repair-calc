@@ -1,6 +1,11 @@
 /**
  * Parser Manager - Управление парсерами цен
  * UPDATE_SERVICE - Specification v1.1
+ * 
+ * Поддержка A/B тестирования парсеров:
+ * - Автоматическое распределение трафика между парсерами
+ * - Запись результатов для анализа
+ * - Определение оптимального парсера
  */
 
 import type { PriceParser, PriceRequest, PriceResult, RateLimit } from './parsers/types.js';
@@ -9,6 +14,7 @@ import { MistralParser, getMistralParser, isMistralEnabled } from './parsers/mis
 import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
 import { PriceSourceRepository } from '../../db/repositories/priceCatalog.repo.js';
+import { ABTestRepository, type ParserGroup, type ParserType as ABParserType } from '../../db/repositories/abTest.repo.js';
 import crypto from 'crypto';
 
 // ═══════════════════════════════════════════════════════
@@ -29,7 +35,14 @@ export interface ParserInfo {
 
 export interface ABTestConfig {
   enabled: boolean;
-  geminiWeight: number; // 0-100, процент запросов к Gemini
+  testId: string | null;
+  geminiWeight: number; // 0-100, процент запросов к Gemini (legacy)
+}
+
+export interface ABTestSelection {
+  testId: string;
+  parserGroup: ParserGroup;
+  parserType: ParserType;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -329,6 +342,290 @@ class ParserManagerImpl {
    */
   getABTestConfig(): ABTestConfig {
     return { ...this.abTestConfig };
+  }
+
+  /**
+   * Включает A/B тестирование для конкретного теста
+   */
+  async enableABTest(testId: string): Promise<boolean> {
+    try {
+      const test = await ABTestRepository.findById(testId);
+      if (!test || test.status !== 'running') {
+        return false;
+      }
+
+      this.abTestConfig = {
+        enabled: true,
+        testId: test.id,
+        geminiWeight: test.traffic_split,
+      };
+
+      return true;
+    } catch (error) {
+      console.error('Failed to enable A/B test:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Отключает A/B тестирование
+   */
+  disableABTest(): void {
+    this.abTestConfig = {
+      enabled: false,
+      testId: null,
+      geminiWeight: 50,
+    };
+  }
+
+  /**
+   * Выбирает парсер для A/B теста с записью в результат
+   * Возвращает парсер и информацию о группе
+   */
+  async selectForABTestWithTracking(request: PriceRequest): Promise<{
+    parser: PriceParser;
+    selection: ABTestSelection;
+  } | null> {
+    if (!this.abTestConfig.enabled || !this.abTestConfig.testId) {
+      return null;
+    }
+
+    try {
+      const test = await ABTestRepository.findById(this.abTestConfig.testId);
+      if (!test || test.status !== 'running') {
+        // Тест больше не активен - отключаем
+        this.disableABTest();
+        return null;
+      }
+
+      // Определяем группу на основе хэша
+      const hash = this.hashRequest(request);
+      const hashValue = parseInt(hash.slice(-8), 16); // Используем последние 8 hex символов
+      const threshold = (test.traffic_split / 100) * 0xFFFFFFFF;
+
+      let parserGroup: ParserGroup;
+      let parserType: ParserType;
+
+      if (hashValue < threshold) {
+        parserGroup = 'a';
+        parserType = test.parser_a as ParserType;
+      } else {
+        parserGroup = 'b';
+        parserType = test.parser_b as ParserType;
+      }
+
+      // Проверяем доступность выбранного парсера
+      const parser = this.parsers.get(parserType);
+      if (!parser || !this.isParserAvailable(parserType)) {
+        // Пробуем альтернативный парсер из теста
+        const altParserType = parserGroup === 'a' ? test.parser_b : test.parser_a;
+        const altParser = this.parsers.get(altParserType as ParserType);
+        
+        if (altParser && this.isParserAvailable(altParserType as ParserType)) {
+          return {
+            parser: altParser,
+            selection: {
+              testId: test.id,
+              parserGroup: parserGroup === 'a' ? 'b' : 'a',
+              parserType: altParserType as ParserType,
+            },
+          };
+        }
+
+        return null;
+      }
+
+      return {
+        parser,
+        selection: {
+          testId: test.id,
+          parserGroup,
+          parserType,
+        },
+      };
+    } catch (error) {
+      console.error('A/B test selection error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Выполняет запрос с A/B тестированием
+   * Автоматически записывает результат теста
+   */
+  async fetchWithABTest(request: PriceRequest): Promise<PriceResult> {
+    const abSelection = await this.selectForABTestWithTracking(request);
+
+    if (!abSelection) {
+      // A/B тест не активен - обычный запрос
+      return this.fetch(request);
+    }
+
+    const { parser, selection } = abSelection;
+    const parserType = parser.type as ParserType;
+    const startTime = Date.now();
+
+    // Rate limiting
+    const limiter = this.rateLimiters.get(parserType);
+    if (limiter) {
+      await limiter.wait();
+    }
+
+    try {
+      const result = await parser.fetch(request);
+      const responseTime = Date.now() - startTime;
+
+      // Успех - обновляем метрики
+      const cb = this.circuitBreakers.get(parserType);
+      if (cb) {
+        cb.recordSuccess();
+      }
+      this.recordSuccess(parserType, responseTime);
+
+      // Записываем результат A/B теста
+      await this.recordABTestResult({
+        testId: selection.testId,
+        request,
+        parserGroup: selection.parserGroup,
+        parserType: selection.parserType,
+        success: true,
+        result,
+        responseTime,
+      });
+
+      return result;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+
+      // Ошибка
+      const cb = this.circuitBreakers.get(parserType);
+      if (cb) {
+        cb.recordFailure();
+      }
+
+      // Записываем неудачный результат A/B теста
+      await this.recordABTestResult({
+        testId: selection.testId,
+        request,
+        parserGroup: selection.parserGroup,
+        parserType: selection.parserType,
+        success: false,
+        result: null,
+        responseTime,
+        error,
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Записывает результат A/B теста в БД
+   */
+  private async recordABTestResult(params: {
+    testId: string;
+    request: PriceRequest;
+    parserGroup: ParserGroup;
+    parserType: ParserType;
+    success: boolean;
+    result: PriceResult | null;
+    responseTime: number;
+    error?: unknown;
+  }): Promise<void> {
+    try {
+      await ABTestRepository.addResult({
+        test_id: params.testId,
+        item_name: params.request.itemName,
+        city: params.request.city,
+        category: params.request.category,
+        parser_group: params.parserGroup,
+        parser_type: params.parserType as ABParserType,
+        success: params.success,
+        price_min: params.result?.priceMin,
+        price_avg: params.result?.priceAvg,
+        price_max: params.result?.priceMax,
+        currency: params.result?.currency,
+        confidence_score: params.result?.confidence,
+        response_time_ms: params.responseTime,
+        error_message: params.error instanceof Error ? params.error.message : undefined,
+        metadata: {
+          source: params.result?.source,
+          itemName: params.request.itemName,
+          unit: params.request.unit,
+        },
+      });
+    } catch (dbError) {
+      // Не прерываем выполнение при ошибке записи
+      console.error('Failed to record A/B test result:', dbError);
+    }
+  }
+
+  /**
+   * Получает статистику активного A/B теста
+   */
+  async getABTestStats(): Promise<{
+    testId: string | null;
+    stats: Awaited<ReturnType<typeof ABTestRepository.getStats>> | null;
+  }> {
+    if (!this.abTestConfig.testId) {
+      return { testId: null, stats: null };
+    }
+
+    try {
+      const stats = await ABTestRepository.getStats(this.abTestConfig.testId);
+      return { testId: this.abTestConfig.testId, stats };
+    } catch (error) {
+      console.error('Failed to get A/B test stats:', error);
+      return { testId: this.abTestConfig.testId, stats: null };
+    }
+  }
+
+  /**
+   * Автоматически завершает тест при достижении достаточной уверенности
+   */
+  async checkAndCompleteABTest(confidenceThreshold = 0.95): Promise<{
+    completed: boolean;
+    winner?: string;
+    confidence?: number;
+  }> {
+    if (!this.abTestConfig.testId) {
+      return { completed: false };
+    }
+
+    try {
+      const stats = await ABTestRepository.getStats(this.abTestConfig.testId);
+      if (!stats || stats.confidenceLevel === null) {
+        return { completed: false };
+      }
+
+      // Проверяем минимальное количество запросов
+      const minRequests = 100;
+      if (stats.groupA.requests < minRequests || stats.groupB.requests < minRequests) {
+        return { completed: false };
+      }
+
+      // Проверяем порог уверенности
+      if (stats.confidenceLevel >= confidenceThreshold && stats.winner) {
+        await ABTestRepository.complete(
+          this.abTestConfig.testId,
+          stats.winner,
+          stats.confidenceLevel
+        );
+
+        this.disableABTest();
+
+        return {
+          completed: true,
+          winner: stats.winner,
+          confidence: stats.confidenceLevel,
+        };
+      }
+
+      return { completed: false };
+    } catch (error) {
+      console.error('Failed to check A/B test completion:', error);
+      return { completed: false };
+    }
   }
 
   // ─── HELPERS ──────────────────────────────────────────────
