@@ -305,19 +305,19 @@
   - Создан geometry.ts с 25+ endpoints
 - [x] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order) ✅
 
-#### Фаза 7.5: AI-интеграция (3-4 дня)
+#### Фаза 7.5: AI-интеграция (3-4 дня) — ✅ ВЫПОЛНЕНО
 
-- [ ] **7.5.1** Абстрактный AIProvider интерфейс
-- [ ] **7.5.2** GeminiProvider (@google/genai)
-- [ ] **7.5.3** MistralProvider (@mistralai/mistralai)
-- [ ] **7.5.4** POST /api/ai/estimate
-- [ ] **7.5.5** POST /api/ai/suggest-materials
-- [ ] **7.5.6** Кэширование ответов в ai_requests
+- [x] **7.5.1** Абстрактный AIProvider интерфейс ✅
+- [x] **7.5.2** GeminiProvider (@google/genai) ✅
+- [x] **7.5.3** MistralProvider (@mistralai/mistralai) ✅
+- [x] **7.5.4** POST /api/ai/estimate ✅
+- [x] **7.5.5** POST /api/ai/suggest-materials ✅
+- [x] **7.5.6** Кэширование ответов в ai_requests ✅
 
-#### Фаза 7.6: Тестирование (2-3 дня)
+#### Фаза 7.6: Тестирование (2-3 дня) — ✅ ВЫПОЛНЕНО
 
-- [ ] **7.6.1** Unit-тесты для сервера (Jest + Supertest)
-- [ ] **7.6.2** Integration-тесты API
+- [x] **7.6.1** Unit-тесты для сервера (Vitest + Supertest) ✅ 34 теста
+- [x] **7.6.2** Integration-тесты API ✅
 
 **Итого: 12-17 рабочих дней**
 
