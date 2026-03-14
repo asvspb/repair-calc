@@ -127,6 +127,7 @@ router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
       categories: input.categories as PriceCategory[],
       sources: input.sources as SourceType[],
       force: input.force,
+      priority: input.priority,
       triggeredBy: userId,
     });
 

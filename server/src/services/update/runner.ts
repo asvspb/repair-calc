@@ -27,6 +27,11 @@ import {
 import type { PriceParser, PriceRequest, PriceResult } from './parsers/types.js';
 import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
+import {
+  prioritizeItems,
+  type PrioritizedItem,
+  type JobPriority,
+} from './utils/priority.js';
 import crypto from 'crypto';
 
 // ═══════════════════════════════════════════════════════
@@ -65,6 +70,7 @@ export interface RunOptions {
   sources?: SourceType[];
   force?: boolean;
   triggeredBy?: string;
+  priority?: JobPriority;  // Приоритет задачи: 'high' | 'normal' | 'low'
 }
 
 export interface ItemToUpdate {
@@ -189,8 +195,8 @@ export class UpdateRunner {
 
   // ─── ПОЛУЧЕНИЕ ЭЛЕМЕНТОВ ДЛЯ ОБНОВЛЕНИЯ ─────────────────────
 
-  private async getItemsToUpdate(options: RunOptions): Promise<ItemToUpdate[]> {
-    const items: ItemToUpdate[] = [];
+  private async getItemsToUpdate(options: RunOptions): Promise<PrioritizedItem[]> {
+    const rawItems: Array<{ name: string; category: PriceCategory; city: string; unit?: string }> = [];
 
     // Если указан город, получаем элементы для этого города
     if (options.city) {
@@ -200,26 +206,38 @@ export class UpdateRunner {
         if (options.city && price.city !== options.city) continue;
         if (options.categories && !options.categories.includes(price.category)) continue;
 
-        items.push({
+        rawItems.push({
           name: price.name,
           category: price.category,
           city: price.city,
           unit: price.unit,
-          existingPrice: price,
         });
       }
     }
 
     // TODO: Добавить элементы из works/materials, которых нет в каталоге
-    
-    return items;
+
+    // Ждём разрешения всех промисов для existingPrice
+    const itemsWithPrices = await Promise.all(
+      rawItems.map(async (item) => {
+        const existingPrice = await PriceCatalogRepository.findByNameCityCategory(
+          item.name,
+          item.city,
+          item.category
+        );
+        return { ...item, existingPrice };
+      })
+    );
+
+    // Приоритизируем и сортируем по убыванию приоритета
+    return prioritizeItems(itemsWithPrices, (item) => item.existingPrice);
   }
 
   // ─── ОБРАБОТКА БАТЧАМИ ────────────────────────────────────
 
   private async processBatches(
     jobId: string,
-    items: ItemToUpdate[],
+    items: PrioritizedItem[],
     sources?: SourceType[]
   ): Promise<void> {
     const batches = this.chunkArray(items, this.config.batchSize);
