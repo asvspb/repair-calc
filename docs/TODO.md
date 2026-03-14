@@ -289,12 +289,15 @@
 - [x] **7.3.6** Реализовать ApiStorageProvider на клиенте
 - [x] **7.3.7** Интегрировать в ProjectContext
 
-#### Фаза 7.4: CRUD для комнат и работ (2-3 дня)
+#### Фаза 7.4: CRUD для комнат и работ — ✅ ВЫПОЛНЕНО
 
-- [ ] **7.4.1** Все CRUD для rooms
-- [ ] **7.4.2** Все CRUD для works, materials, tools
-- [ ] **7.4.3** Все CRUD для геометрии (openings, subsections, segments, obstacles, wall_sections)
-- [ ] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order)
+- [x] **7.4.1** Все CRUD для rooms (уже был реализован)
+- [x] **7.4.2** Все CRUD для works, materials, tools (уже был реализован)
+- [x] **7.4.3** CRUD для геометрии (openings, subsections, segments, obstacles, wall_sections) ✅
+  - Добавлены репозитории: OpeningRepository, SubSectionRepository, SegmentRepository, ObstacleRepository, WallSectionRepository
+  - Добавлены валидационные схемы в validation.ts
+  - Создан geometry.ts с 25+ endpoints
+- [x] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order) ✅
 
 #### Фаза 7.5: AI-интеграция (3-4 дня)
 

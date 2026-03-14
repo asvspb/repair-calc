@@ -91,6 +91,81 @@ export const updateOpeningSchema = z.object({
   comment: z.string().max(500).optional().nullable(),
 });
 
+// SubSection schemas (Extended Mode)
+export const createSubSectionSchema = z.object({
+  name: z.string().max(255).optional().nullable(),
+  shape: z.enum(['rectangle', 'trapezoid', 'triangle', 'parallelogram']).optional(),
+  length: z.number().min(0).optional(),
+  width: z.number().min(0).optional(),
+  base1: z.number().min(0).optional().nullable(),
+  base2: z.number().min(0).optional().nullable(),
+  depth: z.number().min(0).optional().nullable(),
+  side1: z.number().min(0).optional().nullable(),
+  side2: z.number().min(0).optional().nullable(),
+  side_a: z.number().min(0).optional().nullable(),
+  side_b: z.number().min(0).optional().nullable(),
+  side_c: z.number().min(0).optional().nullable(),
+  base: z.number().min(0).optional().nullable(),
+  side: z.number().min(0).optional().nullable(),
+});
+
+export const updateSubSectionSchema = createSubSectionSchema.partial();
+
+// Segment schemas (Advanced Mode)
+export const createSegmentSchema = z.object({
+  name: z.string().max(255).optional().nullable(),
+  length: z.number().min(0).optional(),
+  width: z.number().min(0).optional(),
+  operation: z.enum(['add', 'subtract']).optional(),
+});
+
+export const updateSegmentSchema = createSegmentSchema.partial();
+
+// Obstacle schemas (Advanced Mode)
+export const createObstacleSchema = z.object({
+  name: z.string().max(255).optional().nullable(),
+  type: z.enum(['column', 'duct', 'niche', 'other']).optional(),
+  area: z.number().min(0).optional(),
+  perimeter: z.number().min(0).optional(),
+  operation: z.enum(['add', 'subtract']).optional(),
+});
+
+export const updateObstacleSchema = createObstacleSchema.partial();
+
+// Wall Section schemas (Advanced Mode)
+export const createWallSectionSchema = z.object({
+  name: z.string().max(255).optional().nullable(),
+  length: z.number().min(0).optional(),
+  height: z.number().min(0).optional(),
+});
+
+export const updateWallSectionSchema = createWallSectionSchema.partial();
+
+// Reorder schemas
+export const reorderOpeningsSchema = z.object({
+  openingIds: z.array(z.string().uuid()).min(1),
+});
+
+export const reorderSubSectionsSchema = z.object({
+  subsectionIds: z.array(z.string().uuid()).min(1),
+});
+
+export const reorderSegmentsSchema = z.object({
+  segmentIds: z.array(z.string().uuid()).min(1),
+});
+
+export const reorderObstaclesSchema = z.object({
+  obstacleIds: z.array(z.string().uuid()).min(1),
+});
+
+export const reorderWallSectionsSchema = z.object({
+  wallSectionIds: z.array(z.string().uuid()).min(1),
+});
+
+export const reorderWorksSchema = z.object({
+  workIds: z.array(z.string().uuid()).min(1),
+});
+
 // Material schemas
 export const createMaterialSchema = z.object({
   name: z.string().max(255),
