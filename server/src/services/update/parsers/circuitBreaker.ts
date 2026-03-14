@@ -94,6 +94,20 @@ export class CircuitBreaker {
   }
 
   /**
+   * Публичный метод для записи успеха (для внешнего использования)
+   */
+  recordSuccess(): void {
+    this.onSuccess();
+  }
+
+  /**
+   * Публичный метод для записи ошибки (для внешнего использования)
+   */
+  recordFailure(): void {
+    this.onFailure();
+  }
+
+  /**
    * Получение текущего состояния
    */
   getState(): CircuitBreakerState {

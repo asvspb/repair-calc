@@ -1,7 +1,7 @@
 # TODO: Замечания и задачи по проекту Repair Calculator
 
 **Дата:** 2026-03-04
-**Обновлено:** 2026-03-12
+**Обновлено:** 2026-03-14
 **Источники:** [CODE_REVIEW.md](./CODE_REVIEW.md), ревью шаблонов работ, архитектурный анализ
 
 ---
@@ -217,7 +217,7 @@
 - [x] **8.3.3** Rate Limiter (`parsers/rateLimiter.ts`) ✅
 - [x] **8.3.4** Bazavit Parser (`parsers/bazavitParser.ts`) ✅
 - [x] **8.3.5** Lemana Parser (`parsers/lemanaParser.ts`) ✅
-- [ ] **8.3.6** Web Scraper Aggregator (`webScraper.ts`) — опционально
+- [x] **8.3.6** Web Scraper Aggregator (`webScraper.ts`) ✅
 
 #### Этап 8.4: Оптимизации — ✅ Частично выполнено
 
@@ -240,11 +240,22 @@
 - [x] **8.6.3** Логирование в БД ✅
 - [ ] **8.6.4** Dashboard (Grafana, опционально)
 
-#### Этап 8.7: Дополнительные возможности — ❌ Не начато (опционально)
+#### Этап 8.7: Дополнительные возможности — ✅ ЧАСТИЧНО ВЫПОЛНЕНО
 
-- [ ] **8.7.1** Вебхуки для уведомлений
-- [ ] **8.7.2** Экспорт цен (CSV/XLSX/JSON)
-- [ ] **8.7.3** Импорт цен из файла
+- [x] **8.7.1** Вебхуки для уведомлений ✅ (2026-03-14)
+  - [x] Миграция `update_webhooks` таблицы
+  - [x] `WebhookRepository` для CRUD
+  - [x] `webhookService` для отправки с retry и HMAC-подписью
+  - [x] Endpoints: `GET/POST /api/update/webhooks`, `GET/PUT/DELETE /api/update/webhooks/:id`, `POST /api/update/webhooks/:id/test`
+- [x] **8.7.2** Экспорт цен (CSV/XLSX/JSON) ✅ (2026-03-14)
+  - [x] Endpoint `GET /api/prices/export?format=csv|xlsx|json`
+  - [x] exceljs для XLSX с стилизацией
+  - [x] CSV с BOM для кириллицы
+- [x] **8.7.3** Импорт цен из файла ✅ (2026-03-14)
+  - [x] Endpoint `POST /api/prices/import` (multipart/form-data)
+  - [x] Поддержка CSV, XLSX, JSON
+  - [x] Автоматический маппинг колонок (ru/en)
+  - [x] Upsert записей в БД
 - [ ] **8.7.4** A/B тестирование парсеров (основа готова в ParserManager)
 - [ ] **8.7.5** Аудит действий администраторов
 

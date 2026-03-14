@@ -9,6 +9,7 @@ export * from './circuitBreaker';
 export * from './rateLimiter';
 export * from './lemanaParser';
 export * from './bazavitParser';
+export * from './webScraper';
 
 // AI-парсеры
 export * from './gemini.js';
