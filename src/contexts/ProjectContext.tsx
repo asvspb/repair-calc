@@ -3,6 +3,9 @@ import type { ProjectData, RoomData } from '../types';
 import { StorageManager, StorageError } from '../utils/storage';
 import { useAuth } from './AuthContext';
 import { ApiStorageProvider } from '../api/storage';
+import { saveTotals } from '../api/totals';
+import { calculateRoomMetrics } from '../utils/geometry';
+import { calculateRoomCosts } from '../utils/costs';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -35,7 +38,10 @@ interface ProjectContextValue {
   error: StorageError | null;
   lastSaved: Date | null;
   saveError: string | null;
-  
+  lastSavedToServer: Date | null;
+  lastTotalsSave: Date | null;
+  totalsSaveError: string | null;
+
   // Actions
   setActiveProjectId: (id: string) => void;
   updateProjects: (projects: ProjectData[]) => void;
@@ -61,7 +67,7 @@ interface ProjectProviderProps {
 export function ProjectProvider({ children, initialProjects }: ProjectProviderProps) {
   // Получаем состояние авторизации
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  
+
   // Миграция начальных данных
   const migratedInitial = initialProjects.map(migrateProject);
   const [projects, setProjects] = useState<ProjectData[]>(migratedInitial);
@@ -70,11 +76,15 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   const [error, setError] = useState<StorageError | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  
+  const [lastSavedToServer, setLastSavedToServer] = useState<Date | null>(null);
+  const [lastTotalsSave, setLastTotalsSave] = useState<Date | null>(null);
+  const [totalsSaveError, setTotalsSaveError] = useState<string | null>(null);
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<ProjectData[] | null>(null);
   const apiProviderRef = useRef<ApiStorageProvider | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const totalsSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Вычисляем активный проект
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
@@ -152,19 +162,75 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     loadData();
   }, [isAuthenticated, authLoading, getApiProvider]);
 
+  // Расчёт и сохранение итогов проекта
+  const saveCalculatedTotals = useCallback(async (project: ProjectData) => {
+    if (!isAuthenticated) return; // Сохраняем только для авторизованных пользователей
+
+    let totalArea = 0;
+    let totalWorks = 0;
+    let totalMaterials = 0;
+    let totalTools = 0;
+
+    project.rooms.forEach(room => {
+      const metrics = calculateRoomMetrics(room);
+      const costs = calculateRoomCosts(room);
+      totalArea += metrics.floorArea;
+      totalWorks += costs.totalWork;
+      totalMaterials += costs.totalMaterial;
+      totalTools += costs.totalTools;
+    });
+
+    const grandTotal = totalWorks + totalMaterials + totalTools;
+
+    try {
+      await saveTotals(project.id, {
+        total_area: totalArea,
+        total_works: totalWorks,
+        total_materials: totalMaterials,
+        total_tools: totalTools,
+        grand_total: grandTotal,
+      });
+      setLastTotalsSave(new Date());
+      setTotalsSaveError(null);
+    } catch (error) {
+      console.error('Error saving calculated totals:', error);
+      setTotalsSaveError(error instanceof Error ? error.message : 'Ошибка сохранения расчётов');
+    }
+  }, [isAuthenticated]);
+
+  // Автосохранение рассчитанных данных с debounce
+  const scheduleTotalsSave = useCallback((project: ProjectData) => {
+    if (totalsSaveTimeoutRef.current) {
+      clearTimeout(totalsSaveTimeoutRef.current);
+    }
+
+    totalsSaveTimeoutRef.current = setTimeout(() => {
+      saveCalculatedTotals(project);
+    }, 2000); // 2 секунды задержка после последнего изменения
+  }, [saveCalculatedTotals]);
+
   // Автосохранение с debounce
   const scheduleSave = useCallback((newProjects: ProjectData[]) => {
     pendingSaveRef.current = newProjects;
-    
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       if (pendingSaveRef.current) {
         try {
           StorageManager.saveProjects(pendingSaveRef.current);
           setLastSaved(new Date());
+          // Если авторизован, сохраняем на сервер
+          if (isAuthenticated) {
+            const apiProvider = getApiProvider();
+            apiProvider.saveProjectsAsync(pendingSaveRef.current).then(() => {
+              setLastSavedToServer(new Date());
+            }).catch((err) => {
+              console.error('Server save error:', err);
+            });
+          }
           setSaveError(null);
           pendingSaveRef.current = null;
         } catch (err) {
@@ -174,24 +240,33 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         }
       }
     }, 1000);
-  }, []);
+  }, [isAuthenticated, getApiProvider]);
 
   // Обновление проектов
   const updateProjects = useCallback((newProjects: ProjectData[]) => {
     setProjects(newProjects);
     scheduleSave(newProjects);
-  }, [scheduleSave]);
+    // Save totals for active project
+    const active = newProjects.find(p => p.id === activeProjectId);
+    if (active && isAuthenticated) {
+      scheduleTotalsSave(active);
+    }
+  }, [scheduleSave, activeProjectId, isAuthenticated, scheduleTotalsSave]);
 
   // Обновление активного проекта
   const updateActiveProject = useCallback((updatedProject: ProjectData) => {
     setProjects(prevProjects => {
-      const newProjects = prevProjects.map(p => 
+      const newProjects = prevProjects.map(p =>
         p.id === updatedProject.id ? updatedProject : p
       );
       scheduleSave(newProjects);
+      // Save totals for updated project
+      if (isAuthenticated) {
+        scheduleTotalsSave(updatedProject);
+      }
       return newProjects;
     });
-  }, [scheduleSave]);
+  }, [scheduleSave, isAuthenticated, scheduleTotalsSave]);
 
   // Установка активного проекта с сохранением
   const setActiveProjectId = useCallback((id: string) => {
@@ -214,31 +289,39 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
       const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
       scheduleSave(newProjects);
+      // Save totals for updated project
+      if (isAuthenticated) {
+        scheduleTotalsSave(updatedProject);
+      }
       return newProjects;
     });
-  }, [activeProjectId, scheduleSave]);
+  }, [activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave]);
 
   // Обновление комнаты по ID с функцией обновления (для корректной работы при быстрых изменениях)
   const updateRoomById = useCallback((roomId: string, updater: (prev: RoomData) => RoomData) => {
     setProjects(prevProjects => {
       const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) return prevProjects;
-      
+
       const prevRoom = prevActiveProject.rooms.find(r => r.id === roomId);
       if (!prevRoom) return prevProjects;
-      
+
       const updatedRoom = updater(prevRoom);
-      
+
       const updatedProject = {
         ...prevActiveProject,
         rooms: prevActiveProject.rooms.map(r => r.id === roomId ? updatedRoom : r)
       };
-      
+
       const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
       scheduleSave(newProjects);
+      // Save totals for updated project
+      if (isAuthenticated) {
+        scheduleTotalsSave(updatedProject);
+      }
       return newProjects;
     });
-  }, [activeProjectId, scheduleSave]);
+  }, [activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave]);
 
   // Удаление комнаты
   const deleteRoom = useCallback((roomId: string) => {
@@ -322,21 +405,21 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   // Удаление проекта
   const deleteProject = useCallback(async (projectId: string): Promise<void> => {
     setIsSyncing(true);
-    
+
     try {
       if (isAuthenticated) {
         // Удаляем на сервере
         const apiProvider = getApiProvider();
         await apiProvider.deleteProjectAsync(projectId);
       }
-      
+
       // Удаляем локально
       setProjects(prev => {
         const updated = prev.filter(p => p.id !== projectId);
         scheduleSave(updated);
         return updated;
       });
-      
+
       // Если удалили активный проект, переключаемся на первый доступный
       if (activeProjectId === projectId) {
         const remaining = projects.filter(p => p.id !== projectId);
@@ -367,6 +450,9 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (totalsSaveTimeoutRef.current) {
+        clearTimeout(totalsSaveTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -378,6 +464,9 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     error,
     lastSaved,
     saveError,
+    lastSavedToServer,
+    lastTotalsSave,
+    totalsSaveError,
     setActiveProjectId,
     updateProjects,
     updateActiveProject,

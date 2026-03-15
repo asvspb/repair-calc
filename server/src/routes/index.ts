@@ -7,6 +7,7 @@ import geometryRoutes from './geometry.js';
 import syncRoutes from './sync.js';
 import aiRoutes from './ai.js';
 import updateRoutes from './update.js';
+import totalsRoutes from './totals.js';
 
 export const router = Router();
 
@@ -22,3 +23,4 @@ router.use('/sync', syncRoutes);
 router.use('/ai', aiRoutes);
 router.use('/update', updateRoutes);  // Update Service API
 router.use('/prices', updateRoutes);  // Prices API (alias for /update/prices)
+router.use('/totals', totalsRoutes);  // Calculated totals API

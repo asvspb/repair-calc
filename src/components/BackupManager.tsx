@@ -3,6 +3,7 @@ import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle
 import type { ProjectData } from '../types';
 import type { WorkTemplate } from '../types/workTemplate';
 import { StorageManager } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BackupManagerProps {
   projects: ProjectData[];
@@ -19,6 +20,7 @@ type ImportStatus = {
 };
 
 export function BackupManager({ projects, activeProjectId, onImport, onClearAll, onImportTemplates }: BackupManagerProps) {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -120,9 +122,17 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-        title="Управление данными"
+        title={isAuthenticated ? 'База данных подключена' : 'Работа без базы (локально)'}
       >
-        <Database className="w-4 h-4" />
+        <div className="relative flex items-center gap-2">
+          <Database className="w-4 h-4" />
+          <span
+            className={`absolute -left-1.5 -top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
+              isAuthenticated ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+            title={isAuthenticated ? 'База данных подключена' : 'Работа без базы (локально)'}
+          />
+        </div>
         <span className="hidden sm:inline">Данные</span>
       </button>
     );

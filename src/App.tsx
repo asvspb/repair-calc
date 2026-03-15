@@ -100,6 +100,7 @@ function AppContent() {
     reorderRooms,
     isLoading,
     lastSaved,
+    lastSavedToServer,
     saveError
   } = useProjectContext();
 
@@ -338,9 +339,10 @@ function AppContent() {
           </div>
           <div className="absolute right-4 flex items-center gap-4">
             {lastSaved && (
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Save className="w-3 h-3" />
-                <span>Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+              <div className="flex items-center gap-1 text-xs"
+                title={lastSavedToServer ? 'Сохранено в базу данных' : 'Сохранено локально'}>
+                <Save className={`w-3 h-3 ${lastSavedToServer ? 'text-green-600' : 'text-gray-500'}`} />
+                <span className="text-gray-500">Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             )}
             {saveError && (
