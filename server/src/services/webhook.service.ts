@@ -49,15 +49,18 @@ class WebhookService {
     let failed = 0;
 
     results.forEach((result, index) => {
+      const webhook = webhooks[index];
+      if (!webhook) return;
+      
       if (result.status === 'fulfilled' && result.value.success) {
         sent++;
-        WebhookRepository.recordSuccess(webhooks[index].id).catch(() => {});
+        WebhookRepository.recordSuccess(webhook.id).catch(() => {});
       } else {
         failed++;
-        const error = result.status === 'rejected' 
+        const error = result.status === 'rejected'
           ? result.reason?.message || 'Unknown error'
           : result.value.error || 'Request failed';
-        WebhookRepository.recordFailure(webhooks[index].id, error).catch(() => {});
+        WebhookRepository.recordFailure(webhook.id, error).catch(() => {});
       }
     });
 

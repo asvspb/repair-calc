@@ -394,7 +394,7 @@ function AppContent() {
  * Корневой компонент приложения с роутингом аутентификации
  */
 function AppWithAuth() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Показываем загрузку пока проверяем авторизацию
   if (isLoading) {
@@ -414,8 +414,9 @@ function AppWithAuth() {
   }
 
   // Если авторизован — показываем основное приложение
+  // key={user?.id} обеспечивает пересоздание ProjectProvider при смене пользователя
   return (
-    <ProjectProvider initialProjects={initialProjects}>
+    <ProjectProvider key={user?.id} initialProjects={initialProjects}>
       <WorkTemplateProvider>
         <AppContent />
       </WorkTemplateProvider>

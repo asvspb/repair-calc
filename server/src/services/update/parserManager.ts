@@ -9,8 +9,8 @@
  */
 
 import type { PriceParser, PriceRequest, PriceResult, RateLimit } from './parsers/types.js';
-import { GeminiParser, getGeminiParser, isGeminiEnabled } from './parsers/gemini.js';
-import { MistralParser, getMistralParser, isMistralEnabled } from './parsers/mistral.js';
+import { getGeminiParser } from './parsers/gemini.js';
+import { getMistralParser } from './parsers/mistral.js';
 import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
 import { PriceSourceRepository } from '../../db/repositories/priceCatalog.repo.js';
@@ -57,6 +57,7 @@ class ParserManagerImpl {
   private responseTimes: Map<ParserType, number[]> = new Map();
   private abTestConfig: ABTestConfig = {
     enabled: false,
+    testId: null,
     geminiWeight: 50,
   };
 
@@ -68,15 +69,15 @@ class ParserManagerImpl {
 
   private initializeParsers(): void {
     // Регистрируем Gemini
-    if (isGeminiEnabled()) {
-      const geminiParser = getGeminiParser();
-      this.registerParser(geminiParser);
+    const gemini = getGeminiParser();
+    if (gemini) {
+      this.registerParser(gemini);
     }
 
     // Регистрируем Mistral
-    if (isMistralEnabled()) {
-      const mistralParser = getMistralParser();
-      this.registerParser(mistralParser);
+    const mistral = getMistralParser();
+    if (mistral) {
+      this.registerParser(mistral);
     }
 
     // Web scrapers будут добавлены позже
@@ -86,14 +87,15 @@ class ParserManagerImpl {
     this.parsers.set(parser.type as ParserType, parser);
     this.circuitBreakers.set(
       parser.type as ParserType,
-      new CircuitBreaker({
-        failureThreshold: 5,
+      new CircuitBreaker(parser.type, {
+        threshold: 5,
         resetTimeoutMs: 600000, // 10 минут
+        halfOpenMaxRequests: 3,
       })
     );
     this.rateLimiters.set(
       parser.type as ParserType,
-      new RateLimiter(parser.getRateLimit().requestsPerMinute)
+      new RateLimiter({ requestsPerMinute: parser.getRateLimit().requestsPerMinute })
     );
     this.responseTimes.set(parser.type as ParserType, []);
   }
@@ -111,7 +113,7 @@ class ParserManagerImpl {
 
     // Фильтруем доступные парсеры
     const available = Array.from(this.parsers.entries())
-      .filter(([type, parser]) => {
+      .filter(([type, _parser]) => {
         // Если указаны предпочтительные источники
         if (preferredSources && !preferredSources.includes(type)) {
           return false;
@@ -120,7 +122,7 @@ class ParserManagerImpl {
         // Проверяем доступность
         return this.isParserAvailable(type);
       })
-      .sort(([typeA, parserA], [typeB, parserB]) => {
+      .sort(([, parserA], [, parserB]) => {
         // Сортируем по приоритету (по rate limit)
         const limitA = parserA.getRateLimit();
         const limitB = parserB.getRateLimit();
@@ -173,7 +175,7 @@ class ParserManagerImpl {
 
     // Проверяем Circuit Breaker
     const cb = this.circuitBreakers.get(parserType);
-    if (cb && !cb.canExecute()) {
+    if (cb && !cb.isAvailable()) {
       // Пробуем другой парсер
       const fallbackParser = this.selectSource(request, preferredSources?.filter(s => s !== parserType));
       if (fallbackParser) {
@@ -255,7 +257,7 @@ class ParserManagerImpl {
     if (!parser) return false;
 
     const cb = this.circuitBreakers.get(type);
-    if (cb && !cb.canExecute()) return false;
+    if (cb && !cb.isAvailable()) return false;
 
     return true;
   }
@@ -541,15 +543,15 @@ class ParserManagerImpl {
         parser_group: params.parserGroup,
         parser_type: params.parserType as ABParserType,
         success: params.success,
-        price_min: params.result?.priceMin,
-        price_avg: params.result?.priceAvg,
-        price_max: params.result?.priceMax,
-        currency: params.result?.currency,
-        confidence_score: params.result?.confidence,
+        price_min: params.result?.prices.min,
+        price_avg: params.result?.prices.avg,
+        price_max: params.result?.prices.max,
+        currency: params.result?.prices.currency,
+        confidence_score: params.result?.confidenceScore,
         response_time_ms: params.responseTime,
         error_message: params.error instanceof Error ? params.error.message : undefined,
         metadata: {
-          source: params.result?.source,
+          sources: params.result?.sources,
           itemName: params.request.itemName,
           unit: params.request.unit,
         },

@@ -66,6 +66,8 @@ export class RateLimiter {
     // Проверка лимита
     if (this.requestTimestamps.length >= this.config.requestsPerMinute) {
       const oldestTimestamp = this.requestTimestamps[0];
+      if (!oldestTimestamp) return;
+      
       const waitTime = oldestTimestamp + 60 * 1000 - now;
 
       if (waitTime > 0) {

@@ -4,7 +4,7 @@
  * @package server/src/services/update/parsers
  */
 
-export * from './types';
+export * from './types.js';
 export * from './circuitBreaker';
 export * from './rateLimiter';
 export * from './lemanaParser';

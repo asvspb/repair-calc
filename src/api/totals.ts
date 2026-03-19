@@ -52,7 +52,19 @@ async function fetchJson<T>(
     },
   });
 
-  const data = await response.json();
+  // Try to parse JSON, but handle cases where server returns HTML error page
+  let data;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    // Server returned non-JSON (e.g., HTML error page)
+    const text = await response.text();
+    throw new TotalsApiError(
+      `Server error: ${response.status} ${response.statusText}`,
+      response.status
+    );
+  }
 
   if (!response.ok) {
     throw new TotalsApiError(

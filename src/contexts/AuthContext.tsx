@@ -7,6 +7,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState, typ
 import type { User, AuthState, LoginCredentials, RegisterCredentials } from '../types/auth';
 import * as authApi from '../api/auth';
 import { StorageManager } from '../utils/storage';
+import { ApiStorageProvider } from '../api/storage/apiStorageProvider';
 
 /**
  * Преобразование ошибок валидации в понятные сообщения
@@ -143,6 +144,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         refreshToken: response.data.refreshToken,
       });
 
+      // Сбрасываем кэш ApiStorageProvider для загрузки данных нового пользователя
+      ApiStorageProvider.resetInstance();
+
       setState({
         user: {
           id: response.data.id,
@@ -228,9 +232,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch {
       // Игнорируем ошибки при выходе
     } finally {
-      // Очищаем токены и данные пользователя
+      // Очищаем токены (но НЕ очищаем данные проектов - они сохранены на сервере)
       authApi.clearTokens();
-      StorageManager.clearAll();
+      // Сбрасываем кэш ApiStorageProvider
+      ApiStorageProvider.resetInstance();
       setState({
         user: null,
         isAuthenticated: false,

@@ -1,7 +1,6 @@
 import { query, execute } from '../pool.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
-import { PriceCategory, SourceType } from './priceCatalog.repo.js';
 
 // ═══════════════════════════════════════════════════════
 // ТИПЫ
@@ -189,7 +188,7 @@ export class PriceHistoryRepository {
     oldPrice: number,
     newPrice: number,
     thresholdPercent: number = 100
-  ): { isAnomaly: boolean; changePercent: number; severity: 'low' | 'medium' | 'high' } {
+  ): Promise<{ isAnomaly: boolean; changePercent: number; severity: 'low' | 'medium' | 'high' }> {
     if (!oldPrice || oldPrice === 0) {
       return { isAnomaly: false, changePercent: 0, severity: 'low' };
     }

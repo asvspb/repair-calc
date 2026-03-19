@@ -5,8 +5,18 @@
 
 import type { IStorageProvider } from '../../types/storage';
 import { StorageProviderError } from '../../types/storage';
-import type { ProjectData } from '../../types';
+import type { ProjectData, RoomData } from '../../types';
 import * as projectsApi from '../projects';
+import * as roomsApi from '../rooms';
+import {
+  logApiRequest,
+  logApiSuccess,
+  logApiError,
+  logStart,
+  logSuccess,
+  logError,
+  logDebug,
+} from '../../utils/logger';
 
 const STORAGE_KEYS = {
   PROJECTS: 'repair-calc-projects',
@@ -112,31 +122,123 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
+   * Проверка, является ли ID серверным UUID
+   */
+  private isServerId(id: string): boolean {
+    // UUID формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  }
+
+  /**
    * Асинхронное сохранение проектов
-   * Сравнивает локальные проекты с серверными и синхронизирует изменения
+   * Синхронизирует проекты и комнаты с сервером
    */
   async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
+    const startTime = logStart('ApiStorage', 'Сохранение проектов', { count: projects.length });
+    
     try {
-      // Обновляем кэш немедленно
+      // Обновляем кэш немедленно для UI
       this.projectsCache.clear();
       projects.forEach(p => this.projectsCache.set(p.id, p));
       this.cacheExpiry = Date.now() + this.CACHE_TTL;
 
-      // TODO: Реализовать синхронизацию с сервером
-      // Пока используем гибридный режим — сохраняем также в localStorage как бэкап
+      // Сохраняем также в localStorage как бэкап
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+      logDebug('ApiStorage', 'Проекты сохранены в localStorage как бэкап');
+
+      // Получаем список существующих ID проектов на сервере
+      logDebug('ApiStorage', 'Загрузка существующих проектов с сервера');
+      const existingProjects = await this.loadProjectsAsync();
+      const existingProjectIds = new Set(existingProjects.map(p => p.id));
+
+      // Синхронизируем каждый проект
+      for (const project of projects) {
+        const isServerProject = this.isServerId(project.id);
+        const existsOnServer = existingProjectIds.has(project.id);
+        
+        if (!isServerProject || !existsOnServer) {
+          // Создаём новый проект на сервере (для локальных ID или если не существует)
+          logDebug('ApiStorage', 'Создание нового проекта на сервере', { 
+            projectId: project.id, 
+            name: project.name,
+            isLocalId: !isServerProject 
+          });
+          try {
+            const newProject = await this.createProjectAsync({
+              name: project.name,
+              city: project.city,
+            });
+            
+            logSuccess('ApiStorage', 'Проект создан на сервере', { 
+              oldId: project.id, 
+              newId: newProject.id 
+            });
+            
+            // Синхронизируем комнаты нового проекта
+            for (const room of project.rooms) {
+              try {
+                await roomsApi.createRoom(newProject.id, room);
+                logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
+              } catch (roomError) {
+                logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
+              }
+            }
+          } catch (error) {
+            logError('ApiStorage', 'Ошибка создания проекта', error, { projectId: project.id });
+          }
+        } else {
+          // Обновляем существующий проект
+          logDebug('ApiStorage', 'Обновление проекта на сервере', { projectId: project.id });
+          try {
+            await this.updateProjectAsync(project);
+            
+            // Получаем список существующих комнат
+            const serverProject = existingProjects.find(p => p.id === project.id);
+            const existingRoomIds = new Set(serverProject?.rooms.map(r => r.id) || []);
+            
+            // Синхронизируем комнаты
+            for (const room of project.rooms) {
+              const roomExistsOnServer = this.isServerId(room.id) && existingRoomIds.has(room.id);
+              
+              try {
+                if (roomExistsOnServer) {
+                  // Обновляем существующую комнату
+                  await roomsApi.updateRoom(room.id, room);
+                  logDebug('ApiStorage', 'Комната обновлена', { roomId: room.id });
+                } else {
+                  // Создаём новую комнату
+                  await roomsApi.createRoom(project.id, room);
+                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: project.id });
+                }
+              } catch (roomError) {
+                logError('ApiStorage', 'Ошибка синхронизации комнаты', roomError, { roomId: room.id });
+              }
+            }
+          } catch (error) {
+            logError('ApiStorage', 'Ошибка синхронизации проекта', error, { projectId: project.id });
+          }
+        }
+      }
+      
+      logSuccess('ApiStorage', 'Проекты успешно синхронизированы', { count: projects.length }, startTime);
     } catch (error) {
+      logError('ApiStorage', 'Ошибка сохранения проектов', error);
       throw StorageProviderError.fromError(error);
     }
   }
 
   /**
    * Асинхронная загрузка проектов с сервера
+   * Использует /api/sync/pull для получения проектов с комнатами
    */
   async loadProjectsAsync(): Promise<ProjectData[]> {
+    const startTime = logApiRequest('GET', '/api/sync/pull');
+    
     try {
-      const response = await projectsApi.getProjects();
-      const projects = response.data.map(projectsApi.apiToClientProject);
+      // Используем sync/pull для получения проектов с комнатами
+      const response = await projectsApi.syncPull();
+      const projects = response.data.projects.map(projectsApi.apiToClientProject);
       
       // Обновляем кэш
       this.projectsCache.clear();
@@ -146,14 +248,23 @@ export class ApiStorageProvider implements IStorageProvider {
       // Сохраняем также в localStorage как кэш
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
 
+      logApiSuccess('GET', '/api/sync/pull', startTime, { 
+        projectsCount: projects.length,
+        projectIds: projects.map(p => p.id) 
+      });
+
       return projects;
     } catch (error) {
+      logApiError('GET', '/api/sync/pull', startTime, error);
+      
       // При ошибке пробуем загрузить из localStorage
+      logDebug('ApiStorage', 'Попытка загрузки из localStorage при ошибке');
       const cached = this.loadFromLocalStorage<ProjectData[]>(STORAGE_KEYS.PROJECTS);
       if (cached) {
         this.projectsCache.clear();
         cached.forEach(p => this.projectsCache.set(p.id, p));
         this.cacheExpiry = Date.now() + this.CACHE_TTL;
+        logDebug('ApiStorage', 'Проекты загружены из localStorage', { count: cached.length });
         return cached;
       }
       throw StorageProviderError.fromError(error);
@@ -164,6 +275,8 @@ export class ApiStorageProvider implements IStorageProvider {
    * Создание нового проекта на сервере
    */
   async createProjectAsync(data: { name: string; city?: string }): Promise<ProjectData> {
+    const startTime = logApiRequest('POST', '/api/projects', data);
+    
     try {
       const response = await projectsApi.createProject(data);
       const project = projectsApi.apiToClientProject(response.data);
@@ -171,8 +284,11 @@ export class ApiStorageProvider implements IStorageProvider {
       // Добавляем в кэш
       this.projectsCache.set(project.id, project);
       
+      logApiSuccess('POST', '/api/projects', startTime, { projectId: project.id, name: project.name });
+      
       return project;
     } catch (error) {
+      logApiError('POST', '/api/projects', startTime, error);
       throw StorageProviderError.fromError(error);
     }
   }
@@ -181,20 +297,50 @@ export class ApiStorageProvider implements IStorageProvider {
    * Обновление проекта на сервере
    */
   async updateProjectAsync(project: ProjectData): Promise<ProjectData> {
+    const updateData: {
+      name: string;
+      city?: string;
+      use_ai_pricing?: boolean;
+      last_ai_price_update?: string | null;
+      version?: number;
+    } = {
+      name: project.name,
+    };
+
+    // Only include city if it's a non-empty string
+    if (typeof project.city === 'string' && project.city.trim() !== '') {
+      updateData.city = project.city;
+    }
+
+    // Only include use_ai_pricing if it's defined (convert from number if needed)
+    if (project.useAiPricing !== undefined) {
+      updateData.use_ai_pricing = Boolean(project.useAiPricing);
+    }
+
+    // Include last_ai_price_update if present
+    if (project.lastAiPriceUpdate !== undefined) {
+      updateData.last_ai_price_update = project.lastAiPriceUpdate || null;
+    }
+
+    // Include version if present
+    if (project.version !== undefined) {
+      updateData.version = project.version;
+    }
+
+    const startTime = logApiRequest('PUT', `/api/projects/${project.id}`, updateData);
+
     try {
-      const response = await projectsApi.updateProject(project.id, {
-        name: project.name,
-        city: project.city || null,
-        use_ai_pricing: project.useAiPricing,
-        last_ai_price_update: project.lastAiPriceUpdate || null,
-      });
+      const response = await projectsApi.updateProject(project.id, updateData);
       const updated = projectsApi.apiToClientProject(response.data);
-      
+
       // Обновляем кэш
       this.projectsCache.set(project.id, updated);
-      
+
+      logApiSuccess('PUT', `/api/projects/${project.id}`, startTime, { projectId: project.id });
+
       return updated;
     } catch (error) {
+      logApiError('PUT', `/api/projects/${project.id}`, startTime, error);
       throw StorageProviderError.fromError(error);
     }
   }
@@ -203,12 +349,17 @@ export class ApiStorageProvider implements IStorageProvider {
    * Удаление проекта на сервере
    */
   async deleteProjectAsync(projectId: string): Promise<void> {
+    const startTime = logApiRequest('DELETE', `/api/projects/${projectId}`);
+    
     try {
       await projectsApi.deleteProject(projectId);
       
       // Удаляем из кэша
       this.projectsCache.delete(projectId);
+      
+      logApiSuccess('DELETE', `/api/projects/${projectId}`, startTime, { projectId });
     } catch (error) {
+      logApiError('DELETE', `/api/projects/${projectId}`, startTime, error);
       throw StorageProviderError.fromError(error);
     }
   }

@@ -164,6 +164,7 @@ export type ProjectData = {
   city?: string;                // Город для поиска цен
   useAiPricing?: boolean;       // Использовать ИИ для цен
   lastAiPriceUpdate?: string;   // Дата последнего обновления цен через ИИ
+  version?: number;             // Версия для оптимистичной блокировки
 };
 
 // Room metrics (calculated)

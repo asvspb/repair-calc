@@ -28,6 +28,7 @@ import {
   ABTestRepository,
   type ParserType as ABParserType,
   type TestStatus,
+  type Winner,
 } from '../db/repositories/abTest.repo.js';
 import { getUpdateRunner } from '../services/update/runner.js';
 import { getParserManager } from '../services/update/parserManager.js';
@@ -111,11 +112,10 @@ router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
     // Проверяем, есть ли уже запущенные задачи
     const runningJobs = await UpdateJobRepository.findRunning();
     if (runningJobs.length >= 3) {
-      res.status(429).json({
+      return res.status(429).json({
         status: 'error',
         error: 'Too many running jobs. Please wait.',
       });
-      return;
     }
 
     const runner = getUpdateRunner({
@@ -142,12 +142,11 @@ router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 'error',
         error: 'Validation error',
         details: error.errors,
       });
-      return;
     }
     next(error);
   }
@@ -160,14 +159,6 @@ router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/status/:jobId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId } = req.params;
-    
-    if (!jobId) {
-      res.status(400).json({
-        status: 'error',
-        error: 'Job ID is required',
-      });
-      return;
-    }
 
     const job = await UpdateJobRepository.findById(jobId);
     if (!job) {
@@ -262,24 +253,15 @@ router.get('/jobs', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/cancel/:jobId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId } = req.params;
-    
-    if (!jobId) {
-      res.status(400).json({
-        status: 'error',
-        error: 'Job ID is required',
-      });
-      return;
-    }
 
     const runner = getUpdateRunner();
     const cancelled = await runner.cancel(jobId);
 
     if (!cancelled) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 'error',
         error: 'Cannot cancel job. Job not found or not running.',
       });
-      return;
     }
 
     res.json({

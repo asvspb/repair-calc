@@ -11,8 +11,8 @@
  */
 
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
-import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData, ParsedCategory } from './types';
-import { ParserError } from './types';
+import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData, ParsedCategory } from './types.js';
+import { ParserError } from './types.js';
 
 /**
  * Конфигурация парсера Bazavit
@@ -120,7 +120,7 @@ export class BazavitParser implements PriceParser {
 
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
-      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      const avgPrice = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
 
       return {
         prices: {
@@ -292,7 +292,7 @@ export class BazavitParser implements PriceParser {
       console.log(`    Найдено товаров: ${pageData.items.length}`);
 
       // Добавляем товары в каталог
-      catalogData.products.push(...pageData.items.map(item => ({
+      catalogData.products.push(...pageData.items.map((item: { id: string; category_id: string; name: string; price: number; raw_price: string; url: string }) => ({
         id: item.id,
         categoryId: item.category_id,
         name: item.name,
@@ -305,14 +305,14 @@ export class BazavitParser implements PriceParser {
         currentPageUrl = pageData.nextUrl;
         pageNum++;
         // Пауза между страницами (защита от бана)
-        await this.delay(this.config.delayBetweenPages);
+        await this.delay(this.config.delayBetweenPages ?? 1000);
       } else {
         hasNextPage = false;
       }
     }
 
     // Небольшая пауза между категориями
-    await this.delay(this.config.delayBetweenRequests);
+    await this.delay(this.config.delayBetweenRequests ?? 1000);
   }
 
   /**

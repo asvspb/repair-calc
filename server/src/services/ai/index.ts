@@ -26,11 +26,11 @@ import { getMistralAIProvider, isMistralAIEnabled } from './mistralProvider.js';
  * Получить доступный AI провайдер
  * Приоритет: Gemini -> Mistral
  */
-export function getAvailableAIProvider(): AIProvider | null {
+export async function getAvailableAIProvider(): Promise<AIProvider | null> {
   // Приоритет Gemini
   if (isGeminiAIEnabled()) {
     const gemini = getGeminiAIProvider();
-    if (gemini.isAvailable()) {
+    if (await gemini.isAvailable()) {
       return gemini;
     }
   }
@@ -38,7 +38,7 @@ export function getAvailableAIProvider(): AIProvider | null {
   // Fallback на Mistral
   if (isMistralAIEnabled()) {
     const mistral = getMistralAIProvider();
-    if (mistral.isAvailable()) {
+    if (await mistral.isAvailable()) {
       return mistral;
     }
   }

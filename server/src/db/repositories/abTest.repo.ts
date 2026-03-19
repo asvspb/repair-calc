@@ -188,9 +188,9 @@ export const ABTestRepository = {
     // Count
     const [countRows] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM ab_tests ${whereClause}`,
-      params
+      params as any
     );
-    const total = countRows[0].total;
+    const total = countRows[0]?.total ?? 0;
 
     // Items
     const limit = options?.limit || 20;
@@ -198,7 +198,7 @@ export const ABTestRepository = {
 
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM ab_tests ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset] as any
     );
 
     return { items: rows as ABTest[], total };
@@ -282,7 +282,7 @@ export const ABTestRepository = {
 
     await pool.execute<ResultSetHeader>(
       `UPDATE ab_tests SET ${fields.join(', ')} WHERE id = ?`,
-      [...params, id]
+      [...params, id] as any
     );
 
     return this.findById(id);
@@ -298,13 +298,13 @@ export const ABTestRepository = {
 
   // ─── УПРАВЛЕНИЕ СТАТУСОМ ──────────────────────────────────
 
-  async start(id: string, userId?: string): Promise<ABTest | null> {
-    const test = await this.findById(id);
+  async start(_id: string, _userId?: string): Promise<ABTest | null> {
+    const test = await this.findById(_id);
     if (!test || test.status !== 'draft') {
       return null;
     }
 
-    return this.update(id, {
+    return this.update(_id, {
       status: 'running',
       started_at: new Date(),
     });
@@ -433,14 +433,14 @@ export const ABTestRepository = {
 
     const [countRows] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM ab_test_results WHERE ${conditions.join(' AND ')}`,
-      params
+      params as any
     );
-    const total = countRows[0].total;
+    const total = countRows[0]?.total ?? 0;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM ab_test_results WHERE ${conditions.join(' AND ')} 
+      `SELECT * FROM ab_test_results WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset] as any
     );
 
     return { items: rows as ABTestResult[], total };

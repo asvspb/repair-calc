@@ -1,6 +1,6 @@
 import { query, execute } from '../pool.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import type { RowDataPacket } from 'mysql2/promise';
 
 // ═══════════════════════════════════════════════════════
 // ТИПЫ
@@ -210,7 +210,7 @@ export class PriceCatalogRepository {
     }
     if (input.valid_until !== undefined) {
       fields.push('valid_until = ?');
-      values.push(input.valid_until);
+      values.push(input.valid_until.toISOString());
     }
 
     if (fields.length === 0) {

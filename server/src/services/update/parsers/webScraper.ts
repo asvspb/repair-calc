@@ -15,8 +15,8 @@
  * @package server/src/services/update/parsers
  */
 
-import type { PriceParser, PriceRequest, PriceResult, RateLimit } from './types';
-import { ParserError, CircuitBreakerOpenError } from './types';
+import type { PriceParser, PriceRequest, PriceResult, RateLimit } from './types.js';
+import { ParserError, CircuitBreakerOpenError } from './types.js';
 import { LemanaParser } from './lemanaParser.js';
 import { BazavitParser } from './bazavitParser.js';
 import { CircuitBreaker } from './circuitBreaker.js';
@@ -220,8 +220,8 @@ export class WebScraperParser implements PriceParser {
     // Проверка кэша
     if (this.config.cacheEnabled) {
       const cached = this.cache.get(cacheKey);
-      if (cached) {
-        return { ...cached, raw: { ...cached.raw, fromCache: true } };
+      if (cached && typeof cached === 'object') {
+        return { ...cached, raw: { ...(cached.raw ?? {}), fromCache: true } };
       }
     }
 

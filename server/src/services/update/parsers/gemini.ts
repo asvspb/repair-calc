@@ -120,18 +120,19 @@ export class GeminiParser implements PriceParser {
 
   constructor() {
     this.apiKey = getApiKey();
-    this.circuitBreaker = new CircuitBreaker({
-      failureThreshold: 5,
+    this.circuitBreaker = new CircuitBreaker('ai_gemini', {
+      threshold: 5,
       resetTimeoutMs: 600000, // 10 минут
+      halfOpenMaxRequests: 3,
     });
-    this.rateLimiter = new RateLimiter(60); // 60 запросов в минуту
+    this.rateLimiter = new RateLimiter({ requestsPerMinute: 60 }); // 60 запросов в минуту
   }
 
   async isAvailable(): Promise<boolean> {
     if (!this.apiKey) {
       return false;
     }
-    return this.circuitBreaker.canExecute();
+    return this.circuitBreaker.isAvailable();
   }
 
   getRateLimit(): RateLimit {
@@ -148,7 +149,7 @@ export class GeminiParser implements PriceParser {
     }
 
     // Проверяем Circuit Breaker
-    if (!this.circuitBreaker.canExecute()) {
+    if (!this.circuitBreaker.isAvailable()) {
       throw new Error('Circuit breaker is open for Gemini');
     }
 

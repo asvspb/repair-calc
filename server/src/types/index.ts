@@ -43,6 +43,17 @@ export interface Room {
   sort_order: number;
   created_at: Date;
   updated_at: Date;
+  // JSON fields for full room data storage
+  segments?: string | null;
+  obstacles?: string | null;
+  wall_sections?: string | null;
+  sub_sections?: string | null;
+  windows?: string | null;
+  doors?: string | null;
+  works?: string | null;
+  simple_mode_data?: string | null;
+  extended_mode_data?: string | null;
+  advanced_mode_data?: string | null;
 }
 
 // Opening types

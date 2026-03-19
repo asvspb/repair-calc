@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ParserError, CircuitBreakerOpenError } from './types';
+import { ParserError, CircuitBreakerOpenError } from './types.js';
 
 describe('Parser Types', () => {
   describe('ParserError', () => {

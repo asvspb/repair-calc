@@ -6,6 +6,13 @@
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
+  // Check if table already exists
+  const exists = await knex.schema.hasTable('update_webhooks');
+  if (exists) {
+    console.log('Table update_webhooks already exists, skipping creation');
+    return;
+  }
+  
   await knex.schema.createTable('update_webhooks', (table) => {
     table.string('id', 36).primary();
     

@@ -62,6 +62,8 @@ export async function findCachedResponse(
   }
 
   const row = rows[0];
+  if (!row) return null;
+  
   return {
     id: row.id,
     response: typeof row.response === 'string' ? JSON.parse(row.response) : row.response,

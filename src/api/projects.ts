@@ -3,6 +3,7 @@
  */
 
 import type { ProjectData, RoomData } from '../types';
+import { logApiRequest, logApiSuccess, logApiError, logDebug } from '../utils/logger';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
@@ -59,6 +60,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
     city: apiProject.city || undefined,
     useAiPricing: apiProject.use_ai_pricing,
     lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
+    version: apiProject.version,
     rooms: (apiProject.rooms || []).map(apiToClientRoom),
   };
 }
@@ -88,18 +90,6 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
 }
 
 /**
- * Преобразование проекта из клиентского формата в API
- */
-function clientToApiProject(project: ProjectData, userId: string): Partial<ApiProject> {
-  return {
-    name: project.name,
-    city: project.city || null,
-    use_ai_pricing: project.useAiPricing || false,
-    last_ai_price_update: project.lastAiPriceUpdate || null,
-  };
-}
-
-/**
  * Безопасный парсинг JSON
  */
 function parseJSON<T>(json: string | null, defaultValue: T): T {
@@ -111,10 +101,25 @@ function parseJSON<T>(json: string | null, defaultValue: T): T {
   }
 }
 
+/**
+ * Преобразование проекта из клиентского формата в API
+ */
+function clientToApiProject(project: ProjectData, userId: string): Partial<ApiProject> {
+  return {
+    name: project.name,
+    city: project.city || null,
+    use_ai_pricing: project.useAiPricing || false,
+    last_ai_price_update: project.lastAiPriceUpdate || null,
+  };
+}
+
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = options.method || 'GET';
+  const startTime = logApiRequest(method, endpoint, options.body ? JSON.parse(options.body as string) : undefined);
+  
   const url = `${API_BASE}${endpoint}`;
 
   const defaultHeaders: HeadersInit = {
@@ -124,26 +129,44 @@ async function fetchJson<T>(
   const token = localStorage.getItem('token');
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
+    logDebug('API', 'Токен авторизации добавлен в заголовки');
+  } else {
+    logDebug('API', 'Токен авторизации отсутствует');
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new ProjectsApiError(
-      data.message || 'Произошла ошибка',
-      response.status
-    );
+    if (!response.ok) {
+      const error = new ProjectsApiError(
+        data.message || 'Произошла ошибка',
+        response.status
+      );
+      logApiError(method, endpoint, startTime, { 
+        status: response.status, 
+        message: data.message,
+        error: data 
+      });
+      throw error;
+    }
+
+    logApiSuccess(method, endpoint, startTime, data);
+    return data;
+  } catch (error) {
+    if (error instanceof ProjectsApiError) {
+      throw error;
+    }
+    logApiError(method, endpoint, startTime, error);
+    throw error;
   }
-
-  return data;
 }
 
 /**
@@ -203,6 +226,25 @@ export async function updateAiSettings(
     method: 'PUT',
     body: JSON.stringify(data),
   });
+}
+
+/**
+ * Синхронизация - получение всех проектов с комнатами
+ */
+export async function syncPull(): Promise<{ 
+  status: string; 
+  data: { 
+    projects: (ApiProject & { rooms: ApiRoom[] })[]; 
+    timestamp: number 
+  } 
+}> {
+  return fetchJson<{ 
+    status: string; 
+    data: { 
+      projects: (ApiProject & { rooms: ApiRoom[] })[]; 
+      timestamp: number 
+    } 
+  }>('/api/sync/pull');
 }
 
 // Экспорт утилит для использования в других модулях

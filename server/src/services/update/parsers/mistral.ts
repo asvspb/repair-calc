@@ -117,18 +117,19 @@ export class MistralParser implements PriceParser {
   constructor(model: string = 'mistral-small-latest') {
     this.apiKey = getApiKey();
     this.model = model;
-    this.circuitBreaker = new CircuitBreaker({
-      failureThreshold: 5,
+    this.circuitBreaker = new CircuitBreaker('ai_mistral', {
+      threshold: 5,
       resetTimeoutMs: 600000, // 10 минут
+      halfOpenMaxRequests: 3,
     });
-    this.rateLimiter = new RateLimiter(100); // 100 запросов в минуту
+    this.rateLimiter = new RateLimiter({ requestsPerMinute: 100 }); // 100 запросов в минуту
   }
 
   async isAvailable(): Promise<boolean> {
     if (!this.apiKey) {
       return false;
     }
-    return this.circuitBreaker.canExecute();
+    return this.circuitBreaker.isAvailable();
   }
 
   getRateLimit(): RateLimit {
@@ -144,7 +145,7 @@ export class MistralParser implements PriceParser {
       throw new Error('API ключ Mistral не настроен. Добавьте MISTRAL_API_KEY в .env');
     }
 
-    if (!this.circuitBreaker.canExecute()) {
+    if (!this.circuitBreaker.isAvailable()) {
       throw new Error('Circuit breaker is open for Mistral');
     }
 

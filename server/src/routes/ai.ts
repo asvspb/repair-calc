@@ -33,7 +33,7 @@ router.use(aiRateLimiter);
 router.get('/status', async (_req: AuthRequest, res, next) => {
   try {
     const available = isAIAvailable();
-    const provider = getAvailableAIProvider();
+    const provider = await getAvailableAIProvider();
 
     res.json({
       status: 'success',
@@ -110,7 +110,7 @@ router.post('/estimate', async (req: AuthRequest, res, next) => {
       return;
     }
 
-    const provider = getAvailableAIProvider();
+    const provider = await getAvailableAIProvider();
 
     if (!provider) {
       // Fallback на mock-данные если AI недоступен
@@ -156,7 +156,7 @@ router.post('/estimate', async (req: AuthRequest, res, next) => {
     };
 
     const providerType = provider.type === 'ai_gemini' ? 'gemini' : 'mistral';
-    const promptHash = generatePromptHash('estimate', request);
+    const promptHash = generatePromptHash('estimate', request as unknown as Record<string, unknown>);
     const ttl = getCacheTTL('estimate');
 
     // Проверяем кэш если включён
@@ -225,7 +225,7 @@ router.post('/suggest-materials', async (req: AuthRequest, res, next) => {
       return;
     }
 
-    const provider = getAvailableAIProvider();
+    const provider = await getAvailableAIProvider();
 
     if (!provider) {
       // Fallback на mock-данные
@@ -275,7 +275,7 @@ router.post('/suggest-materials', async (req: AuthRequest, res, next) => {
     };
 
     const providerType = provider.type === 'ai_gemini' ? 'gemini' : 'mistral';
-    const promptHash = generatePromptHash('suggest-materials', request);
+    const promptHash = generatePromptHash('suggest-materials', request as unknown as Record<string, unknown>);
     const ttl = getCacheTTL('suggest-materials');
 
     // Проверяем кэш если включён
@@ -344,7 +344,7 @@ router.post('/generate-template', async (req: AuthRequest, res, next) => {
       return;
     }
 
-    const provider = getAvailableAIProvider();
+    const provider = await getAvailableAIProvider();
 
     if (!provider) {
       // Fallback на mock-данные
@@ -393,7 +393,7 @@ router.post('/generate-template', async (req: AuthRequest, res, next) => {
         roomType,
         area: area || 0,
         city,
-        works: template.works,
+        works: template?.works || [],
         recommendedMaterials: [],
         estimatedDays: Math.ceil((area || 20) / 5),
         confidence: 'low',
@@ -416,7 +416,7 @@ router.post('/generate-template', async (req: AuthRequest, res, next) => {
     };
 
     const providerType = provider.type === 'ai_gemini' ? 'gemini' : 'mistral';
-    const promptHash = generatePromptHash('generate-template', request);
+    const promptHash = generatePromptHash('generate-template', request as unknown as Record<string, unknown>);
     const ttl = getCacheTTL('generate-template');
 
     // Проверяем кэш если включён

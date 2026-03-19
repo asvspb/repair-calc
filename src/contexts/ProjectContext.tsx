@@ -6,6 +6,16 @@ import { ApiStorageProvider } from '../api/storage';
 import { saveTotals } from '../api/totals';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts } from '../utils/costs';
+import {
+  logUserAction,
+  logSuccess,
+  logError,
+  logStart,
+  logEnd,
+  logStateChange,
+  logWarning,
+  logDebug,
+} from '../utils/logger';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -82,7 +92,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<ProjectData[] | null>(null);
-  const apiProviderRef = useRef<ApiStorageProvider | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const totalsSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -90,11 +99,10 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
   // Получение API провайдера
+  // Всегда возвращаем актуальный singleton instance,
+  // так как при логине/логауте instance сбрасывается через resetInstance()
   const getApiProvider = useCallback((): ApiStorageProvider => {
-    if (!apiProviderRef.current) {
-      apiProviderRef.current = ApiStorageProvider.getInstance();
-    }
-    return apiProviderRef.current;
+    return ApiStorageProvider.getInstance();
   }, []);
 
   // Загрузка данных при монтировании или изменении авторизации
@@ -103,14 +111,21 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     if (authLoading) return;
     
     const loadData = async () => {
+      const startTime = logStart('ProjectContext', 'Загрузка данных', { isAuthenticated });
+      
       try {
         // Если пользователь авторизован, загружаем с сервера
         if (isAuthenticated) {
+          logUserAction('Загрузка проектов с сервера (авторизован)');
           const apiProvider = getApiProvider();
           const serverProjects = await apiProvider.loadProjectsAsync();
           
           if (serverProjects.length > 0) {
             const migratedProjects = serverProjects.map(migrateProject);
+            logSuccess('ProjectContext', 'Проекты загружены с сервера', { 
+              count: migratedProjects.length,
+              projectIds: migratedProjects.map(p => p.id) 
+            }, startTime);
             setProjects(migratedProjects);
             
             // Загружаем активный проект из localStorage
@@ -119,14 +134,20 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
             
             if (savedActiveProject && activeExists) {
               setActiveProjectIdState(savedActiveProject);
+              logStateChange('ProjectContext', 'Активный проект', savedActiveProject);
             } else {
               setActiveProjectIdState(migratedProjects[0].id);
+              logStateChange('ProjectContext', 'Активный проект', migratedProjects[0].id);
             }
           } else {
+            logWarning('ProjectContext', 'На сервере нет проектов, проверяем localStorage');
             // На сервере нет проектов, пробуем загрузить из localStorage и синхронизировать
             const localProjects = StorageManager.loadProjects();
             if (localProjects && localProjects.length > 0) {
               const migratedProjects = localProjects.map(migrateProject);
+              logSuccess('ProjectContext', 'Проекты загружены из localStorage', { 
+                count: migratedProjects.length 
+              }, startTime);
               setProjects(migratedProjects);
               setActiveProjectIdState(migratedProjects[0].id);
               
@@ -134,25 +155,34 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
             }
           }
         } else {
+          logUserAction('Загрузка проектов из localStorage (не авторизован)');
           // Не авторизован — используем localStorage
           const savedProjects = StorageManager.loadProjects();
           const savedActiveProject = StorageManager.loadActiveProject();
 
           if (savedProjects && savedProjects.length > 0) {
             const migratedProjects = savedProjects.map(migrateProject);
+            logSuccess('ProjectContext', 'Проекты загружены из localStorage', { 
+              count: migratedProjects.length,
+              projectIds: migratedProjects.map(p => p.id) 
+            }, startTime);
             setProjects(migratedProjects);
 
             const activeExists = savedProjects.some(p => p.id === savedActiveProject);
             if (savedActiveProject && activeExists) {
               setActiveProjectIdState(savedActiveProject);
+              logStateChange('ProjectContext', 'Активный проект', savedActiveProject);
             } else {
               setActiveProjectIdState(savedProjects[0].id);
+              logStateChange('ProjectContext', 'Активный проект', savedProjects[0].id);
             }
           }
         }
         
         setIsLoading(false);
+        logEnd('ProjectContext', 'Загрузка данных завершена', startTime);
       } catch (err) {
+        logError('ProjectContext', 'Ошибка загрузки данных', err);
         console.error('Error loading data:', err);
         setError({ type: 'unknown', message: 'Ошибка загрузки данных' });
         setIsLoading(false);
@@ -162,9 +192,18 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     loadData();
   }, [isAuthenticated, authLoading, getApiProvider]);
 
+  // Проверка, является ли ID серверным UUID
+  const isServerId = useCallback((id: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  }, []);
+
   // Расчёт и сохранение итогов проекта
   const saveCalculatedTotals = useCallback(async (project: ProjectData) => {
     if (!isAuthenticated) return; // Сохраняем только для авторизованных пользователей
+    
+    // Проверяем, что проект существует на сервере (ID должен быть UUID)
+    if (!isServerId(project.id)) return;
 
     let totalArea = 0;
     let totalWorks = 0;
@@ -219,15 +258,32 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
     saveTimeoutRef.current = setTimeout(() => {
       if (pendingSaveRef.current) {
+        const startTime = logStart('Save', 'Автосохранение проектов');
+        const projectsToSave = pendingSaveRef.current;
+        
         try {
-          StorageManager.saveProjects(pendingSaveRef.current);
+          // Сохранение в localStorage
+          StorageManager.saveProjects(projectsToSave);
           setLastSaved(new Date());
+          logSuccess('Save', 'Сохранено в localStorage', { 
+            count: projectsToSave.length,
+            projectIds: projectsToSave.map(p => p.id) 
+          }, startTime);
+          
           // Если авторизован, сохраняем на сервер
           if (isAuthenticated) {
             const apiProvider = getApiProvider();
-            apiProvider.saveProjectsAsync(pendingSaveRef.current).then(() => {
+            const serverStartTime = logStart('Save', 'Сохранение на сервер');
+            
+            apiProvider.saveProjectsAsync(projectsToSave).then(() => {
               setLastSavedToServer(new Date());
+              logSuccess('Save', 'Сохранено на сервер', { 
+                count: projectsToSave.length 
+              }, serverStartTime);
             }).catch((err) => {
+              logError('Save', 'Ошибка сохранения на сервер', err, { 
+                projects: projectsToSave.map(p => ({ id: p.id, name: p.name })) 
+              });
               console.error('Server save error:', err);
             });
           }
@@ -236,6 +292,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         } catch (err) {
           const storageError = err as StorageError;
           setSaveError(storageError.message || 'Ошибка сохранения');
+          logError('Save', 'Ошибка сохранения в localStorage', err);
           console.error('Save error:', err);
         }
       }
@@ -270,8 +327,10 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
   // Установка активного проекта с сохранением
   const setActiveProjectId = useCallback((id: string) => {
+    logUserAction('Переключение активного проекта', { projectId: id });
     setActiveProjectIdState(id);
     StorageManager.saveActiveProject(id);
+    logStateChange('ProjectContext', 'Активный проект', id);
   }, []);
 
   // Обновление комнаты в активном проекте (прямое значение)
@@ -327,45 +386,59 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   const deleteRoom = useCallback((roomId: string) => {
     if (!activeProject) return;
     
+    logUserAction('Удаление комнаты', { roomId, projectId: activeProject.id });
     const newRooms = activeProject.rooms.filter(r => r.id !== roomId);
     const updatedProject = {
       ...activeProject,
       rooms: newRooms
     };
     updateActiveProject(updatedProject);
+    logSuccess('ProjectContext', 'Комната удалена', { roomId, remainingRooms: newRooms.length });
   }, [activeProject, updateActiveProject]);
 
   // Добавление комнаты
   const addRoom = useCallback((newRoom: RoomData) => {
     if (!activeProject) return;
     
+    logUserAction('Добавление комнаты', { roomId: newRoom.id, name: newRoom.name, projectId: activeProject.id });
     const updatedProject = {
       ...activeProject,
       rooms: [...activeProject.rooms, newRoom]
     };
     updateActiveProject(updatedProject);
+    logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id, totalRooms: updatedProject.rooms.length });
   }, [activeProject, updateActiveProject]);
 
   // Переупорядочивание комнат
   const reorderRooms = useCallback((newRooms: RoomData[]) => {
     if (!activeProject) return;
     
+    logUserAction('Переупорядочивание комнат', { projectId: activeProject.id, roomsOrder: newRooms.map(r => r.id) });
     const updatedProject = {
       ...activeProject,
       rooms: newRooms
     };
     updateActiveProject(updatedProject);
+    logSuccess('ProjectContext', 'Комнаты переупорядочены', { roomsCount: newRooms.length });
   }, [activeProject, updateActiveProject]);
 
   // Создание нового проекта
   const createProject = useCallback(async (data: { name: string; city?: string }): Promise<ProjectData> => {
+    logUserAction('Создание проекта', data);
     setIsSyncing(true);
+    const startTime = logStart('ProjectContext', 'Создание проекта', data);
     
     try {
       if (isAuthenticated) {
         // Создаем на сервере
+        logDebug('ProjectContext', 'Создание проекта на сервере', data);
         const apiProvider = getApiProvider();
         const newProject = await apiProvider.createProjectAsync(data);
+        
+        logSuccess('ProjectContext', 'Проект создан на сервере', { 
+          id: newProject.id, 
+          name: newProject.name 
+        }, startTime);
         
         setProjects(prev => {
           const updated = [...prev, newProject];
@@ -375,10 +448,12 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         
         setActiveProjectIdState(newProject.id);
         StorageManager.saveActiveProject(newProject.id);
+        logStateChange('ProjectContext', 'Активный проект', newProject.id);
         
         return newProject;
       } else {
         // Создаем локально
+        logDebug('ProjectContext', 'Создание локального проекта', data);
         const newProject: ProjectData = {
           id: `local-${Date.now()}`,
           name: data.name,
@@ -386,6 +461,11 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
           rooms: [],
         };
         
+        logSuccess('ProjectContext', 'Локальный проект создан', { 
+          id: newProject.id, 
+          name: newProject.name 
+        }, startTime);
+        
         setProjects(prev => {
           const updated = [...prev, newProject];
           scheduleSave(updated);
@@ -394,9 +474,13 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         
         setActiveProjectIdState(newProject.id);
         StorageManager.saveActiveProject(newProject.id);
+        logStateChange('ProjectContext', 'Активный проект', newProject.id);
         
         return newProject;
       }
+    } catch (error) {
+      logError('ProjectContext', 'Ошибка создания проекта', error, data);
+      throw error;
     } finally {
       setIsSyncing(false);
     }
@@ -404,13 +488,17 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
   // Удаление проекта
   const deleteProject = useCallback(async (projectId: string): Promise<void> => {
+    logUserAction('Удаление проекта', { projectId });
     setIsSyncing(true);
+    const startTime = logStart('ProjectContext', 'Удаление проекта', { projectId });
 
     try {
       if (isAuthenticated) {
         // Удаляем на сервере
+        logDebug('ProjectContext', 'Удаление проекта на сервере', { projectId });
         const apiProvider = getApiProvider();
         await apiProvider.deleteProjectAsync(projectId);
+        logSuccess('ProjectContext', 'Проект удалён с сервера', { projectId }, startTime);
       }
 
       // Удаляем локально
@@ -426,11 +514,18 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         if (remaining.length > 0) {
           setActiveProjectIdState(remaining[0].id);
           StorageManager.saveActiveProject(remaining[0].id);
+          logStateChange('ProjectContext', 'Активный проект (после удаления)', remaining[0].id);
         } else {
           setActiveProjectIdState('');
           localStorage.removeItem('repair-calc-active-project');
+          logStateChange('ProjectContext', 'Активный проект (после удаления)', null);
         }
       }
+      
+      logEnd('ProjectContext', 'Удаление проекта завершено', startTime);
+    } catch (error) {
+      logError('ProjectContext', 'Ошибка удаления проекта', error, { projectId });
+      throw error;
     } finally {
       setIsSyncing(false);
     }

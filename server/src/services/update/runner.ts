@@ -9,12 +9,10 @@ import {
   UpdateJobLockRepository,
   UpdateLogRepository,
   type UpdateJob,
-  type UpdateJobItem,
   type JobProgress,
 } from '../../db/repositories/updateJob.repo.js';
 import {
   PriceCatalogRepository,
-  PriceSourceRepository,
   type PriceCatalog,
   type CreatePriceCatalogInput,
   type PriceCategory,
@@ -103,14 +101,15 @@ export class UpdateRunner {
     this.parsers.set(parser.type, parser);
     this.circuitBreakers.set(
       parser.type,
-      new CircuitBreaker({
-        failureThreshold: 5,
+      new CircuitBreaker(parser.type, {
+        threshold: 5,
         resetTimeoutMs: 600000, // 10 минут
+        halfOpenMaxRequests: 3,
       })
     );
     this.rateLimiters.set(
       parser.type,
-      new RateLimiter(parser.getRateLimit().requestsPerMinute)
+      new RateLimiter({ requestsPerMinute: parser.getRateLimit().requestsPerMinute })
     );
   }
 
@@ -337,7 +336,7 @@ export class UpdateRunner {
 
         // Проверка Circuit Breaker
         const cb = this.circuitBreakers.get(parser.type);
-        if (cb && !cb.canExecute()) {
+        if (cb && !cb.isAvailable()) {
           await this.recordFailed(jobId, item, `Circuit breaker open for ${parser.type}`);
           return;
         }
@@ -365,7 +364,7 @@ export class UpdateRunner {
 
         // Проверка на аномалии
         if (this.config.anomalyDetectionEnabled && item.existingPrice) {
-          const anomaly = PriceHistoryRepository.detectAnomaly(
+          const anomaly = await PriceHistoryRepository.detectAnomaly(
             item.existingPrice.price_avg,
             result.prices.avg,
             this.config.anomalyThresholdPercent
@@ -381,14 +380,14 @@ export class UpdateRunner {
         }
 
         // Сохраняем цену
-        await this.savePrice(item, result, jobId, parser.type);
+        await this.savePrice(item, result, jobId, parser.type as SourceType);
 
         // Кэшируем результат
         if (this.config.cacheEnabled) {
           this.saveToCache(cacheKey, result);
         }
 
-        await this.recordSuccess(jobId, item, result, Date.now() - startTime, false, parser.type);
+        await this.recordSuccess(jobId, item, result, Date.now() - startTime, false, parser.type as SourceType);
       } finally {
         // Освобождаем блокировку
         await UpdateJobLockRepository.release(jobId, itemKey);
@@ -417,7 +416,7 @@ export class UpdateRunner {
           return false;
         }
         const cb = this.circuitBreakers.get(p.type);
-        return !cb || cb.canExecute();
+        return !cb || cb.isAvailable();
       })
       .sort((a, b) => {
         const limitA = a.getRateLimit();
@@ -485,8 +484,8 @@ export class UpdateRunner {
     jobId: string,
     item: ItemToUpdate,
     result: PriceResult,
-    durationMs: number,
-    fromCache: boolean,
+    _durationMs: number,
+    _fromCache: boolean,
     sourceType?: SourceType
   ): Promise<void> {
     const jobItems = await UpdateJobItemRepository.findByJobId(jobId);

@@ -32,9 +32,13 @@ export const createProjectSchema = z.object({
 
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  city: z.string().max(100).optional(),
+  city: z.string().max(100).optional().nullable(),
   use_ai_pricing: z.boolean().optional(),
-  last_ai_price_update: z.string().datetime().optional().nullable(),
+  // Accept ISO datetime string or any valid date string, can be null
+  last_ai_price_update: z.union([
+    z.string().datetime(),
+    z.string().min(1), // Any non-empty string (will be parsed as date)
+  ]).optional().nullable(),
   version: z.number().int().positive().optional(),
 });
 
@@ -45,6 +49,17 @@ export const createRoomSchema = z.object({
   length: z.number().min(0).optional(),
   width: z.number().min(0).optional(),
   height: z.number().min(0).optional(),
+  // JSON fields for full room data
+  segments: z.string().optional().nullable(),
+  obstacles: z.string().optional().nullable(),
+  wall_sections: z.string().optional().nullable(),
+  sub_sections: z.string().optional().nullable(),
+  windows: z.string().optional().nullable(),
+  doors: z.string().optional().nullable(),
+  works: z.string().optional().nullable(),
+  simple_mode_data: z.string().optional().nullable(),
+  extended_mode_data: z.string().optional().nullable(),
+  advanced_mode_data: z.string().optional().nullable(),
 });
 
 export const updateRoomSchema = z.object({
@@ -54,6 +69,17 @@ export const updateRoomSchema = z.object({
   width: z.number().min(0).optional(),
   height: z.number().min(0).optional(),
   version: z.number().int().positive().optional(),
+  // JSON fields for full room data
+  segments: z.string().optional().nullable(),
+  obstacles: z.string().optional().nullable(),
+  wall_sections: z.string().optional().nullable(),
+  sub_sections: z.string().optional().nullable(),
+  windows: z.string().optional().nullable(),
+  doors: z.string().optional().nullable(),
+  works: z.string().optional().nullable(),
+  simple_mode_data: z.string().optional().nullable(),
+  extended_mode_data: z.string().optional().nullable(),
+  advanced_mode_data: z.string().optional().nullable(),
 });
 
 export const reorderRoomsSchema = z.object({

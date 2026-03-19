@@ -4,8 +4,8 @@
  */
 
 import { subDays, isBefore } from 'date-fns';
-import type { PriceCatalog } from '../../db/repositories/priceCatalog.repo.js';
-import type { PriceCategory } from '../../db/repositories/priceCatalog.repo.js';
+import type { PriceCategory } from '../../../db/repositories/priceCatalog.repo.js';
+import type { PriceCatalog } from '../../../db/repositories/priceCatalog.repo.js';
 
 // ═══════════════════════════════════════════════════════
 // ТИПЫ

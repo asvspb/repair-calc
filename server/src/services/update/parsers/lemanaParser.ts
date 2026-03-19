@@ -11,8 +11,8 @@
  */
 
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
-import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData } from './types';
-import { ParserError } from './types';
+import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData } from './types.js';
+import { ParserError } from './types.js';
 
 /**
  * Конфигурация парсера Lemana
@@ -121,7 +121,7 @@ export class LemanaParser implements PriceParser {
 
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
-      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      const avgPrice = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
 
       return {
         prices: {
@@ -301,7 +301,7 @@ export class LemanaParser implements PriceParser {
       console.log(`    Найдено товаров: ${pageData.items.length}`);
 
       // Добавляем товары в каталог
-      catalogData.products.push(...pageData.items.map(item => ({
+      catalogData.products.push(...pageData.items.map((item: { id: string; category_id: string; name: string; price: number; rawPrice: string; url: string }) => ({
         id: item.id,
         categoryId: item.category_id,
         name: item.name,
@@ -313,13 +313,13 @@ export class LemanaParser implements PriceParser {
       if (pageData.nextUrl) {
         currentPageUrl = pageData.nextUrl;
         pageNum++;
-        await this.delay(this.config.delayBetweenPages);
+        await this.delay(this.config.delayBetweenPages ?? 1000);
       } else {
         hasNextPage = false;
       }
     }
 
-    await this.delay(this.config.delayBetweenRequests);
+    await this.delay(this.config.delayBetweenRequests ?? 1000);
   }
 
   /**

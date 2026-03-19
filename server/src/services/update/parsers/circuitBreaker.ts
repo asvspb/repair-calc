@@ -4,8 +4,8 @@
  * @package server/src/services/update/parsers
  */
 
-import type { CircuitBreakerState } from './types';
-import { CircuitBreakerOpenError } from './types';
+import type { CircuitBreakerState } from './types.js';
+import { CircuitBreakerOpenError } from './types.js';
 
 /**
  * Конфигурация Circuit Breaker

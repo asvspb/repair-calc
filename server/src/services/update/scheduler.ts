@@ -5,8 +5,7 @@
 
 import { CronJob } from 'cron';
 import { getUpdateRunner } from './runner.js';
-import { UpdateJobRepository, UpdateLogRepository } from '../../db/repositories/updateJob.repo.js';
-import { PriceSourceRepository } from '../../db/repositories/priceCatalog.repo.js';
+import { UpdateJobRepository } from '../../db/repositories/updateJob.repo.js';
 
 // ═══════════════════════════════════════════════════════
 // КОНФИГУРАЦИЯ
@@ -88,7 +87,7 @@ class SchedulerImpl {
     }
 
     // Отменяем все retry таймеры
-    for (const [jobId, timer] of this.retryTimers) {
+    for (const [_jobId, timer] of this.retryTimers) {
       clearTimeout(timer);
     }
     this.retryTimers.clear();
@@ -227,9 +226,9 @@ class SchedulerImpl {
    */
   getNextRun(): Date | null {
     if (!this.cronJob) return null;
-    
+
     const nextDates = this.cronJob.nextDates(1);
-    return nextDates.length > 0 ? nextDates[0].toJSDate() : null;
+    return nextDates.length > 0 && nextDates[0] ? nextDates[0].toJSDate() : null;
   }
 
   /**

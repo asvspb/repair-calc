@@ -411,10 +411,10 @@ export class UpdateJobItemRepository {
       item.item_category,
       item.city,
     ]);
-    
+
     await execute(
       `INSERT INTO update_job_items (id, job_id, item_name, item_category, city) VALUES ?`,
-      [values]
+      [values] as any
     );
   }
 
@@ -679,9 +679,10 @@ export class UpdateJobLockRepository {
 
   static async clearAllExpired(): Promise<number> {
     const result = await execute(
-      'DELETE FROM update_job_locks WHERE expires_at IS NOT NULL AND expires_at <= NOW()'
+      'DELETE FROM update_job_locks WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
+      []
     );
-    
+
     return result.affectedRows;
   }
 }

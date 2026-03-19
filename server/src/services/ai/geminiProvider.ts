@@ -45,12 +45,13 @@ abstract class BaseAIProvider {
     lastRequestAt: null,
   };
 
-  constructor() {
-    this.circuitBreaker = new CircuitBreaker({
-      failureThreshold: 5,
+  constructor(parserType: string) {
+    this.circuitBreaker = new CircuitBreaker(parserType, {
+      threshold: 5,
       resetTimeoutMs: 600000, // 10 минут
+      halfOpenMaxRequests: 3,
     });
-    this.rateLimiter = new RateLimiter(60); // 60 запросов в минуту
+    this.rateLimiter = new RateLimiter({ requestsPerMinute: 60 }); // 60 запросов в минуту
   }
 
   protected updateStats(success: boolean, latencyMs: number): void {
@@ -81,7 +82,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
   private config: AIProviderConfig;
 
   constructor(config: AIProviderConfig = {}) {
-    super();
+    super('ai_gemini');
     this.apiKey = config.apiKey || getApiKey();
     this.config = {
       model: 'gemini-2.0-flash',
@@ -96,7 +97,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
     if (!this.apiKey) {
       return false;
     }
-    return this.circuitBreaker.canExecute();
+    return this.circuitBreaker.isAvailable();
   }
 
   /**
@@ -139,7 +140,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
       );
     }
 
-    if (!this.circuitBreaker.canExecute()) {
+    if (!this.circuitBreaker.isAvailable()) {
       throw new AIProviderError(
         'Circuit breaker is open for Gemini',
         this.name,
@@ -255,7 +256,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
 
     // Удаляем markdown-обёртку если есть
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
+    if (jsonMatch && jsonMatch[1]) {
       jsonStr = jsonMatch[1];
     }
 

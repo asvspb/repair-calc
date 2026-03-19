@@ -22,14 +22,15 @@ interface SaveTotalsRequest {
 router.post('/:projectId', async (req: AuthRequest, res, next) => {
   try {
     const { projectId } = req.params;
-    
+
     if (!projectId) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         message: 'Project ID is required',
       });
+      return;
     }
-    
+
     const totals: SaveTotalsRequest = req.body;
 
     // Validate required fields
@@ -40,10 +41,11 @@ router.post('/:projectId', async (req: AuthRequest, res, next) => {
       totals.total_tools === undefined ||
       totals.grand_total === undefined
     ) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         message: 'Missing required fields',
       });
+      return;
     }
 
     // Check project ownership
@@ -74,12 +76,13 @@ router.post('/:projectId', async (req: AuthRequest, res, next) => {
 router.get('/:projectId', async (req: AuthRequest, res, next) => {
   try {
     const { projectId } = req.params;
-    
+
     if (!projectId) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         message: 'Project ID is required',
       });
+      return;
     }
 
     // Check project ownership

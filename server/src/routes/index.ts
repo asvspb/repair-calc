@@ -16,7 +16,7 @@ router.use('/auth', authRoutes);
 
 // Protected routes (auth required)
 router.use('/projects', projectsRoutes);
-router.use('/rooms', roomsRoutes);
+router.use('/', roomsRoutes);  // rooms routes include both /projects/:id/rooms and /rooms/:id
 router.use('/works', worksRoutes);
 router.use('/', geometryRoutes);  // geometry routes use various paths
 router.use('/sync', syncRoutes);

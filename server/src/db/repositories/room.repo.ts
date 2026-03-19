@@ -1,5 +1,5 @@
 import { query, execute, getConnection } from '../pool.js';
-import type { Room, Opening, RoomSubSection, RoomSegment, Obstacle, WallSection, Work, Material, Tool } from '../../types/index.js';
+import type { Room, Opening, RoomSubSection, RoomSegment, Obstacle, WallSection } from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
 
@@ -15,9 +15,16 @@ export class RoomRepository {
     const sortOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
     
     await execute(
-      `INSERT INTO rooms (id, project_id, name, geometry_mode, length, width, height, sort_order) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, projectId, data.name || 'Новая комната', data.geometry_mode || 'simple', data.length || 0, data.width || 0, data.height || 0, sortOrder]
+      `INSERT INTO rooms (id, project_id, name, geometry_mode, length, width, height, sort_order,
+        segments, obstacles, wall_sections, sub_sections, windows, doors, works,
+        simple_mode_data, extended_mode_data, advanced_mode_data) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, projectId, data.name || 'Новая комната', data.geometry_mode || 'simple', 
+       data.length || 0, data.width || 0, data.height || 0, sortOrder,
+       data.segments || null, data.obstacles || null, data.wall_sections || null,
+       data.sub_sections || null, data.windows || null, data.doors || null,
+       data.works || null, data.simple_mode_data || null, 
+       data.extended_mode_data || null, data.advanced_mode_data || null]
     );
     
     const room = await this.findById(id);
@@ -70,6 +77,47 @@ export class RoomRepository {
       fields.push('version = ?');
       values.push(data.version);
     }
+    // JSON fields
+    if (data.segments !== undefined) {
+      fields.push('segments = ?');
+      values.push(data.segments);
+    }
+    if (data.obstacles !== undefined) {
+      fields.push('obstacles = ?');
+      values.push(data.obstacles);
+    }
+    if (data.wall_sections !== undefined) {
+      fields.push('wall_sections = ?');
+      values.push(data.wall_sections);
+    }
+    if (data.sub_sections !== undefined) {
+      fields.push('sub_sections = ?');
+      values.push(data.sub_sections);
+    }
+    if (data.windows !== undefined) {
+      fields.push('windows = ?');
+      values.push(data.windows);
+    }
+    if (data.doors !== undefined) {
+      fields.push('doors = ?');
+      values.push(data.doors);
+    }
+    if (data.works !== undefined) {
+      fields.push('works = ?');
+      values.push(data.works);
+    }
+    if (data.simple_mode_data !== undefined) {
+      fields.push('simple_mode_data = ?');
+      values.push(data.simple_mode_data);
+    }
+    if (data.extended_mode_data !== undefined) {
+      fields.push('extended_mode_data = ?');
+      values.push(data.extended_mode_data);
+    }
+    if (data.advanced_mode_data !== undefined) {
+      fields.push('advanced_mode_data = ?');
+      values.push(data.advanced_mode_data);
+    }
 
     if (fields.length === 0) {
       return this.findById(id);
@@ -118,77 +166,10 @@ export class RoomRepository {
     }
   }
 
-  // Full room with all relations
-  static async findFullRoom(id: string): Promise<(Room & { 
-    windows: Opening[]; 
-    doors: Opening[];
-    subSections: RoomSubSection[];
-    segments: RoomSegment[];
-    obstacles: Obstacle[];
-    wallSections: WallSection[];
-    works: (Work & { materials: Material[]; tools: Tool[] })[];
-  }) | null> {
-    const room = await this.findById(id);
-    if (!room) return null;
-
-    // Get openings
-    const windows = await query<(Opening & RowDataPacket)[]>(
-      "SELECT * FROM openings WHERE room_id = ? AND type = 'window' AND deleted_at IS NULL ORDER BY sort_order",
-      [id]
-    );
-    const doors = await query<(Opening & RowDataPacket)[]>(
-      "SELECT * FROM openings WHERE room_id = ? AND type = 'door' AND deleted_at IS NULL ORDER BY sort_order",
-      [id]
-    );
-
-    // Get geometry for extended/advanced modes
-    const subSections = await query<(RoomSubSection & RowDataPacket)[]>(
-      'SELECT * FROM room_subsections WHERE room_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-      [id]
-    );
-    const segments = await query<(RoomSegment & RowDataPacket)[]>(
-      'SELECT * FROM room_segments WHERE room_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-      [id]
-    );
-    const obstacles = await query<(Obstacle & RowDataPacket)[]>(
-      'SELECT * FROM room_obstacles WHERE room_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-      [id]
-    );
-    const wallSections = await query<(WallSection & RowDataPacket)[]>(
-      'SELECT * FROM wall_sections WHERE room_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-      [id]
-    );
-
-    // Get works with materials and tools
-    const works = await query<(Work & RowDataPacket)[]>(
-      'SELECT * FROM works WHERE room_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-      [id]
-    );
-
-    const worksWithRelations = await Promise.all(
-      works.map(async (work) => {
-        const materials = await query<(Material & RowDataPacket)[]>(
-          'SELECT * FROM materials WHERE work_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-          [work.id]
-        );
-        const tools = await query<(Tool & RowDataPacket)[]>(
-          'SELECT * FROM tools WHERE work_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-          [work.id]
-        );
-        return { ...work, materials, tools };
-      })
-    );
-
-    return { 
-      ...room, 
-      windows, 
-      doors, 
-      subSections, 
-      segments, 
-      obstacles, 
-      wallSections, 
-      works: worksWithRelations 
-    };
+  // Find room with all data from JSON fields
+  // This is the primary method for getting room data
+  static async findFullRoom(id: string): Promise<Room | null> {
+    return this.findById(id);
   }
 }
 
