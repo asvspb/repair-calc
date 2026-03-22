@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User } from 'lucide-react';
+import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2 } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
@@ -13,6 +13,7 @@ import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
 import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
+import { IdMapper } from './utils/idMapper';
 
 import { initialProjects } from './data/initialData';
 
@@ -96,6 +97,7 @@ function AppContent() {
     updateRoom,
     updateRoomById,
     deleteRoom,
+    deleteProject,
     addRoom,
     reorderRooms,
     isLoading,
@@ -116,6 +118,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
@@ -231,19 +234,39 @@ function AppContent() {
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
-          <select
-            value={activeProjectId}
-            onChange={(e) => {
-              setActiveProjectId(e.target.value);
-              setActiveTab('summary');
-              setIsMobileMenuOpen(false);
-            }}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+          <div className="relative">
+            <select
+              value={activeProjectId}
+              onChange={(e) => {
+                setActiveProjectId(e.target.value);
+                setActiveTab('summary');
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+            >
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {/* Индикатор статуса синхронизации */}
+            {activeProject && (
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+                {IdMapper.isServerId(activeProjectId) ? (
+                  <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
+                ) : (
+                  <CloudOff className="w-4 h-4 text-amber-500" title="Локальный проект (не синхронизирован)" />
+                )}
+              </div>
+            )}
+          </div>
+          {/* Кнопка удаления проекта */}
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm cursor-pointer"
           >
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+            <Trash2 className="w-4 h-4" />
+            <span>Удалить объект</span>
+          </button>
           {/* Город для поиска цен */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Город</label>
@@ -260,6 +283,40 @@ function AppContent() {
             />
           </div>
         </div>
+
+        {/* Модальное окно подтверждения удаления */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить объект?</h3>
+              <p className="text-gray-600 mb-4">
+                Объект «{activeProject?.name}» будет удалён безвозвратно.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={async () => {
+                    setShowDeleteConfirm(false);
+                    // Удаляем через API если проект на сервере
+                    if (IdMapper.isServerId(activeProjectId)) {
+                      await deleteProject(activeProjectId);
+                    }
+                    // Удаляем локально
+                    handleDeleteActiveProject();
+                  }}
+                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 flex flex-col min-h-0">
           {/* Статическая часть - Обзор */}

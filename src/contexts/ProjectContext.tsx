@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useRef, useState, useEffect, type ReactNode } from 'react';
 import type { ProjectData, RoomData } from '../types';
-import { StorageManager, StorageError } from '../utils/storage';
+import { StorageManager } from '../utils/storage';
+import type { StorageError } from '../utils/storage';
 import { useAuth } from './AuthContext';
 import { ApiStorageProvider } from '../api/storage';
 import { saveTotals } from '../api/totals';
@@ -16,6 +17,8 @@ import {
   logWarning,
   logDebug,
 } from '../utils/logger';
+import { runMigrations, needsMigration } from '../utils/migration';
+import { idMapper, IdMapper } from '../utils/idMapper';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -118,7 +121,23 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         if (isAuthenticated) {
           logUserAction('Загрузка проектов с сервера (авторизован)');
           const apiProvider = getApiProvider();
-          const serverProjects = await apiProvider.loadProjectsAsync();
+          let serverProjects = await apiProvider.loadProjectsAsync();
+          
+          // Запускаем миграцию для обнаружения и удаления дубликатов
+          if (needsMigration()) {
+            logDebug('ProjectContext', 'Требуется миграция данных');
+            try {
+              const migrationResult = await runMigrations(serverProjects);
+              if (migrationResult.duplicatesRemoved > 0) {
+                logSuccess('ProjectContext', 'Миграция выполнена', migrationResult);
+                // Перезагружаем проекты после миграции
+                serverProjects = await apiProvider.loadProjectsAsync();
+              }
+            } catch (migrationError) {
+              logError('ProjectContext', 'Ошибка миграции', migrationError);
+              // Продолжаем загрузку даже при ошибке миграции
+            }
+          }
           
           if (serverProjects.length > 0) {
             const migratedProjects = serverProjects.map(migrateProject);
@@ -130,11 +149,26 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
             
             // Загружаем активный проект из localStorage
             const savedActiveProject = StorageManager.loadActiveProject();
-            const activeExists = migratedProjects.some(p => p.id === savedActiveProject);
             
-            if (savedActiveProject && activeExists) {
-              setActiveProjectIdState(savedActiveProject);
-              logStateChange('ProjectContext', 'Активный проект', savedActiveProject);
+            // Проверяем, не был ли активный проект мигрирован
+            let actualActiveId = savedActiveProject;
+            if (savedActiveProject && IdMapper.isLocalId(savedActiveProject)) {
+              const mappedId = idMapper.getServerId(savedActiveProject);
+              if (mappedId) {
+                actualActiveId = mappedId;
+                StorageManager.saveActiveProject(mappedId);
+                logDebug('ProjectContext', 'Активный проект мигрирован', { 
+                  oldId: savedActiveProject, 
+                  newId: mappedId 
+                });
+              }
+            }
+            
+            const activeExists = migratedProjects.some(p => p.id === actualActiveId);
+            
+            if (actualActiveId && activeExists) {
+              setActiveProjectIdState(actualActiveId);
+              logStateChange('ProjectContext', 'Активный проект', actualActiveId);
             } else {
               setActiveProjectIdState(migratedProjects[0].id);
               logStateChange('ProjectContext', 'Активный проект', migratedProjects[0].id);
@@ -150,8 +184,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
               }, startTime);
               setProjects(migratedProjects);
               setActiveProjectIdState(migratedProjects[0].id);
-              
-              // TODO: Синхронизировать локальные проекты с сервером
             }
           }
         } else {
@@ -260,31 +292,38 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       if (pendingSaveRef.current) {
         const startTime = logStart('Save', 'Автосохранение проектов');
         const projectsToSave = pendingSaveRef.current;
-        
+
         try {
           // Сохранение в localStorage
           StorageManager.saveProjects(projectsToSave);
           setLastSaved(new Date());
-          logSuccess('Save', 'Сохранено в localStorage', { 
+          logSuccess('Save', 'Сохранено в localStorage', {
             count: projectsToSave.length,
-            projectIds: projectsToSave.map(p => p.id) 
+            projectIds: projectsToSave.map(p => p.id)
           }, startTime);
-          
+
           // Если авторизован, сохраняем на сервер
           if (isAuthenticated) {
             const apiProvider = getApiProvider();
             const serverStartTime = logStart('Save', 'Сохранение на сервер');
-            
+
             apiProvider.saveProjectsAsync(projectsToSave).then(() => {
               setLastSavedToServer(new Date());
-              logSuccess('Save', 'Сохранено на сервер', { 
-                count: projectsToSave.length 
+              logSuccess('Save', 'Сохранено на сервер', {
+                count: projectsToSave.length
               }, serverStartTime);
             }).catch((err) => {
-              logError('Save', 'Ошибка сохранения на сервер', err, { 
-                projects: projectsToSave.map(p => ({ id: p.id, name: p.name })) 
-              });
-              console.error('Server save error:', err);
+              // Игнорируем ошибки для удаленных проектов
+              if (err instanceof StorageError && err.type === 'unknown') {
+                logDebug('Save', 'Ошибка сохранения (возможно проект удален)', { 
+                  error: err.message 
+                });
+              } else {
+                logError('Save', 'Ошибка сохранения на сервер', err, {
+                  projects: projectsToSave.map(p => ({ id: p.id, name: p.name }))
+                });
+                console.error('Server save error:', err);
+              }
             });
           }
           setSaveError(null);
@@ -296,7 +335,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
           console.error('Save error:', err);
         }
       }
-    }, 1000);
+    }, 2000); // Увеличено с 1000 до 2000ms для предотвращения rate limiting
   }, [isAuthenticated, getApiProvider]);
 
   // Обновление проектов
@@ -493,10 +532,22 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     const startTime = logStart('ProjectContext', 'Удаление проекта', { projectId });
 
     try {
+      // Отменяем pending save для этого проекта
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      pendingSaveRef.current = null;
+
       if (isAuthenticated) {
+        // Получаем свежий instance API провайдера
+        const apiProvider = ApiStorageProvider.getInstance();
+        
+        // Помечаем проект как удаленный в API провайдере перед удалением
+        apiProvider.markProjectDeleted(projectId);
+        
         // Удаляем на сервере
         logDebug('ProjectContext', 'Удаление проекта на сервере', { projectId });
-        const apiProvider = getApiProvider();
         await apiProvider.deleteProjectAsync(projectId);
         logSuccess('ProjectContext', 'Проект удалён с сервера', { projectId }, startTime);
       }
@@ -521,7 +572,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
           logStateChange('ProjectContext', 'Активный проект (после удаления)', null);
         }
       }
-      
+
       logEnd('ProjectContext', 'Удаление проекта завершено', startTime);
     } catch (error) {
       logError('ProjectContext', 'Ошибка удаления проекта', error, { projectId });
@@ -529,7 +580,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     } finally {
       setIsSyncing(false);
     }
-  }, [isAuthenticated, getApiProvider, scheduleSave, activeProjectId, projects]);
+  }, [isAuthenticated, scheduleSave, activeProjectId, projects]);
 
   // Сохранение перед закрытием страницы
   useEffect(() => {

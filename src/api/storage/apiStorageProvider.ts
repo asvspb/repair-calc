@@ -16,13 +16,26 @@ import {
   logSuccess,
   logError,
   logDebug,
+  logWarning,
 } from '../../utils/logger';
+import { idMapper } from '../../utils/idMapper';
 
 const STORAGE_KEYS = {
   PROJECTS: 'repair-calc-projects',
   ACTIVE_PROJECT: 'repair-calc-active-project',
   VERSION: 'repair-calc-version',
 } as const;
+
+/**
+ * Очередь запросов с rate limiting для предотвращения 429 ошибок
+ */
+interface QueuedRequest {
+  execute: () => Promise<void>;
+  resolve: () => void;
+  reject: (error: Error) => void;
+  retryCount: number;
+  projectId?: string;
+}
 
 /**
  * Провайдер хранилища через API
@@ -33,8 +46,126 @@ export class ApiStorageProvider implements IStorageProvider {
   private projectsCache: Map<string, ProjectData> = new Map();
   private cacheExpiry: number = 0;
   private readonly CACHE_TTL = 30000; // 30 секунд
+  
+  // Rate limiting и queue
+  private requestQueue: QueuedRequest[] = [];
+  private isProcessingQueue = false;
+  private lastRequestTime = 0;
+  private readonly MIN_REQUEST_INTERVAL = 500; // 500ms между запросами
+  private readonly MAX_RETRIES = 3;
+  private deletedProjects = new Set<string>(); // Трекаем удаленные проекты
 
   private constructor() {}
+
+  /**
+   * Добавление запроса в очередь с rate limiting
+   */
+  private async enqueueRequest<T>(
+    execute: () => Promise<T>,
+    projectId?: string
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const request: QueuedRequest = {
+        execute: async () => {
+          try {
+            const result = await execute();
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        },
+        resolve: () => resolve(undefined as T),
+        reject,
+        retryCount: 0,
+        projectId,
+      };
+      
+      this.requestQueue.push(request);
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Обработка очереди запросов
+   */
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue[0];
+      
+      // Проверяем, не удален ли проект
+      if (request.projectId && this.deletedProjects.has(request.projectId)) {
+        logDebug('ApiStorage', 'Пропуск запроса для удаленного проекта', { projectId: request.projectId });
+        this.requestQueue.shift();
+        continue;
+      }
+
+      // Rate limiting: ждем минимальный интервал между запросами
+      const now = Date.now();
+      const timeSinceLastRequest = now - this.lastRequestTime;
+      if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+        await new Promise(resolve => 
+          setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+        );
+      }
+
+      try {
+        this.lastRequestTime = Date.now();
+        await request.execute();
+        this.requestQueue.shift();
+      } catch (error) {
+        // Обработка 429 ошибок с exponential backoff
+        if (this.isRateLimitError(error) && request.retryCount < this.MAX_RETRIES) {
+          request.retryCount++;
+          const backoffDelay = Math.min(1000 * Math.pow(2, request.retryCount), 10000);
+          logWarning('ApiStorage', `Rate limit, повторная попытка ${request.retryCount}/${this.MAX_RETRIES} через ${backoffDelay}ms`);
+          
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          // Не удаляем запрос из очереди, попробуем снова
+        } else {
+          // Максимум попыток исчерпан или другая ошибка
+          this.requestQueue.shift();
+          request.reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+    }
+
+    this.isProcessingQueue = false;
+  }
+
+  /**
+   * Проверка на 429 ошибку
+   */
+  private isRateLimitError(error: unknown): boolean {
+    if (error instanceof projectsApi.ProjectsApiError && error.statusCode === 429) {
+      return true;
+    }
+    if (error instanceof roomsApi.RoomsApiError && error.statusCode === 429) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Отметка проекта как удаленный
+   */
+  markProjectDeleted(projectId: string): void {
+    this.deletedProjects.add(projectId);
+    // Очищаем очередь от запросов для этого проекта
+    this.requestQueue = this.requestQueue.filter(req => req.projectId !== projectId);
+  }
+
+  /**
+   * Сброс кэша удаленных проектов
+   */
+  clearDeletedProjects(): void {
+    this.deletedProjects.clear();
+  }
 
   /**
    * Получение singleton instance
@@ -133,10 +264,14 @@ export class ApiStorageProvider implements IStorageProvider {
   /**
    * Асинхронное сохранение проектов
    * Синхронизирует проекты и комнаты с сервером
+   * Использует маппинг ID для предотвращения дублирования
    */
   async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
     const startTime = logStart('ApiStorage', 'Сохранение проектов', { count: projects.length });
-    
+
+    // Отслеживаем мигрировавшие проекты для обновления списка
+    const migratedProjects: { localId: string; serverId: string }[] = [];
+
     try {
       // Обновляем кэш немедленно для UI
       this.projectsCache.clear();
@@ -149,82 +284,153 @@ export class ApiStorageProvider implements IStorageProvider {
 
       // Получаем список существующих ID проектов на сервере
       logDebug('ApiStorage', 'Загрузка существующих проектов с сервера');
-      const existingProjects = await this.loadProjectsAsync();
+      const existingProjects = await this.enqueueRequest(() => this.loadProjectsAsync());
       const existingProjectIds = new Set(existingProjects.map(p => p.id));
 
-      // Синхронизируем каждый проект
+      // Синхронизируем каждый проект через очередь
+      const syncPromises: Promise<void>[] = [];
+      
       for (const project of projects) {
         const isServerProject = this.isServerId(project.id);
         const existsOnServer = existingProjectIds.has(project.id);
-        
-        if (!isServerProject || !existsOnServer) {
-          // Создаём новый проект на сервере (для локальных ID или если не существует)
-          logDebug('ApiStorage', 'Создание нового проекта на сервере', { 
-            projectId: project.id, 
-            name: project.name,
-            isLocalId: !isServerProject 
+
+        // Проверяем есть ли маппинг для локального ID
+        const mappedServerId = !isServerProject ? idMapper.getServerId(project.id) : null;
+
+        if (mappedServerId && existingProjectIds.has(mappedServerId)) {
+          // Уже есть маппинг и проект существует на сервере — обновляем по серверному ID
+          logDebug('ApiStorage', 'Обновление мигрированного проекта', {
+            localId: project.id,
+            serverId: mappedServerId
           });
-          try {
-            const newProject = await this.createProjectAsync({
-              name: project.name,
-              city: project.city,
-            });
-            
-            logSuccess('ApiStorage', 'Проект создан на сервере', { 
-              oldId: project.id, 
-              newId: newProject.id 
-            });
-            
-            // Синхронизируем комнаты нового проекта
-            for (const room of project.rooms) {
-              try {
-                await roomsApi.createRoom(newProject.id, room);
-                logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
-              } catch (roomError) {
-                logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
-              }
+          const syncPromise = this.enqueueRequest(async () => {
+            try {
+              const projectWithServerId = { ...project, id: mappedServerId };
+              await this.updateProjectAsync(projectWithServerId);
+              await this.syncRooms(projectWithServerId, existingProjects);
+            } catch (error) {
+              logError('ApiStorage', 'Ошибка обновления мигрированного проекта', error, {
+                localId: project.id,
+                serverId: mappedServerId
+              });
             }
-          } catch (error) {
-            logError('ApiStorage', 'Ошибка создания проекта', error, { projectId: project.id });
-          }
-        } else {
-          // Обновляем существующий проект
+          }, project.id);
+          syncPromises.push(syncPromise);
+        } else if (isServerProject && existsOnServer) {
+          // Серверный проект — обновляем
           logDebug('ApiStorage', 'Обновление проекта на сервере', { projectId: project.id });
-          try {
-            await this.updateProjectAsync(project);
-            
-            // Получаем список существующих комнат
-            const serverProject = existingProjects.find(p => p.id === project.id);
-            const existingRoomIds = new Set(serverProject?.rooms.map(r => r.id) || []);
-            
-            // Синхронизируем комнаты
-            for (const room of project.rooms) {
-              const roomExistsOnServer = this.isServerId(room.id) && existingRoomIds.has(room.id);
-              
-              try {
-                if (roomExistsOnServer) {
-                  // Обновляем существующую комнату
-                  await roomsApi.updateRoom(room.id, room);
-                  logDebug('ApiStorage', 'Комната обновлена', { roomId: room.id });
-                } else {
-                  // Создаём новую комнату
-                  await roomsApi.createRoom(project.id, room);
-                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: project.id });
-                }
-              } catch (roomError) {
-                logError('ApiStorage', 'Ошибка синхронизации комнаты', roomError, { roomId: room.id });
-              }
+          const syncPromise = this.enqueueRequest(async () => {
+            try {
+              await this.updateProjectAsync(project);
+              await this.syncRooms(project, existingProjects);
+            } catch (error) {
+              logError('ApiStorage', 'Ошибка синхронизации проекта', error, { projectId: project.id });
             }
-          } catch (error) {
-            logError('ApiStorage', 'Ошибка синхронизации проекта', error, { projectId: project.id });
-          }
+          }, project.id);
+          syncPromises.push(syncPromise);
+        } else if (!isServerProject) {
+          // Локальный проект без маппинга — мигрируем на сервер
+          logDebug('ApiStorage', 'Миграция локального проекта на сервер', {
+            projectId: project.id,
+            name: project.name
+          });
+          const syncPromise = this.enqueueRequest(async () => {
+            try {
+              const newProject = await this.createProjectAsync({
+                name: project.name,
+                city: project.city,
+              });
+
+              // Сохраняем маппинг
+              idMapper.addMapping(project.id, newProject.id);
+              migratedProjects.push({ localId: project.id, serverId: newProject.id });
+
+              logSuccess('ApiStorage', 'Проект мигрирован', {
+                localId: project.id,
+                serverId: newProject.id
+              });
+
+              // Синхронизируем комнаты нового проекта
+              for (const room of project.rooms) {
+                try {
+                  await this.enqueueRequest(() => roomsApi.createRoom(newProject.id, room), project.id);
+                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
+                } catch (roomError) {
+                  logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
+                }
+              }
+            } catch (error) {
+              logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
+            }
+          }, project.id);
+          syncPromises.push(syncPromise);
+        } else {
+          // Серверный ID, но проекта нет на сервере — был удалён
+          logWarning('ApiStorage', 'Проект не найден на сервере (был удалён?)', { projectId: project.id });
         }
       }
-      
+
+      // Ждем завершения всех синхронизаций
+      await Promise.all(syncPromises);
+
+      // Если были миграции — обновляем кэш с серверными ID
+      if (migratedProjects.length > 0) {
+        logDebug('ApiStorage', 'Обновление кэша после миграции', { count: migratedProjects.length });
+
+        // Загружаем актуальный список с сервера
+        const updatedProjects = await this.enqueueRequest(() => this.loadProjectsAsync());
+
+        // Удаляем локальные дубликаты из localStorage
+        const localIdsToRemove = new Set(migratedProjects.map(m => m.localId));
+        const cleanedProjects = updatedProjects.filter(p => !localIdsToRemove.has(p.id) || this.isServerId(p.id));
+
+        // Обновляем localStorage только серверными версиями
+        localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(cleanedProjects));
+
+        // Обновляем кэш
+        this.projectsCache.clear();
+        cleanedProjects.forEach(p => this.projectsCache.set(p.id, p));
+        this.cacheExpiry = Date.now() + this.CACHE_TTL;
+
+        logSuccess('ApiStorage', 'Миграция завершена, дубликаты удалены', {
+          migratedCount: migratedProjects.length
+        });
+      }
+
       logSuccess('ApiStorage', 'Проекты успешно синхронизированы', { count: projects.length }, startTime);
     } catch (error) {
       logError('ApiStorage', 'Ошибка сохранения проектов', error);
       throw StorageProviderError.fromError(error);
+    }
+  }
+
+  /**
+   * Синхронизация комнат проекта с debounce для предотвращения rate limiting
+   */
+  private async syncRooms(project: ProjectData, existingProjects: ProjectData[]): Promise<void> {
+    const serverProject = existingProjects.find(p => p.id === project.id);
+    const existingRoomIds = new Set(serverProject?.rooms.map(r => r.id) || []);
+
+    // Синхронизируем комнаты последовательно с rate limiting
+    for (const room of project.rooms) {
+      const roomExistsOnServer = this.isServerId(room.id) && existingRoomIds.has(room.id);
+
+      try {
+        if (roomExistsOnServer) {
+          await this.enqueueRequest(() => roomsApi.updateRoom(room.id, room), project.id);
+          logDebug('ApiStorage', 'Комната обновлена', { roomId: room.id });
+        } else {
+          await this.enqueueRequest(() => roomsApi.createRoom(project.id, room), project.id);
+          logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: project.id });
+        }
+      } catch (roomError) {
+        // Игнорируем 429 ошибки для комнат - они будут обработаны retry logic
+        if (this.isRateLimitError(roomError)) {
+          logWarning('ApiStorage', 'Room sync rate limited, will retry', { roomId: room.id });
+        } else {
+          logError('ApiStorage', 'Ошибка синхронизации комнаты', roomError, { roomId: room.id });
+        }
+      }
     }
   }
 
@@ -350,13 +556,18 @@ export class ApiStorageProvider implements IStorageProvider {
    */
   async deleteProjectAsync(projectId: string): Promise<void> {
     const startTime = logApiRequest('DELETE', `/api/projects/${projectId}`);
-    
+
     try {
-      await projectsApi.deleteProject(projectId);
+      // Сначала помечаем проект как удаленный чтобы отменить pending запросы
+      this.markProjectDeleted(projectId);
       
+      await this.enqueueRequest(async () => {
+        await projectsApi.deleteProject(projectId);
+      }, projectId);
+
       // Удаляем из кэша
       this.projectsCache.delete(projectId);
-      
+
       logApiSuccess('DELETE', `/api/projects/${projectId}`, startTime, { projectId });
     } catch (error) {
       logApiError('DELETE', `/api/projects/${projectId}`, startTime, error);
