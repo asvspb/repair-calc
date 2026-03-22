@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2 } from 'lucide-react';
+import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2, Edit2, Check, XIcon } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
@@ -119,6 +119,8 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
+  const [editedProjectName, setEditedProjectName] = useState('');
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
@@ -234,31 +236,90 @@ function AppContent() {
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
-          <div className="relative">
-            <select
-              value={activeProjectId}
-              onChange={(e) => {
-                setActiveProjectId(e.target.value);
-                setActiveTab('summary');
-                setIsMobileMenuOpen(false);
+          
+          {/* Режим редактирования названия */}
+          {isEditingProjectName && activeProject ? (
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={editedProjectName}
+                onChange={(e) => setEditedProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (editedProjectName.trim()) {
+                      updateActiveProject({ ...activeProject, name: editedProjectName.trim() });
+                    }
+                    setIsEditingProjectName(false);
+                  } else if (e.key === 'Escape') {
+                    setIsEditingProjectName(false);
+                  }
+                }}
+                autoFocus
+                className="flex-1 px-2 py-1.5 text-sm border border-indigo-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <button
+                onClick={() => {
+                  if (editedProjectName.trim()) {
+                    updateActiveProject({ ...activeProject, name: editedProjectName.trim() });
+                  }
+                  setIsEditingProjectName(false);
+                }}
+                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
+                title="Сохранить"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsEditingProjectName(false)}
+                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title="Отмена"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            /* Режим просмотра с селектором */
+            <div className="relative mb-2">
+              <select
+                value={activeProjectId}
+                onChange={(e) => {
+                  setActiveProjectId(e.target.value);
+                  setActiveTab('summary');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+              >
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {/* Индикатор статуса синхронизации */}
+              {activeProject && (
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {IdMapper.isServerId(activeProjectId) ? (
+                    <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
+                  ) : (
+                    <CloudOff className="w-4 h-4 text-amber-500" title="Локальный проект (не синхронизирован)" />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Кнопка редактирования названия */}
+          {!isEditingProjectName && activeProject && (
+            <button
+              onClick={() => {
+                setEditedProjectName(activeProject.name);
+                setIsEditingProjectName(true);
               }}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm cursor-pointer"
             >
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            {/* Индикатор статуса синхронизации */}
-            {activeProject && (
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
-                {IdMapper.isServerId(activeProjectId) ? (
-                  <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
-                ) : (
-                  <CloudOff className="w-4 h-4 text-amber-500" title="Локальный проект (не синхронизирован)" />
-                )}
-              </div>
-            )}
-          </div>
+              <Edit2 className="w-4 h-4" />
+              <span>Переименовать объект</span>
+            </button>
+          )}
+          
           {/* Кнопка удаления проекта */}
           <button
             onClick={() => setShowDeleteConfirm(true)}
