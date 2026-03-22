@@ -45,6 +45,19 @@
 
 ## 🚧 В работе / Следующие задачи
 
+### Фаза 6: Управление объектами и устранение дублирования — В РАБОТЕ 🔄
+
+- [ ] **6.1** Создать `src/utils/idMapper.ts` — хранилище маппингов ID (local ↔ server)
+- [ ] **6.2** Создать `src/utils/storageCleanup.ts` — утилита очистки дубликатов
+- [ ] **6.3** Создать `src/utils/objectAnalyzer.ts` — анализ проектов на дубликаты
+- [ ] **6.4** Модифицировать `ApiStorageProvider.saveProjectsAsync()` для предотвращения дублирования
+- [ ] **6.5** Создать компонент `src/components/ObjectManager.tsx` — UI управления объектами
+- [ ] **6.6** Добавить тесты для новых модулей (покрытие ≥ 80%)
+- [ ] **6.7** Интеграция `cleanupLocalDuplicates()` в `loadProjectsAsync()`
+- [ ] **6.8** E2E тесты сценариев миграции и синхронизации
+
+**Спецификация:** [OBJECT_MANAGEMENT_SPEC.md](./OBJECT_MANAGEMENT_SPEC.md)
+
 ### Фаза 2.1: Исправление критических багов (BUGFIX_EXTENDED_MODE_RESET) — ✅ ВЫПОЛНЕНО
 
 - [x] **Баг сброса данных в расширенном режиме (BUGFIX_EXTENDED_MODE_RESET.md)** — ✅ Исправлено 2026-03-07
