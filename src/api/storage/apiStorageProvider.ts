@@ -570,13 +570,14 @@ export class ApiStorageProvider implements IStorageProvider {
     const startTime = logApiRequest('DELETE', `/api/projects/${projectId}`);
 
     try {
-      // Сначала выполняем удаление, потом помечаем для отмены pending запросов
+      // Помечаем проект как удаленный ДО запроса, чтобы отменить pending запросы
+      // Но сам DELETE запрос делаем БЕЗ projectId в очереди, чтобы он не был пропущен
+      this.markProjectDeleted(projectId);
+
+      // Выполняем удаление без привязки к projectId (иначе запрос будет пропущен)
       await this.enqueueRequest(async () => {
         await projectsApi.deleteProject(projectId);
-      }, projectId);
-
-      // Помечаем проект как удаленный чтобы отменить pending запросы
-      this.markProjectDeleted(projectId);
+      }, undefined);
 
       // Удаляем из кэша
       this.projectsCache.delete(projectId);
