@@ -94,6 +94,8 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
   };
 }
 
+const DEFAULT_TIMEOUT = 30000; // 30 секунд
+
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -109,24 +111,45 @@ async function fetchJson<T>(
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+  // Создаём AbortController для timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new RoomsApiError(
-      data.message || 'Произошла ошибка',
-      response.status
-    );
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new RoomsApiError(
+        data.message || 'Произошла ошибка',
+        response.status
+      );
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof RoomsApiError) {
+      throw error;
+    }
+    // Обработка timeout/abort
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new RoomsApiError(
+        'Превышено время ожидания запроса',
+        408
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
 
 /**

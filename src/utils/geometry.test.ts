@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSectionMetrics } from '../utils/geometry';
-import type { RoomSubSection } from '../types';
+import { calculateSectionMetrics, calculateRoomMetrics } from '../utils/geometry';
+import type { RoomSubSection, RoomData } from '../types';
 
 describe('calculateSectionMetrics', () => {
   describe('Rectangle', () => {
@@ -169,6 +169,151 @@ describe('calculateSectionMetrics', () => {
 
       expect(result.area).toBe(0);
       expect(result.perimeter).toBe(0);
+    });
+  });
+});
+
+describe('calculateRoomMetrics', () => {
+  describe('NaN bug prevention', () => {
+    it('should not return NaN when room dimensions are undefined', () => {
+      const room = {
+        id: '1',
+        name: 'Test Room',
+        geometryMode: 'simple',
+        length: undefined as any,
+        width: undefined as any,
+        height: undefined as any,
+        segments: [],
+        obstacles: [],
+        wallSections: [],
+        subSections: [],
+        windows: [],
+        doors: [],
+        works: [],
+      };
+
+      const result = calculateRoomMetrics(room);
+
+      expect(Number.isNaN(result.floorArea)).toBe(false);
+      expect(Number.isNaN(result.perimeter)).toBe(false);
+      expect(Number.isNaN(result.grossWallArea)).toBe(false);
+      expect(Number.isNaN(result.netWallArea)).toBe(false);
+      expect(Number.isNaN(result.skirtingLength)).toBe(false);
+      expect(Number.isNaN(result.volume)).toBe(false);
+
+      expect(result.floorArea).toBe(0);
+      expect(result.perimeter).toBe(0);
+      expect(result.grossWallArea).toBe(0);
+      expect(result.netWallArea).toBe(0);
+      expect(result.skirtingLength).toBe(0);
+      expect(result.volume).toBe(0);
+    });
+
+    it('should not return NaN when height is 0 or undefined', () => {
+      const room1: RoomData = {
+        id: '1',
+        name: 'Test Room',
+        geometryMode: 'simple',
+        length: 4,
+        width: 3,
+        height: 0,
+        segments: [],
+        obstacles: [],
+        wallSections: [],
+        subSections: [],
+        windows: [],
+        doors: [],
+        works: [],
+      };
+
+      const result1 = calculateRoomMetrics(room1);
+
+      expect(Number.isNaN(result1.grossWallArea)).toBe(false);
+      expect(Number.isNaN(result1.volume)).toBe(false);
+      expect(result1.grossWallArea).toBe(0);
+      expect(result1.volume).toBe(0);
+    });
+
+    it('should correctly calculate metrics for a simple room', () => {
+      const room: RoomData = {
+        id: '1',
+        name: 'Test Room',
+        geometryMode: 'simple',
+        length: 4,
+        width: 3,
+        height: 2.5,
+        segments: [],
+        obstacles: [],
+        wallSections: [],
+        subSections: [],
+        windows: [{ id: 'w1', width: 1.5, height: 1.4 }],
+        doors: [{ id: 'd1', width: 0.9, height: 2.1 }],
+        works: [],
+      };
+
+      const result = calculateRoomMetrics(room);
+
+      expect(result.floorArea).toBe(12);
+      expect(result.perimeter).toBe(14);
+      expect(result.grossWallArea).toBe(35); // 14 * 2.5
+      expect(result.windowsArea).toBeCloseTo(2.1, 2); // 1.5 * 1.4
+      expect(result.doorsArea).toBeCloseTo(1.89, 2); // 0.9 * 2.1
+      expect(result.netWallArea).toBeCloseTo(35 - 2.1 - 1.89, 2);
+      expect(result.skirtingLength).toBeCloseTo(14 - 0.9, 2);
+      expect(result.volume).toBe(30); // 12 * 2.5
+    });
+  });
+
+  describe('Extended mode', () => {
+    it('should not return NaN for empty subSections in extended mode', () => {
+      const room: RoomData = {
+        id: '1',
+        name: 'Test Room',
+        geometryMode: 'extended',
+        length: 0,
+        width: 0,
+        height: 0,
+        segments: [],
+        obstacles: [],
+        wallSections: [],
+        subSections: [],
+        windows: [],
+        doors: [],
+        works: [],
+      };
+
+      const result = calculateRoomMetrics(room);
+
+      expect(Number.isNaN(result.floorArea)).toBe(false);
+      expect(Number.isNaN(result.perimeter)).toBe(false);
+      expect(Number.isNaN(result.grossWallArea)).toBe(false);
+      expect(Number.isNaN(result.volume)).toBe(false);
+    });
+  });
+
+  describe('Advanced mode', () => {
+    it('should not return NaN for empty segments in advanced mode', () => {
+      const room: RoomData = {
+        id: '1',
+        name: 'Test Room',
+        geometryMode: 'advanced',
+        length: 4,
+        width: 3,
+        height: 2.5,
+        segments: [],
+        obstacles: [],
+        wallSections: [],
+        subSections: [],
+        windows: [],
+        doors: [],
+        works: [],
+      };
+
+      const result = calculateRoomMetrics(room);
+
+      expect(Number.isNaN(result.floorArea)).toBe(false);
+      expect(Number.isNaN(result.perimeter)).toBe(false);
+      expect(Number.isNaN(result.grossWallArea)).toBe(false);
     });
   });
 });

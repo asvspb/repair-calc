@@ -8,8 +8,10 @@ export function calculateSectionMetrics(section: RoomSubSection): { area: number
 
   switch (shape) {
     case 'rectangle': {
-      const area = section.length * section.width;
-      const perimeter = (section.length + section.width) * 2;
+      const length = section.length || 0;
+      const width = section.width || 0;
+      const area = length * width;
+      const perimeter = (length + width) * 2;
       return { area, perimeter };
     }
 
@@ -71,10 +73,14 @@ export function calculateSectionMetrics(section: RoomSubSection): { area: number
  * Calculate room metrics (floor area, perimeter, wall area, etc.)
  */
 export function calculateRoomMetrics(room: RoomData): RoomMetrics {
-  // Базовые расчеты
-  let floorArea = room.length * room.width;
-  let perimeter = (room.length + room.width) * 2;
-  let grossWallArea = perimeter * room.height;
+  // Базовые расчеты - гарантируем, что все значения определены
+  const length = room.length || 0;
+  const width = room.width || 0;
+  const height = room.height || 0;
+
+  let floorArea = length * width;
+  let perimeter = (length + width) * 2;
+  let grossWallArea = perimeter * height;
 
   // Гарантируем, что массивы существуют
   const segments = room.segments || [];
@@ -100,7 +106,7 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
     });
 
     // Пересчет площади стен
-    grossWallArea = perimeter * room.height;
+    grossWallArea = perimeter * height;
 
     // Проемы из всех секций
     let totalWindowsArea = 0;
@@ -122,7 +128,7 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
     const skirtingLength = Math.max(0, perimeter - totalDoorsWidth);
 
     // Объем помещения
-    const volume = floorArea * room.height;
+    const volume = floorArea * height;
 
     return {
       floorArea,
@@ -144,8 +150,10 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
 
     // Сегменты: добавляем/вычитаем площадь и периметр
     segments.forEach(segment => {
-      const segmentArea = segment.length * segment.width;
-      const segmentPerimeter = (segment.length + segment.width) * 2;
+      const segLength = segment.length || 0;
+      const segWidth = segment.width || 0;
+      const segmentArea = segLength * segWidth;
+      const segmentPerimeter = (segLength + segWidth) * 2;
       const sign = segment.operation === 'add' ? 1 : -1;
 
       floorArea += segmentArea * sign;
@@ -155,19 +163,21 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
     // Препятствия: добавляем/вычитаем площадь и периметр
     obstacles.forEach(obstacle => {
       const sign = obstacle.operation === 'add' ? 1 : -1;
-      floorArea += obstacle.area * sign;
-      perimeter += obstacle.perimeter * sign;
+      floorArea += (obstacle.area || 0) * sign;
+      perimeter += (obstacle.perimeter || 0) * sign;
     });
 
     // Пересчет площади стен с новым периметром
-    grossWallArea = perimeter * room.height;
+    grossWallArea = perimeter * height;
 
     // Перепады высоты: корректируем площадь стен
     wallSections.forEach(section => {
+      const sectionLength = section.length || 0;
+      const sectionHeight = section.height || height;
       // Вычитаем стандартную площадь этого участка
-      grossWallArea -= section.length * room.height;
+      grossWallArea -= sectionLength * height;
       // Добавляем площадь с фактической высотой
-      grossWallArea += section.length * section.height;
+      grossWallArea += sectionLength * sectionHeight;
     });
   }
 
@@ -185,7 +195,7 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
   const skirtingLength = Math.max(0, perimeter - doorsWidth);
 
   // Объем помещения
-  const volume = floorArea * room.height;
+  const volume = floorArea * height;
 
   return {
     floorArea,

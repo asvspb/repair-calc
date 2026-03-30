@@ -29,6 +29,8 @@ export class TotalsApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT = 30000; // 30 секунд
+
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -44,36 +46,57 @@ async function fetchJson<T>(
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+  // Создаём AbortController для timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
 
-  // Try to parse JSON, but handle cases where server returns HTML error page
-  let data;
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    data = await response.json();
-  } else {
-    // Server returned non-JSON (e.g., HTML error page)
-    const text = await response.text();
-    throw new TotalsApiError(
-      `Server error: ${response.status} ${response.statusText}`,
-      response.status
-    );
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+      signal: controller.signal,
+    });
+
+    // Try to parse JSON, but handle cases where server returns HTML error page
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // Server returned non-JSON (e.g., HTML error page)
+      const text = await response.text();
+      throw new TotalsApiError(
+        `Server error: ${response.status} ${response.statusText}`,
+        response.status
+      );
+    }
+
+    if (!response.ok) {
+      throw new TotalsApiError(
+        data.message || 'Произошла ошибка',
+        response.status
+      );
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof TotalsApiError) {
+      throw error;
+    }
+    // Обработка timeout/abort
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new TotalsApiError(
+        'Превышено время ожидания запроса',
+        408
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  if (!response.ok) {
-    throw new TotalsApiError(
-      data.message || 'Произошла ошибка',
-      response.status
-    );
-  }
-
-  return data;
 }
 
 /**

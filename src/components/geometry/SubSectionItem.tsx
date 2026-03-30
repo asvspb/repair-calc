@@ -54,10 +54,11 @@ export const SubSectionItem = React.memo(function SubSectionItem({
 }: SubSectionItemProps) {
   // Calculate metrics using the utility function
   const subMetrics = calculateSectionMetrics(subSection);
+  const safeRoomHeight = roomHeight ?? 0;
   const openingsArea = (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0) +
                       (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
-  const wallArea = subMetrics.perimeter * roomHeight - openingsArea;
-  const volume = subMetrics.area * roomHeight;
+  const wallArea = subMetrics.perimeter * safeRoomHeight - openingsArea;
+  const volume = subMetrics.area * safeRoomHeight;
   const doorsWidth = (subSection.doors || []).reduce((sum, d) => sum + d.width, 0);
   const skirtingLength = Math.max(0, subMetrics.perimeter - doorsWidth);
 

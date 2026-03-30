@@ -51,9 +51,14 @@ export function RoomEditor({
   onOpenTemplatePicker,
   onCloseTemplatePicker,
 }: RoomEditorProps) {
-  // Normalize room data to ensure all arrays exist
+  // Normalize room data to ensure all fields exist
   const normalizedRoom = {
     ...room,
+    // Гарантируем, что числовые поля определены
+    length: room.length ?? 0,
+    width: room.width ?? 0,
+    height: room.height ?? 0,
+    // Гарантируем, что массивы существуют
     segments: room.segments || [],
     obstacles: room.obstacles || [],
     wallSections: room.wallSections || [],

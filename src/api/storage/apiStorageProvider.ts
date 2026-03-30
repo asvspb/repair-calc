@@ -105,49 +105,51 @@ export class ApiStorageProvider implements IStorageProvider {
 
     this.isProcessingQueue = true;
 
-    while (this.requestQueue.length > 0) {
-      const request = this.requestQueue[0];
+    try {
+      while (this.requestQueue.length > 0) {
+        const request = this.requestQueue[0];
 
-      // Проверяем, не удален ли проект
-      if (request.projectId && this.deletedProjects.has(request.projectId)) {
-        logDebug('ApiStorage', 'Пропуск запроса для удаленного проекта', { projectId: request.projectId });
-        this.requestQueue.shift();
-        continue;
-      }
-
-      // Rate limiting: ждем минимальный интервал между запросами
-      const now = Date.now();
-      const timeSinceLastRequest = now - this.lastRequestTime;
-      if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
-        await new Promise(resolve =>
-          setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest)
-        );
-      }
-
-      try {
-        this.lastRequestTime = Date.now();
-        await request.execute();
-        this.requestQueue.shift();
-      } catch (error) {
-        // Обработка 429 ошибок с exponential backoff
-        if (this.isRateLimitError(error) && request.retryCount < this.MAX_RETRIES) {
-          request.retryCount++;
-          const backoffDelay = Math.min(1000 * Math.pow(2, request.retryCount), 10000);
-          logWarning('ApiStorage', `Rate limit, повторная попытка ${request.retryCount}/${this.MAX_RETRIES} через ${backoffDelay}ms`);
-
-          // Не сдвигаем запрос, ждем и пробуем снова
-          await new Promise(resolve => setTimeout(resolve, backoffDelay));
-          // Продолжаем цикл с тем же запросом
-        } else {
-          // Максимум попыток исчерпан или другая ошибка
+        // Проверяем, не удален ли проект
+        if (request.projectId && this.deletedProjects.has(request.projectId)) {
+          logDebug('ApiStorage', 'Пропуск запроса для удаленного проекта', { projectId: request.projectId });
           this.requestQueue.shift();
-          // Reject уже был вызван внутри execute(), но логируем ошибку
-          logError('ApiStorage', 'Ошибка запроса после всех попыток', error, { projectId: request.projectId });
+          continue;
+        }
+
+        // Rate limiting: ждем минимальный интервал между запросами
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequestTime;
+        if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+          await new Promise(resolve =>
+            setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+          );
+        }
+
+        try {
+          this.lastRequestTime = Date.now();
+          await request.execute();
+          this.requestQueue.shift();
+        } catch (error) {
+          // Обработка 429 ошибок с exponential backoff
+          if (this.isRateLimitError(error) && request.retryCount < this.MAX_RETRIES) {
+            request.retryCount++;
+            const backoffDelay = Math.min(1000 * Math.pow(2, request.retryCount), 10000);
+            logWarning('ApiStorage', `Rate limit, повторная попытка ${request.retryCount}/${this.MAX_RETRIES} через ${backoffDelay}ms`);
+
+            // Не сдвигаем запрос, ждем и пробуем снова
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            // Продолжаем цикл с тем же запросом
+          } else {
+            // Максимум попыток исчерпан или другая ошибка
+            this.requestQueue.shift();
+            // Reject уже был вызван внутри execute(), но логируем ошибку
+            logError('ApiStorage', 'Ошибка запроса после всех попыток', error, { projectId: request.projectId });
+          }
         }
       }
+    } finally {
+      this.isProcessingQueue = false;
     }
-
-    this.isProcessingQueue = false;
   }
 
   /**
@@ -449,10 +451,9 @@ export class ApiStorageProvider implements IStorageProvider {
   /**
    * Асинхронная загрузка проектов с сервера
    * Использует /api/sync/pull для получения проектов с комнатами
+   * Примечание: логирование происходит внутри syncPull в projects.ts
    */
   async loadProjectsAsync(): Promise<ProjectData[]> {
-    const startTime = logApiRequest('GET', '/api/sync/pull');
-    
     try {
       // Используем sync/pull для получения проектов с комнатами
       const response = await projectsApi.syncPull();
@@ -466,14 +467,8 @@ export class ApiStorageProvider implements IStorageProvider {
       // Сохраняем также в localStorage как кэш
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
 
-      logApiSuccess('GET', '/api/sync/pull', startTime, { 
-        projectsCount: projects.length,
-        projectIds: projects.map(p => p.id) 
-      });
-
       return projects;
     } catch (error) {
-      logApiError('GET', '/api/sync/pull', startTime, error);
       
       // При ошибке пробуем загрузить из localStorage
       logDebug('ApiStorage', 'Попытка загрузки из localStorage при ошибке');
@@ -491,10 +486,9 @@ export class ApiStorageProvider implements IStorageProvider {
 
   /**
    * Создание нового проекта на сервере
+   * Примечание: логирование происходит внутри createProject в projects.ts
    */
   async createProjectAsync(data: { name: string; city?: string }): Promise<ProjectData> {
-    const startTime = logApiRequest('POST', '/api/projects', data);
-    
     try {
       const response = await projectsApi.createProject(data);
       const project = projectsApi.apiToClientProject(response.data);
@@ -502,17 +496,15 @@ export class ApiStorageProvider implements IStorageProvider {
       // Добавляем в кэш
       this.projectsCache.set(project.id, project);
       
-      logApiSuccess('POST', '/api/projects', startTime, { projectId: project.id, name: project.name });
-      
       return project;
     } catch (error) {
-      logApiError('POST', '/api/projects', startTime, error);
       throw StorageProviderError.fromError(error);
     }
   }
 
   /**
    * Обновление проекта на сервере
+   * Примечание: логирование происходит внутри updateProject в projects.ts
    */
   async updateProjectAsync(project: ProjectData): Promise<ProjectData> {
     const updateData: {
@@ -520,7 +512,6 @@ export class ApiStorageProvider implements IStorageProvider {
       city?: string;
       use_ai_pricing?: boolean;
       last_ai_price_update?: string | null;
-      version?: number;
     } = {
       name: project.name,
     };
@@ -540,12 +531,8 @@ export class ApiStorageProvider implements IStorageProvider {
       updateData.last_ai_price_update = project.lastAiPriceUpdate || null;
     }
 
-    // Include version if present
-    if (project.version !== undefined) {
-      updateData.version = project.version;
-    }
-
-    const startTime = logApiRequest('PUT', `/api/projects/${project.id}`, updateData);
+    // НЕ отправляем version — сервер сам инкрементирует при обновлении
+    // Это предотвращает 403 Version conflict ошибки
 
     try {
       const response = await projectsApi.updateProject(project.id, updateData);
@@ -554,26 +541,24 @@ export class ApiStorageProvider implements IStorageProvider {
       // Обновляем кэш
       this.projectsCache.set(project.id, updated);
 
-      logApiSuccess('PUT', `/api/projects/${project.id}`, startTime, { projectId: project.id });
-
       return updated;
     } catch (error) {
-      logApiError('PUT', `/api/projects/${project.id}`, startTime, error);
+      // При 403 (Version conflict) пробуем обновить без версии — ошибка уже исправлена выше
+      // Просто пробрасываем ошибку для обработки выше
       throw StorageProviderError.fromError(error);
     }
   }
 
   /**
    * Удаление проекта на сервере
+   * Примечание: логирование происходит внутри deleteProject в projects.ts
    */
   async deleteProjectAsync(projectId: string): Promise<void> {
-    const startTime = logApiRequest('DELETE', `/api/projects/${projectId}`);
+    // Помечаем проект как удаленный ДО запроса, чтобы отменить pending запросы
+    // Но сам DELETE запрос делаем БЕЗ projectId в очереди, чтобы он не был пропущен
+    this.markProjectDeleted(projectId);
 
     try {
-      // Помечаем проект как удаленный ДО запроса, чтобы отменить pending запросы
-      // Но сам DELETE запрос делаем БЕЗ projectId в очереди, чтобы он не был пропущен
-      this.markProjectDeleted(projectId);
-
       // Выполняем удаление без привязки к projectId (иначе запрос будет пропущен)
       await this.enqueueRequest(async () => {
         await projectsApi.deleteProject(projectId);
@@ -581,10 +566,7 @@ export class ApiStorageProvider implements IStorageProvider {
 
       // Удаляем из кэша
       this.projectsCache.delete(projectId);
-
-      logApiSuccess('DELETE', `/api/projects/${projectId}`, startTime, { projectId });
     } catch (error) {
-      logApiError('DELETE', `/api/projects/${projectId}`, startTime, error);
       throw StorageProviderError.fromError(error);
     }
   }

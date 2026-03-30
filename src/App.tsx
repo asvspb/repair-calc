@@ -224,7 +224,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
         <div className="flex items-center justify-center bg-white p-4 border-b border-gray-200" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
           <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
@@ -280,23 +280,10 @@ function AppContent() {
             </div>
           ) : (
             /* Режим просмотра с селектором */
-            <div className="relative mb-2">
-              <select
-                value={activeProjectId}
-                onChange={(e) => {
-                  setActiveProjectId(e.target.value);
-                  setActiveTab('summary');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+            <div className="relative mb-2 flex items-center gap-2">
               {/* Индикатор статуса синхронизации */}
               {activeProject && (
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="shrink-0">
                   {IdMapper.isServerId(activeProjectId) ? (
                     <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
                   ) : (
@@ -304,6 +291,19 @@ function AppContent() {
                   )}
                 </div>
               )}
+              <select
+                value={activeProjectId}
+                onChange={(e) => {
+                  setActiveProjectId(e.target.value);
+                  setActiveTab('summary');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+              >
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
             </div>
           )}
           

@@ -23,6 +23,8 @@ class AuthApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT = 30000; // 30 секунд
+
 async function fetchJson<T>(
   endpoint: string, 
   options: RequestInit = {}
@@ -39,25 +41,46 @@ async function fetchJson<T>(
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+  // Создаём AbortController для timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new AuthApiError(
-      data.message || 'Произошла ошибка',
-      response.status,
-      data.errors
-    );
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new AuthApiError(
+        data.message || 'Произошла ошибка',
+        response.status,
+        data.errors
+      );
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof AuthApiError) {
+      throw error;
+    }
+    // Обработка timeout/abort
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new AuthApiError(
+        'Превышено время ожидания запроса',
+        408
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
 
 /**
@@ -106,21 +129,42 @@ export async function getCurrentUser(): Promise<{ status: string; data: User }> 
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    headers: defaultHeaders,
-  });
+  // Создаём AbortController для timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      headers: defaultHeaders,
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new AuthApiError(
-      data.message || 'Произошла ошибка',
-      response.status,
-      data.errors
-    );
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new AuthApiError(
+        data.message || 'Произошла ошибка',
+        response.status,
+        data.errors
+      );
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof AuthApiError) {
+      throw error;
+    }
+    // Обработка timeout/abort
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new AuthApiError(
+        'Превышено время ожидания запроса',
+        408
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
 
 /**

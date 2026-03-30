@@ -24,6 +24,11 @@ import { idMapper, IdMapper } from '../utils/idMapper';
 function migrateRoom(room: RoomData): RoomData {
   return {
     ...room,
+    // Гарантируем, что числовые поля определены
+    length: room.length ?? 0,
+    width: room.width ?? 0,
+    height: room.height ?? 0,
+    // Гарантируем, что массивы существуют
     segments: room.segments || [],
     obstacles: room.obstacles || [],
     wallSections: room.wallSections || [],

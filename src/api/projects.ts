@@ -113,6 +113,8 @@ function clientToApiProject(project: ProjectData, userId: string): Partial<ApiPr
   };
 }
 
+const DEFAULT_TIMEOUT = 30000; // 30 секунд
+
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -134,6 +136,10 @@ async function fetchJson<T>(
     logDebug('API', 'Токен авторизации отсутствует');
   }
 
+  // Создаём AbortController для timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -141,11 +147,46 @@ async function fetchJson<T>(
         ...defaultHeaders,
         ...options.headers,
       },
+      signal: controller.signal,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      // При 401 пробуем обновить токен и повторить запрос
+      if (response.status === 401 && endpoint !== '/api/auth/refresh') {
+        logDebug('API', 'Получен 401, пробуем обновить токен');
+        const refreshed = await tryRefreshToken();
+        if (refreshed) {
+          // Повторяем запрос с новым токеном
+          const newToken = localStorage.getItem('token');
+          if (newToken) {
+            defaultHeaders['Authorization'] = `Bearer ${newToken}`;
+          }
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers: {
+              ...defaultHeaders,
+              ...options.headers,
+            },
+          });
+          const retryData = await retryResponse.json();
+          if (!retryResponse.ok) {
+            const error = new ProjectsApiError(
+              retryData.message || 'Произошла ошибка',
+              retryResponse.status
+            );
+            logApiError(method, endpoint, startTime, { 
+              status: retryResponse.status, 
+              message: retryData.message 
+            });
+            throw error;
+          }
+          logApiSuccess(method, endpoint, startTime, retryData);
+          return retryData;
+        }
+      }
+      
       const error = new ProjectsApiError(
         data.message || 'Произошла ошибка',
         response.status
@@ -164,8 +205,63 @@ async function fetchJson<T>(
     if (error instanceof ProjectsApiError) {
       throw error;
     }
+    // Обработка timeout/abort
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new ProjectsApiError(
+        'Превышено время ожидания запроса',
+        408
+      );
+      logApiError(method, endpoint, startTime, { timeout: true });
+      throw timeoutError;
+    }
     logApiError(method, endpoint, startTime, error);
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Попытка обновления токена при 401 ошибке
+ * Возвращает true если токен успешно обновлен
+ */
+async function tryRefreshToken(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    logDebug('API', 'Refresh token отсутствует, невозможно обновить');
+    // Очищаем невалидные токены
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      logDebug('API', 'Не удалось обновить токен');
+      // Очищаем невалидные токены
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      return false;
+    }
+
+    const data = await response.json();
+    localStorage.setItem('token', data.data.token);
+    localStorage.setItem('refreshToken', data.data.refreshToken);
+    logDebug('API', 'Токен успешно обновлен');
+    return true;
+  } catch (error) {
+    logDebug('API', 'Ошибка при обновлении токена', error);
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    return false;
   }
 }
 
