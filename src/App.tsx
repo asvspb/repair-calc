@@ -103,7 +103,8 @@ function AppContent() {
     isLoading,
     lastSaved,
     lastSavedToServer,
-    saveError
+    saveError,
+    isSyncing
   } = useProjectContext();
 
   const {
@@ -355,24 +356,36 @@ function AppContent() {
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => !isSyncing && setShowDeleteConfirm(false)}
+                  disabled={isSyncing}
+                  className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Отмена
                 </button>
                 <button
                   onClick={async () => {
-                    setShowDeleteConfirm(false);
+                    // Предотвращаем повторные клики
+                    if (isSyncing) return;
+                    
                     // Удаляем через API если проект на сервере
                     if (IdMapper.isServerId(activeProjectId)) {
                       await deleteProject(activeProjectId);
                     }
                     // Удаляем локально
                     handleDeleteActiveProject();
+                    setShowDeleteConfirm(false);
                   }}
-                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                  disabled={isSyncing}
+                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Удалить
+                  {isSyncing ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      <span>Удаление...</span>
+                    </>
+                  ) : (
+                    <span>Удалить</span>
+                  )}
                 </button>
               </div>
             </div>

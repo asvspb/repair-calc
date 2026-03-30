@@ -548,14 +548,29 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         
         // Удаляем на сервере
         logDebug('ProjectContext', 'Удаление проекта на сервере', { projectId });
-        await apiProvider.deleteProjectAsync(projectId);
-        logSuccess('ProjectContext', 'Проект удалён с сервера', { projectId }, startTime);
+        try {
+          await apiProvider.deleteProjectAsync(projectId);
+          logSuccess('ProjectContext', 'Проект удалён с сервера', { projectId }, startTime);
+        } catch (serverError) {
+          // Логируем ошибку, но продолжаем с локальным удалением
+          logError('ProjectContext', 'Ошибка удаления на сервере, удаляем локально', serverError, { projectId });
+          // Устанавливаем ошибку сохранения для отображения пользователю
+          setSaveError('Не удалось удалить проект на сервере. Проект удалён локально.');
+          // Очищаем ошибку через 5 секунд
+          setTimeout(() => setSaveError(null), 5000);
+        }
       }
 
-      // Удаляем локально
+      // Удаляем локально (всегда, даже если сервер не ответил)
       setProjects(prev => {
         const updated = prev.filter(p => p.id !== projectId);
-        scheduleSave(updated);
+        // Сохраняем в localStorage только если авторизован (серверное удаление могло не сработать)
+        if (!isAuthenticated) {
+          scheduleSave(updated);
+        } else {
+          // При авторизации просто обновляем localStorage без триггера синхронизации
+          StorageManager.saveProjects(updated);
+        }
         return updated;
       });
 
@@ -575,7 +590,9 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
       logEnd('ProjectContext', 'Удаление проекта завершено', startTime);
     } catch (error) {
-      logError('ProjectContext', 'Ошибка удаления проекта', error, { projectId });
+      logError('ProjectContext', 'Критическая ошибка удаления проекта', error, { projectId });
+      setSaveError('Ошибка при удалении проекта');
+      setTimeout(() => setSaveError(null), 5000);
       throw error;
     } finally {
       setIsSyncing(false);
