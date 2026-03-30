@@ -279,8 +279,9 @@ export class ApiStorageProvider implements IStorageProvider {
    * Асинхронное сохранение проектов
    * Синхронизирует проекты и комнаты с сервером
    * Использует маппинг ID для предотвращения дублирования
+   * Возвращает обновлённый список проектов с серверными ID
    */
-  async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
+  async saveProjectsAsync(projects: ProjectData[]): Promise<ProjectData[]> {
     const startTime = logStart('ApiStorage', 'Сохранение проектов', { count: projects.length });
 
     // Отслеживаем мигрировавшие проекты для обновления списка
@@ -379,8 +380,43 @@ export class ApiStorageProvider implements IStorageProvider {
           }, project.id);
           syncPromises.push(syncPromise);
         } else {
-          // Серверный ID, но проекта нет на сервере — был удалён
-          logWarning('ApiStorage', 'Проект не найден на сервере (был удалён?)', { projectId: project.id });
+          // Серверный ID, но проекта нет на сервере — создаём заново
+          // Это может произойти при импорте JSON с другого устройства/аккаунта
+          logDebug('ApiStorage', 'Создание проекта с серверным ID', {
+            projectId: project.id,
+            name: project.name
+          });
+          const syncPromise = this.enqueueRequest(async () => {
+            try {
+              // Создаём новый проект на сервере
+              const newProject = await this.createProjectAsync({
+                name: project.name,
+                city: project.city,
+              });
+
+              // Сохраняем маппинг старого ID на новый
+              idMapper.addMapping(project.id, newProject.id);
+              migratedProjects.push({ localId: project.id, serverId: newProject.id });
+
+              logSuccess('ApiStorage', 'Проект создан (импортирован)', {
+                oldId: project.id,
+                newId: newProject.id
+              });
+
+              // Синхронизируем комнаты нового проекта
+              for (const room of project.rooms) {
+                try {
+                  await this.enqueueRequest(() => roomsApi.createRoom(newProject.id, room), project.id);
+                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
+                } catch (roomError) {
+                  logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
+                }
+              }
+            } catch (error) {
+              logError('ApiStorage', 'Ошибка создания проекта при импорте', error, { projectId: project.id });
+            }
+          }, project.id);
+          syncPromises.push(syncPromise);
         }
       }
 
@@ -412,6 +448,9 @@ export class ApiStorageProvider implements IStorageProvider {
       }
 
       logSuccess('ApiStorage', 'Проекты успешно синхронизированы', { count: projects.length }, startTime);
+      
+      // Возвращаем обновлённый список проектов
+      return Array.from(this.projectsCache.values());
     } catch (error) {
       logError('ApiStorage', 'Ошибка сохранения проектов', error);
       throw StorageProviderError.fromError(error);

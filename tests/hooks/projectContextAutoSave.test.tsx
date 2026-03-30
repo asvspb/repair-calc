@@ -17,7 +17,7 @@ vi.mock('../../src/api/storage/apiStorageProvider', () => ({
   ApiStorageProvider: {
     getInstance: vi.fn(() => ({
       loadProjectsAsync: vi.fn().mockResolvedValue([]),
-      saveProjectsAsync: vi.fn().mockResolvedValue(undefined),
+      saveProjectsAsync: vi.fn().mockResolvedValue([]),
     })),
   },
 }));
