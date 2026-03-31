@@ -4,29 +4,47 @@ import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
 
 export class RoomRepository {
+  /**
+   * Создание комнаты (обёртка для обратной совместимости)
+   * @deprecated Используйте createForObject
+   */
   static async create(projectId: string, data: Partial<Room>): Promise<Room> {
-    const id = uuidv4();
-    
-    // Get max sort_order
-    const maxOrderRows = await query<(RowDataPacket & { max_order: number | null })[]>(
-      'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM rooms WHERE project_id = ?',
+    // Для обратной совместимости — создаём в первый объект проекта
+    const objects = await query<any[]>(
+      'SELECT id FROM objects WHERE project_id = ? AND deleted_at IS NULL LIMIT 1',
       [projectId]
     );
-    const sortOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
     
+    const objectId = objects[0]?.id || projectId;
+    return this.createForObject(objectId, data);
+  }
+  
+  /**
+   * Создание комнаты в объекте
+   */
+  static async createForObject(objectId: string, data: Partial<Room>): Promise<Room> {
+    const id = uuidv4();
+
+    // Get max sort_order
+    const maxOrderRows = await query<(RowDataPacket & { max_order: number | null })[]>(
+      'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM rooms WHERE object_id = ?',
+      [objectId]
+    );
+    const sortOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+
     await execute(
-      `INSERT INTO rooms (id, project_id, name, geometry_mode, length, width, height, sort_order,
+      `INSERT INTO rooms (id, object_id, name, geometry_mode, length, width, height, sort_order,
         segments, obstacles, wall_sections, sub_sections, windows, doors, works,
-        simple_mode_data, extended_mode_data, advanced_mode_data) 
+        simple_mode_data, extended_mode_data, advanced_mode_data)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, projectId, data.name || 'Новая комната', data.geometry_mode || 'simple', 
+      [id, objectId, data.name || 'Новая комната', data.geometry_mode || 'simple',
        data.length || 0, data.width || 0, data.height || 0, sortOrder,
        data.segments || null, data.obstacles || null, data.wall_sections || null,
        data.sub_sections || null, data.windows || null, data.doors || null,
-       data.works || null, data.simple_mode_data || null, 
+       data.works || null, data.simple_mode_data || null,
        data.extended_mode_data || null, data.advanced_mode_data || null]
     );
-    
+
     const room = await this.findById(id);
     return room!;
   }
@@ -170,6 +188,23 @@ export class RoomRepository {
   // This is the primary method for getting room data
   static async findFullRoom(id: string): Promise<Room | null> {
     return this.findById(id);
+  }
+  
+  /**
+   * Поиск комнаты с объектом (для проверки прав доступа)
+   */
+  static async findByIdWithObject(id: string): Promise<(Room & { object_id: string }) | null> {
+    const rows = await query<any[]>(
+      'SELECT r.id, r.object_id, r.name, r.geometry_mode, r.length, r.width, r.height, ' +
+      'r.version, r.sort_order, r.created_at, r.updated_at, ' +
+      'r.segments, r.obstacles, r.wall_sections, r.sub_sections, ' +
+      'r.windows, r.doors, r.works, ' +
+      'r.simple_mode_data, r.extended_mode_data, r.advanced_mode_data ' +
+      'FROM rooms r WHERE r.id = ? AND r.deleted_at IS NULL',
+      [id]
+    );
+    
+    return rows[0] || null;
   }
 }
 

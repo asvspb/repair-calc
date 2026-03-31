@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { syncPushSchema } from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
+import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { RoomRepository } from '../db/repositories/room.repo.js';
 import { transaction } from '../db/pool.js';
 import type { AuthRequest, Conflict, ChangeLogEntry, Room } from '../types/index.js';
@@ -64,7 +65,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
           console.log(`      Название: ${projectData.name || 'N/A'}`);
           console.log(`      Город: ${projectData.city || 'не указан'}`);
           
-          const serverProject = await ProjectRepository.findByIdAndUserId(entityId, userId);
+          const serverProject = await ObjectRepository.findByIdAndUserId(entityId, userId);
 
           if (!serverProject) {
             console.log(`      ⚠️ Проект не найден на сервере`);
@@ -110,17 +111,17 @@ router.post('/push', async (req: AuthRequest, res, next) => {
           const serverRoom = await RoomRepository.findById(entityId);
 
           if (!serverRoom) {
-            if (!roomData.project_id) {
+            if (!roomData.object_id) {
               console.log(`      ❌ Ошибка: нет project_id`);
               throw new Error('project_id is required for room creation');
             }
-            const roomId = await RoomRepository.create(roomData.project_id, roomData);
+            const roomId = await RoomRepository.create(roomData.object_id, roomData);
             synced.push(roomId.id);
             console.log(`      ✅ Создана`);
             continue;
           }
 
-          const project = await ProjectRepository.findByIdAndUserId(serverRoom.project_id, userId);
+          const project = await ObjectRepository.findByIdAndUserId(serverRoom.object_id, userId);
           if (!project) {
             console.log(`      ❌ Проект не найден`);
             conflicts.push({

@@ -31,8 +31,8 @@ RUN npm ci --only=production && npm install tsx
 # Копируем собранный код из builder stage
 COPY --from=builder /app/dist ./dist
 
-# Копируем исходники для миграций
-COPY --from=builder /app/src/db/migrations ./src/db/migrations
+# Копируем исходники для миграций (все .ts файлы)
+COPY src/db/migrations ./src/db/migrations
 COPY --from=builder /app/knexfile.ts ./
 
 # Открываем порт

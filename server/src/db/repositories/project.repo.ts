@@ -1,5 +1,5 @@
 import { query, execute, getConnection, transaction } from '../pool.js';
-import type { Project, Room, ProjectWithRooms } from '../../types/index.js';
+import type { Project, Room, ProjectWithRooms, Object, ObjectWithRooms, ProjectWithObjects } from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
 
@@ -105,16 +105,59 @@ export class ProjectRepository {
   }
 
   // Get all projects with rooms for sync
+  // DEPRECATED: Используется для обратной совместимости
   static async findAllByUserIdForSync(userId: string): Promise<(Project & { rooms: Room[] })[]> {
     const projects = await this.findByUserId(userId);
 
     const result = await Promise.all(
       projects.map(async (project) => {
-        const rooms = await query<(Room & RowDataPacket)[]>(
-          `SELECT * FROM rooms WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
+        // Для обратной совместимости загружаем комнаты из первого объекта
+        const objects = await query<(any & RowDataPacket)[]>(
+          `SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
           [project.id]
         );
+        
+        let rooms: Room[] = [];
+        if (objects.length > 0) {
+          // Загружаем комнаты из всех объектов
+          for (const obj of objects) {
+            const objRooms = await query<(Room & RowDataPacket)[]>(
+              `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
+              [obj.id]
+            );
+            rooms = rooms.concat(objRooms);
+          }
+        }
+        
         return { ...project, rooms };
+      })
+    );
+
+    return result;
+  }
+
+  // Get all projects with objects for sync (new method)
+  static async findAllByUserIdWithObjects(userId: string): Promise<ProjectWithObjects[]> {
+    const projects = await this.findByUserId(userId);
+
+    const result = await Promise.all(
+      projects.map(async (project) => {
+        const objects = await query<(Object & RowDataPacket)[]>(
+          `SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
+          [project.id]
+        );
+        
+        const objectsWithRooms = await Promise.all(
+          objects.map(async (obj) => {
+            const rooms = await query<(Room & RowDataPacket)[]>(
+              `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
+              [obj.id]
+            );
+            return { ...obj, rooms };
+          })
+        );
+        
+        return { ...project, objects: objectsWithRooms };
       })
     );
 

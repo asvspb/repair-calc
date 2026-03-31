@@ -155,16 +155,34 @@ export type RoomData = {
   advancedModeData?: AdvancedModeData;
 };
 
-// Project data
+// Object data (new - недвижимость в составе проекта)
+export type ObjectData = {
+  id: string;
+  projectId: string;          // Ссылка на проект
+  name: string;
+  city?: string;
+  address?: string;
+  useAiPricing?: boolean;
+  lastAiPriceUpdate?: string;
+  rooms: RoomData[];
+  version?: number;
+  sortOrder?: number;
+};
+
+// Project data (обновлено для поддержки объектов)
 export type ProjectData = {
   id: string;
   name: string;
-  rooms: RoomData[];
+  description?: string;
+  isPremium?: boolean;
+  objects: ObjectData[];      // Новый уровень: объекты
   // Дополнительно
-  city?: string;                // Город для поиска цен
-  useAiPricing?: boolean;       // Использовать ИИ для цен
-  lastAiPriceUpdate?: string;   // Дата последнего обновления цен через ИИ
+  city?: string;                // Город для поиска цен (deprecated)
+  useAiPricing?: boolean;       // Использовать ИИ для цен (deprecated)
+  lastAiPriceUpdate?: string;   // Дата последнего обновления цен через ИИ (deprecated)
   version?: number;             // Версия для оптимистичной блокировки
+  // Для обратной совместимости (старые проекты)
+  rooms?: RoomData[];           // deprecated - будет перенесено в objects[0].rooms
 };
 
 // Room metrics (calculated)

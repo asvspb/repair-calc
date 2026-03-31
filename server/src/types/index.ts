@@ -30,10 +30,35 @@ export interface ProjectWithRooms extends Project {
   rooms: Room[];
 }
 
+// Object types (new - недвижимость в составе проекта)
+export interface Object {
+  id: string;
+  project_id: string;
+  user_id: string;
+  name: string;
+  city: string | null;
+  address: string | null;
+  use_ai_pricing: boolean;
+  last_ai_price_update: Date | null;
+  version: number;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+export interface ObjectWithRooms extends Object {
+  rooms: Room[];
+}
+
+export interface ProjectWithObjects extends Project {
+  objects: ObjectWithRooms[];
+}
+
 // Room types
 export interface Room {
   id: string;
-  project_id: string;
+  object_id: string;  // Изменено с project_id на object_id
   name: string;
   geometry_mode: 'simple' | 'extended' | 'advanced';
   length: number;

@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import { createWorkSchema, updateWorkSchema, createMaterialSchema, updateMaterialSchema, createToolSchema, updateToolSchema, idParamSchema, roomIdParamSchema, workIdParamSchema } from '../middleware/validation.js';
 import { WorkRepository, MaterialRepository, ToolRepository } from '../db/repositories/work.repo.js';
 import { RoomRepository } from '../db/repositories/room.repo.js';
-import { ProjectRepository } from '../db/repositories/project.repo.js';
+import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/index.js';
 
@@ -27,7 +27,7 @@ router.post('/rooms/:roomId/works', async (req: AuthRequest, res, next) => {
       throw notFound('Room not found');
     }
     
-    const project = await ProjectRepository.findByIdAndUserId(room.project_id, req.user!.id);
+    const project = await ObjectRepository.findByIdAndUserId(room.object_id, req.user!.id);
     if (!project) {
       throw notFound('Room not found');
     }
@@ -59,7 +59,7 @@ router.put('/works/:id', async (req: AuthRequest, res, next) => {
       throw notFound('Work not found');
     }
     
-    const project = await ProjectRepository.findByIdAndUserId(room.project_id, req.user!.id);
+    const project = await ObjectRepository.findByIdAndUserId(room.object_id, req.user!.id);
     if (!project) {
       throw notFound('Work not found');
     }
@@ -99,7 +99,7 @@ router.delete('/works/:id', async (req: AuthRequest, res, next) => {
       throw notFound('Work not found');
     }
     
-    const project = await ProjectRepository.findByIdAndUserId(room.project_id, req.user!.id);
+    const project = await ObjectRepository.findByIdAndUserId(room.object_id, req.user!.id);
     if (!project) {
       throw notFound('Work not found');
     }
@@ -267,7 +267,7 @@ async function checkWorkAccess(workId: string, userId: string) {
     throw notFound('Work not found');
   }
   
-  const project = await ProjectRepository.findByIdAndUserId(room.project_id, userId);
+  const project = await ObjectRepository.findByIdAndUserId(room.object_id, userId);
   if (!project) {
     throw notFound('Work not found');
   }

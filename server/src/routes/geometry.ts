@@ -11,12 +11,12 @@ import {
   reorderWallSectionsSchema, reorderWorksSchema,
   idParamSchema, roomIdParamSchema
 } from '../middleware/validation.js';
-import { 
-  RoomRepository, OpeningRepository, SubSectionRepository, 
-  SegmentRepository, ObstacleRepository, WallSectionRepository 
+import {
+  RoomRepository, OpeningRepository, SubSectionRepository,
+  SegmentRepository, ObstacleRepository, WallSectionRepository
 } from '../db/repositories/room.repo.js';
 import { WorkRepository } from '../db/repositories/work.repo.js';
-import { ProjectRepository } from '../db/repositories/project.repo.js';
+import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/index.js';
 
@@ -29,16 +29,16 @@ router.use(authenticate);
 // ═══════════════════════════════════════════════════════
 
 async function checkRoomAccess(roomId: string, userId: string) {
-  const room = await RoomRepository.findById(roomId);
+  const room = await RoomRepository.findByIdWithObject(roomId);
   if (!room) {
     throw notFound('Room not found');
   }
-  
-  const project = await ProjectRepository.findByIdAndUserId(room.project_id, userId);
-  if (!project) {
+
+  const object = await ObjectRepository.findByIdAndUserId(room.object_id, userId);
+  if (!object) {
     throw notFound('Room not found');
   }
-  
+
   return room;
 }
 
