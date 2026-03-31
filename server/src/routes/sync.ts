@@ -9,6 +9,27 @@ import type { RowDataPacket } from 'mysql2/promise';
 
 const router = Router();
 
+// Middleware для детального логирования всех запросов
+router.use((req, res, next) => {
+  const userId = (req as AuthRequest).user?.id || 'ANONYMOUS';
+  const method = req.method;
+  const path = req.path;
+  const timestamp = new Date().toISOString();
+  
+  console.log('\n' + '='.repeat(80));
+  console.log(`📡 [${timestamp}] API ЗАПРОС`);
+  console.log('='.repeat(80));
+  console.log(`   Метод: ${method}`);
+  console.log(`   Путь: ${path}`);
+  console.log(`   Пользователь: ${userId}`);
+  
+  if (method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
+    console.log(`   Тело запроса:`, JSON.stringify(req.body, null, 2).substring(0, 1000));
+  }
+  
+  next();
+});
+
 router.use(authenticate);
 
 /**
@@ -16,10 +37,15 @@ router.use(authenticate);
  * Implements last-write-wins conflict resolution with version checking
  */
 router.post('/push', async (req: AuthRequest, res, next) => {
+  const userId = req.user!.id;
+  const startTime = Date.now();
+  
   try {
     const { changes } = syncPushSchema.parse(req.body);
-    const userId = req.user!.id;
-
+    
+    console.log(`\n🔄 [SYNC/PUSH] Начало синхронизации`);
+    console.log(`   Изменений: ${changes.length}`);
+    
     const synced: string[] = [];
     const conflicts: Conflict[] = [];
 
@@ -33,11 +59,15 @@ router.post('/push', async (req: AuthRequest, res, next) => {
         const projectData = data as { name?: string; city?: string; use_ai_pricing?: boolean };
 
         if (entity === 'project') {
-          // Check if project exists and get server version
-          const serverProject = await ProjectRepository.findByIdAndUserId(entityId, userId);
+          console.log(`\n   📁 Проект: ${entityId}`);
+          console.log(`      Действие: ${projectData.name ? 'Обновление' : 'Пропуск'}`);
+          console.log(`      Название: ${projectData.name || 'N/A'}`);
+          console.log(`      Город: ${projectData.city || 'не указан'}`);
           
+          const serverProject = await ProjectRepository.findByIdAndUserId(entityId, userId);
+
           if (!serverProject) {
-            // Project doesn't exist - skip or create
+            console.log(`      ⚠️ Проект не найден на сервере`);
             conflicts.push({
               id,
               entity: 'project',
@@ -48,12 +78,10 @@ router.post('/push', async (req: AuthRequest, res, next) => {
             continue;
           }
 
-          // Check for conflict using last-write-wins with version
           const serverVersion = serverProject.version;
-          const serverUpdatedAt = new Date(serverProject.updated_at).getTime();
           
-          // If client version is older or same timestamp, it's a conflict
           if (clientVersion && clientVersion < serverVersion) {
+            console.log(`      ⚠️ Конфликт версий (клиент: ${clientVersion}, сервер: ${serverVersion})`);
             conflicts.push({
               id,
               entity: 'project',
@@ -64,7 +92,6 @@ router.post('/push', async (req: AuthRequest, res, next) => {
             continue;
           }
 
-          // Apply update (last-write-wins if timestamp is newer)
           const updateData: Partial<typeof serverProject> = {};
           if (projectData.name !== undefined) updateData.name = projectData.name;
           if (projectData.city !== undefined) updateData.city = projectData.city;
@@ -72,23 +99,30 @@ router.post('/push', async (req: AuthRequest, res, next) => {
 
           await ProjectRepository.update(entityId, updateData);
           synced.push(id);
-        } else if (entity === 'room') {
-          // Check if room exists
-          const serverRoom = await RoomRepository.findById(entityId);
+          console.log(`      ✅ Обновлён`);
           
+        } else if (entity === 'room') {
+          console.log(`\n   🏠 Комната: ${entityId}`);
+          console.log(`      Название: ${roomData.name || 'N/A'}`);
+          console.log(`      Размеры: ${roomData.length}×${roomData.width}×${roomData.height}`);
+          console.log(`      Работ: ${roomData.works?.length || 0}`);
+          
+          const serverRoom = await RoomRepository.findById(entityId);
+
           if (!serverRoom) {
-            // Room doesn't exist - create it (only if project_id is present)
             if (!roomData.project_id) {
+              console.log(`      ❌ Ошибка: нет project_id`);
               throw new Error('project_id is required for room creation');
             }
             const roomId = await RoomRepository.create(roomData.project_id, roomData);
             synced.push(roomId.id);
+            console.log(`      ✅ Создана`);
             continue;
           }
 
-          // Check ownership
           const project = await ProjectRepository.findByIdAndUserId(serverRoom.project_id, userId);
           if (!project) {
+            console.log(`      ❌ Проект не найден`);
             conflicts.push({
               id,
               entity: 'room',
@@ -99,9 +133,9 @@ router.post('/push', async (req: AuthRequest, res, next) => {
             continue;
           }
 
-          // Check for conflict
           const serverVersion = serverRoom.version ?? 0;
           if (clientVersion && clientVersion < serverVersion) {
+            console.log(`      ⚠️ Конфликт версий`);
             conflicts.push({
               id,
               entity: 'room',
@@ -112,7 +146,6 @@ router.post('/push', async (req: AuthRequest, res, next) => {
             continue;
           }
 
-          // Apply update
           const updateData: Partial<typeof serverRoom> = {};
           if (roomData.name !== undefined) updateData.name = roomData.name;
           if (roomData.geometry_mode !== undefined) updateData.geometry_mode = roomData.geometry_mode;
@@ -129,10 +162,11 @@ router.post('/push', async (req: AuthRequest, res, next) => {
 
           await RoomRepository.update(entityId, updateData);
           synced.push(id);
+          console.log(`      ✅ Обновлена`);
+          
         }
       } catch (error) {
-        // Log error but continue with other changes
-        console.error('Error processing sync change:', error);
+        console.error('   ❌ Ошибка обработки изменения:', error);
         conflicts.push({
           id: change.id,
           entity: change.entity,
@@ -143,6 +177,11 @@ router.post('/push', async (req: AuthRequest, res, next) => {
       }
     }
 
+    const duration = Date.now() - startTime;
+    console.log(`\n✅ [SYNC/PUSH] Завершено за ${duration}ms`);
+    console.log(`   Успешно: ${synced.length}`);
+    console.log(`   Конфликты: ${conflicts.length}`);
+
     res.json({
       status: 'success',
       data: {
@@ -151,27 +190,108 @@ router.post('/push', async (req: AuthRequest, res, next) => {
       },
     });
   } catch (error) {
+    const duration = Date.now() - startTime;
+    console.log(`\n❌ [SYNC/PUSH] Ошибка за ${duration}ms:`, error);
     next(error);
   }
 });
 
 // GET /api/sync/pull - Pull changes from server
 router.get('/pull', async (req: AuthRequest, res, next) => {
+  const userId = req.user!.id;
+  const startTime = Date.now();
+  
   try {
+    console.log(`\n📥 [SYNC/PULL] Загрузка данных пользователя`);
+    console.log(`   Пользователь: ${userId}`);
+    
     // Get all projects for user with rooms
-    const projects = await ProjectRepository.findAllByUserIdForSync(req.user!.id);
+    const projects = await ProjectRepository.findAllByUserIdForSync(userId);
+
+    // Подробное логирование каждого проекта
+    console.log(`\n   📊 Найдено проектов: ${projects.length}`);
     
-    // In a production app, we would filter by timestamp
-    // For now, return all projects
-    
-    res.json({
+    for (const project of projects) {
+      const floorArea = project.rooms.reduce((sum, r) => sum + (r.length * r.width), 0);
+      const totalRooms = project.rooms.length;
+      const totalWorks = project.rooms.reduce((sum, r) => {
+        const works = typeof r.works === 'string' ? JSON.parse(r.works) : r.works;
+        return sum + (Array.isArray(works) ? works.filter((w: any) => w.enabled).length : 0);
+      }, 0);
+      
+      console.log(`\n   📁 ПРОЕКТ: "${project.name}"`);
+      console.log(`      ID: ${project.id}`);
+      console.log(`      Город: ${project.city || 'не указан'}`);
+      console.log(`      AI Pricing: ${project.use_ai_pricing ? 'ВКЛ' : 'ВЫКЛ'}`);
+      console.log(`      Комнат: ${totalRooms}`);
+      console.log(`      Общая площадь: ${floorArea.toFixed(2)} м²`);
+      console.log(`      Активных работ: ${totalWorks}`);
+      
+      if (project.rooms.length > 0) {
+        console.log(`      ┌─ Комнаты:`);
+        for (const room of project.rooms) {
+          const works = typeof room.works === 'string' ? JSON.parse(room.works) : room.works;
+          const worksArray = Array.isArray(works) ? works : [];
+          const enabledWorks = worksArray.filter((w: any) => w.enabled);
+          
+          const floorAreaRoom = room.length * room.width;
+          const perimeter = (room.length + room.width) * 2;
+          const grossWallArea = perimeter * room.height;
+          
+          // Parse windows and doors
+          const windows = typeof room.windows === 'string' ? JSON.parse(room.windows) : room.windows;
+          const doors = typeof room.doors === 'string' ? JSON.parse(room.doors) : room.doors;
+          const windowsArray = Array.isArray(windows) ? windows : [];
+          const doorsArray = Array.isArray(doors) ? doors : [];
+          
+          const windowsArea = windowsArray.reduce((sum: any, w: any) => sum + w.width * w.height, 0);
+          const doorsArea = doorsArray.reduce((sum: any, d: any) => sum + d.width * d.height, 0);
+          const netWallArea = grossWallArea - windowsArea - doorsArea;
+          
+          console.log(`      │`);
+          console.log(`      ├─ 🏠 "${room.name}"`);
+          console.log(`      │   ID: ${room.id}`);
+          console.log(`      │   Режим: ${room.geometry_mode || 'simple'}`);
+          console.log(`      │   Размеры: ${room.length}м × ${room.width}м × ${room.height}м`);
+          console.log(`      │   Площадь пола: ${floorAreaRoom.toFixed(2)} м²`);
+          console.log(`      │   Периметр: ${perimeter.toFixed(2)} м`);
+          console.log(`      │   Стены (брутто): ${grossWallArea.toFixed(2)} м²`);
+          console.log(`      │   Стены (нетто): ${netWallArea.toFixed(2)} м²`);
+          console.log(`      │   Окна: ${windowsArray.length} шт. (${windowsArea.toFixed(2)} м²)`);
+          console.log(`      │   Двери: ${doorsArray.length} шт. (${doorsArea.toFixed(2)} м²)`);
+          console.log(`      │   Работ: ${enabledWorks.length}`);
+          
+          if (enabledWorks.length > 0) {
+            console.log(`      │   ┌─ Список работ:`);
+            enabledWorks.forEach((w: any, i: number) => {
+              const workTotal = w.work_unit_price * floorAreaRoom;
+              console.log(`      │   ├─ ${i + 1}. ${w.name} — ${workTotal.toFixed(2)} руб.`);
+            });
+            console.log(`      │   └─`);
+          }
+        }
+        console.log(`      └─`);
+      } else {
+        console.log(`      ⚠️ КОМНАТ НЕТ`);
+      }
+    }
+
+    const response = {
       status: 'success',
       data: {
         projects,
         timestamp: Date.now(),
       },
-    });
+    };
+    
+    const duration = Date.now() - startTime;
+    console.log(`\n✅ [SYNC/PULL] Завершено за ${duration}ms`);
+    console.log(`   Размер ответа: ${JSON.stringify(response).length} байт`);
+
+    res.json(response);
   } catch (error) {
+    const duration = Date.now() - startTime;
+    console.log(`\n❌ [SYNC/PULL] Ошибка за ${duration}ms:`, error);
     next(error);
   }
 });
