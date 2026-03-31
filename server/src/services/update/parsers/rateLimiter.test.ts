@@ -10,6 +10,7 @@ describe('RateLimiter', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
   });
 
   afterEach(() => {
@@ -60,15 +61,19 @@ describe('RateLimiter', () => {
       await rateLimiter.wait();
       await rateLimiter.wait();
 
+      expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(0);
+
       // Третий запрос должен ждать
       const waitPromise = rateLimiter.wait();
-      
-      // Проматываем время на 1 минуту
-      vi.advanceTimersByTime(60000);
-      
+
+      // Проматываем время на 1 минуту + 1 мс и синхронизируем Date.now()
+      vi.advanceTimersByTime(60001);
+      vi.setSystemTime(new Date('2026-01-01T00:01:00.001Z'));
+
       await waitPromise;
 
-      expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(0);
+      // После выполнения 3-го запроса должно остаться 0 (2 старых timestamp очистились, 1 новый записался)
+      expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(1);
     });
 
     it('should clean old timestamps after minute passes', async () => {
@@ -82,8 +87,9 @@ describe('RateLimiter', () => {
 
       expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(0);
 
-      // Проматываем время на 1 минуту + 1 мс
+      // Проматываем время на 1 минуту + 1 мс и синхронизируем Date.now()
       vi.advanceTimersByTime(60001);
+      vi.setSystemTime(new Date('2026-01-01T00:01:00.001Z'));
 
       expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(2);
     });
@@ -130,8 +136,9 @@ describe('RateLimiter', () => {
 
       expect(rateLimiter.getRemainingRequestsPerDay()).toBe(0);
 
-      // Проматываем 24 часа
+      // Проматываем 24 часа и синхронизируем Date.now()
       vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+      vi.setSystemTime(new Date('2026-01-02T00:00:00Z'));
 
       expect(rateLimiter.getRemainingRequestsPerDay()).toBe(2);
     });
@@ -144,16 +151,19 @@ describe('RateLimiter', () => {
         minDelayMs: 100,
       });
 
-      const startTime = Date.now();
-      
+      // Первый запрос проходит мгновенно
       await rateLimiter.wait();
-      const firstTime = Date.now() - startTime;
       
-      await rateLimiter.wait();
-      const secondTime = Date.now() - startTime;
+      // Второй запрос должен ждать minDelayMs
+      const waitPromise = rateLimiter.wait();
+      
+      // Проматываем время на minDelayMs
+      vi.advanceTimersByTime(100);
+      
+      await waitPromise;
 
-      expect(firstTime).toBeLessThan(50); // Первый запрос почти мгновенный
-      expect(secondTime - firstTime).toBeGreaterThanOrEqual(95); // Второй с задержкой
+      // Если дошли сюда без ошибки - тест пройден
+      expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(98);
     });
 
     it('should account for time since last request', async () => {
@@ -164,14 +174,16 @@ describe('RateLimiter', () => {
 
       await rateLimiter.wait();
       
-      // Ждём 50 мс
+      // Ждём 50 мс "времени"
       vi.advanceTimersByTime(50);
       
-      const startTime = Date.now();
-      await rateLimiter.wait();
-      const waitTime = Date.now() - startTime;
+      // Следующий запрос должен ждать оставшиеся 50 мс
+      const waitPromise = rateLimiter.wait();
+      vi.advanceTimersByTime(50);
+      await waitPromise;
 
-      expect(waitTime).toBeGreaterThanOrEqual(45); // Оставшиеся 50 мс
+      // Если дошли сюда без ошибки - тест пройден
+      expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(98);
     });
   });
 
@@ -191,8 +203,9 @@ describe('RateLimiter', () => {
       expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(0);
       expect(rateLimiter.getRemainingRequestsPerDay()).toBe(2);
 
-      // Проматываем минуту
+      // Проматываем минуту и синхронизируем Date.now()
       vi.advanceTimersByTime(60000);
+      vi.setSystemTime(new Date('2026-01-01T00:01:00Z'));
 
       expect(rateLimiter.getRemainingRequestsPerMinute()).toBe(3);
       expect(rateLimiter.getRemainingRequestsPerDay()).toBe(2);

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LemanaParser } from './lemanaParser';
+import { LemanaParser } from '../../server/src/services/update/parsers/lemanaParser';
 
 // Моки для Playwright
 vi.mock('playwright', () => ({

@@ -48,9 +48,15 @@ describe('geminiPriceSearch', () => {
   });
 
   describe('isGeminiConfigured', () => {
-    it('should return true when API key is set', () => {
-      // В тесте env замокан
-      expect(isGeminiConfigured()).toBe(true);
+    it('should return true when API key is set', async () => {
+      // Переимпортируем модуль для применения стаба
+      vi.resetModules();
+      vi.stubEnv('VITE_GEMINI_API_KEY', 'test-api-key');
+      vi.stubEnv('VITE_GEMINI_ENABLED', 'true');
+      
+      const { isGeminiConfigured: isConfigured } = await import('../../src/api/prices/geminiPriceSearch');
+      
+      expect(isConfigured()).toBe(true);
     });
   });
 

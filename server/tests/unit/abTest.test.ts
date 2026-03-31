@@ -86,7 +86,7 @@ describe('ABTestRepository', () => {
         { id: 'test-2', name: 'Test 2', status: 'running' },
       ];
 
-      (pool.execute as any).mockResolvedValueOnce([{ total: 2 }]);
+      (pool.execute as any).mockResolvedValueOnce([[{ total: 2 }]]);
       (pool.execute as any).mockResolvedValueOnce([mockTests]);
 
       const result = await ABTestRepository.findMany({ limit: 10, offset: 0 });

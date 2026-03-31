@@ -161,7 +161,7 @@ export const ABTestRepository = {
       'SELECT * FROM ab_tests WHERE id = ?',
       [id]
     );
-    return rows[0] as ABTest | null;
+    return rows.length > 0 ? (rows[0] as ABTest) : null;
   },
 
   async findMany(options?: {

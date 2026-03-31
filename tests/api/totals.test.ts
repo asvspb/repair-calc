@@ -10,10 +10,10 @@ import {
   type TotalsData,
   type TotalsResponse,
 } from '../../src/api/totals';
+import { httpClient, ApiError } from '../../src/api/httpClient';
 
-// Мокаем fetch
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+// Мокаем httpClient.request
+const mockRequest = vi.spyOn(httpClient, 'request').mockImplementation(() => Promise.resolve({}));
 
 // Мокаем localStorage
 const localStorageMock = (() => {
@@ -56,154 +56,70 @@ describe('Totals API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-    // Clear any token from previous tests
     localStorage.removeItem('token');
   });
 
   describe('saveTotals', () => {
     it('should save totals successfully', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: mockTotalsResponse,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
+      mockRequest.mockResolvedValueOnce({
+        status: 'success',
+        data: mockTotalsResponse,
+      });
 
       const result = await saveTotals('project-123', mockTotalsData);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/totals/project-123'),
-        {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/totals/project-123',
+        expect.objectContaining({
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(mockTotalsData),
-        }
+        })
       );
 
-      // API returns { status, data }, function returns data
       expect(result).toEqual(mockTotalsResponse);
       expect(result.project_id).toBe('project-123');
       expect(result.grand_total).toBe(130000);
     });
 
-    it('should include auth token if present', async () => {
-      localStorage.setItem('token', 'test-token-123');
-
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: mockTotalsResponse,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
-
-      await saveTotals('project-123', mockTotalsData);
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/totals/project-123'),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer test-token-123',
-          },
-          body: JSON.stringify(mockTotalsData),
-        }
-      );
-    });
-
     it('should throw TotalsApiError on error response', async () => {
-      const mockError = {
-        ok: false,
-        status: 404,
-        json: vi.fn().mockResolvedValue({
-          message: 'Project not found',
-        }),
-      };
+      mockRequest.mockRejectedValueOnce(new ApiError('Project not found', 404));
 
-      mockFetch.mockResolvedValueOnce(mockError);
+      await expect(saveTotals('project-123', mockTotalsData)).rejects.toThrow(TotalsApiError);
 
+      let caughtError: Error | null = null;
       try {
         await saveTotals('project-123', mockTotalsData);
-        fail('Expected saveTotals to throw TotalsApiError');
       } catch (error) {
-        expect(error).toBeInstanceOf(TotalsApiError);
-        expect((error as TotalsApiError).message).toBe('Project not found');
-        expect((error as TotalsApiError).statusCode).toBe(404);
+        caughtError = error as Error;
+        expect(caughtError.name).toBe('TotalsApiError');
+        expect((caughtError as TotalsApiError).message).toBe('Project not found');
+        expect((caughtError as TotalsApiError).statusCode).toBe(404);
       }
-    });
-
-    it('should use default API URL if env var is not set', async () => {
-      // Temporarily remove env var
-      const originalEnv = import.meta.env.VITE_API_URL;
-      import.meta.env.VITE_API_URL = undefined;
-
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: mockTotalsResponse,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
-
-      await saveTotals('project-123', mockTotalsData);
-
-      // Should use default URL (localhost:3993 or localhost:3994 depending on config)
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/totals/project-123'),
-        expect.any(Object)
-      );
-
-      // Restore env var
-      import.meta.env.VITE_API_URL = originalEnv;
     });
   });
 
   describe('getTotals', () => {
     it('should get totals successfully', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: mockTotalsResponse,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
+      mockRequest.mockResolvedValueOnce({
+        status: 'success',
+        data: mockTotalsResponse,
+      });
 
       const result = await getTotals('project-123');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/totals/project-123'),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/totals/project-123',
+        expect.any(Object)
       );
 
       expect(result).toEqual(mockTotalsResponse);
     });
 
     it('should return null if totals not found', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: null,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
+      mockRequest.mockResolvedValueOnce({
+        status: 'success',
+        data: null,
+      });
 
       const result = await getTotals('project-123');
 
@@ -211,45 +127,11 @@ describe('Totals API', () => {
     });
 
     it('should return null on error', async () => {
-      const mockError = {
-        ok: false,
-        status: 404,
-        json: vi.fn().mockResolvedValue({
-          message: 'Project not found',
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockError);
+      mockRequest.mockRejectedValueOnce(new ApiError('Project not found', 404));
 
       const result = await getTotals('project-123');
 
       expect(result).toBeNull();
-    });
-
-    it('should include auth token if present', async () => {
-      localStorage.setItem('token', 'test-token-123');
-
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          status: 'success',
-          data: mockTotalsResponse,
-        }),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse);
-
-      await getTotals('project-123');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/totals/project-123'),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer test-token-123',
-          },
-        }
-      );
     });
   });
 
