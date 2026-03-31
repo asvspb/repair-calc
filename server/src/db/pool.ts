@@ -1,13 +1,19 @@
 import mysql, { type RowDataPacket, type ResultSetHeader, type PoolConnection } from 'mysql2/promise';
 import { config } from '../config/env.js';
 
-// Create pool with proper typing
+// Create pool with proper typing and UTF-8 support
 export const pool = mysql.createPool({
   host: config.database.host,
   port: config.database.port,
   user: config.database.user,
   password: config.database.password,
   database: config.database.database,
+  
+  // UTF-8 support for Cyrillic characters
+  charset: config.database.charset,
+  timezone: config.database.timezone,
+  
+  // Existing settings
   waitForConnections: true,
   connectionLimit: config.database.poolLimit,
   queueLimit: 0,

@@ -9,6 +9,10 @@ const config: Knex.Config = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'repair_calc',
+    
+    // UTF-8 support for Cyrillic characters
+    charset: process.env.DB_CHARSET || 'utf8mb4',
+    timezone: process.env.DB_TIMEZONE || '+00:00',
   },
   pool: {
     min: 2,

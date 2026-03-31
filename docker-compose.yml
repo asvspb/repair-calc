@@ -9,10 +9,17 @@ services:
       MYSQL_DATABASE: repair_calc
       MYSQL_USER: repair_user
       MYSQL_PASSWORD: secure_password
+      
+      # UTF-8 charset for Cyrillic support
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    
     # ports:
     #   - "3307:3306"  # Раскомментировать если нужен внешний доступ к БД
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./server/mysql-conf.d:/etc/mysql/conf.d:ro
+    
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s

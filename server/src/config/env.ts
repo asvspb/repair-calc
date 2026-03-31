@@ -11,6 +11,9 @@ export const config = {
     password: process.env['DB_PASSWORD'] || '',
     database: process.env['DB_NAME'] || 'repair_calc',
     poolLimit: parseInt(process.env['DB_POOL_LIMIT'] || '10'),
+    charset: process.env['DB_CHARSET'] || 'utf8mb4',
+    collation: process.env['DB_COLLATION'] || 'utf8mb4_unicode_ci',
+    timezone: process.env['DB_TIMEZONE'] || '+00:00',
   },
   
   jwt: {
