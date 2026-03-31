@@ -111,3 +111,5 @@ database/
 .blackbox/
 .blackboxcli/
 .qodo/
+
+playwright-profile
