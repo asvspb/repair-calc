@@ -128,6 +128,7 @@ repair-calc/
 
 | Файл | Назначение |
 |------|----------|
+| `docs/TECHNICAL-SPECIFICATION.md` | 🆕 Техническое задание на архитектуру |
 | `docs/LOGGING.md` | 🆕 Полное руководство по логированию |
 | `docs/LOGGING-CHEATSHEET.md` | 🆕 Шпаргалка по командам логирования |
 | `docs/README.md` | 🆕 Индекс документации |
@@ -391,6 +392,50 @@ npm run test:e2e:ui
 - [docs/LOGGING.md](./docs/LOGGING.md) — Логирование
 - [docs/LOGGING-CHEATSHEET.md](./docs/LOGGING-CHEATSHEET.md) — Шпаргалка
 - [docs/README.md](./docs/README.md) — Индекс документации
+- [docs/TECHNICAL-SPECIFICATION.md](./docs/TECHNICAL-SPECIFICATION.md) — ТЗ (v1.1)
+- [docs/IMPLEMENTATION_PLAN.md](./docs/IMPLEMENTATION_PLAN.md) — План реализации
+- [docs/MIGRATION-COMPLETE.md](./docs/MIGRATION-COMPLETE.md) — ✅ Отчёт о миграции
+
+---
+
+## ✅ Реализованные изменения (2026-03-31)
+
+### Многопользовательская архитектура с группировкой объектов
+
+**Статус:** ✅ ЗАВЕРШЕНО (Этапы 1-4)
+
+**Структура данных:**
+```
+Пользователь
+└── Проект (группа объектов)
+    └── Объект (недвижимость)
+        └── Комната
+            └── Работа
+                └── Материал/Инструмент
+```
+
+**База данных:**
+- ✅ Таблица `objects` — объекты недвижимости
+- ✅ Таблица `deleted_entities` — отслеживание удалений (30 дней)
+- ✅ `users.is_premium` — флаг премиум-доступа
+- ✅ `rooms.object_id` — связь с объектами
+
+**API Endpoints:**
+- ✅ `POST /api/projects/:projectId/objects` — создать объект
+- ✅ `GET /api/objects` — список объектов
+- ✅ `GET /api/objects/:id` — объект с комнатами
+- ✅ `PUT /api/objects/:id` — обновить объект
+- ✅ `DELETE /api/objects/:id` — удалить объект
+- ✅ `GET /api/users/me` — профиль пользователя
+
+**Лимиты:**
+- Бесплатные: 10 объектов в проекте
+- Премиум: безлимит
+
+**Миграция:**
+- Все проекты объединены в "Мои объекты"
+- Каждый проект стал объектом
+- Комнаты перенесены в объекты
 
 ---
 
