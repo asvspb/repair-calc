@@ -213,3 +213,48 @@ export const idMapper = new IdMapper();
 
 // Экспорт класса для использования статических методов
 export { IdMapper };
+
+/**
+ * Генерация уникального ID для локальных сущностей
+ */
+export function generateId(): string {
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * Проверка, является ли ID серверным (числовым или UUID)
+ */
+export function isServerId(id: string): boolean {
+  // Проверка на числовой ID (строка из цифр)
+  if (/^\d+$/.test(id)) {
+    return true;
+  }
+  // Проверка на UUID формат
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
+/**
+ * Маппинг локального ID на серверный ID
+ * @param localId - локальный ID
+ * @param mapping - объект маппингов { localId: serverId }
+ * @returns серверный ID или null
+ */
+export function mapLocalToServerId(localId: string, mapping: Record<string, number | string>): number | string | null {
+  return mapping[localId] ?? null;
+}
+
+/**
+ * Маппинг серверного ID на локальный ID
+ * @param serverId - серверный ID
+ * @param mapping - объект маппингов { localId: serverId }
+ * @returns локальный ID или null
+ */
+export function mapServerToLocalId(serverId: number | string, mapping: Record<string, number | string>): string | null {
+  for (const [localId, mappedServerId] of Object.entries(mapping)) {
+    if (mappedServerId === serverId) {
+      return localId;
+    }
+  }
+  return null;
+}

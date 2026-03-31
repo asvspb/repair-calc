@@ -73,6 +73,10 @@ export class CircuitBreaker {
       this.failures = 0;
       this.successes = 0;
       console.info(`Circuit breaker for ${this.parserType} closed (recovered)`);
+    } else if (this.state === 'closed') {
+      // Сброс failures при успехе в closed состоянии
+      this.failures = 0;
+      this.successes = 0;
     }
   }
 

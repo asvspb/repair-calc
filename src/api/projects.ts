@@ -4,6 +4,7 @@
 
 import type { ProjectData, RoomData } from '../types';
 import { logApiRequest, logApiSuccess, logApiError, logDebug } from '../utils/logger';
+import { httpClient, ApiError } from './httpClient';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
@@ -115,115 +116,29 @@ function clientToApiProject(project: ProjectData, userId: string): Partial<ApiPr
 
 const DEFAULT_TIMEOUT = 30000; // 30 секунд
 
+/**
+ * Выполнение HTTP запроса с использованием единого клиента
+ * Обеспечивает согласованную обработку ошибок, таймауты и авторизацию
+ */
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const method = options.method || 'GET';
-  const startTime = logApiRequest(method, endpoint, options.body ? JSON.parse(options.body as string) : undefined);
-  
-  const url = `${API_BASE}${endpoint}`;
-
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = localStorage.getItem('token');
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
-    logDebug('API', 'Токен авторизации добавлен в заголовки');
-  } else {
-    logDebug('API', 'Токен авторизации отсутствует');
-  }
-
-  // Создаём AbortController для timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      signal: controller.signal,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      // При 401 пробуем обновить токен и повторить запрос
-      if (response.status === 401 && endpoint !== '/api/auth/refresh') {
-        logDebug('API', 'Получен 401, пробуем обновить токен');
-        const refreshed = await tryRefreshToken();
-        if (refreshed) {
-          // Повторяем запрос с новым токеном
-          const newToken = localStorage.getItem('token');
-          if (newToken) {
-            defaultHeaders['Authorization'] = `Bearer ${newToken}`;
-          }
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers: {
-              ...defaultHeaders,
-              ...options.headers,
-            },
-          });
-          const retryData = await retryResponse.json();
-          if (!retryResponse.ok) {
-            const error = new ProjectsApiError(
-              retryData.message || 'Произошла ошибка',
-              retryResponse.status
-            );
-            logApiError(method, endpoint, startTime, { 
-              status: retryResponse.status, 
-              message: retryData.message 
-            });
-            throw error;
-          }
-          logApiSuccess(method, endpoint, startTime, retryData);
-          return retryData;
-        }
-      }
-      
-      const error = new ProjectsApiError(
-        data.message || 'Произошла ошибка',
-        response.status
-      );
-      logApiError(method, endpoint, startTime, { 
-        status: response.status, 
-        message: data.message,
-        error: data 
-      });
-      throw error;
-    }
-
-    logApiSuccess(method, endpoint, startTime, data);
-    return data;
+    return await httpClient.request<T>(endpoint, options);
   } catch (error) {
-    if (error instanceof ProjectsApiError) {
-      throw error;
+    // Конвертируем ApiError в ProjectsApiError для обратной совместимости
+    if (error instanceof ApiError) {
+      throw new ProjectsApiError(error.message, error.statusCode);
     }
-    // Обработка timeout/abort
-    if (error instanceof Error && error.name === 'AbortError') {
-      const timeoutError = new ProjectsApiError(
-        'Превышено время ожидания запроса',
-        408
-      );
-      logApiError(method, endpoint, startTime, { timeout: true });
-      throw timeoutError;
-    }
-    logApiError(method, endpoint, startTime, error);
     throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
 /**
  * Попытка обновления токена при 401 ошибке
  * Возвращает true если токен успешно обновлен
+ * @deprecated Используется httpClient для автоматического обновления токена
  */
 async function tryRefreshToken(): Promise<boolean> {
   const refreshToken = localStorage.getItem('refreshToken');
@@ -338,9 +253,31 @@ export async function syncPull(): Promise<{
     status: string; 
     data: { 
       projects: (ApiProject & { rooms: ApiRoom[] })[]; 
-      timestamp: number 
-    } 
+      timestamp: number
+    }
   }>('/api/sync/pull');
+}
+
+/**
+ * Обновление проекта и комнат в одной транзакции
+ */
+export async function updateProjectWithRooms(
+  id: string,
+  data: {
+    name?: string;
+    city?: string | null;
+    use_ai_pricing?: boolean;
+    last_ai_price_update?: string | null;
+    rooms: RoomData[]
+  }
+): Promise<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }> {
+  return fetchJson<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }>(
+    `/api/projects/${id}/with-rooms`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+  );
 }
 
 // Экспорт утилит для использования в других модулях

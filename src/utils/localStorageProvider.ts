@@ -23,13 +23,13 @@ export class LocalStorageProvider implements IStorageProvider {
   private constructor() {}
 
   /**
-   * Get a value from localStorage
+   * Get a value from localStorage (synchronous)
    */
   get<T>(key: string): T | null {
     try {
       const data = localStorage.getItem(key);
       if (!data) return null;
-      
+
       try {
         return JSON.parse(data) as T;
       } catch {
@@ -57,7 +57,15 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Set a value in localStorage
+   * Get a value from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async getAsync<T>(key: string): Promise<T | null> {
+    return Promise.resolve(this.get<T>(key));
+  }
+
+  /**
+   * Set a value in localStorage (synchronous)
    */
   set<T>(key: string, value: T): void {
     try {
@@ -69,7 +77,15 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Remove a value from localStorage
+   * Set a value in localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async setAsync<T>(key: string, value: T): Promise<void> {
+    return Promise.resolve(this.set(key, value));
+  }
+
+  /**
+   * Remove a value from localStorage (synchronous)
    */
   remove(key: string): void {
     try {
@@ -80,7 +96,15 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Clear all values from localStorage
+   * Remove a value from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async removeAsync(key: string): Promise<void> {
+    return Promise.resolve(this.remove(key));
+  }
+
+  /**
+   * Clear all values from localStorage (synchronous)
    */
   clear(): void {
     try {
@@ -88,6 +112,14 @@ export class LocalStorageProvider implements IStorageProvider {
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
+  }
+
+  /**
+   * Clear all values from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async clearAsync(): Promise<void> {
+    return Promise.resolve(this.clear());
   }
 
   /**

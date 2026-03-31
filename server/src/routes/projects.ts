@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import { createProjectSchema, updateProjectSchema, idParamSchema } from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
-import type { AuthRequest } from '../types/index.js';
+import type { AuthRequest, Project } from '../types/index.js';
 
 const router = Router();
 
@@ -132,21 +132,57 @@ router.put('/:id/ai-settings', async (req: AuthRequest, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params);
     const { use_ai_pricing, city } = req.body;
-    
+
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
       throw notFound('Project not found');
     }
-    
+
     const project = await ProjectRepository.update(id, {
       use_ai_pricing,
       city,
       last_ai_price_update: use_ai_pricing ? new Date() : null,
     });
-    
+
     res.json({
       status: 'success',
       data: project,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/projects/:id/with-rooms - Update project and rooms in a single transaction
+router.put('/:id/with-rooms', async (req: AuthRequest, res, next) => {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const { name, city, use_ai_pricing, last_ai_price_update, rooms } = req.body;
+
+    // Check ownership
+    const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
+    if (!existing) {
+      throw notFound('Project not found');
+    }
+
+    const projectData: Partial<Project> = {};
+    if (name !== undefined) projectData.name = name;
+    if (city !== undefined) projectData.city = city;
+    if (use_ai_pricing !== undefined) projectData.use_ai_pricing = use_ai_pricing;
+    if (last_ai_price_update !== undefined) {
+      projectData.last_ai_price_update = last_ai_price_update ? new Date(last_ai_price_update) : null;
+    }
+
+    const updated = await ProjectRepository.updateWithRooms(
+      id,
+      req.user!.id,
+      projectData,
+      rooms || []
+    );
+
+    res.json({
+      status: 'success',
+      data: updated,
     });
   } catch (error) {
     next(error);

@@ -47,13 +47,14 @@ export class ApiStorageProvider implements IStorageProvider {
   private cacheExpiry: number = 0;
   private readonly CACHE_TTL = 30000; // 30 секунд
   
-  // Rate limiting и queue
+  // Rate limiting and queue
   private requestQueue: QueuedRequest[] = [];
   private isProcessingQueue = false;
   private lastRequestTime = 0;
   private readonly MIN_REQUEST_INTERVAL = 500; // 500ms между запросами
   private readonly MAX_RETRIES = 3;
   private deletedProjects = new Set<string>(); // Трекаем удаленные проекты
+  private roomSyncErrors = new Map<string, { error: Error; timestamp: number }>(); // Трекаем ошибки синхронизации комнат
 
   private constructor() {}
 
@@ -239,23 +240,55 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
+   * Получение значения из хранилища (асинхронно)
+   * Для проектов загружает с сервера, для остальных ключей — localStorage
+   */
+  async getAsync<T>(key: string): Promise<T | null> {
+    if (key === STORAGE_KEYS.PROJECTS) {
+      // Для проектов используем загрузку с сервера
+      if (this.isCacheValid()) {
+        return Array.from(this.projectsCache.values()) as T;
+      }
+      // Загружаем с сервера
+      try {
+        const projects = await this.loadProjectsAsync();
+        return projects as T;
+      } catch (error) {
+        console.error('ApiStorage: ошибка загрузки проектов', error);
+        return null;
+      }
+    }
+
+    // Остальные данные из localStorage
+    return Promise.resolve(this.get<T>(key));
+  }
+
+  /**
    * Сохранение значения в хранилище
-   * Для проектов использует API (асинхронно), для остальных ключей — localStorage
+   * Для проектов использует API (асинхронно через saveProjectsAsync), для остальных ключей — localStorage
+   * Примечание: для PROJECTS ключа метод синхронно обновляет кэш и localStorage (бэкап),
+   * а синхронизация с сервером происходит асинхронно через saveProjectsAsync
    */
   set<T>(key: string, value: T): void {
-    // Проекты сохраняем через API
+    // Проекты сохраняем в кэш и localStorage (бэкап), серверная синхронизация — через saveProjectsAsync
     if (key === STORAGE_KEYS.PROJECTS) {
-      // Обновляем кэш немедленно для UI
       const projects = value as ProjectData[];
+
+      // Обновляем кэш немедленно для UI
       this.projectsCache.clear();
       projects.forEach(p => this.projectsCache.set(p.id, p));
       this.cacheExpiry = Date.now() + this.CACHE_TTL;
 
-      // Асинхронное сохранение на сервер — вызывающий код должен использовать saveProjectsAsync
-      throw new StorageProviderError(
-        'unknown',
-        'Use saveProjectsAsync for API storage'
-      );
+      // Сохраняем в localStorage как бэкап
+      try {
+        localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+      } catch (error) {
+        throw StorageProviderError.fromError(error);
+      }
+
+      // Возвращаем сразу — вызывающий код (StorageManager.saveProjects) завершён
+      // Синхронизация с сервером происходит через debounce в ProjectContext.scheduleSave
+      return;
     }
 
     // Остальные данные в localStorage
@@ -264,6 +297,21 @@ export class ApiStorageProvider implements IStorageProvider {
     } catch (error) {
       throw StorageProviderError.fromError(error);
     }
+  }
+
+  /**
+   * Сохранение значения в хранилище (асинхронно)
+   * Для проектов вызывает saveProjectsAsync для синхронизации с сервером
+   */
+  async setAsync<T>(key: string, value: T): Promise<void> {
+    if (key === STORAGE_KEYS.PROJECTS) {
+      // Для проектов используем полную синхронизацию с сервером
+      await this.saveProjectsAsync(value as ProjectData[]);
+      return;
+    }
+
+    // Остальные данные в localStorage
+    return Promise.resolve(this.set(key, value));
   }
 
   /**
@@ -321,8 +369,8 @@ export class ApiStorageProvider implements IStorageProvider {
           const syncPromise = this.enqueueRequest(async () => {
             try {
               const projectWithServerId = { ...project, id: mappedServerId };
+              // updateProjectAsync теперь использует транзакционный endpoint и включает комнаты
               await this.updateProjectAsync(projectWithServerId);
-              await this.syncRooms(projectWithServerId, existingProjects);
             } catch (error) {
               logError('ApiStorage', 'Ошибка обновления мигрированного проекта', error, {
                 localId: project.id,
@@ -336,8 +384,8 @@ export class ApiStorageProvider implements IStorageProvider {
           logDebug('ApiStorage', 'Обновление проекта на сервере', { projectId: project.id });
           const syncPromise = this.enqueueRequest(async () => {
             try {
+              // updateProjectAsync теперь использует транзакционный endpoint и включает комнаты
               await this.updateProjectAsync(project);
-              await this.syncRooms(project, existingProjects);
             } catch (error) {
               logError('ApiStorage', 'Ошибка синхронизации проекта', error, { projectId: project.id });
             }
@@ -459,10 +507,12 @@ export class ApiStorageProvider implements IStorageProvider {
 
   /**
    * Синхронизация комнат проекта с debounce для предотвращения rate limiting
+   * Возвращает массив ошибок для комнат, которые не удалось синхронизировать
    */
-  private async syncRooms(project: ProjectData, existingProjects: ProjectData[]): Promise<void> {
+  private async syncRooms(project: ProjectData, existingProjects: ProjectData[]): Promise<Error[]> {
     const serverProject = existingProjects.find(p => p.id === project.id);
     const existingRoomIds = new Set(serverProject?.rooms.map(r => r.id) || []);
+    const errors: Error[] = [];
 
     // Синхронизируем комнаты последовательно с rate limiting
     for (const room of project.rooms) {
@@ -472,19 +522,47 @@ export class ApiStorageProvider implements IStorageProvider {
         if (roomExistsOnServer) {
           await this.enqueueRequest(() => roomsApi.updateRoom(room.id, room), project.id);
           logDebug('ApiStorage', 'Комната обновлена', { roomId: room.id });
+          // Clear any previous error for this room
+          this.roomSyncErrors.delete(`${project.id}:${room.id}`);
         } else {
           await this.enqueueRequest(() => roomsApi.createRoom(project.id, room), project.id);
           logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: project.id });
+          // Clear any previous error for this room
+          this.roomSyncErrors.delete(`${project.id}:${room.id}`);
         }
       } catch (roomError) {
         // Игнорируем 429 ошибки для комнат - они будут обработаны retry logic
         if (this.isRateLimitError(roomError)) {
           logWarning('ApiStorage', 'Room sync rate limited, will retry', { roomId: room.id });
+          // Не считаем 429 ошибкой, будет повторная попытка
         } else {
-          logError('ApiStorage', 'Ошибка синхронизации комнаты', roomError, { roomId: room.id });
+          const error = roomError instanceof Error ? roomError : new Error(String(roomError));
+          logError('ApiStorage', 'Ошибка синхронизации комнаты', error, { roomId: room.id });
+          // Сохраняем ошибку для последующего уведомления
+          this.roomSyncErrors.set(`${project.id}:${room.id}`, {
+            error,
+            timestamp: Date.now()
+          });
+          errors.push(error);
         }
       }
     }
+
+    return errors;
+  }
+
+  /**
+   * Получение ошибок синхронизации комнат
+   */
+  getRoomSyncErrors(): Map<string, { error: Error; timestamp: number }> {
+    return new Map(this.roomSyncErrors);
+  }
+
+  /**
+   * Очистка ошибок синхронизации комнат
+   */
+  clearRoomSyncErrors(): void {
+    this.roomSyncErrors.clear();
   }
 
   /**
@@ -543,6 +621,7 @@ export class ApiStorageProvider implements IStorageProvider {
 
   /**
    * Обновление проекта на сервере
+   * Если присутствуют комнаты — использует транзакционный endpoint
    * Примечание: логирование происходит внутри updateProject в projects.ts
    */
   async updateProjectAsync(project: ProjectData): Promise<ProjectData> {
@@ -551,6 +630,7 @@ export class ApiStorageProvider implements IStorageProvider {
       city?: string;
       use_ai_pricing?: boolean;
       last_ai_price_update?: string | null;
+      rooms?: RoomData[];
     } = {
       name: project.name,
     };
@@ -570,11 +650,24 @@ export class ApiStorageProvider implements IStorageProvider {
       updateData.last_ai_price_update = project.lastAiPriceUpdate || null;
     }
 
+    // Включаем комнаты для транзакционного обновления
+    if (project.rooms && project.rooms.length > 0) {
+      updateData.rooms = project.rooms;
+    }
+
     // НЕ отправляем version — сервер сам инкрементирует при обновлении
     // Это предотвращает 403 Version conflict ошибки
 
     try {
-      const response = await projectsApi.updateProject(project.id, updateData);
+      let response;
+      if (updateData.rooms) {
+        // Используем транзакционный endpoint для атомарного обновления проекта и комнат
+        response = await projectsApi.updateProjectWithRooms(project.id, updateData);
+      } else {
+        // Обычное обновление только проекта
+        response = await projectsApi.updateProject(project.id, updateData);
+      }
+      
       const updated = projectsApi.apiToClientProject(response.data);
 
       // Обновляем кэш
@@ -631,7 +724,7 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Удаление значения из хранилища
+   * Удаление значения из хранилища (синхронно)
    */
   remove(key: string): void {
     if (key === STORAGE_KEYS.PROJECTS) {
@@ -642,7 +735,14 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Очистка всего хранилища
+   * Удаление значения из хранилища (асинхронно)
+   */
+  async removeAsync(key: string): Promise<void> {
+    return Promise.resolve(this.remove(key));
+  }
+
+  /**
+   * Очистка всего хранилища (синхронно)
    */
   clear(): void {
     this.projectsCache.clear();
@@ -650,6 +750,13 @@ export class ApiStorageProvider implements IStorageProvider {
     localStorage.removeItem(STORAGE_KEYS.PROJECTS);
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
     localStorage.removeItem(STORAGE_KEYS.VERSION);
+  }
+
+  /**
+   * Очистка всего хранилища (асинхронно)
+   */
+  async clearAsync(): Promise<void> {
+    return Promise.resolve(this.clear());
   }
 
   /**

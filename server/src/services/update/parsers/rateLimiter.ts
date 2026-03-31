@@ -31,6 +31,11 @@ export class RateLimiter {
    * Ожидание возможности выполнения запроса
    */
   async wait(): Promise<void> {
+    // Проверка нулевого лимита
+    if (this.config.requestsPerMinute <= 0) {
+      throw new Error(`Rate limit exceeded (requests per minute set to 0)`);
+    }
+
     // Проверка дневного лимита
     if (this.config.requestsPerDay && this.dailyRequestCount >= this.config.requestsPerDay) {
       throw new Error(`Daily rate limit exceeded (${this.config.requestsPerDay} requests)`);

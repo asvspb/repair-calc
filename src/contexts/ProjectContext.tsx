@@ -19,6 +19,7 @@ import {
 } from '../utils/logger';
 import { runMigrations, needsMigration } from '../utils/migration';
 import { idMapper, IdMapper } from '../utils/idMapper';
+import { saveQueue } from '../utils/saveQueue';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -59,6 +60,7 @@ interface ProjectContextValue {
   lastSavedToServer: Date | null;
   lastTotalsSave: Date | null;
   totalsSaveError: string | null;
+  roomSyncError: string | null;
 
   // Actions
   setActiveProjectId: (id: string) => void;
@@ -97,6 +99,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   const [lastSavedToServer, setLastSavedToServer] = useState<Date | null>(null);
   const [lastTotalsSave, setLastTotalsSave] = useState<Date | null>(null);
   const [totalsSaveError, setTotalsSaveError] = useState<string | null>(null);
+  const [roomSyncError, setRoomSyncError] = useState<string | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<ProjectData[] | null>(null);
@@ -285,7 +288,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     }, 2000); // 2 секунды задержка после последнего изменения
   }, [saveCalculatedTotals]);
 
-  // Автосохранение с debounce
+  // Автосохранение с debounce и персистентной очередью
   const scheduleSave = useCallback((newProjects: ProjectData[]) => {
     pendingSaveRef.current = newProjects;
 
@@ -298,47 +301,42 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         const startTime = logStart('Save', 'Автосохранение проектов');
         const projectsToSave = pendingSaveRef.current;
 
-        try {
-          // Сохранение в localStorage
-          StorageManager.saveProjects(projectsToSave);
-          setLastSaved(new Date());
-          logSuccess('Save', 'Сохранено в localStorage', {
-            count: projectsToSave.length,
-            projectIds: projectsToSave.map(p => p.id)
-          }, startTime);
+        // Создаем задачу сохранения с персистентностью
+        const saveTask = async () => {
+          try {
+            // Сохранение в localStorage
+            StorageManager.saveProjects(projectsToSave);
+            setLastSaved(new Date());
+            logSuccess('Save', 'Сохранено в localStorage', {
+              count: projectsToSave.length,
+              projectIds: projectsToSave.map(p => p.id)
+            }, startTime);
 
-          // Если авторизован, сохраняем на сервер
-          if (isAuthenticated) {
-            const apiProvider = getApiProvider();
-            const serverStartTime = logStart('Save', 'Сохранение на сервер');
+            // Если авторизован, сохраняем на сервер
+            if (isAuthenticated) {
+              const apiProvider = getApiProvider();
+              const serverStartTime = logStart('Save', 'Сохранение на сервер');
 
-            apiProvider.saveProjectsAsync(projectsToSave).then(() => {
+              await apiProvider.saveProjectsAsync(projectsToSave);
               setLastSavedToServer(new Date());
               logSuccess('Save', 'Сохранено на сервер', {
                 count: projectsToSave.length
               }, serverStartTime);
-            }).catch((err) => {
-              // Игнорируем ошибки для удаленных проектов
-              if (err instanceof StorageError && err.type === 'unknown') {
-                logDebug('Save', 'Ошибка сохранения (возможно проект удален)', { 
-                  error: err.message 
-                });
-              } else {
-                logError('Save', 'Ошибка сохранения на сервер', err, {
-                  projects: projectsToSave.map(p => ({ id: p.id, name: p.name }))
-                });
-                console.error('Server save error:', err);
-              }
-            });
+              setSaveError(null);
+            }
+            pendingSaveRef.current = null;
+          } catch (err) {
+            const storageError = err as StorageError;
+            setSaveError(storageError.message || 'Ошибка сохранения');
+            logError('Save', 'Ошибка сохранения', err);
+            console.error('Save error:', err);
+            // Пробрасываем ошибку для обработки в saveQueue
+            throw err;
           }
-          setSaveError(null);
-          pendingSaveRef.current = null;
-        } catch (err) {
-          const storageError = err as StorageError;
-          setSaveError(storageError.message || 'Ошибка сохранения');
-          logError('Save', 'Ошибка сохранения в localStorage', err);
-          console.error('Save error:', err);
-        }
+        };
+
+        // Добавляем в очередь с персистентностью
+        saveQueue.enqueue(saveTask, projectsToSave);
       }
     }, 2000); // Увеличено с 1000 до 2000ms для предотвращения rate limiting
   }, [isAuthenticated, getApiProvider]);
@@ -569,13 +567,8 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       // Удаляем локально (всегда, даже если сервер не ответил)
       setProjects(prev => {
         const updated = prev.filter(p => p.id !== projectId);
-        // Сохраняем в localStorage только если авторизован (серверное удаление могло не сработать)
-        if (!isAuthenticated) {
-          scheduleSave(updated);
-        } else {
-          // При авторизации просто обновляем localStorage без триггера синхронизации
-          StorageManager.saveProjects(updated);
-        }
+        // Используем единый путь сохранения через scheduleSave для консистентности
+        scheduleSave(updated);
         return updated;
       });
 
@@ -624,6 +617,66 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     };
   }, []);
 
+  // Восстановление pending сохранений после перезагрузки и обработка visibilitychange
+  useEffect(() => {
+    // Проверяем наличие pending данных при загрузке
+    if (saveQueue.hasPendingData && isAuthenticated) {
+      const pendingData = saveQueue.getPendingData();
+      if (pendingData && Array.isArray(pendingData)) {
+        logDebug('ProjectContext', 'Восстановление pending сохранений', {
+          count: pendingData.length
+        });
+        // Восстанавливаем pending данные и планируем сохранение
+        pendingSaveRef.current = pendingData as ProjectData[];
+        scheduleSave(pendingSaveRef.current);
+      }
+    }
+
+    // Обработка возвращения на вкладку — проверяем наличие несохранённых данных
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && saveQueue.hasPendingData) {
+        logDebug('ProjectContext', 'Вкладка активна, проверяем pending сохранения');
+        const pendingData = saveQueue.getPendingData();
+        if (pendingData && Array.isArray(pendingData) && !pendingSaveRef.current) {
+          pendingSaveRef.current = pendingData as ProjectData[];
+          scheduleSave(pendingSaveRef.current);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, scheduleSave]);
+
+  // Периодическая проверка ошибок синхронизации комнат
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const checkRoomSyncErrors = () => {
+      const apiProvider = getApiProvider();
+      const errors = apiProvider.getRoomSyncErrors();
+      
+      if (errors.size > 0) {
+        const errorMessages = Array.from(errors.entries()).map(([key, value]) => {
+          const [projectId, roomId] = key.split(':');
+          return `Комната ${roomId}: ${value.error.message}`;
+        });
+        setRoomSyncError(`Ошибка синхронизации комнат: ${errorMessages.join('; ')}`);
+      } else {
+        setRoomSyncError(null);
+      }
+    };
+
+    // Проверяем сразу и затем каждые 5 секунд
+    checkRoomSyncErrors();
+    const interval = setInterval(checkRoomSyncErrors, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, getApiProvider]);
+
   const value: ProjectContextValue = {
     projects,
     activeProjectId,
@@ -635,6 +688,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     lastSavedToServer,
     lastTotalsSave,
     totalsSaveError,
+    roomSyncError,
     setActiveProjectId,
     updateProjects,
     updateActiveProject,

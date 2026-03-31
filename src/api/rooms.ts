@@ -3,6 +3,7 @@
  */
 
 import type { RoomData, Opening, RoomSegment, Obstacle, WallSection, RoomSubSection, WorkData } from '../types';
+import { httpClient, ApiError } from './httpClient';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
@@ -96,59 +97,21 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
 
 const DEFAULT_TIMEOUT = 30000; // 30 секунд
 
+/**
+ * Выполнение HTTP запроса с использованием единого клиента
+ */
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
-
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = localStorage.getItem('token');
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
-  }
-
-  // Создаём AbortController для timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      signal: controller.signal,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new RoomsApiError(
-        data.message || 'Произошла ошибка',
-        response.status
-      );
-    }
-
-    return data;
+    return await httpClient.request<T>(endpoint, options);
   } catch (error) {
-    if (error instanceof RoomsApiError) {
-      throw error;
-    }
-    // Обработка timeout/abort
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new RoomsApiError(
-        'Превышено время ожидания запроса',
-        408
-      );
+    // Конвертируем ApiError в RoomsApiError для обратной совместимости
+    if (error instanceof ApiError) {
+      throw new RoomsApiError(error.message, error.statusCode);
     }
     throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

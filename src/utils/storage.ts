@@ -66,17 +66,50 @@ export class StorageManager {
     }
   }
 
+  static async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
+    try {
+      await StorageManager.provider.setAsync(STORAGE_KEYS.PROJECTS, projects);
+      await StorageManager.provider.setAsync(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+    } catch (error) {
+      if (error instanceof StorageProviderError) {
+        throw {
+          type: error.type,
+          message: error.message
+        } as StorageError;
+      }
+      throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
+    }
+  }
+
   static loadProjects(): ProjectData[] | null {
     try {
       const projects = StorageManager.provider.get<ProjectData[]>(STORAGE_KEYS.PROJECTS);
-      
+
       if (!projects) return null;
-      
+
       // Валидация структуры
       if (!Array.isArray(projects)) {
         throw new Error('Invalid data structure');
       }
-      
+
+      return projects;
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      return null;
+    }
+  }
+
+  static async loadProjectsAsync(): Promise<ProjectData[] | null> {
+    try {
+      const projects = await StorageManager.provider.getAsync<ProjectData[]>(STORAGE_KEYS.PROJECTS);
+
+      if (!projects) return null;
+
+      // Валидация структуры
+      if (!Array.isArray(projects)) {
+        throw new Error('Invalid data structure');
+      }
+
       return projects;
     } catch (error) {
       console.error('Error loading projects:', error);
