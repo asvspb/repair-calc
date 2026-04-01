@@ -1,8 +1,8 @@
 # Application Index - Repair Calculator
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-04-01
 **Application Name:** Мой ремонт (Repair Calculator)
-**Version:** 0.0.0
+**Version:** 1.0.0
 
 ---
 
@@ -264,17 +264,16 @@ npm run lint         # TypeScript type check
 
 ## 🗄️ Data Persistence
 
-### Current (localStorage)
-- **Primary:** localStorage (browser)
-- **Auto-save:** 1 second debounce
-- **Abstraction:** `IStorageProvider` interface
+### Current Architecture (MySQL + Backend)
+- **Server:** Express + MySQL (Docker)
+- **Auth:** JWT tokens
+- **Frontend:** Port 3993
+- **Backend:** Port 3994
+- **Database:** MySQL 8 (utf8mb4)
 
-### Planned (MySQL)
-- **Server:** Express + MySQL
-- **Auth:** JWT
-- **Sync:** Offline-first with IndexedDB queue
-
-**See:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+### Offline Support
+- **Queue:** IndexedDB for pending changes
+- **Sync:** Auto-sync on reconnect
 
 ---
 
@@ -311,12 +310,13 @@ npm run lint         # TypeScript type check
 
 | Document | Description |
 |----------|-------------|
-| [TODO.md](./TODO.md) | Current tasks and progress |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Project architecture |
-| [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md) | DB migration spec |
-| [CODE_REVIEW.md](./CODE_REVIEW.md) | Code review results |
-| [PROGRESS.md](./PROGRESS.md) | Progress history |
-| [MATERIALS_CATALOG_FEATURE.md](./MATERIALS_CATALOG_FEATURE.md) | Materials catalog spec |
+| [TODO.md](./TODO.md) | Текущие задачи |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | Техническое задание |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты code review |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
+| [OBJECT_MANAGEMENT_SPEC.md](./OBJECT_MANAGEMENT_SPEC.md) | Спецификация управления объектами |
 
 ---
 
@@ -325,7 +325,7 @@ npm run lint         # TypeScript type check
 ### Before Making Changes
 1. Read this index to understand current state
 2. Check `docs/TODO.md` for current tasks
-3. Check `docs/DATABASE_MIGRATION.md` for DB migration plan
+3. Check `docs/TECHNICAL-SPECIFICATION.md` for technical specs
 
 ### After Making Changes
 1. Update relevant documentation
