@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { createProjectSchema, updateProjectSchema, idParamSchema } from '../middleware/validation.js';
+import { createProjectSchema, updateProjectSchema, idParamSchema, updateProjectWithObjectsSchema } from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
 import type { AuthRequest, Project, Room } from '../types/index.js';
@@ -77,29 +77,38 @@ router.post('/', async (req: AuthRequest, res, next) => {
   }
 });
 
-// GET /api/projects/:id - Get single project with rooms
+// GET /api/projects/:id - Get single project with objects
 router.get('/:id', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
   try {
     const { id } = idParamSchema.parse(req.params);
 
-    const project = await ProjectRepository.findFullProject(id, req.user!.id);
+    const project = await ProjectRepository.findByIdWithObjects(id, req.user!.id);
     if (!project) {
       console.log(`\n⚠️ [GET /projects/:id] Проект не найден: ${id}`);
       throw notFound('Project not found');
     }
 
-    console.log(`\n📋 [GET /projects/:id] Проект с комнатами`);
+    console.log(`\n📋 [GET /projects/:id] Проект с объектами`);
     console.log(`   ID: ${project.id}`);
     console.log(`   Название: "${project.name}"`);
     console.log(`   Город: ${project.city || 'не указан'}`);
-    console.log(`   Комнат: ${project.rooms?.length || 0}`);
-    
-    if (project.rooms && project.rooms.length > 0) {
-      project.rooms.forEach(r => {
-        const works = typeof r.works === 'string' ? JSON.parse(r.works) : r.works;
-        const worksArray = Array.isArray(works) ? works : [];
-        console.log(`   • ${r.name}: ${r.length}×${r.width}×${r.height}, работ: ${worksArray.filter(w => w.enabled).length}`);
+    console.log(`   Объектов: ${project.objects?.length || 0}`);
+
+    if (project.objects && project.objects.length > 0) {
+      project.objects.forEach((obj, objIndex) => {
+        console.log(`   ┌─ Объект #${objIndex + 1}: "${obj.name}"`);
+        console.log(`   │   ID: ${obj.id}`);
+        console.log(`   │   Комнат: ${obj.rooms?.length || 0}`);
+        
+        if (obj.rooms && obj.rooms.length > 0) {
+          obj.rooms.forEach(r => {
+            const works = typeof r.works === 'string' ? JSON.parse(r.works) : r.works;
+            const worksArray = Array.isArray(works) ? works : [];
+            console.log(`   │   • ${r.name}: ${r.length}×${r.width}×${r.height}, работ: ${worksArray.filter(w => w.enabled).length}`);
+          });
+        }
+        console.log(`   └─`);
       });
     }
     console.log(`   Завершено за ${Date.now() - startTime}ms`);
@@ -309,6 +318,53 @@ router.put('/:id/with-rooms', async (req: AuthRequest, res, next) => {
     });
   } catch (error) {
     console.log(`\n❌ [PUT /projects/:id/with-rooms] Ошибка за ${Date.now() - startTime}ms:`, error);
+    next(error);
+  }
+});
+
+// PUT /api/projects/:id/with-objects - Update project with multiple objects
+router.put('/:id/with-objects', async (req: AuthRequest, res, next) => {
+  const startTime = Date.now();
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const { name, city, use_ai_pricing, last_ai_price_update, objects } = updateProjectWithObjectsSchema.parse(req.body);
+
+    // Check ownership
+    const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
+    if (!existing) {
+      console.log(`\n⚠️ [PUT /projects/:id/with-objects] Проект не найден: ${id}`);
+      throw notFound('Project not found');
+    }
+
+    console.log(`\n🔄 [PUT /projects/:id/with-objects] Обновление проекта с объектами`);
+    console.log(`   ID: ${id}`);
+    console.log(`   Название: "${existing.name}" → "${name || existing.name}"`);
+    console.log(`   Объектов в запросе: ${objects?.length || 0}`);
+
+    const projectData: Partial<Project> = {};
+    if (name !== undefined) projectData.name = name;
+    if (city !== undefined) projectData.city = city;
+    if (use_ai_pricing !== undefined) projectData.use_ai_pricing = use_ai_pricing;
+    if (last_ai_price_update !== undefined) {
+      projectData.last_ai_price_update = last_ai_price_update ? new Date(last_ai_price_update) : null;
+    }
+
+    const updated = await ProjectRepository.updateWithObjects(
+      id,
+      req.user!.id,
+      projectData,
+      objects || []
+    );
+
+    console.log(`\n✅ [PUT /projects/:id/with-objects] Успешно обновлено`);
+    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+
+    res.json({
+      status: 'success',
+      data: updated,
+    });
+  } catch (error) {
+    console.log(`\n❌ [PUT /projects/:id/with-objects] Ошибка за ${Date.now() - startTime}ms:`, error);
     next(error);
   }
 });

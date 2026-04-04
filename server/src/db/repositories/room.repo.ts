@@ -25,6 +25,16 @@ export class RoomRepository {
   static async createForObject(objectId: string, data: Partial<Room>): Promise<Room> {
     const id = uuidv4();
 
+    // Get project_id from object
+    const objectRows = await query<(RowDataPacket & { project_id: string })[]>(
+      'SELECT project_id FROM objects WHERE id = ? AND deleted_at IS NULL LIMIT 1',
+      [objectId]
+    );
+    const projectId = objectRows[0]?.project_id;
+    if (!projectId) {
+      throw new Error('Object not found');
+    }
+
     // Get max sort_order
     const maxOrderRows = await query<(RowDataPacket & { max_order: number | null })[]>(
       'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM rooms WHERE object_id = ?',
@@ -33,11 +43,11 @@ export class RoomRepository {
     const sortOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
 
     await execute(
-      `INSERT INTO rooms (id, object_id, name, geometry_mode, length, width, height, sort_order,
+      `INSERT INTO rooms (id, object_id, project_id, name, geometry_mode, length, width, height, sort_order,
         segments, obstacles, wall_sections, sub_sections, windows, doors, works,
         simple_mode_data, extended_mode_data, advanced_mode_data)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, objectId, data.name || 'Новая комната', data.geometry_mode || 'simple',
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, objectId, projectId, data.name || 'Новая комната', data.geometry_mode || 'simple',
        data.length || 0, data.width || 0, data.height || 0, sortOrder,
        data.segments || null, data.obstacles || null, data.wall_sections || null,
        data.sub_sections || null, data.windows || null, data.doors || null,

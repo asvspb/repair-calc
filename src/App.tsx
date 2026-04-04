@@ -14,6 +14,7 @@ import { createNewProject, createNewRoom } from './utils/factories';
 import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
 import { IdMapper } from './utils/idMapper';
+import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
 
 import { initialProjects } from './data/initialData';
 
@@ -178,7 +179,9 @@ function AppContent() {
   };
 
   const handleImport = (importedProjects: ProjectData[], importedActiveId: string) => {
-    updateProjects(importedProjects);
+    // Выполняем миграцию импортированных проектов на новую структуру с objects
+    const migratedProjects = importedProjects.map(project => migrateProjectToObjects(project));
+    updateProjects(migratedProjects);
     setActiveProjectId(importedActiveId);
     setActiveTab('summary');
   };
@@ -193,8 +196,10 @@ function AppContent() {
 
   const handleDeleteRoom = (roomId: string) => {
     deleteRoom(roomId);
-    const newActiveTab = activeProject && activeProject.rooms.length > 1 
-      ? activeProject.rooms.filter(r => r.id !== roomId)[0]?.id || 'summary'
+    const allRooms = activeProject ? getAllRooms(activeProject) : [];
+    const remainingRooms = allRooms.filter(r => r.id !== roomId);
+    const newActiveTab = remainingRooms.length > 1
+      ? remainingRooms[0]?.id || 'summary'
       : 'summary';
     setActiveTab(newActiveTab);
   };
@@ -410,7 +415,9 @@ function AppContent() {
             <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
             {activeProject && (
               <RoomList
-                rooms={activeProject.rooms}
+                rooms={activeProject.objects && activeProject.objects.length > 0
+                  ? activeProject.objects.flatMap(o => o.rooms)
+                  : (activeProject.rooms || [])}
                 activeTab={activeTab}
                 onRoomClick={(roomId) => {
                   setActiveTab(roomId);
@@ -449,7 +456,7 @@ function AppContent() {
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
           <span className="font-semibold text-lg truncate flex-1">
-            {activeTab === 'summary' ? activeProject?.name : activeProject?.rooms.find(r => r.id === activeTab)?.name}
+            {activeTab === 'summary' ? activeProject?.name : activeProject && getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
           </span>
           <BackupManager
             projects={projects}
@@ -465,7 +472,7 @@ function AppContent() {
           <div className="text-2xl font-bold text-gray-900 uppercase">
             {activeProject?.name}
             {activeTab !== 'summary' && showRoomNameInHeader && (
-              <span className="text-gray-400 font-normal"> / {activeProject.rooms.find(r => r.id === activeTab)?.name}</span>
+              <span className="text-gray-400 font-normal"> / {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}</span>
             )}
           </div>
           <div className="absolute right-4 flex items-center gap-4">
@@ -498,9 +505,9 @@ function AppContent() {
                 project={activeProject}
                 onRoomClick={(roomId) => setActiveTab(roomId)}
               />
-            ) : activeProject?.rooms.find(r => r.id === activeTab) ? (
+            ) : activeProject && getAllRooms(activeProject).find(r => r.id === activeTab) ? (
               <RoomEditor
-                room={activeProject.rooms.find(r => r.id === activeTab)!}
+                room={getAllRooms(activeProject).find(r => r.id === activeTab)!}
                 city={activeProject.city}
                 updateRoom={updateRoom}
                 updateRoomById={updateRoomById}

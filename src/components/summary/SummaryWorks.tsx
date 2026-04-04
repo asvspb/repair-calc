@@ -8,6 +8,7 @@ import { Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectData, WorkData, RoomData } from '../../types';
 import { calculateRoomMetrics } from '../../utils/geometry';
 import { CALCULATION_TYPE_LABELS } from '../../types/workTemplate';
+import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
   project: ProjectData;
@@ -61,7 +62,12 @@ function getWorkCount(work: WorkData, room: RoomData): number {
 function aggregateWorks(project: ProjectData): WorkAggregate[] {
   const workMap = new Map<string, WorkAggregate>();
 
-  project.rooms.forEach(room => {
+  // Получаем все комнаты из объектов или из старой структуры
+  const allRooms = project.objects && project.objects.length > 0
+    ? getAllRooms(project)
+    : (project.rooms || []);
+
+  allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
       if (!work.enabled) return;
 
@@ -303,13 +309,15 @@ const ChevronRight: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const SummaryWorks = memo(SummaryWorksInternal, (prev, next) => {
-  const prevWorksCount = prev.project.rooms.reduce(
+  const prevRooms = getAllRooms(prev.project);
+  const nextRooms = getAllRooms(next.project);
+  const prevWorksCount = prevRooms.reduce(
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
     0
   );
-  const nextWorksCount = next.project.rooms.reduce(
+  const nextWorksCount = nextRooms.reduce(
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
     0
   );
-  return prevWorksCount === nextWorksCount && prev.project.rooms === next.project.rooms;
+  return prevWorksCount === nextWorksCount && prevRooms === nextRooms;
 });

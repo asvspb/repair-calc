@@ -26,6 +26,17 @@ interface ApiProject {
   created_at: string;
   updated_at: string;
   rooms?: ApiRoom[];
+  objects?: Array<{
+    id: string;
+    project_id: string;
+    user_id: string;
+    name: string;
+    city: string | null;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    rooms?: ApiRoom[];
+  }>;
 }
 
 interface ApiRoom {
@@ -55,6 +66,30 @@ interface ApiRoom {
  * Преобразование проекта из API формата в клиентский
  */
 function apiToClientProject(apiProject: ApiProject): ProjectData {
+  // Если сервер вернул objects, используем новую структуру
+  if ((apiProject as any).objects) {
+    return {
+      id: apiProject.id,
+      name: apiProject.name,
+      city: apiProject.city || undefined,
+      useAiPricing: apiProject.use_ai_pricing,
+      lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
+      version: apiProject.version,
+      objects: ((apiProject as any).objects || []).map((obj: any) => ({
+        id: obj.id,
+        projectId: obj.project_id,
+        name: obj.name,
+        city: obj.city || undefined,
+        rooms: (obj.rooms || []).map(apiToClientRoom),
+        useAiPricing: obj.use_ai_pricing,
+        lastAiPriceUpdate: obj.last_ai_price_update || undefined,
+        version: obj.version,
+        sortOrder: obj.sort_order,
+      })),
+    };
+  }
+
+  // Для обратной совместимости (старая структура с rooms)
   return {
     id: apiProject.id,
     name: apiProject.name,
@@ -93,13 +128,16 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
 /**
  * Безопасный парсинг JSON
  */
-function parseJSON<T>(json: string | null, defaultValue: T): T {
-  if (!json) return defaultValue;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return defaultValue;
+function parseJSON<T>(value: string | any | null | undefined, defaultValue: T): T {
+  if (value === null || value === undefined) return defaultValue;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return defaultValue;
+    }
   }
+  return value as T;
 }
 
 /**
@@ -240,19 +278,19 @@ export async function updateAiSettings(
 }
 
 /**
- * Синхронизация - получение всех проектов с комнатами
+ * Синхронизация - получение всех проектов с объектами и комнатами
  */
-export async function syncPull(): Promise<{ 
-  status: string; 
-  data: { 
-    projects: (ApiProject & { rooms: ApiRoom[] })[]; 
-    timestamp: number 
-  } 
+export async function syncPull(): Promise<{
+  status: string;
+  data: {
+    projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
+    timestamp: number
+  }
 }> {
-  return fetchJson<{ 
-    status: string; 
-    data: { 
-      projects: (ApiProject & { rooms: ApiRoom[] })[]; 
+  return fetchJson<{
+    status: string;
+    data: {
+      projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
       timestamp: number
     }
   }>('/api/sync/pull');
@@ -273,6 +311,34 @@ export async function updateProjectWithRooms(
 ): Promise<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }> {
   return fetchJson<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }>(
     `/api/projects/${id}/with-rooms`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+/**
+ * Обновление проекта с несколькими объектами в одной транзакции
+ */
+export async function updateProjectWithObjects(
+  id: string,
+  data: {
+    name?: string;
+    city?: string | null;
+    use_ai_pricing?: boolean;
+    last_ai_price_update?: string | null;
+    objects?: Array<{
+      id?: string;
+      name?: string;
+      city?: string | null;
+      sort_order?: number;
+      rooms?: RoomData[];
+    }>;
+  }
+): Promise<{ status: string; data: ApiProject & { objects: any[] } }> {
+  return fetchJson<{ status: string; data: ApiProject & { objects: any[] } }>(
+    `/api/projects/${id}/with-objects`,
     {
       method: 'PUT',
       body: JSON.stringify(data),

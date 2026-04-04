@@ -112,7 +112,8 @@ export const createNewProject = (): ProjectData => ({
   id: Math.random().toString(36).substring(2, 11),
   name: 'Новый объект',
   city: 'Москва',
-  rooms: []
+  objects: [],  // Новая структура
+  rooms: [],    // Для обратной совместимости
 });
 
 export const createNewRoom = (): RoomData => ({

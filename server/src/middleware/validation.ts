@@ -49,17 +49,40 @@ export const createRoomSchema = z.object({
   length: z.number().min(0).optional(),
   width: z.number().min(0).optional(),
   height: z.number().min(0).optional(),
-  // JSON fields for full room data
-  segments: z.string().optional().nullable(),
-  obstacles: z.string().optional().nullable(),
-  wall_sections: z.string().optional().nullable(),
-  sub_sections: z.string().optional().nullable(),
-  windows: z.string().optional().nullable(),
-  doors: z.string().optional().nullable(),
-  works: z.string().optional().nullable(),
-  simple_mode_data: z.string().optional().nullable(),
-  extended_mode_data: z.string().optional().nullable(),
-  advanced_mode_data: z.string().optional().nullable(),
+  // JSON fields - accept both string (for DB) and any (for direct objects)
+  segments: z.union([z.string(), z.any()]).optional().nullable(),
+  obstacles: z.union([z.string(), z.any()]).optional().nullable(),
+  wall_sections: z.union([z.string(), z.any()]).optional().nullable(),
+  sub_sections: z.union([z.string(), z.any()]).optional().nullable(),
+  windows: z.union([z.string(), z.any()]).optional().nullable(),
+  doors: z.union([z.string(), z.any()]).optional().nullable(),
+  works: z.union([z.string(), z.any()]).optional().nullable(),
+  simple_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
+  extended_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
+  advanced_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
+  // Additional fields
+  sort_order: z.number().int().min(0).optional(),
+  object_id: z.string().uuid().optional(),
+});
+
+// Object schema for nested updates
+export const updateObjectSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1).max(255).optional(),
+  city: z.string().max(100).optional().nullable(),
+  rooms: z.array(createRoomSchema).optional(),
+});
+
+// Schema for updating project with multiple objects
+export const updateProjectWithObjectsSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  city: z.string().max(100).optional().nullable(),
+  use_ai_pricing: z.boolean().optional(),
+  last_ai_price_update: z.union([
+    z.string().datetime(),
+    z.string().min(1),
+  ]).optional().nullable(),
+  objects: z.array(updateObjectSchema).optional(),
 });
 
 export const updateRoomSchema = z.object({
@@ -69,17 +92,17 @@ export const updateRoomSchema = z.object({
   width: z.number().min(0).optional(),
   height: z.number().min(0).optional(),
   version: z.number().int().positive().optional(),
-  // JSON fields for full room data
-  segments: z.string().optional().nullable(),
-  obstacles: z.string().optional().nullable(),
-  wall_sections: z.string().optional().nullable(),
-  sub_sections: z.string().optional().nullable(),
-  windows: z.string().optional().nullable(),
-  doors: z.string().optional().nullable(),
-  works: z.string().optional().nullable(),
-  simple_mode_data: z.string().optional().nullable(),
-  extended_mode_data: z.string().optional().nullable(),
-  advanced_mode_data: z.string().optional().nullable(),
+  // JSON fields - accept both string (for DB) and any (for direct objects)
+  segments: z.union([z.string(), z.any()]).optional().nullable(),
+  obstacles: z.union([z.string(), z.any()]).optional().nullable(),
+  wall_sections: z.union([z.string(), z.any()]).optional().nullable(),
+  sub_sections: z.union([z.string(), z.any()]).optional().nullable(),
+  windows: z.union([z.string(), z.any()]).optional().nullable(),
+  doors: z.union([z.string(), z.any()]).optional().nullable(),
+  works: z.union([z.string(), z.any()]).optional().nullable(),
+  simple_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
+  extended_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
+  advanced_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
 });
 
 export const reorderRoomsSchema = z.object({

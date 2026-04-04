@@ -100,7 +100,7 @@ const TestComponent: React.FC<{
     <div>
       <div data-testid="project-count">{ctx.projects.length}</div>
       <div data-testid="current-project">{ctx.activeProject?.name || 'none'}</div>
-      <div data-testid="room-count">{ctx.activeProject?.rooms.length || 0}</div>
+      <div data-testid="room-count">{ctx.activeProject?.objects?.[0]?.rooms.length || 0}</div>
       <div data-testid="is-loading">{ctx.isLoading ? 'true' : 'false'}</div>
       <button data-testid="create-project" onClick={createProject}>
         Create Project

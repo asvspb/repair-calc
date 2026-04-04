@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useCallback, useRef, useState, useEffect, type ReactNode } from 'react';
-import type { ProjectData, RoomData } from '../types';
+import type { ProjectData, RoomData, ObjectData } from '../types';
 import { StorageManager } from '../utils/storage';
 import type { StorageError } from '../utils/storage';
 import { useAuth } from './AuthContext';
@@ -20,6 +20,15 @@ import {
 import { runMigrations, needsMigration } from '../utils/migration';
 import { idMapper, IdMapper } from '../utils/idMapper';
 import { saveQueue } from '../utils/saveQueue';
+import {
+  migrateProjectToObjects,
+  updateRoomInProject,
+  addRoomToProject,
+  deleteRoomFromProject,
+  getAllRooms,
+  reorderRoomsInProject,
+  getObjectFromProject,
+} from '../utils/projectObjects';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -41,11 +50,18 @@ function migrateRoom(room: RoomData): RoomData {
 }
 
 // Миграция проекта для обеспечения наличия всех полей у комнат
+// И миграция на новую структуру с objects
 function migrateProject(project: ProjectData): ProjectData {
-  return {
+  // Сначала миграция комнат
+  const roomsWithDefaults = (project.rooms || []).map(migrateRoom);
+  
+  // Затем миграция на структуру с objects
+  const projectWithObjects = {
     ...project,
-    rooms: project.rooms.map(migrateRoom)
+    rooms: roomsWithDefaults.length > 0 ? roomsWithDefaults : undefined,
   };
+  
+  return migrateProjectToObjects(projectWithObjects);
 }
 
 interface ProjectContextValue {
@@ -241,7 +257,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   // Расчёт и сохранение итогов проекта
   const saveCalculatedTotals = useCallback(async (project: ProjectData) => {
     if (!isAuthenticated) return; // Сохраняем только для авторизованных пользователей
-    
+
     // Проверяем, что проект существует на сервере (ID должен быть UUID)
     if (!isServerId(project.id)) return;
 
@@ -250,7 +266,8 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     let totalMaterials = 0;
     let totalTools = 0;
 
-    project.rooms.forEach(room => {
+    const allRooms = getAllRooms(project);
+    allRooms.forEach(room => {
       const metrics = calculateRoomMetrics(room);
       const costs = calculateRoomCosts(room);
       totalArea += metrics.floorArea;
@@ -383,10 +400,8 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         return prevProjects;
       }
 
-      const updatedProject = {
-        ...prevActiveProject,
-        rooms: prevActiveProject.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)
-      };
+      // Используем новую функцию для работы с objects
+      const updatedProject = updateRoomInProject(prevActiveProject, updatedRoom.id, () => updatedRoom);
 
       const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
       scheduleSave(newProjects);
@@ -404,15 +419,8 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) return prevProjects;
 
-      const prevRoom = prevActiveProject.rooms.find(r => r.id === roomId);
-      if (!prevRoom) return prevProjects;
-
-      const updatedRoom = updater(prevRoom);
-
-      const updatedProject = {
-        ...prevActiveProject,
-        rooms: prevActiveProject.rooms.map(r => r.id === roomId ? updatedRoom : r)
-      };
+      // Используем новую функцию для работы с objects
+      const updatedProject = updateRoomInProject(prevActiveProject, roomId, updater);
 
       const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
       scheduleSave(newProjects);
@@ -427,39 +435,47 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   // Удаление комнаты
   const deleteRoom = useCallback((roomId: string) => {
     if (!activeProject) return;
-    
+
     logUserAction('Удаление комнаты', { roomId, projectId: activeProject.id });
-    const newRooms = activeProject.rooms.filter(r => r.id !== roomId);
-    const updatedProject = {
-      ...activeProject,
-      rooms: newRooms
-    };
+    
+    // Используем новую функцию для работы с objects
+    const updatedProject = deleteRoomFromProject(activeProject, roomId);
+    
     updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комната удалена', { roomId, remainingRooms: newRooms.length });
+    logSuccess('ProjectContext', 'Комната удалена', { roomId });
   }, [activeProject, updateActiveProject]);
 
   // Добавление комнаты
   const addRoom = useCallback((newRoom: RoomData) => {
     if (!activeProject) return;
-    
+
     logUserAction('Добавление комнаты', { roomId: newRoom.id, name: newRoom.name, projectId: activeProject.id });
-    const updatedProject = {
-      ...activeProject,
-      rooms: [...activeProject.rooms, newRoom]
-    };
+    
+    // Используем новую функцию для работы с objects
+    const updatedProject = addRoomToProject(activeProject, newRoom);
+    
     updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id, totalRooms: updatedProject.rooms.length });
+    logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id });
   }, [activeProject, updateActiveProject]);
 
   // Переупорядочивание комнат
   const reorderRooms = useCallback((newRooms: RoomData[]) => {
     if (!activeProject) return;
+
+    // Get the first object (where rooms are stored for single-object projects)
+    const firstObject = activeProject.objects?.[0];
+    if (!firstObject) {
+      logWarning('ProjectContext', 'Cannot reorder rooms: no objects found');
+      return;
+    }
+
+    logUserAction('Переупорядочивание комнат', { 
+      projectId: activeProject.id, 
+      objectId: firstObject.id,
+      roomsOrder: newRooms.map(r => r.id) 
+    });
     
-    logUserAction('Переупорядочивание комнат', { projectId: activeProject.id, roomsOrder: newRooms.map(r => r.id) });
-    const updatedProject = {
-      ...activeProject,
-      rooms: newRooms
-    };
+    const updatedProject = reorderRoomsInProject(activeProject, firstObject.id, newRooms);
     updateActiveProject(updatedProject);
     logSuccess('ProjectContext', 'Комнаты переупорядочены', { roomsCount: newRooms.length });
   }, [activeProject, updateActiveProject]);
@@ -500,12 +516,12 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
           id: `local-${Date.now()}`,
           name: data.name,
           city: data.city,
-          rooms: [],
+          objects: [],  // New structure with objects
         };
-        
-        logSuccess('ProjectContext', 'Локальный проект создан', { 
-          id: newProject.id, 
-          name: newProject.name 
+
+        logSuccess('ProjectContext', 'Локальный проект создан', {
+          id: newProject.id,
+          name: newProject.name
         }, startTime);
         
         setProjects(prev => {
@@ -727,10 +743,10 @@ export function useProjectContext(): ProjectContextValue {
  */
 export function useRoom(roomId: string | null): RoomData | null {
   const { activeProject } = useProjectContext();
-  
+
   if (!roomId || !activeProject) return null;
-  
-  return activeProject.rooms.find(r => r.id === roomId) || null;
+
+  return getAllRooms(activeProject).find(r => r.id === roomId) || null;
 }
 
 export { ProjectContext };

@@ -6,6 +6,7 @@ import { LocalStorageProvider } from './localStorageProvider';
 import { TemplateStorage } from './templateStorage';
 import { calculateRoomMetrics } from './geometry';
 import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
+import { getAllRooms } from './projectObjects';
 
 const STORAGE_KEYS = {
   PROJECTS: 'repair-calc-projects',
@@ -161,8 +162,14 @@ export class StorageManager {
 
       // Проверка каждого проекта
       for (const project of data.projects) {
-        if (!project.id || !project.name || !Array.isArray(project.rooms)) {
+        if (!project.id || !project.name) {
           return { success: false, error: `Неверная структура проекта: ${project.name || 'без названия'}` };
+        }
+        // Проверяем наличие rooms или objects
+        const hasRooms = Array.isArray(project.rooms);
+        const hasObjects = Array.isArray(project.objects);
+        if (!hasRooms && !hasObjects) {
+          return { success: false, error: `Неверная структура проекта: ${project.name || 'без названия'} (нет rooms или objects)` };
         }
       }
 
@@ -187,25 +194,26 @@ export class StorageManager {
 
   static exportToCSV(projects: ProjectData[]): string {
     const rows: string[] = [];
-    
+
     // Заголовки — добавлена колонка для инструментов
     rows.push(['Объект', 'Комната', 'Работа', 'Единица', 'Объем', 'Цена работы', 'Цена материалов', 'Цена инструментов', 'Итого'].join(';'));
-    
+
     for (const project of projects) {
-      for (const room of project.rooms) {
+      const allRooms = getAllRooms(project);
+      for (const room of allRooms) {
         // Используем общую функцию расчёта метрик (учитывает extended/advanced режимы)
         const metrics = calculateRoomMetrics(room);
-        
+
         for (const work of room.works) {
           if (!work.enabled) continue;
-          
+
           // Мигрируем данные работы для поддержки materials[] и tools[]
           const migratedWork = migrateWorkData(work);
-          
+
           // Используем общие функции расчёта
           const qty = calculateWorkQuantity(migratedWork, metrics);
           const costs = calculateWorkCosts(migratedWork, metrics);
-          
+
           rows.push([
             project.name,
             room.name,
@@ -220,7 +228,7 @@ export class StorageManager {
         }
       }
     }
-    
+
     // Добавляем BOM для корректного отображения кириллицы в Excel
     return '\uFEFF' + rows.join('\n');
   }

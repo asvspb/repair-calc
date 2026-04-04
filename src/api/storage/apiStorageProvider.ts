@@ -8,6 +8,7 @@ import { StorageProviderError } from '../../types/storage';
 import type { ProjectData, RoomData } from '../../types';
 import * as projectsApi from '../projects';
 import * as roomsApi from '../rooms';
+import { getAllRooms } from '../../utils/projectObjects';
 import {
   logApiRequest,
   logApiSuccess,
@@ -399,6 +400,7 @@ export class ApiStorageProvider implements IStorageProvider {
           });
           const syncPromise = this.enqueueRequest(async () => {
             try {
+              // Создаём проект на сервере
               const newProject = await this.createProjectAsync({
                 name: project.name,
                 city: project.city,
@@ -413,14 +415,40 @@ export class ApiStorageProvider implements IStorageProvider {
                 serverId: newProject.id
               });
 
-              // Синхронизируем комнаты нового проекта
-              for (const room of project.rooms) {
-                try {
-                  await this.enqueueRequest(() => roomsApi.createRoom(newProject.id, room), project.id);
-                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
-                } catch (roomError) {
-                  logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
-                }
+              // Атомарно сохраняем все комнаты через updateProjectWithObjects
+              const allRooms = getAllRooms(project);
+              if (allRooms.length > 0 && newProject.objects?.[0]) {
+                const objectsData = [{
+                  id: newProject.objects[0].id,
+                  name: project.name,
+                  city: project.city || null,
+                  rooms: allRooms.map(room => ({
+                    id: room.id,
+                    name: room.name,
+                    geometry_mode: room.geometryMode,
+                    length: room.length,
+                    width: room.width,
+                    height: room.height,
+                    segments: room.segments,
+                    obstacles: room.obstacles,
+                    wall_sections: room.wallSections,
+                    sub_sections: room.subSections,
+                    windows: room.windows,
+                    doors: room.doors,
+                    works: room.works,
+                    sort_order: 0,
+                  })),
+                }];
+
+                await projectsApi.updateProjectWithObjects(newProject.id, {
+                  name: project.name,
+                  city: project.city,
+                  objects: objectsData,
+                });
+                logDebug('ApiStorage', 'Комнаты мигрированы через updateProjectWithObjects', {
+                  roomId: newProject.id,
+                  roomCount: allRooms.length
+                });
               }
             } catch (error) {
               logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
@@ -451,14 +479,40 @@ export class ApiStorageProvider implements IStorageProvider {
                 newId: newProject.id
               });
 
-              // Синхронизируем комнаты нового проекта
-              for (const room of project.rooms) {
-                try {
-                  await this.enqueueRequest(() => roomsApi.createRoom(newProject.id, room), project.id);
-                  logDebug('ApiStorage', 'Комната создана', { roomId: room.id, projectId: newProject.id });
-                } catch (roomError) {
-                  logError('ApiStorage', 'Ошибка создания комнаты', roomError, { roomId: room.id });
-                }
+              // Атомарно сохраняем все комнаты через updateProjectWithObjects
+              const allRooms = getAllRooms(project);
+              if (allRooms.length > 0 && newProject.objects?.[0]) {
+                const objectsData = [{
+                  id: newProject.objects[0].id,
+                  name: project.name,
+                  city: project.city || null,
+                  rooms: allRooms.map(room => ({
+                    id: room.id,
+                    name: room.name,
+                    geometry_mode: room.geometryMode,
+                    length: room.length,
+                    width: room.width,
+                    height: room.height,
+                    segments: room.segments,
+                    obstacles: room.obstacles,
+                    wall_sections: room.wallSections,
+                    sub_sections: room.subSections,
+                    windows: room.windows,
+                    doors: room.doors,
+                    works: room.works,
+                    sort_order: 0,
+                  })),
+                }];
+
+                await projectsApi.updateProjectWithObjects(newProject.id, {
+                  name: project.name,
+                  city: project.city,
+                  objects: objectsData,
+                });
+                logDebug('ApiStorage', 'Комнаты импортированы через updateProjectWithObjects', {
+                  roomId: newProject.id,
+                  roomCount: allRooms.length
+                });
               }
             } catch (error) {
               logError('ApiStorage', 'Ошибка создания проекта при импорте', error, { projectId: project.id });
@@ -511,11 +565,13 @@ export class ApiStorageProvider implements IStorageProvider {
    */
   private async syncRooms(project: ProjectData, existingProjects: ProjectData[]): Promise<Error[]> {
     const serverProject = existingProjects.find(p => p.id === project.id);
-    const existingRoomIds = new Set(serverProject?.rooms.map(r => r.id) || []);
+    const allRooms = getAllRooms(project);
+    const serverRooms = serverProject ? getAllRooms(serverProject) : [];
+    const existingRoomIds = new Set(serverRooms.map(r => r.id));
     const errors: Error[] = [];
 
     // Синхронизируем комнаты последовательно с rate limiting
-    for (const room of project.rooms) {
+    for (const room of allRooms) {
       const roomExistsOnServer = this.isServerId(room.id) && existingRoomIds.has(room.id);
 
       try {
@@ -631,6 +687,28 @@ export class ApiStorageProvider implements IStorageProvider {
       use_ai_pricing?: boolean;
       last_ai_price_update?: string | null;
       rooms?: RoomData[];
+      objects?: Array<{
+        id?: string;
+        name: string;
+        city?: string | null;
+        sort_order?: number;
+        rooms: Array<{
+          id: string;
+          name: string;
+          geometry_mode: string;
+          length: number;
+          width: number;
+          height: number;
+          segments: any;
+          obstacles: any;
+          wall_sections: any;
+          sub_sections: any;
+          windows: any;
+          doors: any;
+          works: any;
+          sort_order?: number;
+        }>;
+      }>;
     } = {
       name: project.name,
     };
@@ -650,9 +728,31 @@ export class ApiStorageProvider implements IStorageProvider {
       updateData.last_ai_price_update = project.lastAiPriceUpdate || null;
     }
 
-    // Включаем комнаты для транзакционного обновления
-    if (project.rooms && project.rooms.length > 0) {
-      updateData.rooms = project.rooms;
+    // Включаем объекты для транзакционного обновления
+    // Если проект имеет структуру с objects, используем новый endpoint
+    if (project.objects && project.objects.length > 0) {
+      updateData.objects = project.objects.map(obj => ({
+        id: obj.id,
+        name: obj.name,
+        city: obj.city ?? null,
+        sort_order: obj.sortOrder ?? 0,
+        rooms: (obj.rooms || []).map(room => ({
+          id: room.id,
+          name: room.name,
+          geometry_mode: room.geometryMode,
+          length: room.length ?? 0,
+          width: room.width ?? 0,
+          height: room.height ?? 0,
+          segments: room.segments ?? [],
+          obstacles: room.obstacles ?? [],
+          wall_sections: room.wallSections ?? [],
+          sub_sections: room.subSections ?? [],
+          windows: room.windows ?? [],
+          doors: room.doors ?? [],
+          works: room.works ?? [],
+          sort_order: room.sortOrder ?? 0,
+        })),
+      }));
     }
 
     // НЕ отправляем version — сервер сам инкрементирует при обновлении
@@ -660,14 +760,17 @@ export class ApiStorageProvider implements IStorageProvider {
 
     try {
       let response;
-      if (updateData.rooms) {
-        // Используем транзакционный endpoint для атомарного обновления проекта и комнат
+      if (updateData.objects) {
+        // Используем новый endpoint для обновления проекта с несколькими объектами
+        response = await projectsApi.updateProjectWithObjects(project.id, updateData);
+      } else if (updateData.rooms) {
+        // Используем транзакционный endpoint для атомарного обновления проекта и комнат (legacy)
         response = await projectsApi.updateProjectWithRooms(project.id, updateData);
       } else {
         // Обычное обновление только проекта
         response = await projectsApi.updateProject(project.id, updateData);
       }
-      
+
       const updated = projectsApi.apiToClientProject(response.data);
 
       // Обновляем кэш

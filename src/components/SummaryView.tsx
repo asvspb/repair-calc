@@ -3,6 +3,7 @@ import type { ProjectData } from '../types';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts } from '../utils/costs';
 import { SummaryMaterials, SummaryTools, SummaryWorks } from './summary';
+import { getAllRooms } from '../utils/projectObjects';
 
 interface SummaryViewProps {
   project: ProjectData;
@@ -20,16 +21,23 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
   let totalMaterialCost = 0;
   let totalToolsCost = 0;
 
-  project.rooms.forEach(r => {
-    const metrics = calculateRoomMetrics(r);
-    const costs = calculateRoomCosts(r);
-    totalFloorArea += metrics.floorArea;
-    totalWallArea += metrics.netWallArea;
-    totalVolume += metrics.volume || 0;
-    totalWorkCost += costs.totalWork;
-    totalMaterialCost += costs.totalMaterial;
-    totalToolsCost += costs.totalTools;
-  });
+  // Получаем все комнаты из всех объектов (или из старой структуры rooms)
+  const allRooms = project.objects && project.objects.length > 0
+    ? getAllRooms(project)
+    : (project.rooms || []);
+
+  if (allRooms && allRooms.length > 0) {
+    allRooms.forEach(r => {
+      const metrics = calculateRoomMetrics(r);
+      const costs = calculateRoomCosts(r);
+      totalFloorArea += metrics.floorArea;
+      totalWallArea += metrics.netWallArea;
+      totalVolume += metrics.volume || 0;
+      totalWorkCost += costs.totalWork;
+      totalMaterialCost += costs.totalMaterial;
+      totalToolsCost += costs.totalTools;
+    });
+  }
 
   const grandTotal = totalWorkCost + totalMaterialCost + totalToolsCost;
 
@@ -63,7 +71,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
           <h3 className="text-lg font-medium">Детализация по комнатам</h3>
         </div>
         <div className="divide-y divide-gray-100">
-          {project.rooms.map(room => {
+          {allRooms.map(room => {
             const costs = calculateRoomCosts(room);
             return (
               <div key={room.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -86,7 +94,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
               </div>
             );
           })}
-          {project.rooms.length === 0 && (
+          {allRooms.length === 0 && (
             <div className="p-6 text-center text-gray-500 italic">
               Нет добавленных комнат
             </div>
@@ -107,10 +115,13 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
  * Сравниваем id проекта, название и количество комнат для оптимизации.
  */
 export const SummaryView = memo(SummaryViewInternal, (prevProps, nextProps) => {
+  const prevRoomsCount = prevProps.project.objects ? getAllRooms(prevProps.project).length : (prevProps.project.rooms?.length || 0);
+  const nextRoomsCount = nextProps.project.objects ? getAllRooms(nextProps.project).length : (nextProps.project.rooms?.length || 0);
+  
   return (
     prevProps.project.id === nextProps.project.id &&
     prevProps.project.name === nextProps.project.name &&
-    prevProps.project.rooms.length === nextProps.project.rooms.length &&
+    prevRoomsCount === nextRoomsCount &&
     prevProps.project.rooms === nextProps.project.rooms
   );
 });

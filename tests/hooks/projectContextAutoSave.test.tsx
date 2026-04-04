@@ -217,7 +217,7 @@ describe('ProjectContext - Auto-save totals', () => {
 
       const project = result.current.activeProject;
       expect(project).toBeDefined();
-      const room = project?.rooms.find(r => r.id === 'room-1');
+      const room = project?.objects?.[0]?.rooms.find(r => r.id === 'room-1');
       expect(room?.length).toBe(6);
     });
   });
@@ -240,7 +240,7 @@ describe('ProjectContext - Auto-save totals', () => {
       });
 
       const project = result.current.activeProject;
-      const room = project?.rooms.find(r => r.id === 'room-1');
+      const room = project?.objects?.[0]?.rooms.find(r => r.id === 'room-1');
       expect(room?.length).toBe(10);
     });
   });
@@ -262,7 +262,7 @@ describe('ProjectContext - Auto-save totals', () => {
       });
 
       const project = result.current.activeProject;
-      expect(project?.rooms).toHaveLength(2);
+      expect(project?.objects?.[0]?.rooms).toHaveLength(2);
     });
   });
 
@@ -281,7 +281,7 @@ describe('ProjectContext - Auto-save totals', () => {
       });
 
       const project = result.current.activeProject;
-      expect(project?.rooms).toHaveLength(0);
+      expect(project?.objects?.[0]?.rooms).toHaveLength(0);
     });
   });
 
@@ -303,14 +303,14 @@ describe('ProjectContext - Auto-save totals', () => {
       });
 
       const project = result.current.activeProject;
-      if (project) {
+      if (project && project.objects?.[0]?.rooms) {
         await act(async () => {
-          result.current.reorderRooms([...project.rooms].reverse());
+          result.current.reorderRooms([...project.objects[0].rooms].reverse());
         });
       }
 
       const updatedProject = result.current.activeProject;
-      expect(updatedProject?.rooms).toHaveLength(2);
+      expect(updatedProject?.objects?.[0]?.rooms).toHaveLength(2);
     });
   });
 

@@ -6,6 +6,7 @@ import { StorageManager } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiStorageProvider } from '../api/storage/apiStorageProvider';
 import { getProjects, getProject, createProject, updateProject } from '../api/projects';
+import { getAllRooms } from '../utils/projectObjects';
 
 interface BackupManagerProps {
   projects: ProjectData[];
@@ -224,7 +225,8 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       });
 
       // Сохраняем комнаты в новый проект
-      for (const room of activeProject.rooms) {
+      const allRooms = getAllRooms(activeProject);
+      for (const room of allRooms) {
         try {
           const { createRoom } = await import('../api/rooms');
           await createRoom(newProject.id, room);

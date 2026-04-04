@@ -6,6 +6,7 @@
 import React, { memo, useMemo } from 'react';
 import { Wrench, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectData, Tool, WorkData } from '../../types';
+import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
   project: ProjectData;
@@ -26,7 +27,12 @@ type ToolAggregate = {
 function aggregateTools(project: ProjectData): ToolAggregate[] {
   const toolMap = new Map<string, ToolAggregate>();
 
-  project.rooms.forEach(room => {
+  // Получаем все комнаты из объектов или из старой структуры
+  const allRooms = project.objects && project.objects.length > 0
+    ? getAllRooms(project)
+    : (project.rooms || []);
+
+  allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
       if (!work.tools || !work.enabled) return;
 
@@ -248,13 +254,15 @@ const SummaryToolsInternal: React.FC<Props> = ({ project }) => {
 };
 
 export const SummaryTools = memo(SummaryToolsInternal, (prev, next) => {
-  const prevToolsCount = prev.project.rooms.reduce(
+  const prevRooms = getAllRooms(prev.project);
+  const nextRooms = getAllRooms(next.project);
+  const prevToolsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
     0
   );
-  const nextToolsCount = next.project.rooms.reduce(
+  const nextToolsCount = nextRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
     0
   );
-  return prevToolsCount === nextToolsCount && prev.project.rooms === next.project.rooms;
+  return prevToolsCount === nextToolsCount && prevRooms === nextRooms;
 });

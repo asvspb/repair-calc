@@ -1,11 +1,12 @@
 /**
- * SummaryMaterials - сводка по всем материалам проекта
+ * SummaryMaterials - сводная информация по всем материалам проекта
  * Агрегирует материалы из всех комнат и работ
  */
 
 import React, { memo, useMemo } from 'react';
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectData, Material, WorkData } from '../../types';
+import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
   project: ProjectData;
@@ -25,7 +26,8 @@ type MaterialAggregate = {
 function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
   const materialMap = new Map<string, MaterialAggregate>();
 
-  project.rooms.forEach(room => {
+  const allRooms = getAllRooms(project);
+  allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
       if (!work.materials || !work.enabled) return;
 
@@ -161,13 +163,15 @@ const SummaryMaterialsInternal: React.FC<Props> = ({ project }) => {
 
 export const SummaryMaterials = memo(SummaryMaterialsInternal, (prev, next) => {
   // Сравниваем количество работ и материалы в них
-  const prevMaterialsCount = prev.project.rooms.reduce(
+  const prevRooms = getAllRooms(prev.project);
+  const nextRooms = getAllRooms(next.project);
+  const prevMaterialsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
     0
   );
-  const nextMaterialsCount = next.project.rooms.reduce(
+  const nextMaterialsCount = nextRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
     0
   );
-  return prevMaterialsCount === nextMaterialsCount && prev.project.rooms === next.project.rooms;
+  return prevMaterialsCount === nextMaterialsCount && prevRooms === nextRooms;
 });

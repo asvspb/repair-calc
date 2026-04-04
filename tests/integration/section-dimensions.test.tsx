@@ -61,9 +61,9 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       result.current.addRoom(room);
     });
 
-    const roomId = result.current.activeProject?.rooms[0].id;
+    const roomId = result.current.activeProject?.objects?.[0]?.rooms[0].id;
     expect(roomId).toBeDefined();
-    
+
     // Add first section with dimensions
     const section1: RoomSubSection = {
       id: 's1',
@@ -77,13 +77,13 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
 
     // Simulate adding section 1 via updateRoom
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({ ...currentRoom, subSections: [section1] });
       }
     });
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+    let updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].length).toBe(5);
     expect(updatedRoom?.subSections[0].width).toBe(4);
 
@@ -99,7 +99,7 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
     };
 
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({
           ...currentRoom,
@@ -108,12 +108,12 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       }
     });
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
+    updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+
     // Section 1 should preserve its dimensions
     expect(updatedRoom?.subSections[0].length).toBe(5);
     expect(updatedRoom?.subSections[0].width).toBe(4);
-    
+
     // Section 2 should have its own dimensions
     expect(updatedRoom?.subSections[1].length).toBe(3);
     expect(updatedRoom?.subSections[1].width).toBe(3);
@@ -130,8 +130,8 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       result.current.addRoom(room);
     });
 
-    const roomId = result.current.activeProject?.rooms[0].id!;
-    
+    const roomId = result.current.activeProject?.objects?.[0]?.rooms[0].id!;
+
     // Add two trapezoid sections
     const section1: RoomSubSection = {
       id: 's1',
@@ -164,19 +164,19 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
     };
 
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({ ...currentRoom, subSections: [section1, section2] });
       }
     });
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
+    let updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+
     // Verify initial values
     expect(updatedRoom?.subSections[0].base1).toBe(6);
     expect(updatedRoom?.subSections[0].base2).toBe(4);
     expect(updatedRoom?.subSections[0].depth).toBe(5);
-    
+
     expect(updatedRoom?.subSections[1].base1).toBe(8);
     expect(updatedRoom?.subSections[1].base2).toBe(6);
     expect(updatedRoom?.subSections[1].depth).toBe(4);
@@ -184,7 +184,7 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
     // Update section 1's base1
     const updatedSection1 = { ...section1, base1: 10 };
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({
           ...currentRoom,
@@ -193,11 +193,11 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       }
     });
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
+    updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+
     // Section 1 should have new value
     expect(updatedRoom?.subSections[0].base1).toBe(10);
-    
+
     // Section 2 should be unchanged - THIS IS THE KEY TEST
     expect(updatedRoom?.subSections[1].base1).toBe(8);
     expect(updatedRoom?.subSections[1].base2).toBe(6);
@@ -219,8 +219,8 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       result.current.addRoom(room);
     });
 
-    const roomId = result.current.activeProject?.rooms[0].id!;
-    
+    const roomId = result.current.activeProject?.objects?.[0]?.rooms[0].id!;
+
     // Start with rectangle
     const section: RoomSubSection = {
       id: 's1',
@@ -233,13 +233,13 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
     };
 
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({ ...currentRoom, subSections: [section] });
       }
     });
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+    let updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].shape).toBe('rectangle');
     expect(updatedRoom?.subSections[0].length).toBe(5);
 
@@ -255,7 +255,7 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
     };
 
     act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+      const currentRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
       if (currentRoom) {
         result.current.updateRoom({
           ...currentRoom,
@@ -264,11 +264,11 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       }
     });
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
+    updatedRoom = result.current.activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+
     // Shape should be updated
     expect(updatedRoom?.subSections[0].shape).toBe('trapezoid');
-    
+
     // Trapezoid fields should be present
     expect(updatedRoom?.subSections[0].base1).toBe(6);
     expect(updatedRoom?.subSections[0].base2).toBe(4);

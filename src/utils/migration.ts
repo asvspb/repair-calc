@@ -6,6 +6,7 @@
 import type { ProjectData } from '../types';
 import { idMapper, IdMapper } from './idMapper';
 import { logStart, logSuccess, logWarning, logDebug, logError } from './logger';
+import { getAllRooms } from './projectObjects';
 
 const MIGRATION_VERSION_KEY = 'repair-calc-migration-version';
 const CURRENT_MIGRATION_VERSION = 1;
@@ -153,7 +154,7 @@ function calculateSimilarity(local: ProjectData, server: ProjectData): number {
   if (local.name && server.name) {
     const localName = local.name.toLowerCase().trim();
     const serverName = server.name.toLowerCase().trim();
-    
+
     if (localName === serverName) {
       score += 0.6;
     } else if (localName.includes(serverName) || serverName.includes(localName)) {
@@ -161,8 +162,10 @@ function calculateSimilarity(local: ProjectData, server: ProjectData): number {
     }
   }
 
-  // Количество комнат
-  if (local.rooms.length === server.rooms.length && local.rooms.length > 0) {
+  // Количество комнат (используем getAllRooms для поддержки objects структуры)
+  const localRooms = getAllRooms(local);
+  const serverRooms = getAllRooms(server);
+  if (localRooms.length === serverRooms.length && localRooms.length > 0) {
     score += 0.2;
   }
 
