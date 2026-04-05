@@ -105,7 +105,15 @@ function AppContent() {
     lastSaved,
     lastSavedToServer,
     saveError,
-    isSyncing
+    isSyncing,
+    // New object management
+    activeObjectId,
+    activeObject,
+    setActiveObjectId,
+    createObject,
+    updateObject,
+    deleteObject,
+    copyObject,
   } = useProjectContext();
 
   const {
@@ -413,11 +421,9 @@ function AppContent() {
           {/* Прокручиваемая часть - Комнаты */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-            {activeProject && (
+            {activeObject && (
               <RoomList
-                rooms={activeProject.objects && activeProject.objects.length > 0
-                  ? activeProject.objects.flatMap(o => o.rooms)
-                  : (activeProject.rooms || [])}
+                rooms={activeObject.rooms || []}
                 activeTab={activeTab}
                 onRoomClick={(roomId) => {
                   setActiveTab(roomId);

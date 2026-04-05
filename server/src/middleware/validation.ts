@@ -43,7 +43,9 @@ export const updateProjectSchema = z.object({
 });
 
 // Room schemas
+// Allow any string ID format (including local-room-... prefixes for client-generated IDs)
 export const createRoomSchema = z.object({
+  id: z.string().optional(),  // Any string ID format allowed
   name: z.string().min(1, 'Name is required').max(255),
   geometry_mode: z.enum(['simple', 'extended', 'advanced']).optional(),
   length: z.number().min(0).optional(),
@@ -62,12 +64,14 @@ export const createRoomSchema = z.object({
   advanced_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
   // Additional fields
   sort_order: z.number().int().min(0).optional(),
-  object_id: z.string().uuid().optional(),
+  object_id: z.string().optional(),  // Any string ID format allowed
 });
 
 // Object schema for nested updates
+// Allow any string ID format (including local-obj-... prefixes for client-generated IDs)
+// The repository will handle creating new objects for non-UUID or non-existent IDs
 export const updateObjectSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.string().optional(),  // Any string ID format allowed
   name: z.string().min(1).max(255).optional(),
   city: z.string().max(100).optional().nullable(),
   rooms: z.array(createRoomSchema).optional(),

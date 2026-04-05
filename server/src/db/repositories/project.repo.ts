@@ -395,6 +395,14 @@ export class ProjectRepository {
   }
 
   /**
+   * Check if an ID is a valid server UUID format
+   */
+  private static isServerUuid(id: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  }
+
+  /**
    * Update project with multiple objects in a transaction
    */
   static async updateWithObjects(
@@ -450,190 +458,155 @@ export class ProjectRepository {
       );
       const existingObjects = existingObjectsResult[0] || [];
 
-      // Get object IDs from request
-      const objectIds = objectsData.map(o => o.id).filter(Boolean);
-
-      // Soft delete objects not in the request
-      if (objectIds.length > 0) {
-        const placeholders = objectIds.map(() => '?').join(',');
-        await conn.execute(
-          `UPDATE objects SET deleted_at = CURRENT_TIMESTAMP
-           WHERE project_id = ? AND id NOT IN (${placeholders}) AND deleted_at IS NULL`,
-          [projectId, ...objectIds]
-        );
-      } else if (objectsData.length > 0) {
-        // No IDs provided but objects exist - delete all existing
-        await conn.execute(
-          'UPDATE objects SET deleted_at = CURRENT_TIMESTAMP WHERE project_id = ? AND deleted_at IS NULL',
-          [projectId]
-        );
+      // Build a map of existing objects by ID
+      const existingObjectsMap = new Map<string, any>();
+      for (const obj of existingObjects) {
+        existingObjectsMap.set(obj.id, obj);
       }
+
+      // Track which server UUIDs are being used (for keeping track of what to delete)
+      const usedServerObjectIds = new Set<string>();
 
       // Update or create each object
       for (const objData of objectsData) {
         let objectId: string;
+        const inputId = objData.id;
 
-        if (objData.id) {
-          // Check if object exists
-          const existingObjResult = await conn.query<(any & RowDataPacket)[]>(
-            'SELECT * FROM objects WHERE id = ? AND project_id = ? AND deleted_at IS NULL',
-            [objData.id, projectId]
-          );
+        // Determine if this is a valid server UUID that exists
+        const isServerId = inputId && this.isServerUuid(inputId);
+        const existingObject = isServerId ? existingObjectsMap.get(inputId) : null;
 
-          if (existingObjResult[0]) {
-            // Update existing object
-            objectId = objData.id;
-            const objFields: string[] = [];
-            const objValues: (string | number | null)[] = [];
+        if (existingObject) {
+          // Update existing object
+          objectId = inputId;
+          usedServerObjectIds.add(objectId);
+          
+          const objFields: string[] = [];
+          const objValues: (string | number | null)[] = [];
 
-            if (objData.name !== undefined) {
-              objFields.push('name = ?');
-              objValues.push(objData.name);
-            }
-            if (objData.city !== undefined) {
-              objFields.push('city = ?');
-              objValues.push(objData.city);
-            }
+          if (objData.name !== undefined) {
+            objFields.push('name = ?');
+            objValues.push(objData.name);
+          }
+          if (objData.city !== undefined) {
+            objFields.push('city = ?');
+            objValues.push(objData.city);
+          }
 
-            if (objFields.length > 0) {
-              objValues.push(objectId, projectId);
-              await conn.execute(
-                `UPDATE objects SET ${objFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND project_id = ?`,
-                objValues
-              );
-            }
-          } else {
-            // Create new object with new ID
-            objectId = uuidv4();
+          if (objFields.length > 0) {
+            objValues.push(objectId, projectId);
             await conn.execute(
-              `INSERT INTO objects (id, project_id, user_id, name, city, sort_order) VALUES (?, ?, ?, ?, ?, ?)`,
-              [objectId, projectId, userId, objData.name || '', objData.city || null, objData.sort_order || 0]
+              `UPDATE objects SET ${objFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND project_id = ?`,
+              objValues
             );
           }
         } else {
-          // Create new object
+          // Create new object with a new server UUID
+          // This handles both: no ID provided, or local ID (like "local-obj-...")
           objectId = uuidv4();
+          console.log(`   🆕 Создание нового объекта: ${objData.name || ''} (local ID: ${inputId || 'none'} → server ID: ${objectId})`);
           await conn.execute(
             `INSERT INTO objects (id, project_id, user_id, name, city, sort_order) VALUES (?, ?, ?, ?, ?, ?)`,
             [objectId, projectId, userId, objData.name || '', objData.city || null, objData.sort_order || 0]
           );
         }
 
-        // Update rooms for this object
+        // Get existing rooms for this object
+        const existingRoomsResult = await conn.query<(Room & RowDataPacket)[]>(
+          'SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL',
+          [objectId]
+        );
+        const existingRooms = existingRoomsResult[0] || [];
+        const existingRoomsMap = new Map<string, Room>();
+        for (const room of existingRooms) {
+          existingRoomsMap.set(room.id, room);
+        }
+
+        // Track which server room UUIDs are being used
+        const usedServerRoomIds = new Set<string>();
+
+        // Update or create each room
         if (objData.rooms && objData.rooms.length > 0) {
-          const roomIds = objData.rooms.map((r: any) => r.id);
-
-          // Soft delete rooms not in the request for this object
-          if (roomIds.length > 0) {
-            const placeholders = roomIds.map(() => '?').join(',');
-            await conn.execute(
-              `UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP
-               WHERE object_id = ? AND id NOT IN (${placeholders}) AND deleted_at IS NULL`,
-              [objectId, ...roomIds]
-            );
-          } else {
-            await conn.execute(
-              'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE object_id = ? AND deleted_at IS NULL',
-              [objectId]
-            );
-          }
-
-          // Update or create each room
           for (const room of objData.rooms) {
-            if (room.id) {
-              // Check if room exists
-              const existingRoomResult = await conn.query<(Room & RowDataPacket)[]>(
-                'SELECT * FROM rooms WHERE id = ? AND object_id = ? AND deleted_at IS NULL',
-                [room.id, objectId]
-              );
+            const inputRoomId = room.id;
+            const isServerRoomId = inputRoomId && this.isServerUuid(inputRoomId);
+            const existingRoom = isServerRoomId ? existingRoomsMap.get(inputRoomId) : null;
 
-              if (existingRoomResult[0]) {
-                // Update existing room
-                const roomFields: string[] = [];
-                const roomValues: (string | number | null)[] = [];
+            let roomId: string;
 
-                if (room.name !== undefined) {
-                  roomFields.push('name = ?');
-                  roomValues.push(room.name);
-                }
-                if (room.geometry_mode !== undefined) {
-                  roomFields.push('geometry_mode = ?');
-                  roomValues.push(room.geometry_mode);
-                }
-                if (room.length !== undefined) {
-                  roomFields.push('length = ?');
-                  roomValues.push(room.length);
-                }
-                if (room.width !== undefined) {
-                  roomFields.push('width = ?');
-                  roomValues.push(room.width);
-                }
-                if (room.height !== undefined) {
-                  roomFields.push('height = ?');
-                  roomValues.push(room.height);
-                }
-                if (room.segments !== undefined) {
-                  roomFields.push('segments = ?');
-                  roomValues.push(room.segments ? JSON.stringify(room.segments) : null);
-                }
-                if (room.obstacles !== undefined) {
-                  roomFields.push('obstacles = ?');
-                  roomValues.push(room.obstacles ? JSON.stringify(room.obstacles) : null);
-                }
-                if (room.wall_sections !== undefined) {
-                  roomFields.push('wall_sections = ?');
-                  roomValues.push(room.wall_sections ? JSON.stringify(room.wall_sections) : null);
-                }
-                if (room.sub_sections !== undefined) {
-                  roomFields.push('sub_sections = ?');
-                  roomValues.push(room.sub_sections ? JSON.stringify(room.sub_sections) : null);
-                }
-                if (room.windows !== undefined) {
-                  roomFields.push('windows = ?');
-                  roomValues.push(room.windows ? JSON.stringify(room.windows) : null);
-                }
-                if (room.doors !== undefined) {
-                  roomFields.push('doors = ?');
-                  roomValues.push(room.doors ? JSON.stringify(room.doors) : null);
-                }
-                if (room.works !== undefined) {
-                  roomFields.push('works = ?');
-                  roomValues.push(room.works ? JSON.stringify(room.works) : null);
-                }
-                if (room.sort_order !== undefined) {
-                  roomFields.push('sort_order = ?');
-                  roomValues.push(room.sort_order);
-                }
+            if (existingRoom) {
+              // Update existing room
+              roomId = inputRoomId;
+              usedServerRoomIds.add(roomId);
 
-                if (roomFields.length > 0) {
-                  roomValues.push(room.id, objectId);
-                  await conn.execute(
-                    `UPDATE rooms SET ${roomFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND object_id = ?`,
-                    roomValues
-                  );
-                }
-              } else {
-                // Room ID provided but not found - create new with provided ID
+              const roomFields: string[] = [];
+              const roomValues: (string | number | null)[] = [];
+
+              if (room.name !== undefined) {
+                roomFields.push('name = ?');
+                roomValues.push(room.name);
+              }
+              if (room.geometry_mode !== undefined) {
+                roomFields.push('geometry_mode = ?');
+                roomValues.push(room.geometry_mode);
+              }
+              if (room.length !== undefined) {
+                roomFields.push('length = ?');
+                roomValues.push(room.length);
+              }
+              if (room.width !== undefined) {
+                roomFields.push('width = ?');
+                roomValues.push(room.width);
+              }
+              if (room.height !== undefined) {
+                roomFields.push('height = ?');
+                roomValues.push(room.height);
+              }
+              if (room.segments !== undefined) {
+                roomFields.push('segments = ?');
+                roomValues.push(room.segments ? JSON.stringify(room.segments) : null);
+              }
+              if (room.obstacles !== undefined) {
+                roomFields.push('obstacles = ?');
+                roomValues.push(room.obstacles ? JSON.stringify(room.obstacles) : null);
+              }
+              if (room.wall_sections !== undefined) {
+                roomFields.push('wall_sections = ?');
+                roomValues.push(room.wall_sections ? JSON.stringify(room.wall_sections) : null);
+              }
+              if (room.sub_sections !== undefined) {
+                roomFields.push('sub_sections = ?');
+                roomValues.push(room.sub_sections ? JSON.stringify(room.sub_sections) : null);
+              }
+              if (room.windows !== undefined) {
+                roomFields.push('windows = ?');
+                roomValues.push(room.windows ? JSON.stringify(room.windows) : null);
+              }
+              if (room.doors !== undefined) {
+                roomFields.push('doors = ?');
+                roomValues.push(room.doors ? JSON.stringify(room.doors) : null);
+              }
+              if (room.works !== undefined) {
+                roomFields.push('works = ?');
+                roomValues.push(room.works ? JSON.stringify(room.works) : null);
+              }
+              if (room.sort_order !== undefined) {
+                roomFields.push('sort_order = ?');
+                roomValues.push(room.sort_order);
+              }
+
+              if (roomFields.length > 0) {
+                roomValues.push(roomId, objectId);
                 await conn.execute(
-                  `INSERT INTO rooms (id, object_id, project_id, name, geometry_mode, length, width, height, segments, obstacles, wall_sections, sub_sections, windows, doors, works, sort_order)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                  [
-                    room.id, objectId, projectId, room.name || 'Комната', room.geometry_mode || 'simple',
-                    room.length ?? 0, room.width ?? 0, room.height ?? 0,
-                    JSON.stringify(room.segments ?? []),
-                    JSON.stringify(room.obstacles ?? []),
-                    JSON.stringify(room.wall_sections ?? []),
-                    JSON.stringify(room.sub_sections ?? []),
-                    JSON.stringify(room.windows ?? []),
-                    JSON.stringify(room.doors ?? []),
-                    JSON.stringify(room.works ?? []),
-                    room.sort_order ?? 0
-                  ]
+                  `UPDATE rooms SET ${roomFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND object_id = ?`,
+                  roomValues
                 );
               }
             } else {
-              // Create new room
-              const roomId = uuidv4();
+              // Create new room with a new server UUID
+              // This handles both: no ID provided, or local ID (like "local-room-...")
+              roomId = uuidv4();
+              console.log(`     🆕 Создание новой комнаты: ${room.name || 'Комната'} (local ID: ${inputRoomId || 'none'} → server ID: ${roomId})`);
               await conn.execute(
                 `INSERT INTO rooms (id, object_id, project_id, name, geometry_mode, length, width, height, segments, obstacles, wall_sections, sub_sections, windows, doors, works, sort_order)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -652,6 +625,19 @@ export class ProjectRepository {
               );
             }
           }
+        }
+
+        // Soft delete rooms that are no longer in the request (only for server UUIDs that exist)
+        const existingRoomIds = Array.from(existingRoomsMap.keys());
+        const roomIdsToDelete = existingRoomIds.filter(id => !usedServerRoomIds.has(id));
+        
+        if (roomIdsToDelete.length > 0) {
+          const placeholders = roomIdsToDelete.map(() => '?').join(',');
+          await conn.execute(
+            `UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE object_id = ? AND id IN (${placeholders}) AND deleted_at IS NULL`,
+            [objectId, ...roomIdsToDelete]
+          );
+          console.log(`     🗑️ Удалено комнат: ${roomIdsToDelete.length}`);
         }
       }
 

@@ -202,3 +202,179 @@ export function getObjectFromProject(project: ProjectData, objectId: string): Ob
 
   return project.objects.find(o => o.id === objectId) || null;
 }
+
+// ============================================================
+// CRUD операции для объектов
+// ============================================================
+
+/**
+ * Создание нового пустого объекта
+ */
+export function createNewObject(
+  projectId: string,
+  data: { name: string; city?: string }
+): ObjectData {
+  return {
+    id: `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    projectId,
+    name: data.name,
+    city: data.city,
+    rooms: [],
+    sortOrder: 0,
+  };
+}
+
+/**
+ * Добавление объекта в проект
+ */
+export function addObjectToProject(
+  project: ProjectData,
+  newObject: ObjectData
+): ProjectData {
+  // Ensure objects array exists
+  const existingObjects = project.objects || [];
+  
+  // Set sort order to be last
+  const objectWithOrder = {
+    ...newObject,
+    sortOrder: existingObjects.length,
+  };
+
+  return {
+    ...project,
+    objects: [...existingObjects, objectWithOrder],
+  };
+}
+
+/**
+ * Копирование объекта со всеми комнатами
+ */
+export function copyObjectInProject(
+  project: ProjectData,
+  sourceObjectId: string
+): { project: ProjectData; newObjectId: string } | null {
+  const sourceObject = getObjectFromProject(project, sourceObjectId);
+  if (!sourceObject) {
+    return null;
+  }
+
+  // Создаём копию с новыми ID
+  const newObjectId = `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const timestamp = Date.now();
+  
+  const newRooms = sourceObject.rooms.map((room, index) => ({
+    ...room,
+    id: `local-room-${timestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+  }));
+
+  const newObject: ObjectData = {
+    ...sourceObject,
+    id: newObjectId,
+    name: `${sourceObject.name} (копия)`,
+    rooms: newRooms,
+    sortOrder: (project.objects?.length || 0),
+  };
+
+  return {
+    project: {
+      ...project,
+      objects: [...(project.objects || []), newObject],
+    },
+    newObjectId,
+  };
+}
+
+/**
+ * Обновление данных объекта
+ */
+export function updateObjectInProject(
+  project: ProjectData,
+  objectId: string,
+  updates: Partial<ObjectData>
+): ProjectData {
+  if (!project.objects) return project;
+
+  return {
+    ...project,
+    objects: project.objects.map(obj =>
+      obj.id === objectId ? { ...obj, ...updates } : obj
+    ),
+  };
+}
+
+/**
+ * Удаление объекта из проекта
+ * Возвращает null если это последний объект (нельзя удалить)
+ */
+export function deleteObjectFromProject(
+  project: ProjectData,
+  objectId: string
+): ProjectData | null {
+  if (!project.objects) return null;
+
+  // Нельзя удалить последний объект
+  if (project.objects.length <= 1) {
+    return null;
+  }
+
+  return {
+    ...project,
+    objects: project.objects.filter(obj => obj.id !== objectId),
+  };
+}
+
+/**
+ * Переупорядочивание объектов
+ */
+export function reorderObjectsInProject(
+  project: ProjectData,
+  newOrder: string[] // массив ID объектов в новом порядке
+): ProjectData {
+  if (!project.objects) return project;
+
+  const objectMap = new Map(project.objects.map(obj => [obj.id, obj]));
+  const reorderedObjects = newOrder
+    .map((id, index) => {
+      const obj = objectMap.get(id);
+      return obj ? { ...obj, sortOrder: index } : null;
+    })
+    .filter(Boolean) as ObjectData[];
+
+  return {
+    ...project,
+    objects: reorderedObjects,
+  };
+}
+
+/**
+ * Получение первого объекта проекта (или null)
+ */
+export function getFirstObject(project: ProjectData): ObjectData | null {
+  if (!project.objects || project.objects.length === 0) {
+    return null;
+  }
+  return project.objects[0];
+}
+
+/**
+ * Подсчёт количества комнат в объекте
+ */
+export function getRoomCount(project: ProjectData, objectId: string): number {
+  const obj = getObjectFromProject(project, objectId);
+  return obj?.rooms.length || 0;
+}
+
+/**
+ * Получение ID объекта, которому принадлежит комната
+ */
+export function getObjectIdByRoomId(project: ProjectData, roomId: string): string | null {
+  if (!project.objects) return null;
+  
+  for (const obj of project.objects) {
+    if (obj.rooms.some(r => r.id === roomId)) {
+      return obj.id;
+    }
+  }
+  
+  return null;
+}

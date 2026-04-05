@@ -28,6 +28,12 @@ import {
   getAllRooms,
   reorderRoomsInProject,
   getObjectFromProject,
+  createNewObject,
+  addObjectToProject,
+  copyObjectInProject,
+  updateObjectInProject,
+  deleteObjectFromProject,
+  getFirstObject,
 } from '../utils/projectObjects';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
@@ -78,6 +84,10 @@ interface ProjectContextValue {
   totalsSaveError: string | null;
   roomSyncError: string | null;
 
+  // Object state (new)
+  activeObjectId: string | null;
+  activeObject: ObjectData | null;
+
   // Actions
   setActiveProjectId: (id: string) => void;
   updateProjects: (projects: ProjectData[]) => void;
@@ -91,6 +101,13 @@ interface ProjectContextValue {
   createProject: (data: { name: string; city?: string }) => Promise<ProjectData>;
   deleteProject: (projectId: string) => Promise<void>;
   isSyncing: boolean;
+
+  // Object management (new)
+  setActiveObjectId: (id: string | null) => void;
+  createObject: (data: { name: string; city?: string }) => string;
+  updateObject: (objectId: string, data: Partial<ObjectData>) => void;
+  deleteObject: (objectId: string) => boolean;
+  copyObject: (objectId: string) => string | null;
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
@@ -122,8 +139,16 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   const [isSyncing, setIsSyncing] = useState(false);
   const totalsSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Состояние активного объекта
+  const [activeObjectId, setActiveObjectIdState] = useState<string | null>(null);
+
   // Вычисляем активный проект
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
+
+  // Вычисляем активный объект
+  const activeObject = activeProject && activeObjectId
+    ? getObjectFromProject(activeProject, activeObjectId)
+    : activeProject?.objects?.[0] || null;
 
   // Получение API провайдера
   // Всегда возвращаем актуальный singleton instance,
@@ -693,6 +718,98 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     return () => clearInterval(interval);
   }, [isAuthenticated, getApiProvider]);
 
+  // ============================================================
+  // Методы управления объектами
+  // ============================================================
+
+  // Установка активного объекта
+  const setActiveObjectId = useCallback((id: string | null) => {
+    logUserAction('Переключение активного объекта', { objectId: id });
+    setActiveObjectIdState(id);
+    logStateChange('ProjectContext', 'Активный объект', id);
+  }, []);
+
+  // Создание нового объекта
+  const createObject = useCallback((data: { name: string; city?: string }): string => {
+    if (!activeProject) {
+      logError('ProjectContext', 'Cannot create object: no active project');
+      return '';
+    }
+
+    logUserAction('Создание объекта', { ...data, projectId: activeProject.id });
+    
+    const newObject = createNewObject(activeProject.id, data);
+    const updatedProject = addObjectToProject(activeProject, newObject);
+    
+    updateActiveProject(updatedProject);
+    setActiveObjectIdState(newObject.id);
+    
+    logSuccess('ProjectContext', 'Объект создан', { objectId: newObject.id, name: data.name });
+    
+    return newObject.id;
+  }, [activeProject, updateActiveProject]);
+
+  // Обновление объекта
+  const updateObject = useCallback((objectId: string, data: Partial<ObjectData>) => {
+    if (!activeProject) return;
+
+    logUserAction('Обновление объекта', { objectId, updates: data });
+    
+    const updatedProject = updateObjectInProject(activeProject, objectId, data);
+    updateActiveProject(updatedProject);
+    
+    logSuccess('ProjectContext', 'Объект обновлён', { objectId });
+  }, [activeProject, updateActiveProject]);
+
+  // Удаление объекта
+  const deleteObject = useCallback((objectId: string): boolean => {
+    if (!activeProject) return false;
+
+    logUserAction('Удаление объекта', { objectId, projectId: activeProject.id });
+    
+    const updatedProject = deleteObjectFromProject(activeProject, objectId);
+    
+    if (!updatedProject) {
+      logWarning('ProjectContext', 'Невозможно удалить последний объект', { objectId });
+      return false;
+    }
+    
+    updateActiveProject(updatedProject);
+    
+    // Если удалили активный объект, переключаемся на первый
+    if (activeObjectId === objectId) {
+      const firstObj = getFirstObject(updatedProject);
+      setActiveObjectIdState(firstObj?.id || null);
+      logStateChange('ProjectContext', 'Активный объект (после удаления)', firstObj?.id || null);
+    }
+    
+    logSuccess('ProjectContext', 'Объект удалён', { objectId });
+    return true;
+  }, [activeProject, activeObjectId, updateActiveProject]);
+
+  // Копирование объекта
+  const copyObject = useCallback((objectId: string): string | null => {
+    if (!activeProject) return null;
+
+    logUserAction('Копирование объекта', { objectId, projectId: activeProject.id });
+    
+    const result = copyObjectInProject(activeProject, objectId);
+    
+    if (!result) {
+      logError('ProjectContext', 'Ошибка копирования объекта', { objectId });
+      return null;
+    }
+    
+    updateActiveProject(result.project);
+    
+    logSuccess('ProjectContext', 'Объект скопирован', { 
+      sourceObjectId: objectId, 
+      newObjectId: result.newObjectId 
+    });
+    
+    return result.newObjectId;
+  }, [activeProject, updateActiveProject]);
+
   const value: ProjectContextValue = {
     projects,
     activeProjectId,
@@ -705,6 +822,9 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     lastTotalsSave,
     totalsSaveError,
     roomSyncError,
+    // Object state
+    activeObjectId,
+    activeObject,
     setActiveProjectId,
     updateProjects,
     updateActiveProject,
@@ -716,6 +836,12 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
     createProject,
     deleteProject,
     isSyncing,
+    // Object management
+    setActiveObjectId,
+    createObject,
+    updateObject,
+    deleteObject,
+    copyObject,
   };
 
   return (
