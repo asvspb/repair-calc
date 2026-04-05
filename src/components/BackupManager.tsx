@@ -22,6 +22,14 @@ type ImportStatus = {
   data?: { projects: ProjectData[]; activeProjectId: string; workTemplates?: WorkTemplate[] };
 };
 
+// Тип для ожидающих импорта данных
+type PendingImportData = {
+  projects: ProjectData[];
+  activeProjectId: string;
+  workTemplates?: WorkTemplate[];
+  objectCount: number;
+};
+
 // Типы для диалогов сохранения/загрузки
 type ServerProject = {
   id: string;
@@ -50,6 +58,11 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingProject, setIsLoadingProject] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Состояния для диалога импорта с названием проекта
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importProjectName, setImportProjectName] = useState('');
+  const [pendingImportData, setPendingImportData] = useState<PendingImportData | null>(null);
 
   // Инициализация имени для сохранения
   useEffect(() => {
@@ -140,6 +153,15 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
     URL.revokeObjectURL(url);
   }, [projects]);
 
+  // Генерация дефолтного названия для импорта
+  const getDefaultImportName = useCallback(() => {
+    const date = new Date();
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `Импорт от ${day}.${month}.${year}`;
+  }, []);
+
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -150,11 +172,19 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       const result = StorageManager.importFromJSON(content);
 
       if (result.success) {
-        setImportStatus({
-          type: 'confirm',
-          message: `Найдено ${result.data.projects.length} проектов. Заменить текущие данные?`,
-          data: result.data,
+        // Подсчитываем общее количество объектов
+        const objectCount = result.data.projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
+        
+        // Сохраняем данные и открываем диалог
+        setPendingImportData({
+          projects: result.data.projects,
+          activeProjectId: result.data.activeProjectId,
+          workTemplates: result.data.workTemplates,
+          objectCount,
         });
+        setImportProjectName(getDefaultImportName());
+        setShowImportDialog(true);
+        setIsOpen(false);
       } else {
         setImportStatus({
           type: 'error',
@@ -168,7 +198,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, []);
+  }, [getDefaultImportName]);
 
   const handleConfirmImport = useCallback(() => {
     if (importStatus?.data) {
@@ -320,6 +350,45 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       setIsLoadingProject(false);
     }
   }, [selectedProjectId, projects, onImport]);
+
+  // Подтвердить импорт с созданием нового проекта
+  const handleConfirmImportWithProject = useCallback(() => {
+    if (!pendingImportData || !importProjectName.trim()) return;
+
+    // Генерируем новый ID для проекта
+    const newProjectId = `import-${Date.now()}`;
+    
+    // Создаём новый проект с введённым названием
+    // Все объекты из импортированных данных переносим в этот проект
+    const allObjects = pendingImportData.projects.flatMap(p => p.objects || []);
+    
+    const newProject: ProjectData = {
+      id: newProjectId,
+      name: importProjectName.trim(),
+      objects: allObjects.map(obj => ({
+        ...obj,
+        projectId: newProjectId,
+      })),
+    };
+
+    // Добавляем новый проект к существующим
+    const updatedProjects = [...projects, newProject];
+    
+    onImport(updatedProjects, newProjectId);
+    
+    if (pendingImportData.workTemplates && onImportTemplates) {
+      onImportTemplates(pendingImportData.workTemplates);
+    }
+
+    setImportStatus({
+      type: 'success',
+      message: `Проект "${importProjectName.trim()}" успешно создан с ${allObjects.length} объектами`,
+    });
+    
+    setShowImportDialog(false);
+    setPendingImportData(null);
+    setImportProjectName('');
+  }, [pendingImportData, importProjectName, projects, onImport, onImportTemplates]);
 
   return (
     <div className="relative">
@@ -685,6 +754,78 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 >
                   {isLoadingProject && <RefreshCw className="w-4 h-4 animate-spin" />}
                   {isLoadingProject ? 'Загрузка...' : 'Открыть'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Диалог импорта с названием проекта */}
+      {showImportDialog && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowImportDialog(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
+              <button
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setPendingImportData(null);
+                }}
+                className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-indigo-600" />
+                Импорт данных
+              </h2>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Название нового проекта
+                </label>
+                <input
+                  type="text"
+                  value={importProjectName}
+                  onChange={(e) => setImportProjectName(e.target.value)}
+                  placeholder="Введите название проекта"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleConfirmImportWithProject();
+                    if (e.key === 'Escape') setShowImportDialog(false);
+                  }}
+                />
+              </div>
+
+              {pendingImportData && (
+                <div className="mb-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    <span>Будет создан проект с <strong>{pendingImportData.objectCount}</strong> объектами</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowImportDialog(false);
+                    setPendingImportData(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleConfirmImportWithProject}
+                  disabled={!importProjectName.trim()}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Импортировать
                 </button>
               </div>
             </div>

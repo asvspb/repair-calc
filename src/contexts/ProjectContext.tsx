@@ -257,6 +257,17 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
               setActiveProjectIdState(savedProjects[0].id);
               logStateChange('ProjectContext', 'Активный проект', savedProjects[0].id);
             }
+          } else {
+            // Первый запуск - используем демонстрационные проекты и сохраняем их
+            logSuccess('ProjectContext', 'Первый запуск - используются демонстрационные проекты', { 
+              count: migratedInitial.length,
+              projectIds: migratedInitial.map(p => p.id) 
+            }, startTime);
+            StorageManager.saveProjects(migratedInitial);
+            StorageManager.saveActiveProject(migratedInitial[0].id);
+            setProjects(migratedInitial);
+            setActiveProjectIdState(migratedInitial[0].id);
+            logStateChange('ProjectContext', 'Активный проект', migratedInitial[0].id);
           }
         }
         

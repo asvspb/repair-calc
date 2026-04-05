@@ -1,4 +1,4 @@
-import type { RoomData, ProjectData, WorkData, Material, Tool, RoomMetrics } from '../types';
+import type { RoomData, ProjectData, ObjectData, WorkData, Material, Tool, RoomMetrics } from '../types';
 import { WORK_TEMPLATES_CATALOG } from './workTemplatesCatalog';
 import { calculateMaterialQuantity } from '../utils/materialCalculations';
 
@@ -82,8 +82,8 @@ function calculateSimpleMetrics(
   length: number,
   width: number,
   height: number,
-  windows: { width: number; height: number }[],
-  doors: { width: number; height: number }[]
+  windows: { width: number; height: number }[] = [],
+  doors: { width: number; height: number }[] = []
 ): RoomMetrics {
   const floorArea = length * width;
   const perimeter = (length + width) * 2;
@@ -107,150 +107,276 @@ function calculateSimpleMetrics(
   };
 }
 
-// Метрики для демонстрационных комнат (рассчитываются один раз при инициализации)
-const bedroomMetrics = calculateSimpleMetrics(
-  4.0, 3.5, 2.6,
-  [{ width: 1.5, height: 1.4 }],
-  [{ width: 0.9, height: 2.1 }]
-);
-
-const livingRoomMetrics = calculateSimpleMetrics(
-  5.2, 4.0, 2.6,
-  [{ width: 1.8, height: 1.5 }, { width: 1.8, height: 1.5 }],
-  [{ width: 0.9, height: 2.1 }]
-);
-
-const kitchenMetrics = calculateSimpleMetrics(
-  3.5, 3.0, 2.6,
-  [{ width: 1.4, height: 1.4 }],
-  [{ width: 0.8, height: 2.1 }]
-);
+/**
+ * Создаёт комнату с работами
+ */
+function createRoom(
+  id: string,
+  name: string,
+  length: number,
+  width: number,
+  height: number,
+  works: WorkData[],
+  windows: { id: string; width: number; height: number; comment?: string }[] = [],
+  doors: { id: string; width: number; height: number; comment?: string }[] = []
+): RoomData {
+  return {
+    id,
+    name,
+    geometryMode: 'simple',
+    length,
+    width,
+    height,
+    segments: [],
+    obstacles: [],
+    wallSections: [],
+    subSections: [],
+    windows,
+    doors,
+    works,
+    simpleModeData: {
+      length,
+      width,
+      windows,
+      doors
+    },
+    extendedModeData: {
+      subSections: []
+    },
+    advancedModeData: {
+      segments: [],
+      obstacles: [],
+      wallSections: []
+    }
+  };
+}
 
 /**
- * Демонстрационные комнаты с работами из каталога шаблонов
+ * Создаёт работы для жилой комнаты
  */
-export const initialRooms: RoomData[] = [
-  {
-    id: '1',
-    name: 'Спальня',
-    geometryMode: 'simple',
-    length: 4.0,
-    width: 3.5,
-    height: 2.6,
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
-    windows: [{ id: 'w1', width: 1.5, height: 1.4, comment: '' }],
-    doors: [{ id: 'd1', width: 0.9, height: 2.1, comment: '' }],
-    works: [
-      createWorkFromTemplate('screed-floor', bedroomMetrics, true),        // Заливка стяжки
-      createWorkFromTemplate('laminate-flooring', bedroomMetrics, true),   // Укладка ламината
-      createWorkFromTemplate('wallpaper-walls', bedroomMetrics, true),     // Поклейка обоев
-      createWorkFromTemplate('paint-ceiling', bedroomMetrics, true),       // Покраска потолка
-      createWorkFromTemplate('install-door', bedroomMetrics, true, 1),     // Установка двери
-      createWorkFromTemplate('electrical', bedroomMetrics, true, 4),       // Электрика
-    ],
-    simpleModeData: {
-      length: 4.0,
-      width: 3.5,
-      windows: [{ id: 'w1', width: 1.5, height: 1.4, comment: '' }],
-      doors: [{ id: 'd1', width: 0.9, height: 2.1, comment: '' }]
-    },
-    extendedModeData: {
-      subSections: []
-    },
-    advancedModeData: {
-      segments: [],
-      obstacles: [],
-      wallSections: []
-    }
-  },
-  {
-    id: '2',
-    name: 'Гостиная',
-    geometryMode: 'simple',
-    length: 5.2,
-    width: 4.0,
-    height: 2.6,
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
-    windows: [
-      { id: 'w2', width: 1.8, height: 1.5, comment: '' },
-      { id: 'w3', width: 1.8, height: 1.5, comment: '' }
-    ],
-    doors: [{ id: 'd2', width: 0.9, height: 2.1, comment: '' }],
-    works: [
-      createWorkFromTemplate('screed-floor', livingRoomMetrics, true),        // Заливка стяжки
-      createWorkFromTemplate('laminate-flooring', livingRoomMetrics, true),   // Укладка ламината
-      createWorkFromTemplate('wallpaper-walls', livingRoomMetrics, true),     // Поклейка обоев
-      createWorkFromTemplate('stretch-ceiling', livingRoomMetrics, true),     // Натяжной потолок
-      createWorkFromTemplate('install-door', livingRoomMetrics, true, 1),     // Установка двери
-      createWorkFromTemplate('electrical', livingRoomMetrics, true, 6),       // Электрика
-    ],
-    simpleModeData: {
-      length: 5.2,
-      width: 4.0,
-      windows: [
-        { id: 'w2', width: 1.8, height: 1.5, comment: '' },
-        { id: 'w3', width: 1.8, height: 1.5, comment: '' }
-      ],
-      doors: [{ id: 'd2', width: 0.9, height: 2.1, comment: '' }]
-    },
-    extendedModeData: {
-      subSections: []
-    },
-    advancedModeData: {
-      segments: [],
-      obstacles: [],
-      wallSections: []
-    }
-  },
-  {
-    id: '3',
-    name: 'Кухня',
-    geometryMode: 'simple',
-    length: 3.5,
-    width: 3.0,
-    height: 2.6,
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
-    windows: [{ id: 'w4', width: 1.4, height: 1.4, comment: '' }],
-    doors: [{ id: 'd3', width: 0.8, height: 2.1, comment: '' }],
-    works: [
-      createWorkFromTemplate('screed-floor', kitchenMetrics, true),        // Заливка стяжки
-      createWorkFromTemplate('tile-flooring', kitchenMetrics, true),       // Укладка плитки (пол)
-      createWorkFromTemplate('tile-walls', kitchenMetrics, true),          // Укладка плитки (стены) - фартук
-      createWorkFromTemplate('paint-ceiling', kitchenMetrics, true),       // Покраска потолка
-      createWorkFromTemplate('install-door', kitchenMetrics, true, 1),     // Установка двери
-      createWorkFromTemplate('electrical', kitchenMetrics, true, 8),       // Электрика
-    ],
-    simpleModeData: {
-      length: 3.5,
-      width: 3.0,
-      windows: [{ id: 'w4', width: 1.4, height: 1.4, comment: '' }],
-      doors: [{ id: 'd3', width: 0.8, height: 2.1, comment: '' }]
-    },
-    extendedModeData: {
-      subSections: []
-    },
-    advancedModeData: {
-      segments: [],
-      obstacles: [],
-      wallSections: []
-    }
-  }
+function createResidentialRoomWorks(metrics: RoomMetrics): WorkData[] {
+  return [
+    createWorkFromTemplate('screed-floor', metrics, true),
+    createWorkFromTemplate('laminate-flooring', metrics, true),
+    createWorkFromTemplate('wallpaper-walls', metrics, true),
+    createWorkFromTemplate('paint-ceiling', metrics, true),
+    createWorkFromTemplate('install-door', metrics, true, 1),
+    createWorkFromTemplate('electrical', metrics, true, 4),
+  ];
+}
+
+/**
+ * Создаёт работы для ванной
+ */
+function createBathroomWorks(metrics: RoomMetrics): WorkData[] {
+  return [
+    createWorkFromTemplate('screed-floor', metrics, true),
+    createWorkFromTemplate('tile-flooring', metrics, true),
+    createWorkFromTemplate('tile-walls', metrics, true),
+    createWorkFromTemplate('paint-ceiling', metrics, true),
+    createWorkFromTemplate('install-door', metrics, true, 1),
+    createWorkFromTemplate('electrical', metrics, true, 4),
+    createWorkFromTemplate('plumbing', metrics, true, 3),
+  ];
+}
+
+/**
+ * Создаёт работы для балкона/террасы
+ */
+function createBalconyWorks(metrics: RoomMetrics): WorkData[] {
+  return [
+    createWorkFromTemplate('tile-flooring', metrics, true),
+    createWorkFromTemplate('paint-walls', metrics, true),
+    createWorkFromTemplate('paint-ceiling', metrics, true),
+  ];
+}
+
+/**
+ * Создаёт работы для технического помещения
+ */
+function createTechnicalRoomWorks(metrics: RoomMetrics): WorkData[] {
+  return [
+    createWorkFromTemplate('screed-floor', metrics, true),
+    createWorkFromTemplate('paint-walls', metrics, true),
+    createWorkFromTemplate('paint-ceiling', metrics, true),
+    createWorkFromTemplate('electrical', metrics, true, 2),
+  ];
+}
+
+// ============================================
+// ДЕМОНСТРАЦИОННЫЕ КОМНАТЫ
+// ============================================
+
+// --- Дом ---
+const houseKitchenMetrics = calculateSimpleMetrics(4.0, 3.0, 2.6, [{ width: 1.4, height: 1.4 }], [{ width: 0.8, height: 2.1 }]);
+const houseLivingRoomMetrics = calculateSimpleMetrics(5.0, 4.0, 2.6, [{ width: 1.8, height: 1.5 }, { width: 1.8, height: 1.5 }], [{ width: 0.9, height: 2.1 }]);
+const houseBedroomMetrics = calculateSimpleMetrics(4.0, 4.0, 2.6, [{ width: 1.5, height: 1.4 }], [{ width: 0.9, height: 2.1 }]);
+const houseBathroomMetrics = calculateSimpleMetrics(3.0, 2.0, 2.6, [], [{ width: 0.7, height: 2.0 }]);
+const houseBalconyMetrics = calculateSimpleMetrics(2.0, 2.0, 2.6, [{ width: 1.5, height: 1.2 }], []);
+
+const houseRooms: RoomData[] = [
+  createRoom('house-kitchen', 'Кухня', 4.0, 3.0, 2.6, [
+    createWorkFromTemplate('screed-floor', houseKitchenMetrics, true),
+    createWorkFromTemplate('tile-flooring', houseKitchenMetrics, true),
+    createWorkFromTemplate('tile-walls', houseKitchenMetrics, true), // фартук
+    createWorkFromTemplate('paint-ceiling', houseKitchenMetrics, true),
+    createWorkFromTemplate('install-door', houseKitchenMetrics, true, 1),
+    createWorkFromTemplate('electrical', houseKitchenMetrics, true, 6),
+  ], [{ id: 'w-house-1', width: 1.4, height: 1.4 }], [{ id: 'd-house-1', width: 0.8, height: 2.1 }]),
+  
+  createRoom('house-living', 'Зал', 5.0, 4.0, 2.6, createResidentialRoomWorks(houseLivingRoomMetrics),
+    [{ id: 'w-house-2', width: 1.8, height: 1.5 }, { id: 'w-house-3', width: 1.8, height: 1.5 }],
+    [{ id: 'd-house-2', width: 0.9, height: 2.1 }]),
+  
+  createRoom('house-bedroom', 'Спальня', 4.0, 4.0, 2.6, createResidentialRoomWorks(houseBedroomMetrics),
+    [{ id: 'w-house-4', width: 1.5, height: 1.4 }], [{ id: 'd-house-3', width: 0.9, height: 2.1 }]),
+  
+  createRoom('house-bathroom', 'Ванная', 3.0, 2.0, 2.6, createBathroomWorks(houseBathroomMetrics),
+    [], [{ id: 'd-house-4', width: 0.7, height: 2.0 }]),
+  
+  createRoom('house-balcony', 'Балкон', 2.0, 2.0, 2.6, createBalconyWorks(houseBalconyMetrics),
+    [{ id: 'w-house-5', width: 1.5, height: 1.2 }], []),
 ];
 
-export const initialProjects: ProjectData[] = [
-  {
-    id: 'p1',
-    name: 'Квартира (пример)',
-    city: 'Москва',
-    rooms: initialRooms
-  }
+// --- Гараж ---
+const garageUpperMetrics = calculateSimpleMetrics(6.0, 3.0, 2.5, [{ width: 2.5, height: 2.2 }], [{ width: 3.0, height: 2.2 }]);
+const garageLowerMetrics = calculateSimpleMetrics(6.0, 3.0, 2.0, [], []);
+
+const garageRooms: RoomData[] = [
+  createRoom('garage-upper', 'Верхняя часть', 6.0, 3.0, 2.5, [
+    createWorkFromTemplate('screed-floor', garageUpperMetrics, true),
+    createWorkFromTemplate('paint-walls', garageUpperMetrics, true),
+    createWorkFromTemplate('paint-ceiling', garageUpperMetrics, true),
+    createWorkFromTemplate('electrical', garageUpperMetrics, true, 4),
+  ], [{ id: 'w-garage-1', width: 2.5, height: 2.2 }], [{ id: 'd-garage-1', width: 3.0, height: 2.2 }]),
+  
+  createRoom('garage-lower', 'Нижняя часть', 6.0, 3.0, 2.0, createTechnicalRoomWorks(garageLowerMetrics), [], []),
 ];
+
+// --- Дача ---
+const dachaRoom1Metrics = calculateSimpleMetrics(4.5, 3.0, 2.5, [{ width: 1.4, height: 1.3 }], [{ width: 0.9, height: 2.0 }]);
+const dachaRoom2Metrics = calculateSimpleMetrics(4.5, 3.0, 2.5, [{ width: 1.4, height: 1.3 }], [{ width: 0.9, height: 2.0 }]);
+const dachaKitchenMetrics = calculateSimpleMetrics(4.0, 2.5, 2.5, [{ width: 1.2, height: 1.2 }], [{ width: 0.8, height: 2.0 }]);
+const dachaTerraceMetrics = calculateSimpleMetrics(4.0, 4.0, 2.5, [], []);
+
+const dachaRooms: RoomData[] = [
+  createRoom('dacha-room1', 'Комната первый этаж', 4.5, 3.0, 2.5, createResidentialRoomWorks(dachaRoom1Metrics),
+    [{ id: 'w-dacha-1', width: 1.4, height: 1.3 }], [{ id: 'd-dacha-1', width: 0.9, height: 2.0 }]),
+  
+  createRoom('dacha-room2', 'Комната второй этаж', 4.5, 3.0, 2.5, createResidentialRoomWorks(dachaRoom2Metrics),
+    [{ id: 'w-dacha-2', width: 1.4, height: 1.3 }], [{ id: 'd-dacha-2', width: 0.9, height: 2.0 }]),
+  
+  createRoom('dacha-kitchen', 'Кухня', 4.0, 2.5, 2.5, createResidentialRoomWorks(dachaKitchenMetrics),
+    [{ id: 'w-dacha-3', width: 1.2, height: 1.2 }], [{ id: 'd-dacha-3', width: 0.8, height: 2.0 }]),
+  
+  createRoom('dacha-terrace', 'Терраса', 4.0, 4.0, 2.5, createBalconyWorks(dachaTerraceMetrics), [], []),
+];
+
+// --- Магазин ---
+const shopSection1Metrics = calculateSimpleMetrics(8.0, 5.0, 3.0, [{ width: 2.0, height: 1.5 }], [{ width: 1.0, height: 2.2 }]);
+const shopSection2Metrics = calculateSimpleMetrics(8.0, 5.0, 3.0, [{ width: 2.0, height: 1.5 }], [{ width: 1.0, height: 2.2 }]);
+
+const shopRooms: RoomData[] = [
+  createRoom('shop-section1', 'Секция 1', 8.0, 5.0, 3.0, createTechnicalRoomWorks(shopSection1Metrics),
+    [{ id: 'w-shop-1', width: 2.0, height: 1.5 }], [{ id: 'd-shop-1', width: 1.0, height: 2.2 }]),
+  
+  createRoom('shop-section2', 'Секция 2', 8.0, 5.0, 3.0, createTechnicalRoomWorks(shopSection2Metrics),
+    [{ id: 'w-shop-2', width: 2.0, height: 1.5 }], [{ id: 'd-shop-2', width: 1.0, height: 2.2 }]),
+];
+
+// --- Склад ---
+const warehouseRoom1Metrics = calculateSimpleMetrics(10.0, 5.0, 3.5, [], [{ width: 1.2, height: 2.5 }]);
+const warehouseRoom2Metrics = calculateSimpleMetrics(10.0, 5.0, 3.5, [], [{ width: 1.2, height: 2.5 }]);
+
+const warehouseRooms: RoomData[] = [
+  createRoom('warehouse-room1', 'Помещение 1', 10.0, 5.0, 3.5, createTechnicalRoomWorks(warehouseRoom1Metrics),
+    [], [{ id: 'd-warehouse-1', width: 1.2, height: 2.5 }]),
+  
+  createRoom('warehouse-room2', 'Помещение 2', 10.0, 5.0, 3.5, createTechnicalRoomWorks(warehouseRoom2Metrics),
+    [], [{ id: 'd-warehouse-2', width: 1.2, height: 2.5 }]),
+];
+
+// --- Мастерская ---
+const workshopZoneMetrics = calculateSimpleMetrics(6.0, 5.0, 3.0, [{ width: 1.5, height: 1.5 }], [{ width: 1.0, height: 2.2 }]);
+const workshopStorageMetrics = calculateSimpleMetrics(3.5, 3.0, 3.0, [], [{ width: 0.9, height: 2.1 }]);
+const workshopCellarMetrics = calculateSimpleMetrics(3.0, 2.5, 2.2, [], [{ width: 0.8, height: 1.8 }]);
+
+const workshopRooms: RoomData[] = [
+  createRoom('workshop-zone', 'Рабочая зона', 6.0, 5.0, 3.0, createTechnicalRoomWorks(workshopZoneMetrics),
+    [{ id: 'w-workshop-1', width: 1.5, height: 1.5 }], [{ id: 'd-workshop-1', width: 1.0, height: 2.2 }]),
+  
+  createRoom('workshop-storage', 'Подсобка', 3.5, 3.0, 3.0, createTechnicalRoomWorks(workshopStorageMetrics),
+    [], [{ id: 'd-workshop-2', width: 0.9, height: 2.1 }]),
+  
+  createRoom('workshop-cellar', 'Погреб', 3.0, 2.5, 2.2, createTechnicalRoomWorks(workshopCellarMetrics),
+    [], [{ id: 'd-workshop-3', width: 0.8, height: 1.8 }]),
+];
+
+// ============================================
+// ДЕМОНСТРАЦИОННЫЕ ОБЪЕКТЫ
+// ============================================
+
+/**
+ * Создаёт демонстрационный объект
+ */
+function createDemoObject(
+  id: string,
+  projectId: string,
+  name: string,
+  rooms: RoomData[],
+  city?: string
+): ObjectData {
+  return {
+    id,
+    projectId,
+    name,
+    city,
+    rooms,
+    sortOrder: 0,
+  };
+}
+
+// ============================================
+// ДЕМОНСТРАЦИОННЫЕ ПРОЕКТЫ
+// ============================================
+
+/**
+ * Создаёт демонстрационные проекты
+ */
+function createInitialProjects(): ProjectData[] {
+  const project1Id = 'demo-real-estate';
+  const project2Id = 'demo-work-projects';
+
+  return [
+    {
+      id: project1Id,
+      name: 'Моя недвижимость',
+      objects: [
+        createDemoObject('obj-house', project1Id, 'Дом', houseRooms, 'Подмосковье'),
+        createDemoObject('obj-garage', project1Id, 'Гараж', garageRooms, 'Подмосковье'),
+        createDemoObject('obj-dacha', project1Id, 'Дача', dachaRooms, 'Сельское поселение'),
+      ],
+    },
+    {
+      id: project2Id,
+      name: 'Рабочие проекты',
+      objects: [
+        createDemoObject('obj-shop', project2Id, 'Магазин', shopRooms, 'Москва'),
+        createDemoObject('obj-warehouse', project2Id, 'Склад', warehouseRooms, 'Москва'),
+        createDemoObject('obj-workshop', project2Id, 'Мастерская', workshopRooms, 'Москва'),
+      ],
+    },
+  ];
+}
+
+export const initialProjects: ProjectData[] = createInitialProjects();
+
+// ============================================
+// УСТАРЕВШИЕ ЭКСПОРТЫ (для обратной совместимости)
+// ============================================
+
+/**
+ * @deprecated Используйте initialProjects[0].objects[0].rooms
+ * Оставлен для обратной совместимости со старым кодом
+ */
+export const initialRooms: RoomData[] = houseRooms;
