@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port=3993 --host=0.0.0.0 2>&1 | grep -v \"@ljharb/tsconfig\"",
     "clean": "rm -rf dist",
+    "clean:full": "bash scripts/rebuild.sh",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
