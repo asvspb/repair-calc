@@ -10,6 +10,7 @@ import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
   project: ProjectData;
+  groupByObject?: boolean;
 };
 
 type ToolAggregate = {
@@ -68,7 +69,7 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
   });
 }
 
-const SummaryToolsInternal: React.FC<Props> = ({ project }) => {
+const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const tools = useMemo(() => aggregateTools(project), [project]);
@@ -264,5 +265,5 @@ export const SummaryTools = memo(SummaryToolsInternal, (prev, next) => {
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
     0
   );
-  return prevToolsCount === nextToolsCount && prevRooms === nextRooms;
+  return prevToolsCount === nextToolsCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2, Edit2, Check, XIcon } from 'lucide-react';
+import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2, Edit2, Check, XIcon, FolderOpen, Briefcase, ChevronRight } from 'lucide-react';
 import { RoomList } from './components/rooms/RoomList';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
@@ -8,13 +8,15 @@ import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTem
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoginPage, RegisterPage, ProtectedRoute } from './components/auth';
-import type { ProjectData, RoomData } from './types';
+import type { ProjectData, RoomData, ObjectData } from './types';
 import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
-import { BackupManager } from './components/BackupManager';
 import { StorageManager } from './utils/storage';
 import { IdMapper } from './utils/idMapper';
 import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
+import { pluralize } from './utils/format';
+import { ProjectsModal } from './components/projects';
+import { CreateObjectModal } from './components/objects/CreateObjectModal';
 
 import { initialProjects } from './data/initialData';
 
@@ -131,6 +133,8 @@ function AppContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [editedProjectName, setEditedProjectName] = useState('');
+  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+  const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
@@ -244,12 +248,14 @@ function AppContent() {
         </div>
 
         <div className="p-4 bg-white space-y-3">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект</label>
-            <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
+          {/* Project selector section */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Проект</label>
+              <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
           
           {/* Режим редактирования названия */}
           {isEditingProjectName && activeProject ? (
@@ -330,26 +336,71 @@ function AppContent() {
               className="w-full flex items-center justify-center gap-2 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm cursor-pointer"
             >
               <Edit2 className="w-4 h-4" />
-              <span>Переименовать объект</span>
+              <span>Переименовать проект</span>
             </button>
           )}
-          
+
           {/* Кнопка удаления проекта */}
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="w-full flex items-center justify-center gap-2 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
-            <span>Удалить объект</span>
+            <span>Удалить проект</span>
           </button>
+          </div>
+
+          {/* Object selector section */}
+          {activeProject && activeProject.objects && activeProject.objects.length > 0 && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект ремонта</label>
+                {activeProject.objects.length > 1 && (
+                  <button
+                    onClick={() => setIsCreateObjectModalOpen(true)}
+                    className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Добавить объект"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {activeProject.objects.length > 1 ? (
+                <select
+                  value={activeObjectId || activeProject.objects[0]?.id || ''}
+                  onChange={(e) => {
+                    setActiveObjectId(e.target.value);
+                    setActiveTab('summary');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
+                >
+                  {activeProject.objects.map((obj) => (
+                    <option key={obj.id} value={obj.id}>
+                      {obj.name}{obj.city ? ` (${obj.city})` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                  <Briefcase className="w-3 h-3 inline mr-2" />
+                  {activeObject?.name || activeProject.objects[0]?.name}
+                </div>
+              )}
+            </div>
+          )}
           {/* Город для поиска цен */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Город</label>
             <input
               type="text"
-              value={activeProject?.city || ''}
+              value={activeObject?.city || activeProject?.city || ''}
               onChange={(e) => {
-                if (activeProject) {
+                if (activeObject) {
+                  updateObject(activeObject.id, { city: e.target.value || undefined });
+                } else if (activeProject) {
+                  // Fallback for backward compatibility
                   updateActiveProject({ ...activeProject, city: e.target.value });
                 }
               }}
@@ -363,9 +414,9 @@ function AppContent() {
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить объект?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить проект?</h3>
               <p className="text-gray-600 mb-4">
-                Объект «{activeProject?.name}» будет удалён безвозвратно.
+                Проект «{activeProject?.name}» будет удалён безвозвратно.
               </p>
               <div className="flex gap-3">
                 <button
@@ -432,6 +483,36 @@ function AppContent() {
                 onReorderRooms={reorderRooms}
               />
             )}
+
+            {/* Другие объекты section */}
+            {activeProject && activeProject.objects && activeProject.objects.length > 1 && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Другие объекты</div>
+                <div className="px-4 space-y-1">
+                  {activeProject.objects
+                    .filter(obj => obj.id !== activeObjectId)
+                    .map((obj: ObjectData) => (
+                      <button
+                        key={obj.id}
+                        onClick={() => {
+                          setActiveObjectId(obj.id);
+                          setActiveTab('summary');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer text-left"
+                      >
+                        <Briefcase className="w-4 h-4 text-gray-400" />
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{obj.name}</div>
+                          <div className="text-xs text-gray-400">
+                            {obj.rooms?.length || 0} {pluralize(obj.rooms?.length || 0, 'комната', 'комнаты', 'комнат')}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -443,12 +524,21 @@ function AppContent() {
             <Plus className="w-4 h-4" />
             Добавить комнату
           </button>
+          {activeProject && activeProject.objects && activeProject.objects.length > 0 && (
+            <button
+              onClick={() => setIsCreateObjectModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Добавить объект ремонта
+            </button>
+          )}
           <button
             onClick={addNewProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Новый объект
+            Новый проект
           </button>
         </div>
 
@@ -461,24 +551,50 @@ function AppContent() {
           <button onClick={() => setIsMobileMenuOpen(true)} className="cursor-pointer">
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
-          <span className="font-semibold text-lg truncate flex-1">
-            {activeTab === 'summary' ? activeProject?.name : activeProject && getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
-          </span>
-          <BackupManager
-            projects={projects}
-            activeProjectId={activeProjectId}
-            onImport={handleImport}
-            onClearAll={handleClearAll}
-            onImportTemplates={handleImportTemplates}
-          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1 text-sm font-medium truncate">
+              <span className="truncate">{activeProject?.name}</span>
+              {activeTab !== 'summary' && activeProject && (
+                <>
+                  <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 truncate">
+                    {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setIsProjectsModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
+            title="Мои проекты"
+          >
+            <FolderOpen className="w-5 h-5" />
+          </button>
         </header>
 
-        {/* Desktop header with backup manager */}
+        {/* Desktop header with breadcrumbs */}
         <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-center relative">
-          <div className="text-2xl font-bold text-gray-900 uppercase">
-            {activeProject?.name}
+          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 uppercase">
+            {/* Project name */}
+            <span>{activeProject?.name}</span>
+
+            {/* Object breadcrumb (show if multiple objects or not on summary) */}
+            {activeObject && activeProject?.objects && activeProject.objects.length > 1 && (
+              <>
+                <ChevronRight className="w-5 h-5 text-gray-400 font-normal" />
+                <span className="text-gray-600">{activeObject.name}</span>
+              </>
+            )}
+
+            {/* Room breadcrumb */}
             {activeTab !== 'summary' && showRoomNameInHeader && (
-              <span className="text-gray-400 font-normal"> / {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}</span>
+              <>
+                <ChevronRight className="w-5 h-5 text-gray-400 font-normal" />
+                <span className="text-gray-400 font-normal">
+                  {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
+                </span>
+              </>
             )}
           </div>
           <div className="absolute right-4 flex items-center gap-4">
@@ -494,13 +610,14 @@ function AppContent() {
                 {saveError}
               </div>
             )}
-            <BackupManager
-              projects={projects}
-              activeProjectId={activeProjectId}
-              onImport={handleImport}
-              onClearAll={handleClearAll}
-              onImportTemplates={handleImportTemplates}
-            />
+            <button
+              onClick={() => setIsProjectsModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              title="Мои проекты"
+            >
+              <FolderOpen className="w-5 h-5" />
+              <span className="text-sm">Мои проекты</span>
+            </button>
           </div>
         </header>
 
@@ -510,6 +627,7 @@ function AppContent() {
               <SummaryView
                 project={activeProject}
                 onRoomClick={(roomId) => setActiveTab(roomId)}
+                groupByObject={activeProject.objects && activeProject.objects.length > 1}
               />
             ) : activeProject && getAllRooms(activeProject).find(r => r.id === activeTab) ? (
               <RoomEditor
@@ -530,6 +648,20 @@ function AppContent() {
           </div>
         </div>
       </main>
+
+      {/* Projects Modal */}
+      <ProjectsModal
+        isOpen={isProjectsModalOpen}
+        onClose={() => setIsProjectsModalOpen(false)}
+        onImportTemplates={handleImportTemplates}
+      />
+
+      {/* Create Object Modal */}
+      {isCreateObjectModalOpen && (
+        <CreateObjectModal
+          onClose={() => setIsCreateObjectModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

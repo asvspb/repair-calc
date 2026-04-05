@@ -10,6 +10,7 @@ import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
   project: ProjectData;
+  groupByObject?: boolean;
 };
 
 type MaterialAggregate = {
@@ -58,7 +59,7 @@ function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
   return Array.from(materialMap.values()).sort((a, b) => b.totalPrice - a.totalPrice);
 }
 
-const SummaryMaterialsInternal: React.FC<Props> = ({ project }) => {
+const SummaryMaterialsInternal: React.FC<Props> = ({ project, groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const materials = useMemo(() => aggregateMaterials(project), [project]);
@@ -173,5 +174,5 @@ export const SummaryMaterials = memo(SummaryMaterialsInternal, (prev, next) => {
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
     0
   );
-  return prevMaterialsCount === nextMaterialsCount && prevRooms === nextRooms;
+  return prevMaterialsCount === nextMaterialsCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
 });

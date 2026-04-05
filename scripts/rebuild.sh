@@ -207,9 +207,41 @@ else
 fi
 
 # =============================================================================
-# Step 10: Rebuild Docker images
+# Step 8: Run tests
 # =============================================================================
-print_header "Step 7: Rebuilding Docker Images"
+print_header "Step 8: Running Tests"
+
+print_step "Running test suite..."
+TEST_OUTPUT=$(npm test 2>&1) || true
+echo "$TEST_OUTPUT" | tail -30
+
+# Parse test statistics
+if echo "$TEST_OUTPUT" | grep -q "Test Files.*passed"; then
+    TEST_FILES_LINE=$(echo "$TEST_OUTPUT" | grep "Test Files")
+    TESTS_LINE=$(echo "$TEST_OUTPUT" | grep "Tests")
+
+    print_success "Tests completed!"
+    echo ""
+    echo -e "  ${YELLOW}$TEST_FILES_LINE${NC}"
+    echo -e "  ${YELLOW}$TESTS_LINE${NC}"
+
+    # Check for failures
+    if echo "$TEST_OUTPUT" | grep -q "failed"; then
+        FAILED_COUNT=$(echo "$TEST_OUTPUT" | grep "Tests" | grep -oP '\d+(?= failed)' | head -1)
+        if [ -n "$FAILED_COUNT" ] && [ "$FAILED_COUNT" -gt 0 ]; then
+            echo ""
+            echo -e "  ${RED}⚠ $FAILED_COUNT test(s) failed - check output above for details${NC}"
+        fi
+    fi
+else
+    print_error "Failed to parse test output"
+    echo "$TEST_OUTPUT" | tail -10
+fi
+
+# =============================================================================
+# Step 9: Rebuild Docker images
+# =============================================================================
+print_header "Step 9: Rebuilding Docker Images"
 
 print_step "Building Docker images from scratch (no cache)..."
 if docker-compose build --no-cache; then
@@ -220,14 +252,35 @@ else
 fi
 
 # =============================================================================
+# Step 10: Start Docker services
+# =============================================================================
+print_header "Step 10: Starting Services"
+
+print_step "Starting Docker containers..."
+if docker-compose up -d; then
+    print_success "Containers started"
+else
+    print_error "Failed to start containers"
+    exit 1
+fi
+
+print_step "Waiting for services to be ready..."
+sleep 3
+
+print_step "Checking service health..."
+if docker-compose ps --format "table {{.Name}}\t{{.Status}}"; then
+    print_success "Services are running"
+else
+    print_error "Failed to check service status"
+    exit 1
+fi
+
+# =============================================================================
 # Final Summary
 # =============================================================================
 print_header "Build Complete!"
 echo ""
-echo -e "${GREEN}All done! The project has been cleaned and rebuilt from scratch.${NC}"
-echo ""
-echo -e "To start the application:"
-echo -e "  ${YELLOW}docker-compose up -d${NC}"
+echo -e "${GREEN}All done! The project has been cleaned, tested, rebuilt, and started.${NC}"
 echo ""
 echo -e "To view logs:"
 echo -e "  ${YELLOW}docker-compose logs -f${NC}"

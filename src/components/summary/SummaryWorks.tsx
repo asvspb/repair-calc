@@ -13,6 +13,7 @@ import { getAllRooms } from '../../utils/projectObjects';
 type Props = {
   project: ProjectData;
   onRoomClick: (roomId: string) => void;
+  groupByObject?: boolean;
 };
 
 type WorkAggregate = {
@@ -125,7 +126,7 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
   });
 }
 
-const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick }) => {
+const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [expandedWorks, setExpandedWorks] = React.useState<Set<string>>(new Set());
 
@@ -319,5 +320,5 @@ export const SummaryWorks = memo(SummaryWorksInternal, (prev, next) => {
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
     0
   );
-  return prevWorksCount === nextWorksCount && prevRooms === nextRooms;
+  return prevWorksCount === nextWorksCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
 });
