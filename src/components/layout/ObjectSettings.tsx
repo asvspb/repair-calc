@@ -96,8 +96,11 @@ export function OtherObjectsSection({
   activeObjectId,
   onObjectClick,
 }: OtherObjectsProps) {
+  // Получаем ID активного объекта с fallback на первый объект
+  const activeId = activeObjectId || objects[0]?.id;
+  
   // Фильтруем - показываем только другие объекты (не активный)
-  const otherObjects = objects.filter(obj => obj.id !== activeObjectId);
+  const otherObjects = objects.filter(obj => obj.id !== activeId);
 
   if (otherObjects.length === 0) {
     return null;

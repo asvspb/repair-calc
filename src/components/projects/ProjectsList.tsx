@@ -118,11 +118,6 @@ export function ProjectsList({
                       <span className={`text-sm font-medium truncate ${isActive ? 'text-indigo-700' : 'text-gray-700'}`}>
                         {project.name}
                       </span>
-                      {isActive && (
-                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded">
-                          активен
-                        </span>
-                      )}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
                       {stats.objectsCount} {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
