@@ -57,9 +57,18 @@ export function ProjectsList({
 
   return (
     <div className="border-b border-gray-200">
-      <div className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-        <FolderOpen className="w-4 h-4" />
-        Проекты
+      <div className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FolderOpen className="w-4 h-4" />
+          Проекты
+        </div>
+        <button
+          onClick={onNewProject}
+          className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+          title="Новый проект"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Project list */}
@@ -156,17 +165,6 @@ export function ProjectsList({
             </div>
           );
         })}
-      </div>
-
-      {/* New project button */}
-      <div className="px-4 py-2.5 border-t border-gray-100">
-        <button
-          onClick={onNewProject}
-          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Новый проект
-        </button>
       </div>
 
       {/* Delete confirmation dialog */}

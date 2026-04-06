@@ -1,4 +1,4 @@
-import { X, Settings, LayoutDashboard } from 'lucide-react';
+import { X, Settings, LayoutDashboard, Plus } from 'lucide-react';
 import { ProjectsList } from '../projects/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '../../types';
@@ -143,6 +143,17 @@ export function RightSidebar({
             activeObjectId={activeObjectId}
             onObjectClick={onObjectChange}
           />
+        </div>
+
+        {/* Action buttons */}
+        <div className="p-4 space-y-3 bg-white shrink-0">
+          <button
+            onClick={onNewProject}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Новый проект
+          </button>
         </div>
       </aside>
     </>
