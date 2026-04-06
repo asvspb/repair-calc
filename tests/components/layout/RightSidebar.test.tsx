@@ -162,7 +162,9 @@ describe('RightSidebar', () => {
 
     it('should show active indicator for current project', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('активен')).toBeInTheDocument();
+      // Active project is highlighted with indigo color
+      const projectName = screen.getByText('Тестовый проект');
+      expect(projectName).toHaveClass('text-indigo-700');
     });
   });
 

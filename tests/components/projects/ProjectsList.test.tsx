@@ -69,7 +69,9 @@ describe('ProjectsList', () => {
 
     it('should show active indicator for active project', () => {
       render(<ProjectsList {...mockProps} />);
-      expect(screen.getByText('активен')).toBeInTheDocument();
+      // Active project is highlighted with indigo color, not a badge
+      const projectName = screen.getByText('Тестовый проект');
+      expect(projectName).toHaveClass('text-indigo-700');
     });
 
     it('should display project stats (objects and rooms)', () => {
