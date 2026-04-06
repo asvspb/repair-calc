@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Calculator, Menu, X, LayoutDashboard, Save, LogOut, User, Cloud, CloudOff, Trash2, Edit2, Check, XIcon, FolderOpen, Briefcase, ChevronRight } from 'lucide-react';
-import { RoomList } from './components/rooms/RoomList';
+import { Calculator, Menu, Settings, Save, ChevronRight } from 'lucide-react';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
 import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
@@ -8,14 +7,14 @@ import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTem
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoginPage, RegisterPage, ProtectedRoute } from './components/auth';
+import { LeftSidebar } from './components/layout/LeftSidebar';
+import { RightSidebar } from './components/layout/RightSidebar';
 import type { ProjectData, RoomData, ObjectData } from './types';
 import type { WorkTemplate } from './types/workTemplate';
 import { createNewProject, createNewRoom } from './utils/factories';
 import { StorageManager } from './utils/storage';
 import { IdMapper } from './utils/idMapper';
 import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
-import { pluralize } from './utils/format';
-import { ProjectsModal } from './components/projects';
 import { CreateObjectModal } from './components/objects/CreateObjectModal';
 
 import { initialProjects } from './data/initialData';
@@ -30,58 +29,6 @@ function AuthPages() {
     <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
   ) : (
     <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />
-  );
-}
-
-/**
- * Компонент с пользователем в сайдбаре
- */
-function UserSection() {
-  const { user, logout } = useAuth();
-  const [showMenu, setShowMenu] = useState(false);
-
-  if (!user) return null;
-
-  return (
-    <div className="p-4 border-t border-gray-200 bg-white shrink-0 relative">
-      <button
-        onClick={() => setShowMenu(!showMenu)}
-        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-      >
-        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-          <User className="w-4 h-4 text-indigo-600" />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <div className="text-sm font-medium text-gray-900 truncate">
-            {user.name || 'Пользователь'}
-          </div>
-          <div className="text-xs text-gray-500 truncate">
-            {user.email}
-          </div>
-        </div>
-      </button>
-      
-      {showMenu && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setShowMenu(false)}
-          />
-          <div className="absolute bottom-full left-4 right-4 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-            <button
-              onClick={async () => {
-                setShowMenu(false);
-                await logout();
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Выйти</span>
-            </button>
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -128,12 +75,10 @@ function AppContent() {
 
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('summary');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLeftMobileMenuOpen, setIsLeftMobileMenuOpen] = useState(false);
+  const [isRightMobileMenuOpen, setIsRightMobileMenuOpen] = useState(false);
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
-  const [editedProjectName, setEditedProjectName] = useState('');
-  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
@@ -220,7 +165,7 @@ function AppContent() {
     const newRoom = createNewRoom();
     addRoom(newRoom);
     setActiveTab(newRoom.id);
-    setIsMobileMenuOpen(false);
+    setIsLeftMobileMenuOpen(false);
   };
 
   const addNewProject = () => {
@@ -228,7 +173,7 @@ function AppContent() {
     updateProjects([...projects, newProject]);
     setActiveProjectId(newProject.id);
     setActiveTab('summary');
-    setIsMobileMenuOpen(false);
+    setIsRightMobileMenuOpen(false);
   };
 
   const handleImportTemplates = (importedTemplates: WorkTemplate[]) => {
@@ -241,314 +186,25 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        {/* Logo */}
-        <div className="flex items-center justify-center bg-white p-4 border-b border-gray-200" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
-          <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
-        </div>
+      {/* Left Sidebar */}
+      <LeftSidebar
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setIsLeftMobileMenuOpen(false);
+        }}
+        onAddRoom={handleAddRoom}
+        isMobileMenuOpen={isLeftMobileMenuOpen}
+        onMobileMenuClose={() => setIsLeftMobileMenuOpen(false)}
+        rooms={activeObject?.rooms || []}
+        onReorderRooms={reorderRooms}
+      />
 
-        <div className="p-4 bg-white space-y-3">
-          {/* Project selector section */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Проект</label>
-              <button className="md:hidden cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-          
-          {/* Режим редактирования названия */}
-          {isEditingProjectName && activeProject ? (
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={editedProjectName}
-                onChange={(e) => setEditedProjectName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (editedProjectName.trim()) {
-                      updateActiveProject({ ...activeProject, name: editedProjectName.trim() });
-                    }
-                    setIsEditingProjectName(false);
-                  } else if (e.key === 'Escape') {
-                    setIsEditingProjectName(false);
-                  }
-                }}
-                autoFocus
-                className="flex-1 px-2 py-1.5 text-sm border border-indigo-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <button
-                onClick={() => {
-                  if (editedProjectName.trim()) {
-                    updateActiveProject({ ...activeProject, name: editedProjectName.trim() });
-                  }
-                  setIsEditingProjectName(false);
-                }}
-                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
-                title="Сохранить"
-              >
-                <Check className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setIsEditingProjectName(false)}
-                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                title="Отмена"
-              >
-                <XIcon className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            /* Режим просмотра с селектором */
-            <div className="relative mb-2 flex items-center gap-2">
-              {/* Индикатор статуса синхронизации */}
-              {activeProject && (
-                <div className="shrink-0">
-                  {IdMapper.isServerId(activeProjectId) ? (
-                    <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
-                  ) : (
-                    <CloudOff className="w-4 h-4 text-amber-500" title="Локальный проект (не синхронизирован)" />
-                  )}
-                </div>
-              )}
-              <select
-                value={activeProjectId}
-                onChange={(e) => {
-                  setActiveProjectId(e.target.value);
-                  setActiveTab('summary');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {/* Кнопка редактирования названия */}
-          {!isEditingProjectName && activeProject && (
-            <button
-              onClick={() => {
-                setEditedProjectName(activeProject.name);
-                setIsEditingProjectName(true);
-              }}
-              className="w-full flex items-center justify-center gap-2 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm cursor-pointer"
-            >
-              <Edit2 className="w-4 h-4" />
-              <span>Переименовать проект</span>
-            </button>
-          )}
-
-          {/* Кнопка удаления проекта */}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Удалить проект</span>
-          </button>
-          </div>
-
-          {/* Object selector section */}
-          {activeProject && activeProject.objects && activeProject.objects.length > 0 && (
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Объект ремонта</label>
-                {activeProject.objects.length > 1 && (
-                  <button
-                    onClick={() => setIsCreateObjectModalOpen(true)}
-                    className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                    title="Добавить объект"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {activeProject.objects.length > 1 ? (
-                <select
-                  value={activeObjectId || activeProject.objects[0]?.id || ''}
-                  onChange={(e) => {
-                    setActiveObjectId(e.target.value);
-                    setActiveTab('summary');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
-                >
-                  {activeProject.objects.map((obj) => (
-                    <option key={obj.id} value={obj.id}>
-                      {obj.name}{obj.city ? ` (${obj.city})` : ''}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                  <Briefcase className="w-3 h-3 inline mr-2" />
-                  {activeObject?.name || activeProject.objects[0]?.name}
-                </div>
-              )}
-            </div>
-          )}
-          {/* Город для поиска цен */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Город</label>
-            <input
-              type="text"
-              value={activeObject?.city || activeProject?.city || ''}
-              onChange={(e) => {
-                if (activeObject) {
-                  updateObject(activeObject.id, { city: e.target.value || undefined });
-                } else if (activeProject) {
-                  // Fallback for backward compatibility
-                  updateActiveProject({ ...activeProject, city: e.target.value });
-                }
-              }}
-              placeholder="Для поиска цен"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
-
-        {/* Модальное окно подтверждения удаления */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить проект?</h3>
-              <p className="text-gray-600 mb-4">
-                Проект «{activeProject?.name}» будет удалён безвозвратно.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => !isSyncing && setShowDeleteConfirm(false)}
-                  disabled={isSyncing}
-                  className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Отмена
-                </button>
-                <button
-                  onClick={async () => {
-                    // Предотвращаем повторные клики
-                    if (isSyncing) return;
-                    
-                    // Удаляем через API если проект на сервере
-                    if (IdMapper.isServerId(activeProjectId)) {
-                      await deleteProject(activeProjectId);
-                    }
-                    // Удаляем локально
-                    handleDeleteActiveProject();
-                    setShowDeleteConfirm(false);
-                  }}
-                  disabled={isSyncing}
-                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSyncing ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      <span>Удаление...</span>
-                    </>
-                  ) : (
-                    <span>Удалить</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Статическая часть - Обзор */}
-          <div className="py-4 shrink-0">
-            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
-            <button
-              onClick={() => { setActiveTab('summary'); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="font-medium">Общая смета</span>
-            </button>
-          </div>
-
-          {/* Прокручиваемая часть - Комнаты */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
-            {activeObject && (
-              <RoomList
-                rooms={activeObject.rooms || []}
-                activeTab={activeTab}
-                onRoomClick={(roomId) => {
-                  setActiveTab(roomId);
-                  setIsMobileMenuOpen(false);
-                }}
-                onReorderRooms={reorderRooms}
-              />
-            )}
-
-            {/* Другие объекты section */}
-            {activeProject && activeProject.objects && activeProject.objects.length > 1 && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Другие объекты</div>
-                <div className="px-4 space-y-1">
-                  {activeProject.objects
-                    .filter(obj => obj.id !== activeObjectId)
-                    .map((obj: ObjectData) => (
-                      <button
-                        key={obj.id}
-                        onClick={() => {
-                          setActiveObjectId(obj.id);
-                          setActiveTab('summary');
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer text-left"
-                      >
-                        <Briefcase className="w-4 h-4 text-gray-400" />
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">{obj.name}</div>
-                          <div className="text-xs text-gray-400">
-                            {obj.rooms?.length || 0} {pluralize(obj.rooms?.length || 0, 'комната', 'комнаты', 'комнат')}
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  }
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 space-y-3 bg-white shrink-0">
-          <button
-            onClick={handleAddRoom}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Добавить комнату
-          </button>
-          {activeProject && activeProject.objects && activeProject.objects.length > 0 && (
-            <button
-              onClick={() => setIsCreateObjectModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Добавить объект ремонта
-            </button>
-          )}
-          <button
-            onClick={addNewProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Новый проект
-          </button>
-        </div>
-
-        {/* User section */}
-        <UserSection />
-      </aside>
-
+      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Mobile header */}
         <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-          <button onClick={() => setIsMobileMenuOpen(true)} className="cursor-pointer">
+          <button onClick={() => setIsLeftMobileMenuOpen(true)} className="cursor-pointer">
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
           <div className="flex-1 min-w-0">
@@ -565,11 +221,11 @@ function AppContent() {
             </div>
           </div>
           <button
-            onClick={() => setIsProjectsModalOpen(true)}
+            onClick={() => setIsRightMobileMenuOpen(true)}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
-            title="Мои проекты"
+            title="Настройки"
           >
-            <FolderOpen className="w-5 h-5" />
+            <Settings className="w-5 h-5" />
           </button>
         </header>
 
@@ -610,14 +266,6 @@ function AppContent() {
                 {saveError}
               </div>
             )}
-            <button
-              onClick={() => setIsProjectsModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-              title="Мои проекты"
-            >
-              <FolderOpen className="w-5 h-5" />
-              <span className="text-sm">Мои проекты</span>
-            </button>
           </div>
         </header>
 
@@ -649,11 +297,51 @@ function AppContent() {
         </div>
       </main>
 
-      {/* Projects Modal */}
-      <ProjectsModal
-        isOpen={isProjectsModalOpen}
-        onClose={() => setIsProjectsModalOpen(false)}
-        onImportTemplates={handleImportTemplates}
+      {/* Right Sidebar */}
+      <RightSidebar
+        isMobileMenuOpen={isRightMobileMenuOpen}
+        onMobileMenuClose={() => setIsRightMobileMenuOpen(false)}
+        projects={projects}
+        activeProjectId={activeProjectId}
+        activeProject={activeProject}
+        isSyncing={isSyncing}
+        onProjectChange={(id) => {
+          setActiveProjectId(id);
+          setActiveTab('summary');
+        }}
+        onRenameProject={(name) => {
+          if (activeProject) {
+            updateActiveProject({ ...activeProject, name });
+          }
+        }}
+        onDeleteProject={() => setShowDeleteConfirm(true)}
+        onNewProject={addNewProject}
+        objects={activeProject?.objects || []}
+        activeObjectId={activeObjectId}
+        activeObject={activeObject}
+        onObjectChange={(id) => {
+          setActiveObjectId(id);
+          setActiveTab('summary');
+        }}
+        onAddObject={() => setIsCreateObjectModalOpen(true)}
+        city={activeObject?.city || activeProject?.city || ''}
+        onCityChange={(city) => {
+          if (activeObject) {
+            updateObject(activeObject.id, { city: city || undefined });
+          } else if (activeProject) {
+            updateActiveProject({ ...activeProject, city });
+          }
+        }}
+        showDeleteConfirm={showDeleteConfirm}
+        onDeleteConfirm={async () => {
+          if (isSyncing) return;
+          if (IdMapper.isServerId(activeProjectId)) {
+            await deleteProject(activeProjectId);
+          }
+          handleDeleteActiveProject();
+          setShowDeleteConfirm(false);
+        }}
+        onDeleteCancel={() => setShowDeleteConfirm(false)}
       />
 
       {/* Create Object Modal */}
