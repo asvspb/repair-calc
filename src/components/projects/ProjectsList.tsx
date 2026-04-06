@@ -72,7 +72,7 @@ export function ProjectsList({
           return (
             <div
               key={project.id}
-              className={`px-4 py-2.5 border-t border-gray-100 transition-colors ${
+              className={`group px-4 py-2.5 border-t border-gray-100 transition-colors ${
                 isActive
                   ? 'bg-indigo-50'
                   : 'hover:bg-gray-50'
@@ -128,7 +128,7 @@ export function ProjectsList({
 
                 {/* Action buttons */}
                 {!isEditing && (
-                  <div className="flex items-center gap-0.5 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => startEditing(project.id, project.name)}
                       className="p-1.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
