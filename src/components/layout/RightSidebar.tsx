@@ -1,6 +1,4 @@
-import React from 'react';
-import { X, LogOut, User, Database, LayoutDashboard } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { X, Settings, LayoutDashboard } from 'lucide-react';
 import { ProjectsList } from '../projects/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '../../types';
@@ -28,58 +26,6 @@ type RightSidebarProps = {
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
 };
-
-/**
- * User section component for the right sidebar
- */
-function UserSection() {
-  const { user, logout } = useAuth();
-  const [showMenu, setShowMenu] = React.useState(false);
-
-  if (!user) return null;
-
-  return (
-    <div className="p-4 border-t border-gray-200 bg-white shrink-0 relative mt-auto">
-      <button
-        onClick={() => setShowMenu(!showMenu)}
-        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-      >
-        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-          <User className="w-4 h-4 text-indigo-600" />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <div className="text-sm font-medium text-gray-900 truncate">
-            {user.name || 'Пользователь'}
-          </div>
-          <div className="text-xs text-gray-500 truncate">
-            {user.email}
-          </div>
-        </div>
-      </button>
-
-      {showMenu && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setShowMenu(false)}
-          />
-          <div className="absolute bottom-full left-4 right-4 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-            <button
-              onClick={async () => {
-                setShowMenu(false);
-                await logout();
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Выйти</span>
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 export function RightSidebar({
   isMobileMenuOpen,
@@ -152,10 +98,10 @@ export function RightSidebar({
           <button
             onClick={onDataManagement}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            title="Управление данными"
+            title="Настройки"
           >
-            <Database className="w-5 h-5" />
-            <span className="text-sm">Данные</span>
+            <Settings className="w-5 h-5" />
+            <span className="text-sm">Настройки</span>
           </button>
           <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
             <X className="w-5 h-5 text-gray-500" />
@@ -198,9 +144,6 @@ export function RightSidebar({
             onObjectClick={onObjectChange}
           />
         </div>
-
-        {/* User section */}
-        <UserSection />
       </aside>
     </>
   );
