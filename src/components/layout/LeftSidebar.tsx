@@ -80,18 +80,18 @@ export function LeftSidebar({
       {/* Action buttons */}
       <div className="p-4 space-y-3 bg-white shrink-0">
         <button
-          onClick={onAddObject}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Добавить объект ремонта
-        </button>
-        <button
           onClick={onAddRoom}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Добавить комнату
+        </button>
+        <button
+          onClick={onAddObject}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          Добавить объект ремонта
         </button>
       </div>
     </aside>

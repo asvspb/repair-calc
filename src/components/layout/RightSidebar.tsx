@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Plus, LogOut, User, FolderOpen, LayoutDashboard } from 'lucide-react';
+import { X, LogOut, User, Database, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ProjectSettings } from './ProjectSettings';
+import { ProjectsList } from '../projects/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '../../types';
 
@@ -13,10 +13,11 @@ type RightSidebarProps = {
   activeProject: ProjectData | null;
   isSyncing: boolean;
   onProjectChange: (id: string) => void;
-  onRenameProject: (name: string) => void;
-  onDeleteProject: () => void;
+  onRenameProject: (id: string, name: string) => void;
+  onDeleteProject: (id: string) => void;
+  onCopyProject: (id: string) => void;
   onNewProject: () => void;
-  onOpenProjects: () => void;
+  onDataManagement: () => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
   objects: ObjectData[];
@@ -90,8 +91,9 @@ export function RightSidebar({
   onProjectChange,
   onRenameProject,
   onDeleteProject,
+  onCopyProject,
   onNewProject,
-  onOpenProjects,
+  onDataManagement,
   activeTab,
   onTabChange,
   objects,
@@ -148,12 +150,12 @@ export function RightSidebar({
         {/* Header */}
         <div className="flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
           <button
-            onClick={onOpenProjects}
+            onClick={onDataManagement}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            title="Мои проекты"
+            title="Управление данными"
           >
-            <FolderOpen className="w-5 h-5" />
-            <span className="text-sm">Мои проекты</span>
+            <Database className="w-5 h-5" />
+            <span className="text-sm">Данные</span>
           </button>
           <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
             <X className="w-5 h-5 text-gray-500" />
@@ -162,6 +164,17 @@ export function RightSidebar({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Projects List */}
+          <ProjectsList
+            projects={projects}
+            activeProjectId={activeProjectId}
+            onProjectSelect={onProjectChange}
+            onProjectRename={onRenameProject}
+            onProjectCopy={onCopyProject}
+            onProjectDelete={onDeleteProject}
+            onNewProject={onNewProject}
+          />
+
           {/* Overview section */}
           <div className="py-4 shrink-0 border-b border-gray-200">
             <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
@@ -178,35 +191,12 @@ export function RightSidebar({
             </button>
           </div>
 
-          {/* Project Settings */}
-          <ProjectSettings
-            projects={projects}
-            activeProjectId={activeProjectId}
-            activeProject={activeProject}
-            isSyncing={isSyncing}
-            onProjectChange={onProjectChange}
-            onRename={onRenameProject}
-            onDelete={onDeleteProject}
-            onNewProject={onNewProject}
-          />
-
           {/* Other Objects Section */}
           <OtherObjectsSection
             objects={objects}
             activeObjectId={activeObjectId}
             onObjectClick={onObjectChange}
           />
-        </div>
-
-        {/* Action buttons */}
-        <div className="p-4 space-y-3 bg-white shrink-0">
-          <button
-            onClick={onNewProject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Новый проект
-          </button>
         </div>
 
         {/* User section */}

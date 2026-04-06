@@ -17,6 +17,7 @@ import { IdMapper } from './utils/idMapper';
 import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
 import { CreateObjectModal } from './components/objects/CreateObjectModal';
 import { ProjectsModal } from './components/projects';
+import { DataManagementModal } from './components/projects/DataManagementModal';
 
 import { initialProjects } from './data/initialData';
 
@@ -82,6 +83,7 @@ function AppContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+  const [isDataManagementModalOpen, setIsDataManagementModalOpen] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
@@ -176,6 +178,33 @@ function AppContent() {
     setActiveProjectId(newProject.id);
     setActiveTab('summary');
     setIsRightMobileMenuOpen(false);
+  };
+
+  const handleCopyProject = (id: string) => {
+    const sourceProject = projects.find(p => p.id === id);
+    if (!sourceProject) return;
+
+    const copiedProject = JSON.parse(JSON.stringify(sourceProject));
+    copiedProject.id = `local-${Date.now()}`;
+    copiedProject.name = `${sourceProject.name} (копия)`;
+
+    // Re-generate IDs for objects and rooms to avoid conflicts
+    if (copiedProject.objects) {
+      copiedProject.objects = copiedProject.objects.map((obj: any) => ({
+        ...obj,
+        id: `obj-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        projectId: copiedProject.id,
+        rooms: obj.rooms?.map((room: any) => ({
+          ...room,
+          id: `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          objectId: obj.id,
+        })),
+      }));
+    }
+
+    const updatedProjects = [...projects, copiedProject];
+    updateProjects(updatedProjects);
+    setActiveProjectId(copiedProject.id);
   };
 
   const handleImportTemplates = (importedTemplates: WorkTemplate[]) => {
@@ -327,14 +356,23 @@ function AppContent() {
           setActiveProjectId(id);
           setActiveTab('summary');
         }}
-        onRenameProject={(name) => {
-          if (activeProject) {
-            updateActiveProject({ ...activeProject, name });
+        onRenameProject={(id, name) => {
+          const updatedProjects = projects.map(p =>
+            p.id === id ? { ...p, name } : p
+          );
+          updateProjects(updatedProjects);
+        }}
+        onDeleteProject={(id) => {
+          if (id === activeProjectId) {
+            setShowDeleteConfirm(true);
+          } else {
+            const updatedProjects = projects.filter(p => p.id !== id);
+            updateProjects(updatedProjects);
           }
         }}
-        onDeleteProject={() => setShowDeleteConfirm(true)}
+        onCopyProject={handleCopyProject}
         onNewProject={addNewProject}
-        onOpenProjects={() => setIsProjectsModalOpen(true)}
+        onDataManagement={() => setIsDataManagementModalOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         objects={activeProject?.objects || []}
@@ -367,6 +405,13 @@ function AppContent() {
       <ProjectsModal
         isOpen={isProjectsModalOpen}
         onClose={() => setIsProjectsModalOpen(false)}
+        onImportTemplates={handleImportTemplates}
+      />
+
+      {/* Data Management Modal */}
+      <DataManagementModal
+        isOpen={isDataManagementModalOpen}
+        onClose={() => setIsDataManagementModalOpen(false)}
         onImportTemplates={handleImportTemplates}
       />
     </div>

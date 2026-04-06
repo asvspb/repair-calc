@@ -51,8 +51,9 @@ describe('RightSidebar', () => {
     onProjectChange: vi.fn(),
     onRenameProject: vi.fn(),
     onDeleteProject: vi.fn(),
+    onCopyProject: vi.fn(),
     onNewProject: vi.fn(),
-    onOpenProjects: vi.fn(),
+    onDataManagement: vi.fn(),
     activeTab: 'summary',
     onTabChange: vi.fn(),
     objects: mockObjects,
@@ -98,19 +99,19 @@ describe('RightSidebar', () => {
     });
   });
 
-  describe('Projects header', () => {
-    it('should display "Мои проекты" button', () => {
+  describe('Data management header', () => {
+    it('should display "Данные" button', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Мои проекты')).toBeInTheDocument();
+      expect(screen.getByText('Данные')).toBeInTheDocument();
     });
 
-    it('should call onOpenProjects when "Мои проекты" button is clicked', () => {
+    it('should call onDataManagement when "Данные" button is clicked', () => {
       render(<RightSidebar {...mockProps} />);
-      const myProjectsButton = screen.getByText('Мои проекты');
+      const dataButton = screen.getByText('Данные');
 
-      fireEvent.click(myProjectsButton);
+      fireEvent.click(dataButton);
 
-      expect(mockProps.onOpenProjects).toHaveBeenCalled();
+      expect(mockProps.onDataManagement).toHaveBeenCalled();
     });
   });
 
@@ -148,17 +149,20 @@ describe('RightSidebar', () => {
     });
   });
 
-  describe('Project settings section', () => {
-    it('should render project label', () => {
+  describe('Projects list section', () => {
+    it('should render projects list header', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Проект')).toBeInTheDocument();
+      expect(screen.getByText('Проекты')).toBeInTheDocument();
     });
 
-    it('should render project selector', () => {
+    it('should display active project name', () => {
       render(<RightSidebar {...mockProps} />);
-      const selects = screen.getAllByRole('combobox');
-      // There should be at least one select (project selector)
-      expect(selects.length).toBeGreaterThan(0);
+      expect(screen.getByText('Тестовый проект')).toBeInTheDocument();
+    });
+
+    it('should show active indicator for current project', () => {
+      render(<RightSidebar {...mockProps} />);
+      expect(screen.getByText('активен')).toBeInTheDocument();
     });
   });
 
@@ -170,14 +174,15 @@ describe('RightSidebar', () => {
   });
 
   describe('Action buttons', () => {
-    it('should display "Новый проект" button', () => {
+    it('should display "Новый проект" button in ProjectsList', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Новый проект')).toBeInTheDocument();
+      const newProjectButtons = screen.getAllByText('Новый проект');
+      expect(newProjectButtons.length).toBeGreaterThan(0);
     });
 
-    it('should call onNewProject when new project button is clicked', () => {
+    it('should call onNewProject when new project button is clicked in ProjectsList', () => {
       render(<RightSidebar {...mockProps} />);
-      const newProjectButton = screen.getByText('Новый проект');
+      const newProjectButton = screen.getAllByText('Новый проект')[0];
 
       fireEvent.click(newProjectButton);
 
