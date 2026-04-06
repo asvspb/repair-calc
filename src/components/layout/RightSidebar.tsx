@@ -1,8 +1,8 @@
 import React from 'react';
-import { X, Plus, LogOut, User, FolderOpen } from 'lucide-react';
+import { X, Plus, LogOut, User, FolderOpen, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProjectSettings } from './ProjectSettings';
-import { ObjectSettings, OtherObjectsSection } from './ObjectSettings';
+import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '../../types';
 
 type RightSidebarProps = {
@@ -17,13 +17,12 @@ type RightSidebarProps = {
   onDeleteProject: () => void;
   onNewProject: () => void;
   onOpenProjects: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
   objects: ObjectData[];
   activeObjectId: string | null;
   activeObject: ObjectData | null;
   onObjectChange: (id: string) => void;
-  onAddObject: () => void;
-  city: string;
-  onCityChange: (city: string) => void;
   showDeleteConfirm: boolean;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
@@ -93,13 +92,12 @@ export function RightSidebar({
   onDeleteProject,
   onNewProject,
   onOpenProjects,
+  activeTab,
+  onTabChange,
   objects,
   activeObjectId,
   activeObject,
   onObjectChange,
-  onAddObject,
-  city,
-  onCityChange,
   showDeleteConfirm,
   onDeleteConfirm,
   onDeleteCancel,
@@ -164,6 +162,22 @@ export function RightSidebar({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Overview section */}
+          <div className="py-4 shrink-0 border-b border-gray-200">
+            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Обзор</div>
+            <button
+              onClick={() => onTabChange('summary')}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${
+                activeTab === 'summary'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="font-medium">Общая смета</span>
+            </button>
+          </div>
+
           {/* Project Settings */}
           <ProjectSettings
             projects={projects}
@@ -176,17 +190,6 @@ export function RightSidebar({
             onNewProject={onNewProject}
           />
 
-          {/* Object Settings */}
-          <ObjectSettings
-            objects={objects}
-            activeObjectId={activeObjectId}
-            activeObject={activeObject}
-            onObjectChange={onObjectChange}
-            onAddObject={onAddObject}
-            city={city}
-            onCityChange={onCityChange}
-          />
-
           {/* Other Objects Section */}
           <OtherObjectsSection
             objects={objects}
@@ -197,13 +200,6 @@ export function RightSidebar({
 
         {/* Action buttons */}
         <div className="p-4 space-y-3 bg-white shrink-0">
-          <button
-            onClick={onAddObject}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Добавить объект ремонта
-          </button>
           <button
             onClick={onNewProject}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"

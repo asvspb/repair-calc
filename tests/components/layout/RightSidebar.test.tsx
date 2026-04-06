@@ -52,13 +52,13 @@ describe('RightSidebar', () => {
     onRenameProject: vi.fn(),
     onDeleteProject: vi.fn(),
     onNewProject: vi.fn(),
+    onOpenProjects: vi.fn(),
+    activeTab: 'summary',
+    onTabChange: vi.fn(),
     objects: mockObjects,
     activeObjectId: 'obj-1',
     activeObject: mockObjects[0],
     onObjectChange: vi.fn(),
-    onAddObject: vi.fn(),
-    city: 'Москва',
-    onCityChange: vi.fn(),
     showDeleteConfirm: false,
     onDeleteConfirm: vi.fn(),
     onDeleteCancel: vi.fn(),
@@ -91,17 +91,60 @@ describe('RightSidebar', () => {
       render(<RightSidebar {...mockProps} isMobileMenuOpen={true} />);
       // Close button is the X button in the header
       const closeButton = screen.getByRole('button', { name: '' });
-      
+
       fireEvent.click(closeButton);
-      
+
       expect(mockProps.onMobileMenuClose).toHaveBeenCalled();
     });
   });
 
-  describe('Settings header', () => {
-    it('should display "Настройки" header', () => {
+  describe('Projects header', () => {
+    it('should display "Мои проекты" button', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Настройки')).toBeInTheDocument();
+      expect(screen.getByText('Мои проекты')).toBeInTheDocument();
+    });
+
+    it('should call onOpenProjects when "Мои проекты" button is clicked', () => {
+      render(<RightSidebar {...mockProps} />);
+      const myProjectsButton = screen.getByText('Мои проекты');
+
+      fireEvent.click(myProjectsButton);
+
+      expect(mockProps.onOpenProjects).toHaveBeenCalled();
+    });
+  });
+
+  describe('Overview section', () => {
+    it('should display "Обзор" section header', () => {
+      render(<RightSidebar {...mockProps} />);
+      expect(screen.getByText('Обзор')).toBeInTheDocument();
+    });
+
+    it('should display "Общая смета" button', () => {
+      render(<RightSidebar {...mockProps} />);
+      expect(screen.getByText('Общая смета')).toBeInTheDocument();
+    });
+
+    it('should highlight summary button when activeTab is summary', () => {
+      render(<RightSidebar {...mockProps} activeTab="summary" />);
+      const summaryButton = screen.getByText('Общая смета').closest('button');
+      expect(summaryButton).toHaveClass('bg-indigo-50');
+      expect(summaryButton).toHaveClass('text-indigo-700');
+    });
+
+    it('should not highlight summary button when activeTab is not summary', () => {
+      render(<RightSidebar {...mockProps} activeTab="room-1" />);
+      const summaryButton = screen.getByText('Общая смета').closest('button');
+      expect(summaryButton).not.toHaveClass('bg-indigo-50');
+    });
+
+    it('should call onTabChange with "summary" when summary button is clicked', () => {
+      render(<RightSidebar {...mockProps} />);
+      const summaryButton = screen.getByText('Общая смета');
+
+      fireEvent.click(summaryButton);
+
+      expect(mockProps.onTabChange).toHaveBeenCalledWith('summary');
     });
   });
 
@@ -119,28 +162,14 @@ describe('RightSidebar', () => {
     });
   });
 
-  describe('Object settings section', () => {
-    it('should render object label', () => {
+  describe('Other objects section', () => {
+    it('should display "Другие объекты" section when there are multiple objects', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Объект ремонта')).toBeInTheDocument();
+      expect(screen.getByText('Другие объекты')).toBeInTheDocument();
     });
   });
 
   describe('Action buttons', () => {
-    it('should display "Добавить объект ремонта" button', () => {
-      render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Добавить объект ремонта')).toBeInTheDocument();
-    });
-
-    it('should call onAddObject when add object button is clicked', () => {
-      render(<RightSidebar {...mockProps} />);
-      const addButton = screen.getByText('Добавить объект ремонта');
-      
-      fireEvent.click(addButton);
-      
-      expect(mockProps.onAddObject).toHaveBeenCalled();
-    });
-
     it('should display "Новый проект" button', () => {
       render(<RightSidebar {...mockProps} />);
       expect(screen.getByText('Новый проект')).toBeInTheDocument();
@@ -149,9 +178,9 @@ describe('RightSidebar', () => {
     it('should call onNewProject when new project button is clicked', () => {
       render(<RightSidebar {...mockProps} />);
       const newProjectButton = screen.getByText('Новый проект');
-      
+
       fireEvent.click(newProjectButton);
-      
+
       expect(mockProps.onNewProject).toHaveBeenCalled();
     });
   });
@@ -171,18 +200,18 @@ describe('RightSidebar', () => {
     it('should call onDeleteCancel when cancel button is clicked', () => {
       render(<RightSidebar {...mockProps} showDeleteConfirm={true} />);
       const cancelButton = screen.getByText('Отмена');
-      
+
       fireEvent.click(cancelButton);
-      
+
       expect(mockProps.onDeleteCancel).toHaveBeenCalled();
     });
 
     it('should call onDeleteConfirm when delete button is clicked', () => {
       render(<RightSidebar {...mockProps} showDeleteConfirm={true} />);
       const deleteButton = screen.getByText('Удалить');
-      
+
       fireEvent.click(deleteButton);
-      
+
       expect(mockProps.onDeleteConfirm).toHaveBeenCalled();
     });
 
@@ -196,7 +225,7 @@ describe('RightSidebar', () => {
       );
       const cancelButton = screen.getByRole('button', { name: 'Отмена' });
       const deleteButton = screen.getByRole('button', { name: /Удаление/ });
-      
+
       expect(cancelButton).toBeDisabled();
       expect(deleteButton).toBeDisabled();
     });
@@ -212,9 +241,9 @@ describe('RightSidebar', () => {
     it('should show logout menu when user button is clicked', () => {
       render(<RightSidebar {...mockProps} />);
       const userButton = screen.getByText('Тестовый пользователь').closest('button');
-      
+
       fireEvent.click(userButton!);
-      
+
       expect(screen.getByText('Выйти')).toBeInTheDocument();
     });
   });

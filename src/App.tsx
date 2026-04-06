@@ -200,6 +200,22 @@ function AppContent() {
         onMobileMenuClose={() => setIsLeftMobileMenuOpen(false)}
         rooms={activeObject?.rooms || []}
         onReorderRooms={reorderRooms}
+        objects={activeProject?.objects || []}
+        activeObjectId={activeObjectId}
+        activeObject={activeObject}
+        onObjectChange={(id) => {
+          setActiveObjectId(id);
+          setActiveTab('summary');
+        }}
+        onAddObject={() => setIsCreateObjectModalOpen(true)}
+        city={activeObject?.city || activeProject?.city || ''}
+        onCityChange={(city) => {
+          if (activeObject) {
+            updateObject(activeObject.id, { city: city || undefined });
+          } else if (activeProject) {
+            updateActiveProject({ ...activeProject, city });
+          }
+        }}
       />
 
       {/* Main content */}
@@ -319,21 +335,14 @@ function AppContent() {
         onDeleteProject={() => setShowDeleteConfirm(true)}
         onNewProject={addNewProject}
         onOpenProjects={() => setIsProjectsModalOpen(true)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
         onObjectChange={(id) => {
           setActiveObjectId(id);
           setActiveTab('summary');
-        }}
-        onAddObject={() => setIsCreateObjectModalOpen(true)}
-        city={activeObject?.city || activeProject?.city || ''}
-        onCityChange={(city) => {
-          if (activeObject) {
-            updateObject(activeObject.id, { city: city || undefined });
-          } else if (activeProject) {
-            updateActiveProject({ ...activeProject, city });
-          }
         }}
         showDeleteConfirm={showDeleteConfirm}
         onDeleteConfirm={async () => {

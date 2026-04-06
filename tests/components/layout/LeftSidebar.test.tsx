@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { LeftSidebar } from '../../../src/components/layout/LeftSidebar';
-import type { RoomData } from '../../../src/types';
+import type { RoomData, ObjectData } from '../../../src/types';
 
 // Mock RoomList component
 vi.mock('../../../src/components/rooms/RoomList', () => ({
@@ -44,10 +44,22 @@ const createMockRoom = (id: string, name: string): RoomData => ({
   tools: [],
 });
 
+const createMockObject = (id: string, name: string): ObjectData => ({
+  id,
+  projectId: 'proj-1',
+  name,
+  rooms: [],
+});
+
 describe('LeftSidebar', () => {
   const mockRooms = [
     createMockRoom('room-1', 'Кухня'),
     createMockRoom('room-2', 'Спальня'),
+  ];
+
+  const mockObjects = [
+    createMockObject('obj-1', 'Квартира'),
+    createMockObject('obj-2', 'Гараж'),
   ];
 
   const mockProps = {
@@ -58,6 +70,13 @@ describe('LeftSidebar', () => {
     onMobileMenuClose: vi.fn(),
     rooms: mockRooms,
     onReorderRooms: vi.fn(),
+    objects: mockObjects,
+    activeObjectId: 'obj-1',
+    activeObject: mockObjects[0],
+    onObjectChange: vi.fn(),
+    onAddObject: vi.fn(),
+    city: 'Москва',
+    onCityChange: vi.fn(),
   };
 
   beforeEach(() => {
@@ -94,37 +113,39 @@ describe('LeftSidebar', () => {
     });
   });
 
-  describe('Overview section', () => {
-    it('should display "Обзор" section header', () => {
+  describe('Object settings section', () => {
+    it('should display "Объект ремонта" label', () => {
       render(<LeftSidebar {...mockProps} />);
-      expect(screen.getByText('Обзор')).toBeInTheDocument();
+      expect(screen.getByText('Объект ремонта')).toBeInTheDocument();
     });
 
-    it('should display "Общая смета" button', () => {
+    it('should display "Город" label', () => {
       render(<LeftSidebar {...mockProps} />);
-      expect(screen.getByText('Общая смета')).toBeInTheDocument();
+      expect(screen.getByText('Город')).toBeInTheDocument();
     });
 
-    it('should highlight summary button when activeTab is summary', () => {
-      render(<LeftSidebar {...mockProps} activeTab="summary" />);
-      const summaryButton = screen.getByText('Общая смета').closest('button');
-      expect(summaryButton).toHaveClass('bg-indigo-50');
-      expect(summaryButton).toHaveClass('text-indigo-700');
-    });
-
-    it('should not highlight summary button when activeTab is not summary', () => {
-      render(<LeftSidebar {...mockProps} activeTab="room-1" />);
-      const summaryButton = screen.getByText('Общая смета').closest('button');
-      expect(summaryButton).not.toHaveClass('bg-indigo-50');
-    });
-
-    it('should call onTabChange with "summary" when summary button is clicked', () => {
+    it('should render object selector when multiple objects', () => {
       render(<LeftSidebar {...mockProps} />);
-      const summaryButton = screen.getByText('Общая смета');
-      
-      fireEvent.click(summaryButton);
-      
-      expect(mockProps.onTabChange).toHaveBeenCalledWith('summary');
+      const selects = screen.getAllByRole('combobox');
+      expect(selects.length).toBeGreaterThan(0);
+    });
+
+    it('should call onObjectChange when object selector is changed', () => {
+      render(<LeftSidebar {...mockProps} />);
+      const select = screen.getAllByRole('combobox')[0];
+
+      fireEvent.change(select, { target: { value: 'obj-2' } });
+
+      expect(mockProps.onObjectChange).toHaveBeenCalledWith('obj-2');
+    });
+
+    it('should call onCityChange when city input is changed', () => {
+      render(<LeftSidebar {...mockProps} />);
+      const cityInput = screen.getByPlaceholderText('Для поиска цен');
+
+      fireEvent.change(cityInput, { target: { value: 'Санкт-Петербург' } });
+
+      expect(mockProps.onCityChange).toHaveBeenCalledWith('Санкт-Петербург');
     });
   });
 
@@ -150,14 +171,28 @@ describe('LeftSidebar', () => {
     it('should call onTabChange when room is clicked', () => {
       render(<LeftSidebar {...mockProps} />);
       const roomButton = screen.getByText('Кухня');
-      
+
       fireEvent.click(roomButton);
-      
+
       expect(mockProps.onTabChange).toHaveBeenCalledWith('room-1');
     });
   });
 
-  describe('Add room button', () => {
+  describe('Action buttons', () => {
+    it('should display "Добавить объект ремонта" button', () => {
+      render(<LeftSidebar {...mockProps} />);
+      expect(screen.getByText('Добавить объект ремонта')).toBeInTheDocument();
+    });
+
+    it('should call onAddObject when add object button is clicked', () => {
+      render(<LeftSidebar {...mockProps} />);
+      const addObjectButton = screen.getByText('Добавить объект ремонта');
+
+      fireEvent.click(addObjectButton);
+
+      expect(mockProps.onAddObject).toHaveBeenCalled();
+    });
+
     it('should display "Добавить комнату" button', () => {
       render(<LeftSidebar {...mockProps} />);
       expect(screen.getByText('Добавить комнату')).toBeInTheDocument();
@@ -166,18 +201,22 @@ describe('LeftSidebar', () => {
     it('should call onAddRoom when add room button is clicked', () => {
       render(<LeftSidebar {...mockProps} />);
       const addRoomButton = screen.getByText('Добавить комнату');
-      
+
       fireEvent.click(addRoomButton);
-      
+
       expect(mockProps.onAddRoom).toHaveBeenCalled();
     });
   });
 
-  describe('Other objects section', () => {
-    it('should NOT display "Другие объекты" section (moved to RightSidebar)', () => {
+  describe('Overview section', () => {
+    it('should NOT display "Обзор" section (moved to RightSidebar)', () => {
       render(<LeftSidebar {...mockProps} />);
-      // "Другие объекты" was moved to RightSidebar/ObjectSettings
-      expect(screen.queryByText('Другие объекты')).not.toBeInTheDocument();
+      expect(screen.queryByText('Обзор')).not.toBeInTheDocument();
+    });
+
+    it('should NOT display "Общая смета" button (moved to RightSidebar)', () => {
+      render(<LeftSidebar {...mockProps} />);
+      expect(screen.queryByText('Общая смета')).not.toBeInTheDocument();
     });
   });
 });
