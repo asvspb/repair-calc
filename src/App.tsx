@@ -16,6 +16,7 @@ import { StorageManager } from './utils/storage';
 import { IdMapper } from './utils/idMapper';
 import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
 import { CreateObjectModal } from './components/objects/CreateObjectModal';
+import { ProjectsModal } from './components/projects';
 
 import { initialProjects } from './data/initialData';
 
@@ -80,6 +81,7 @@ function AppContent() {
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
+  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
@@ -316,6 +318,7 @@ function AppContent() {
         }}
         onDeleteProject={() => setShowDeleteConfirm(true)}
         onNewProject={addNewProject}
+        onOpenProjects={() => setIsProjectsModalOpen(true)}
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
@@ -350,6 +353,13 @@ function AppContent() {
           onClose={() => setIsCreateObjectModalOpen(false)}
         />
       )}
+
+      {/* Projects Modal */}
+      <ProjectsModal
+        isOpen={isProjectsModalOpen}
+        onClose={() => setIsProjectsModalOpen(false)}
+        onImportTemplates={handleImportTemplates}
+      />
     </div>
   );
 }

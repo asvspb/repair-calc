@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, LogOut, User } from 'lucide-react';
+import { X, Plus, LogOut, User, FolderOpen } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProjectSettings } from './ProjectSettings';
 import { ObjectSettings, OtherObjectsSection } from './ObjectSettings';
@@ -16,6 +16,7 @@ type RightSidebarProps = {
   onRenameProject: (name: string) => void;
   onDeleteProject: () => void;
   onNewProject: () => void;
+  onOpenProjects: () => void;
   objects: ObjectData[];
   activeObjectId: string | null;
   activeObject: ObjectData | null;
@@ -91,6 +92,7 @@ export function RightSidebar({
   onRenameProject,
   onDeleteProject,
   onNewProject,
+  onOpenProjects,
   objects,
   activeObjectId,
   activeObject,
@@ -147,9 +149,14 @@ export function RightSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
-          <span className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-            Мои проекты
-          </span>
+          <button
+            onClick={onOpenProjects}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            title="Мои проекты"
+          >
+            <FolderOpen className="w-5 h-5" />
+            <span className="text-sm">Мои проекты</span>
+          </button>
           <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
             <X className="w-5 h-5 text-gray-500" />
           </button>
