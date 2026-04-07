@@ -271,10 +271,12 @@ function AppContent() {
         </header>
 
         {/* Desktop header with breadcrumbs */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-[28px] items-center justify-center relative">
+        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 items-center justify-center relative h-[88px]">
           <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 uppercase">
             {/* Project name */}
-            <span>{activeProject?.name}</span>
+            <span>
+              {activeProject?.name || ''}
+            </span>
 
             {/* Object breadcrumb (show if multiple objects or not on summary) */}
             {activeObject && activeProject?.objects && activeProject.objects.length > 1 && (
@@ -285,7 +287,7 @@ function AppContent() {
             )}
 
             {/* Room breadcrumb */}
-            {activeTab !== 'summary' && showRoomNameInHeader && (
+            {activeTab !== 'summary' && showRoomNameInHeader && activeProject && (
               <>
                 <ChevronRight className="w-5 h-5 text-gray-400 font-normal" />
                 <span className="text-gray-400 font-normal">
