@@ -58,7 +58,7 @@ export function ObjectSettings({
           >
             {objects.map((obj) => (
               <option key={obj.id} value={obj.id}>
-                {obj.name}{obj.city ? ` (${obj.city})` : ''}
+                {obj.name}
               </option>
             ))}
           </select>
