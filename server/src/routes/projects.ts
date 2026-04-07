@@ -58,6 +58,20 @@ router.get('/', async (req: AuthRequest, res, next) => {
 router.post('/', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
   try {
+    // Детальное логирование входящего запроса
+    console.log('\n' + '='.repeat(60));
+    console.log('📥 [POST /projects] Входящий запрос');
+    console.log('='.repeat(60));
+    console.log(`   Content-Type: ${req.headers['content-type']}`);
+    console.log(`   User ID: ${req.user?.id || 'NO USER'}`);
+    console.log(`   Body keys: ${Object.keys(req.body || {}).join(', ') || 'EMPTY'}`);
+    if (req.body && Object.keys(req.body).length > 0) {
+      console.log(`   Body: ${JSON.stringify(req.body, null, 2).substring(0, 500)}`);
+    } else {
+      console.log('   Body: ПУСТОЙ!');
+    }
+    console.log('='.repeat(60) + '\n');
+
     const data = createProjectSchema.parse(req.body);
     const project = await ProjectRepository.create(req.user!.id, data);
 

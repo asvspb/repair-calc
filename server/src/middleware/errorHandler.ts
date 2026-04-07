@@ -27,6 +27,19 @@ export function errorHandler(
   console.error('Error:', err);
 
   if (err instanceof ZodError) {
+    // Детальное логирование ошибок валидации
+    console.log('\n' + '='.repeat(60));
+    console.log('❌ [VALIDATION ERROR] ZodError');
+    console.log('='.repeat(60));
+    err.errors.forEach((e, i) => {
+      console.log(`   ${i + 1}. Поле: "${e.path.join('.')}"`);
+      console.log(`      Сообщение: ${e.message}`);
+      console.log(`      Код: ${e.code}`);
+      if ('expected' in e) console.log(`      Ожидался: ${(e as any).expected}`);
+      if ('received' in e) console.log(`      Получен: ${(e as any).received}`);
+    });
+    console.log('='.repeat(60) + '\n');
+
     res.status(400).json({
       status: 'error',
       message: 'Validation error',

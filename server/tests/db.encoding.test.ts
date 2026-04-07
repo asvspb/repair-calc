@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { pool } from '../src/db/pool.js';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { pool, closePool } from '../src/db/pool.js';
 
-describe('MySQL Encoding', () => {
+// Skip tests if database is not available
+const skipDbTests = !process.env['CI'] && !process.env['DB_HOST'];
+
+describe.skipIf(skipDbTests)('MySQL Encoding', () => {
   const testCyrillicData = [
     { name: 'Квартира', city: 'Саратов' },
     { name: 'Дом', city: 'Волгоград' },
@@ -23,7 +26,7 @@ describe('MySQL Encoding', () => {
 
   afterAll(async () => {
     await pool.execute('DROP TEMPORARY TABLE IF EXISTS test_encoding');
-    await pool.end();
+    await closePool();
   });
 
   it('должен корректно сохранять кириллицу', async () => {

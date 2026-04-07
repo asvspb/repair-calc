@@ -181,15 +181,11 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
       } else {
         // Local deletion
         const updatedProjects = projects.filter(p => p.id !== projectId);
-        if (updatedProjects.length === 0) {
-          // Create a default project if all are deleted
-          const newProject = await createProject({ name: 'Новый проект' });
-          updateProjects([newProject]);
-        } else {
-          updateProjects(updatedProjects);
-          if (activeProjectId === projectId) {
-            setActiveProjectId(updatedProjects[0].id);
-          }
+        updateProjects(updatedProjects);
+        if (updatedProjects.length > 0 && activeProjectId === projectId) {
+          setActiveProjectId(updatedProjects[0].id);
+        } else if (updatedProjects.length === 0) {
+          setActiveProjectId('');
         }
       }
 
@@ -205,7 +201,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
         message: 'Ошибка удаления проекта',
       });
     }
-  }, [projects, activeProjectId, isAuthenticated, deleteProject, createProject, updateProjects, setActiveProjectId]);
+  }, [projects, activeProjectId, isAuthenticated, deleteProject, updateProjects, setActiveProjectId]);
 
   // Export JSON
   const handleExportJSON = useCallback(() => {

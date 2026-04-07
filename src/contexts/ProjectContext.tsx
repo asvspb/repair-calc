@@ -263,11 +263,19 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
               count: migratedInitial.length,
               projectIds: migratedInitial.map(p => p.id) 
             }, startTime);
-            StorageManager.saveProjects(migratedInitial);
-            StorageManager.saveActiveProject(migratedInitial[0].id);
-            setProjects(migratedInitial);
-            setActiveProjectIdState(migratedInitial[0].id);
-            logStateChange('ProjectContext', 'Активный проект', migratedInitial[0].id);
+            
+            if (migratedInitial.length > 0) {
+              StorageManager.saveProjects(migratedInitial);
+              StorageManager.saveActiveProject(migratedInitial[0].id);
+              setProjects(migratedInitial);
+              setActiveProjectIdState(migratedInitial[0].id);
+              logStateChange('ProjectContext', 'Активный проект', migratedInitial[0].id);
+            } else {
+              // Нет начальных проектов - оставляем пустой список
+              setProjects([]);
+              setActiveProjectIdState('');
+              logStateChange('ProjectContext', 'Активный проект', null);
+            }
           }
         }
         

@@ -426,9 +426,10 @@ export class ApiStorageProvider implements IStorageProvider {
                     id: room.id,
                     name: room.name,
                     geometry_mode: room.geometryMode,
-                    length: room.length,
-                    width: room.width,
-                    height: room.height,
+                    // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
+                    length: Number(room.length) || 0,
+                    width: Number(room.width) || 0,
+                    height: Number(room.height) || 0,
                     segments: room.segments,
                     obstacles: room.obstacles,
                     wall_sections: room.wallSections,
@@ -451,7 +452,23 @@ export class ApiStorageProvider implements IStorageProvider {
                 });
               }
             } catch (error) {
-              logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
+              // Детальное логирование ошибки 400
+              if (error instanceof Error) {
+                const apiError = error as any;
+                if (apiError.statusCode === 400 || apiError.data) {
+                  logError('ApiStorage', 'Ошибка 400 при миграции проекта', error, {
+                    projectId: project.id,
+                    projectName: project.name,
+                    statusCode: apiError.statusCode,
+                    errorData: apiError.data,
+                    errorMessage: apiError.message,
+                  });
+                } else {
+                  logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
+                }
+              } else {
+                logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
+              }
             }
           }, project.id);
           syncPromises.push(syncPromise);
@@ -490,9 +507,10 @@ export class ApiStorageProvider implements IStorageProvider {
                     id: room.id,
                     name: room.name,
                     geometry_mode: room.geometryMode,
-                    length: room.length,
-                    width: room.width,
-                    height: room.height,
+                    // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
+                    length: Number(room.length) || 0,
+                    width: Number(room.width) || 0,
+                    height: Number(room.height) || 0,
                     segments: room.segments,
                     obstacles: room.obstacles,
                     wall_sections: room.wallSections,
@@ -740,9 +758,10 @@ export class ApiStorageProvider implements IStorageProvider {
           id: room.id,
           name: room.name,
           geometry_mode: room.geometryMode,
-          length: room.length ?? 0,
-          width: room.width ?? 0,
-          height: room.height ?? 0,
+          // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
+          length: Number(room.length) || 0,
+          width: Number(room.width) || 0,
+          height: Number(room.height) || 0,
           segments: room.segments ?? [],
           obstacles: room.obstacles ?? [],
           wall_sections: room.wallSections ?? [],

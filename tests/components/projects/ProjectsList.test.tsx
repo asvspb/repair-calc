@@ -93,12 +93,12 @@ describe('ProjectsList', () => {
   describe('New project button', () => {
     it('should display "Новый проект" button', () => {
       render(<ProjectsList {...mockProps} />);
-      expect(screen.getByText('Новый проект')).toBeInTheDocument();
+      expect(screen.getByTitle('Новый проект')).toBeInTheDocument();
     });
 
     it('should call onNewProject when clicked', () => {
       render(<ProjectsList {...mockProps} />);
-      const newProjectButton = screen.getByText('Новый проект');
+      const newProjectButton = screen.getByTitle('Новый проект');
       
       fireEvent.click(newProjectButton);
 
