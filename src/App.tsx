@@ -239,6 +239,7 @@ function AppContent() {
             updateActiveProject({ ...activeProject, city });
           }
         }}
+        hasProjects={projects.length > 0}
       />
 
       {/* Main content */}

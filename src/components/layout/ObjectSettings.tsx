@@ -11,6 +11,7 @@ type ObjectSettingsProps = {
   onAddObject: () => void;
   city: string;
   onCityChange: (city: string) => void;
+  hasProjects: boolean;
 };
 
 export function ObjectSettings({
@@ -21,6 +22,7 @@ export function ObjectSettings({
   onAddObject,
   city,
   onCityChange,
+  hasProjects,
 }: ObjectSettingsProps) {
   const hasObjects = objects && objects.length > 0;
 
@@ -78,7 +80,13 @@ export function ObjectSettings({
           value={city}
           onChange={(e) => onCityChange(e.target.value)}
           placeholder="Для поиска цен"
-          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          disabled={!hasProjects}
+          title={!hasProjects ? 'Сначала создайте проект' : ''}
+          className={`w-full px-3 py-2 border rounded-lg text-sm ${
+            hasProjects
+              ? 'bg-white border-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+              : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
         />
       </div>
     </div>

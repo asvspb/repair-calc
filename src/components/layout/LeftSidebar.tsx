@@ -19,6 +19,7 @@ type LeftSidebarProps = {
   onAddObject: () => void;
   city: string;
   onCityChange: (city: string) => void;
+  hasProjects: boolean;
 };
 
 export function LeftSidebar({
@@ -36,6 +37,7 @@ export function LeftSidebar({
   onAddObject,
   city,
   onCityChange,
+  hasProjects,
 }: LeftSidebarProps) {
   return (
     <aside
@@ -63,6 +65,7 @@ export function LeftSidebar({
           onAddObject={onAddObject}
           city={city}
           onCityChange={onCityChange}
+          hasProjects={hasProjects}
         />
 
         {/* Rooms section */}
@@ -81,14 +84,26 @@ export function LeftSidebar({
       <div className="p-4 space-y-3 bg-white shrink-0">
         <button
           onClick={onAddRoom}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm cursor-pointer"
+          disabled={!hasProjects}
+          title={!hasProjects ? 'Сначала создайте проект' : ''}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all shadow-sm ${
+            hasProjects
+              ? 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 cursor-pointer'
+              : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
         >
           <Plus className="w-4 h-4" />
           Добавить комнату
         </button>
         <button
           onClick={onAddObject}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+          disabled={!hasProjects}
+          title={!hasProjects ? 'Сначала создайте проект' : ''}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all ${
+            hasProjects
+              ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 cursor-pointer'
+              : 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed shadow-none'
+          }`}
         >
           <Plus className="w-4 h-4" />
           Добавить объект ремонта
