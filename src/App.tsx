@@ -80,7 +80,7 @@ function AppContent() {
   const [isLeftMobileMenuOpen, setIsLeftMobileMenuOpen] = useState(false);
   const [isRightMobileMenuOpen, setIsRightMobileMenuOpen] = useState(false);
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null);
   const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isDataManagementModalOpen, setIsDataManagementModalOpen] = useState(false);
@@ -378,12 +378,7 @@ function AppContent() {
           updateProjects(updatedProjects);
         }}
         onDeleteProject={(id) => {
-          if (id === activeProjectId) {
-            setShowDeleteConfirm(true);
-          } else {
-            const updatedProjects = projects.filter(p => p.id !== id);
-            updateProjects(updatedProjects);
-          }
+          setProjectToDeleteId(id);
         }}
         onCopyProject={handleCopyProject}
         onNewProject={addNewProject}
@@ -397,16 +392,29 @@ function AppContent() {
           setActiveObjectId(id);
           setActiveTab('summary');
         }}
-        showDeleteConfirm={showDeleteConfirm}
+        showDeleteConfirm={projectToDeleteId !== null}
+        projectToDeleteId={projectToDeleteId}
         onDeleteConfirm={async () => {
+          if (!projectToDeleteId) return;
           if (isSyncing) return;
-          if (IdMapper.isServerId(activeProjectId)) {
-            await deleteProject(activeProjectId);
+
+          if (IdMapper.isServerId(projectToDeleteId)) {
+            await deleteProject(projectToDeleteId);
           }
-          handleDeleteActiveProject();
-          setShowDeleteConfirm(false);
+          const updatedProjects = projects.filter(p => p.id !== projectToDeleteId);
+          updateProjects(updatedProjects);
+
+          // If the active project was deleted, select the first available one
+          if (projectToDeleteId === activeProjectId && updatedProjects.length > 0) {
+            setActiveProjectId(updatedProjects[0].id);
+          } else if (updatedProjects.length === 0) {
+            setActiveProjectId('');
+          }
+
+          setProjectToDeleteId(null);
+          setActiveTab('summary');
         }}
-        onDeleteCancel={() => setShowDeleteConfirm(false)}
+        onDeleteCancel={() => setProjectToDeleteId(null)}
       />
 
       {/* Create Object Modal */}

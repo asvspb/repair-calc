@@ -26,7 +26,6 @@ export function ProjectsList({
 }: ProjectsListProps) {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [copyConfirmId, setCopyConfirmId] = useState<string | null>(null);
 
   const getProjectStats = (project: ProjectData) => {
@@ -153,7 +152,7 @@ export function ProjectsList({
                       <Copy className="w-3.5 h-3.5 text-gray-500" />
                     </button>
                     <button
-                      onClick={() => setDeleteConfirmId(project.id)}
+                      onClick={() => onProjectDelete(project.id)}
                       className="p-1.5 hover:bg-red-100 rounded transition-colors cursor-pointer"
                       title="Удалить"
                     >
@@ -166,23 +165,6 @@ export function ProjectsList({
           );
         })}
       </div>
-
-      {/* Delete confirmation dialog */}
-      {deleteConfirmId && (
-        <ConfirmDialog
-          isOpen={!!deleteConfirmId}
-          onClose={() => setDeleteConfirmId(null)}
-          onConfirm={() => {
-            onProjectDelete(deleteConfirmId);
-            setDeleteConfirmId(null);
-          }}
-          onCancel={() => setDeleteConfirmId(null)}
-          title="Удалить проект?"
-          message="Проект будет удалён безвозвратно."
-          confirmLabel="Удалить"
-          variant="danger"
-        />
-      )}
 
       {/* Copy confirmation dialog */}
       {copyConfirmId && (

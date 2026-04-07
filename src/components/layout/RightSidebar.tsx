@@ -23,6 +23,7 @@ type RightSidebarProps = {
   activeObject: ObjectData | null;
   onObjectChange: (id: string) => void;
   showDeleteConfirm: boolean;
+  projectToDeleteId: string | null;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
 };
@@ -47,6 +48,7 @@ export function RightSidebar({
   activeObject,
   onObjectChange,
   showDeleteConfirm,
+  projectToDeleteId,
   onDeleteConfirm,
   onDeleteCancel,
 }: RightSidebarProps) {
@@ -58,7 +60,7 @@ export function RightSidebar({
           <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить проект?</h3>
             <p className="text-gray-600 mb-4">
-              Проект «{activeProject?.name}» будет удалён безвозвратно.
+              Проект «{projects.find(p => p.id === projectToDeleteId)?.name}» будет удалён безвозвратно.
             </p>
             <div className="flex gap-3">
               <button

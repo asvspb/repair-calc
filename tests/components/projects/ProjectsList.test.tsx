@@ -170,25 +170,24 @@ describe('ProjectsList', () => {
   });
 
   describe('Delete functionality', () => {
-    it('should show confirm dialog when delete button is clicked', () => {
+    it('should call onProjectDelete directly when delete button is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const deleteButton = screen.getAllByTitle('Удалить')[0];
-      
+
       fireEvent.click(deleteButton);
 
-      expect(screen.getByText('Удалить проект?')).toBeInTheDocument();
+      // Confirmation dialog has been removed; deletion is handled by parent component
+      expect(mockProps.onProjectDelete).toHaveBeenCalledWith('proj-1');
     });
 
-    it('should call onProjectDelete when confirm is clicked', () => {
+    it('should not show confirm dialog (dialog is handled in RightSidebar)', () => {
       render(<ProjectsList {...mockProps} />);
       const deleteButton = screen.getAllByTitle('Удалить')[0];
-      
+
       fireEvent.click(deleteButton);
 
-      const confirmButton = screen.getByText('Удалить');
-      fireEvent.click(confirmButton);
-
-      expect(mockProps.onProjectDelete).toHaveBeenCalledWith('proj-1');
+      // ConfirmDialog is no longer in this component
+      expect(screen.queryByText('Удалить проект?')).not.toBeInTheDocument();
     });
   });
 });
