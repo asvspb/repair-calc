@@ -11,6 +11,14 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      // Сохраняем console.log в production для отладки
+      minify: 'esbuild',
+    },
+    esbuild: {
+      // Не удалять console.log при минификации
+      drop: [],
+    },
     server: {
       port: 3993,
       strictPort: true,

@@ -9,6 +9,9 @@
 # 3. Cleans Node.js dependencies and build artifacts
 # 4. Reinstalls dependencies and rebuilds the project from scratch
 # =============================================================================
+# NOTE: For quick frontend rebuilds during development, use:
+#       ./scripts/quick-build.sh
+# =============================================================================
 
 set -e  # Exit on error
 
