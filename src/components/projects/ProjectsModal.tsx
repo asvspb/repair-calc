@@ -435,7 +435,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
                   <span className="hidden sm:inline">Экспорт</span>
                 </button>
 
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 hidden group-hover:block z-10">
+                <div className="absolute right-0 top-full pt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden group-hover:block z-10">
                   <button
                     onClick={handleExportJSON}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
