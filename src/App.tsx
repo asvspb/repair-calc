@@ -169,11 +169,8 @@ function AppContent() {
     setIsLeftMobileMenuOpen(false);
   };
 
-  const addNewProject = () => {
-    const newProject = createNewProject();
-    updateProjects([...projects, newProject]);
-    setActiveProjectId(newProject.id);
-    setActiveTab('summary');
+  const openCreateProjectModal = () => {
+    setIsProjectsModalOpen(true);
     setIsRightMobileMenuOpen(false);
   };
 
@@ -324,7 +321,7 @@ function AppContent() {
                   Создайте первый проект, чтобы начать расчёт стоимости ремонта
                 </p>
                 <button
-                  onClick={addNewProject}
+                  onClick={openCreateProjectModal}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer font-medium"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +378,7 @@ function AppContent() {
           setProjectToDeleteId(id);
         }}
         onCopyProject={handleCopyProject}
-        onNewProject={addNewProject}
+        onNewProject={openCreateProjectModal}
         onDataManagement={() => setIsDataManagementModalOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}

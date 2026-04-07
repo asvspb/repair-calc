@@ -13,6 +13,10 @@ import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
 import { getAllRooms, migrateProjectToObjects } from '../../utils/projectObjects';
 import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { CreateProjectModal } from './CreateProjectModal';
+import { dlog, derror } from '../../utils/debugLogger';
+
+const LOG_PREFIX = '[ProjectsModal]';
 
 interface ProjectsModalProps {
   isOpen: boolean;
@@ -39,9 +43,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
 
   const { isAuthenticated } = useAuth();
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectCity, setNewProjectCity] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
   // Reset states when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setShowCreateForm(false);
+      setShowCreateModal(false);
       setEditingProjectId(null);
       setImportStatus(null);
       setDeleteConfirmId(null);
@@ -90,26 +92,26 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     return { objectsCount, roomsCount, totalCost };
   }, []);
 
-  // Create new project
-  const handleCreateProject = useCallback(async () => {
-    if (!newProjectName.trim()) return;
-
+  // Create new project via modal
+  const handleCreateProject = useCallback(async (data: { name: string; city?: string; objects: string[] }) => {
+    dlog(LOG_PREFIX, '[Create] Received create request:', data);
     setIsCreating(true);
     try {
+      dlog(LOG_PREFIX, '[Create] Calling context.createProject...');
       const newProject = await createProject({
-        name: newProjectName.trim(),
-        city: newProjectCity.trim() || undefined,
+        name: data.name,
+        city: data.city,
+        objects: data.objects,
       });
 
-      setNewProjectName('');
-      setNewProjectCity('');
-      setShowCreateForm(false);
+      dlog(LOG_PREFIX, '[Create] Project created OK:', newProject.id, newProject.name, '- objects:', newProject.objects?.length || 0);
+      setShowCreateModal(false);
       setImportStatus({
         type: 'success',
         message: `Проект "${newProject.name}" успешно создан`,
       });
     } catch (error) {
-      console.error('Error creating project:', error);
+      derror(LOG_PREFIX, '[Create] Error creating project:', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка создания проекта',
@@ -117,7 +119,29 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     } finally {
       setIsCreating(false);
     }
-  }, [newProjectName, newProjectCity, createProject]);
+  }, [createProject]);
+
+  // Import projects from backup
+  const handleImportFromBackup = useCallback((importedProjects: ProjectData[]) => {
+    dlog(LOG_PREFIX, '[Import] Received', importedProjects.length, 'project(s):', importedProjects.map(p => p.name));
+    if (importedProjects.length === 0) return;
+
+    updateProjects(prev => {
+      const updated = [...prev, ...importedProjects];
+      dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
+      return updated;
+    });
+
+    if (importedProjects[0]) {
+      dlog(LOG_PREFIX, '[Import] Setting active to:', importedProjects[0].name);
+      setActiveProjectId(importedProjects[0].id);
+    }
+
+    setImportStatus({
+      type: 'success',
+      message: `Импортировано проектов: ${importedProjects.length}`,
+    });
+  }, [updateProjects, setActiveProjectId]);
 
   // Rename project
   const handleRenameProject = useCallback((projectId: string) => {
@@ -382,7 +406,10 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
           {/* Toolbar */}
           <div className="flex flex-wrap gap-3 mb-6">
             <button
-              onClick={() => setShowCreateForm(true)}
+              onClick={() => {
+                dlog(LOG_PREFIX, '"Новый проект" clicked, opening CreateProjectModal');
+                setShowCreateModal(true);
+              }}
               className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -435,54 +462,6 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
               className="hidden"
             />
           </div>
-
-          {/* Create form */}
-          {showCreateForm && (
-            <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-              <h3 className="text-sm font-medium text-indigo-900 mb-3">Новый проект</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  placeholder="Название проекта"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateProject();
-                    if (e.key === 'Escape') setShowCreateForm(false);
-                  }}
-                />
-                <input
-                  type="text"
-                  value={newProjectCity}
-                  onChange={(e) => setNewProjectCity(e.target.value)}
-                  placeholder="Город (для поиска цен)"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateProject();
-                    if (e.key === 'Escape') setShowCreateForm(false);
-                  }}
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowCreateForm(false)}
-                    className="px-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    onClick={handleCreateProject}
-                    disabled={isCreating || !newProjectName.trim()}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isCreating && <RefreshCw className="w-4 h-4 animate-spin" />}
-                    {isCreating ? 'Создание...' : 'Создать'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Project list */}
           <div className="space-y-3">
@@ -703,6 +682,18 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
           confirmLabel="Копировать"
         />
       )}
+
+      {/* Create project modal */}
+      <CreateProjectModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          dlog(LOG_PREFIX, 'CreateProjectModal closed');
+          setShowCreateModal(false);
+        }}
+        onCreate={handleCreateProject}
+        onImportFromBackup={handleImportFromBackup}
+        isCreating={isCreating}
+      />
     </div>
   );
 }

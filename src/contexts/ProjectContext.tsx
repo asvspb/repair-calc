@@ -36,6 +36,14 @@ import {
   getFirstObject,
 } from '../utils/projectObjects';
 
+// Default object name when none is provided
+const DEFAULT_OBJECT_NAME = 'Основной объект';
+
+// Generate a unique ID with collision resistance
+function generateId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).substring(2, 10)}`;
+}
+
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
   return {
@@ -98,7 +106,7 @@ interface ProjectContextValue {
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
   // Project management
-  createProject: (data: { name: string; city?: string }) => Promise<ProjectData>;
+  createProject: (data: { name: string; city?: string; objects?: string[] }) => Promise<ProjectData>;
   deleteProject: (projectId: string) => Promise<void>;
   isSyncing: boolean;
 
@@ -525,7 +533,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   }, [activeProject, updateActiveProject]);
 
   // Создание нового проекта
-  const createProject = useCallback(async (data: { name: string; city?: string }): Promise<ProjectData> => {
+  const createProject = useCallback(async (data: { name: string; city?: string; objects?: string[] }): Promise<ProjectData> => {
     logUserAction('Создание проекта', data);
     setIsSyncing(true);
     const startTime = logStart('ProjectContext', 'Создание проекта', data);
@@ -537,9 +545,26 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         const apiProvider = getApiProvider();
         const newProject = await apiProvider.createProjectAsync(data);
         
+        // Если переданы объекты, создаём их в проекте
+        if (data.objects && data.objects.length > 0) {
+          const objects: ObjectData[] = data.objects.map((objName, index) => ({
+            id: generateId('obj'),
+            projectId: newProject.id,
+            name: objName,
+            city: data.city,
+            rooms: [],
+            sortOrder: index,
+          }));
+          newProject.objects = objects;
+          
+          // Сохраняем проект с объектами на сервере
+          await apiProvider.saveProjectsAsync([newProject]);
+        }
+        
         logSuccess('ProjectContext', 'Проект создан на сервере', { 
           id: newProject.id, 
-          name: newProject.name 
+          name: newProject.name,
+          objectsCount: newProject.objects?.length || 0
         }, startTime);
         
         setProjects(prev => {
@@ -556,16 +581,28 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       } else {
         // Создаем локально
         logDebug('ProjectContext', 'Создание локального проекта', data);
+        
+        // Создаём объекты, если переданы
+        const objects: ObjectData[] = (data.objects || [DEFAULT_OBJECT_NAME]).map((objName, index) => ({
+          id: generateId('obj'),
+          projectId: generateId('local'),
+          name: objName,
+          city: data.city,
+          rooms: [],
+          sortOrder: index,
+        }));
+
         const newProject: ProjectData = {
-          id: `local-${Date.now()}`,
+          id: generateId('local'),
           name: data.name,
           city: data.city,
-          objects: [],  // New structure with objects
+          objects: objects,
         };
 
         logSuccess('ProjectContext', 'Локальный проект создан', {
           id: newProject.id,
-          name: newProject.name
+          name: newProject.name,
+          objectsCount: objects.length
         }, startTime);
         
         setProjects(prev => {
