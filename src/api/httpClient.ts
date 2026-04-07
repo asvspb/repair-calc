@@ -14,6 +14,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 
 /**
+ * Token refresh state management
+ * Prevents concurrent refresh attempts and queues pending requests
+ */
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+/**
  * API Error class
  */
 export class ApiError extends Error {
@@ -64,6 +71,59 @@ interface HttpClientConfig {
 }
 
 /**
+ * Perform token refresh with mutex lock
+ * Returns true if refresh succeeded, false otherwise
+ */
+async function performTokenRefresh(): Promise<boolean> {
+  // If already refreshing, wait for the existing refresh to complete
+  if (isRefreshing && refreshPromise) {
+    logDebug('HTTPClient', 'Ожидание завершения обновления токена');
+    return refreshPromise;
+  }
+
+  // Start refresh process
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      logDebug('HTTPClient', 'Попытка обновления токена');
+      const refreshResponse = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          refreshToken: localStorage.getItem('refreshToken'),
+        }),
+      });
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        localStorage.setItem('token', refreshData.token);
+        localStorage.setItem('refreshToken', refreshData.refreshToken);
+        logDebug('HTTPClient', 'Токен успешно обновлён');
+        return true;
+      } else {
+        // Refresh failed, clear tokens
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        logDebug('HTTPClient', 'Не удалось обновить токен, выход из системы');
+        return false;
+      }
+    } catch (refreshError) {
+      logDebug('HTTPClient', 'Ошибка при обновлении токена', refreshError);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
  * Unified HTTP Client with interceptors
  */
 class HttpClient {
@@ -94,6 +154,9 @@ class HttpClient {
    */
   static resetInstance(): void {
     HttpClient.instance = null;
+    // Also reset refresh state
+    isRefreshing = false;
+    refreshPromise = null;
   }
 
   /**
@@ -125,20 +188,15 @@ class HttpClient {
   }
 
   /**
-   * Perform HTTP request
+   * Internal method to perform the actual fetch without retry logic
    */
-  async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
+  private async fetchWithTimeout<T>(
+    url: string,
+    options: RequestInit,
+    startTime: number,
+    method: string,
+    endpoint: string
   ): Promise<T> {
-    const method = options.method || 'GET';
-    const url = `${this.config.baseURL}${endpoint}`;
-    const startTime = logApiRequest(
-      method,
-      endpoint,
-      options.body ? JSON.parse(options.body as string) : undefined
-    );
-
     // Apply request interceptors
     let enrichedOptions = options;
     for (const interceptor of this.config.requestInterceptors) {
@@ -150,7 +208,7 @@ class HttpClient {
       'Content-Type': 'application/json',
     };
 
-    // Add auth token
+    // Add auth token (always get fresh token from localStorage)
     const token = localStorage.getItem('token');
     if (token) {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
@@ -189,7 +247,49 @@ class HttpClient {
 
       logApiSuccess(method, endpoint, startTime, data);
       return data as T;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Perform HTTP request with automatic token refresh and retry
+   */
+  async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    isRetry: boolean = false
+  ): Promise<T> {
+    const method = options.method || 'GET';
+    const url = `${this.config.baseURL}${endpoint}`;
+    const startTime = logApiRequest(
+      method,
+      endpoint,
+      options.body ? JSON.parse(options.body as string) : undefined
+    );
+
+    try {
+      return await this.fetchWithTimeout<T>(url, options, startTime, method, endpoint);
     } catch (error) {
+      // Handle 401 with token refresh and retry
+      if (error instanceof ApiError && error.statusCode === 401 && !isRetry) {
+        // Don't try to refresh on the refresh endpoint itself
+        if (!url.includes('/api/auth/refresh')) {
+          const refreshSucceeded = await performTokenRefresh();
+          
+          if (refreshSucceeded) {
+            // Retry the original request with new token
+            logDebug('HTTPClient', 'Повторный запрос с новым токеном');
+            try {
+              return await this.fetchWithTimeout<T>(url, options, startTime, method, endpoint);
+            } catch (retryError) {
+              // If retry also fails, throw the error
+              throw retryError;
+            }
+          }
+        }
+      }
+
       // Handle API errors
       if (error instanceof ApiError) {
         for (const handler of this.config.errorHandlers) {
@@ -215,8 +315,6 @@ class HttpClient {
       // Handle other errors
       logApiError(method, endpoint, startTime, error);
       throw error;
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 
@@ -298,49 +396,13 @@ httpClient.addRequestInterceptor((url, options) => {
   return options;
 });
 
-// Default response interceptor: handle 401 for token refresh
-// Note: 401 handling is done in error handler to allow retry
+// Default response interceptor: pass through
+// Note: 401 handling is done in request method with retry logic
 httpClient.addResponseInterceptor(async (response, data) => {
-  // Just pass through - error handling happens in catch block
   return data;
 });
 
-// Default error handler: attempt token refresh on 401
-httpClient.addErrorHandler(async (error, url, method) => {
-  if (error instanceof ApiError && error.statusCode === 401) {
-    // Don't try to refresh on the refresh endpoint itself
-    if (url.includes('/api/auth/refresh')) {
-      return;
-    }
-
-    try {
-      logDebug('HTTPClient', 'Попытка обновления токена');
-      const refreshResponse = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          refreshToken: localStorage.getItem('refreshToken'),
-        }),
-      });
-
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        localStorage.setItem('token', refreshData.token);
-        localStorage.setItem('refreshToken', refreshData.refreshToken);
-        logDebug('HTTPClient', 'Токен успешно обновлён');
-        // Note: The calling code should retry the request if needed
-      } else {
-        // Refresh failed, clear tokens
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        logDebug('HTTPClient', 'Не удалось обновить токен, выход из системы');
-      }
-    } catch (refreshError) {
-      logDebug('HTTPClient', 'Ошибка при обновлении токена', refreshError);
-    }
-  }
-});
+// No default error handler - token refresh with retry is handled in request method
+// Error handlers can still be added by calling code for custom error handling
 
 export default httpClient;
