@@ -208,15 +208,6 @@ class HttpClient {
       'Content-Type': 'application/json',
     };
 
-    // Add auth token (always get fresh token from localStorage)
-    const token = localStorage.getItem('token');
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
-      logDebug('HTTPClient', 'Токен авторизации добавлен в заголовки');
-    } else {
-      logDebug('HTTPClient', 'Токен авторизации отсутствует');
-    }
-
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(
