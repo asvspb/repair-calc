@@ -4,7 +4,7 @@ import { authRateLimiter } from '../middleware/rateLimiter.js';
 import { UserRepository } from '../db/repositories/user.repo.js';
 import { authenticate, generateTokens, verifyRefreshToken } from '../middleware/auth.js';
 import { badRequest, unauthorized } from '../middleware/errorHandler.js';
-import type { AuthRequest } from '../types/index.js';
+import type { AuthRequest, User } from '../types/index.js';
 
 const router = Router();
 
@@ -105,7 +105,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
       data: {
         id: req.user!.id,
         email: req.user!.email,
-        name: req.user!.name,
+        name: 'name' in req.user! ? (req.user! as User).name : null,
       },
     });
   } catch (error) {

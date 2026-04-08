@@ -1,8 +1,14 @@
 import type { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
-import type { AuthRequest, User, TokenPayload } from '../types/index.js';
+import type { AuthRequest, TokenPayload } from '../types/index.js';
 import { unauthorized } from './errorHandler.js';
+
+/** Minimal user shape available after authentication (no DB lookup) */
+interface AuthenticatedUser {
+  id: string;
+  email: string;
+}
 
 export function authenticate(
   req: AuthRequest,
@@ -20,15 +26,12 @@ export function authenticate(
 
   try {
     const payload = jwt.verify(token, config.jwt.secret) as TokenPayload;
-    
-    // Attach user to request (without password)
+
+    // Attach only what's in the token — no fake data
     req.user = {
       id: payload.userId,
       email: payload.email,
-      name: null,
-      created_at: new Date(),
-      updated_at: new Date(),
-    } as User;
+    } as AuthenticatedUser;
 
     next();
   } catch {

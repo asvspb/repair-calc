@@ -202,7 +202,7 @@ export interface WallSection {
 
 // Auth request extension
 export interface AuthRequest extends Request {
-  user?: User;
+  user?: User | { id: string; email: string };
 }
 
 // API Response types
