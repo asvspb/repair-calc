@@ -1,5 +1,21 @@
 import 'dotenv/config';
 
+function getJwtSecret(): string {
+  const secret = process.env['JWT_SECRET'];
+  if (!secret && process.env['NODE_ENV'] === 'production') {
+    throw new Error('JWT_SECRET is required in production mode. Set it via environment variable.');
+  }
+  return secret || 'dev-secret-change-in-production';
+}
+
+function getJwtRefreshSecret(): string {
+  const secret = process.env['JWT_REFRESH_SECRET'];
+  if (!secret && process.env['NODE_ENV'] === 'production') {
+    throw new Error('JWT_REFRESH_SECRET is required in production mode. Set it via environment variable.');
+  }
+  return secret || 'dev-refresh-secret-change-in-production';
+}
+
 export const config = {
   port: parseInt(process.env['PORT'] || '3994'),
   nodeEnv: process.env['NODE_ENV'] || 'development',
@@ -17,9 +33,9 @@ export const config = {
   },
   
   jwt: {
-    secret: process.env['JWT_SECRET'] || 'dev-secret-change-in-production',
+    secret: getJwtSecret(),
     expiresIn: process.env['JWT_EXPIRES_IN'] || '15m',
-    refreshSecret: process.env['JWT_REFRESH_SECRET'] || 'dev-refresh-secret-change-in-production',
+    refreshSecret: getJwtRefreshSecret(),
     refreshExpiresIn: process.env['JWT_REFRESH_EXPIRES_IN'] || '7d',
   },
   
