@@ -30,6 +30,7 @@ describe('ObjectSettings', () => {
     onAddObject: vi.fn(),
     city: 'Москва',
     onCityChange: vi.fn(),
+    hasProjects: true,
   };
 
   beforeEach(() => {
@@ -37,9 +38,10 @@ describe('ObjectSettings', () => {
   });
 
   describe('Rendering conditions', () => {
-    it('should not render when no objects exist', () => {
+    it('should show "Нет объектов" when objects list is empty', () => {
       render(<ObjectSettings {...mockProps} objects={[]} />);
-      expect(screen.queryByText('Объект ремонта')).not.toBeInTheDocument();
+      expect(screen.getByText('Объект ремонта')).toBeInTheDocument();
+      expect(screen.getByText('Нет объектов')).toBeInTheDocument();
     });
 
     it('should render when objects exist', () => {
@@ -69,10 +71,10 @@ describe('ObjectSettings', () => {
     it('should show object names in selector options', () => {
       render(<ObjectSettings {...mockProps} />);
       const select = screen.getByRole('combobox');
-      
+
       const options = select.querySelectorAll('option');
       expect(options).toHaveLength(2);
-      expect(options[0]).toHaveTextContent('Квартира (Москва)');
+      expect(options[0]).toHaveTextContent('Квартира');
       expect(options[1]).toHaveTextContent('Гараж');
     });
 
