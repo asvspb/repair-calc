@@ -98,10 +98,19 @@ async function performTokenRefresh(): Promise<boolean> {
 
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
-        localStorage.setItem('token', refreshData.token);
-        localStorage.setItem('refreshToken', refreshData.refreshToken);
-        logDebug('HTTPClient', 'Токен успешно обновлён');
-        return true;
+        // Сервер возвращает { status: 'success', data: { token, refreshToken } }
+        const tokens = refreshData.data || refreshData;
+        if (tokens.token && tokens.refreshToken) {
+          localStorage.setItem('token', tokens.token);
+          localStorage.setItem('refreshToken', tokens.refreshToken);
+          logDebug('HTTPClient', 'Токен успешно обновлён');
+          return true;
+        } else {
+          logDebug('HTTPClient', 'Некорректный ответ сервера при обновлении токена');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          return false;
+        }
       } else {
         // Refresh failed, clear tokens
         localStorage.removeItem('token');

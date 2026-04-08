@@ -102,8 +102,9 @@ export function RightSidebar({
         }`}
       >
         {/* Header */}
-        <div className="px-4 border-b border-gray-200 bg-white shrink-0 py-3">
-          <div className="flex items-center justify-between">
+        <div className="px-4 border-b border-gray-200 bg-white shrink-0 flex items-center" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
+          <div className="w-full">
+            <div className="flex items-center justify-between">
             <button
               onClick={onDataManagement}
               className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -118,7 +119,7 @@ export function RightSidebar({
           </div>
           {/* Save status */}
           {lastSaved && (
-            <div className="flex items-center gap-1 text-xs mt-1 px-3"
+            <div className="flex items-center gap-1 text-xs px-3"
               title={lastSavedToServer ? 'Сохранено в базу данных' : 'Сохранено локально'}>
               <Save className={`w-3 h-3 ${lastSavedToServer ? 'text-green-600' : 'text-gray-500'}`} />
               <span className="text-gray-500">Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -129,6 +130,7 @@ export function RightSidebar({
               {saveError}
             </div>
           )}
+          </div>
         </div>
 
         {/* Scrollable content */}
