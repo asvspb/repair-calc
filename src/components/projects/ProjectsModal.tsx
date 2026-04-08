@@ -126,11 +126,10 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     dlog(LOG_PREFIX, '[Import] Received', importedProjects.length, 'project(s):', importedProjects.map(p => p.name));
     if (importedProjects.length === 0) return;
 
-    updateProjects(prev => {
-      const updated = [...prev, ...importedProjects];
-      dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
-      return updated;
-    });
+    // updateProjects expects an array, not a function
+    const updated = [...projects, ...importedProjects];
+    dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
+    updateProjects(updated);
 
     if (importedProjects[0]) {
       dlog(LOG_PREFIX, '[Import] Setting active to:', importedProjects[0].name);
@@ -141,7 +140,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
       type: 'success',
       message: `Импортировано проектов: ${importedProjects.length}`,
     });
-  }, [updateProjects, setActiveProjectId]);
+  }, [projects, updateProjects, setActiveProjectId]);
 
   // Rename project
   const handleRenameProject = useCallback((projectId: string) => {
