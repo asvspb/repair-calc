@@ -68,8 +68,8 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
 
       {/* Модальное окно с результатами */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowModal(false); reset(); }}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             {/* Заголовок */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">

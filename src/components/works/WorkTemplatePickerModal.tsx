@@ -97,8 +97,8 @@ export function WorkTemplatePickerModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-in">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-800">Шаблоны работ</h2>

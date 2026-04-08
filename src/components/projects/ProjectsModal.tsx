@@ -385,8 +385,8 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
