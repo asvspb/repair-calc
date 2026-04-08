@@ -1,7 +1,7 @@
 # TODO: Замечания и задачи по проекту Repair Calculator
 
 **Дата:** 2026-03-04
-**Обновлено:** 2026-04-04
+**Обновлено:** 2026-04-08
 **Источники:** [CODE_REVIEW.md](./CODE_REVIEW.md), ревью шаблонов работ, архитектурный анализ
 
 ---
@@ -19,7 +19,7 @@
 
 ### Фаза 1: Декомпозиция App.tsx — ВЫПОЛНЕНО
 
-- [x] **God Component `App.tsx`** — декомпозиция завершена. App.tsx теперь ~170 строк (было ~2700).
+- [x] **God Component `App.tsx`** — декомпозиция завершена. App.tsx теперь ~489 строк (было ~2700).
 - [x] Типы вынесены в `src/types/`
 - [x] Утилиты вынесены в `src/utils/` (geometry.ts, costs.ts, factories.ts, storage.ts)
 - [x] Компоненты вынесены: `SummaryView`, `RoomEditor`, `BackupManager`, `RoomList`, `WorkList`, `NumberInput`
@@ -31,7 +31,6 @@
 - [x] Stale closure исправлен
 - [x] CSV экспорт исправлен
 - [x] Порты унифицированы
-- [x] Все `any` заменены на конкретные типы (проверено поиском)
 
 ### Зависимости
 
@@ -44,9 +43,118 @@
 
 ---
 
-## 🚧 В работе / Следующие задачи
+## 🔴 Приоритет 1: Критические исправления (2–3 дня)
 
-### Фаза 6: Управление объектами и устранение дублирования — ✅ ЗАВЕРШЕНО
+### Безопасность (не исправлено с v3.0)
+
+- [ ] **1.1** Падение при отсутствии `JWT_SECRET` в production — `server/src/config/env.ts`
+  - Добавить проверку: если `NODE_ENV=production` и `JWT_SECRET` не задан → throw error
+- [ ] **1.2** Добавить `helmet` — `server/src/app.ts`, `server/package.json`
+  - HTTP Security Headers: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`
+- [ ] **1.3** Убрать CORS bypass (`!origin`) — `server/src/app.ts`
+  - Убрать `!origin` из условия или ограничить через env-переменную
+
+### Качество кода
+
+- [ ] **1.4** Убрать 4× дублирование `isServerId`
+  - Файлы: `idMapper.ts`, `apiStorageProvider.ts`, `ProjectContext.tsx`
+  - Решение: использовать единственный `IdMapper.isServerId()` или экспортированную функцию
+- [ ] **1.5** Исправить `any` типы (~12 мест) — регрессия с v3.0
+  - `App.tsx`, `apiStorageProvider.ts`, `DataManagementModal.tsx`, `SummaryView.tsx`, `projects.ts`
+- [ ] **1.6** Исправить 4 failing теста — `tests/components/layout/ObjectSettings.test.tsx`
+- [ ] **1.7** Убрать двойную инъекцию токена в `httpClient.ts`
+  - Токен добавляется дважды: в interceptor и в `fetchWithTimeout`
+- [ ] **1.8** Убрать фиктивные поля из auth middleware — `server/src/middleware/auth.ts`
+  - `created_at`, `updated_at` — фиктивные данные, не из БД
+
+---
+
+## 🟡 Приоритет 2: Производительность (2–3 дня)
+
+- [ ] **2.1** `useMemo` для метрик и costs в RoomEditor — `src/components/RoomEditor.tsx`
+  - Обернуть `calculateRoomMetrics` и `calculateRoomCosts` в `useMemo`
+- [ ] **2.2** Убрать двойную нормализацию комнат
+  - Файлы: `ProjectContext.tsx`, `RoomEditor.tsx`
+  - Нормализовать только при загрузке данных (в ProjectContext)
+- [ ] **2.3** Инкрементальное сохранение — `ProjectContext.tsx`
+  - Сериализовать только изменённый проект, не все
+
+---
+
+## 🟠 Приоритет 3: Архитектура (5–8 дней)
+
+### Декомпозиция крупных файлов
+
+- [ ] **3.1** Разделить ProjectContext (933 → 3 модуля)
+  - `useProjectState.ts` — чистый state management
+  - `useProjectSync.ts` — логика синхронизации и persistence
+  - `useObjectManagement.ts` — CRUD для объектов
+- [ ] **3.2** Исправить stale closures в deleteRoom/addRoom/reorderRooms — `ProjectContext.tsx`
+- [ ] **3.3** Декомпозиция RoomEditor (900 строк) — вынести обработчики в `useRoomHandlers.ts`
+- [ ] **3.4** Декомпозиция BackupManager (837 строк) → `ExportPanel` + `ImportPanel`
+- [ ] **3.5** Декомпозиция routes/update.ts (2184 строки) → controller + service
+
+### Утилиты и консистентность
+
+- [ ] **3.6** Единая утилита генерации ID — `utils/factories.ts`
+  - Сейчас 4+ разных способа генерации ID
+- [ ] **3.7** Заменить 53 `console.*` на logger — по всему `src/`
+  - Добавить ESLint правило `no-console`
+- [ ] **3.8** Удалить мёртвый код (`handleDeleteActiveProject` и др.) — `App.tsx`
+
+### Nitpicks
+
+- [ ] **3.9** Исправить опечатку в App.tsx: "Страниццы" → "Страницы"
+- [ ] **3.10** Удалить неиспользуемый импорт `ProtectedRoute` — `App.tsx`
+- [ ] **3.11** Заменить `require()` на `import()` в ESM-модуле — `apiStorageProvider.ts`
+- [ ] **3.12** Вынести magic numbers для debounce в константы — `ProjectContext.tsx`
+- [ ] **3.13** Использовать единые константы для localStorage keys
+
+---
+
+## 🧪 Приоритет 4: Тестирование (5–7 дней)
+
+### Актуальное состояние
+
+| Метрика | Значение |
+|---------|----------|
+| Всего тестов | 841 |
+| Passing | 829 |
+| Failing | 4 🔴 |
+| Skipped | 8 |
+| Тестовых файлов | 51 |
+
+### Задачи
+
+- [ ] **4.1** Компонентные тесты для RoomEditor (900 строк) — `RoomEditor.test.tsx`
+- [ ] **4.2** Тесты для ProjectContext (933 строки) — `ProjectContext.test.tsx`
+  - Loading, saving, sync, objects management
+- [ ] **4.3** Тесты для httpClient — `httpClient.test.ts`
+  - Retry logic, refresh token, timeout handling
+- [ ] **4.4** Тесты для BackupManager — `BackupManager.test.tsx`
+- [ ] **4.5** Дополнительные E2E для авторизации — `e2e/auth-sync.spec.ts`
+
+---
+
+## 🔧 Приоритет 5: Бэкенд (3–5 дней)
+
+- [ ] **5.1** DI для репозиториев — `server/src/db/repositories/*.ts`
+  - Статические методы → инстансы с dependency injection
+- [ ] **5.2** Request ID middleware — `server/src/middleware/requestId.ts`
+- [ ] **5.3** Per-user rate limiting — `server/src/middleware/rateLimiter.ts`
+
+---
+
+## 📚 Приоритет 6: Документация (1 день)
+
+- [ ] **6.1** Обновить ARCHITECTURE.md — добавить Objects model, Auth, HttpClient
+- [ ] **6.2** Обновить TODO.md — отметить выполненное
+
+---
+
+## 🚀 Выполненные работы
+
+### Фаза 6: Управление объектами — ✅ ЗАВЕРШЕНО
 
 **Статус:** ✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО (Objects Save Fix)
 
@@ -55,131 +163,43 @@
 - [x] **6.3** Frontend использует атомарные транзакционные сохранения
 - [x] **6.4** Локальные ID объектов заменяются на server ID при синхронизации
 - [x] **6.5** Helper functions в `src/utils/projectObjects.ts` для работы с объектами
-- [x] **6.6** Все существующие тесты проходят (641/641)
-- [x] **6.7** Автоматическая миграция старых проектов → objects[0].rooms
-- [x] **6.8** Обратная совместимость с устаревшей структурой rooms
+- [x] **6.6** Автоматическая миграция старых проектов → objects[0].rooms
+- [x] **6.7** Обратная совместимость с устаревшей структурой rooms
 
 **Документация:** [OBJECTS_SAVE_FIX_COMPLETED.md](./OBJECTS_SAVE_FIX_COMPLETED.md)
-
-### Фаза 2.1: Исправление критических багов (BUGFIX_EXTENDED_MODE_RESET) — ✅ ВЫПОЛНЕНО
-
-- [x] **Баг сброса данных в расширенном режиме (BUGFIX_EXTENDED_MODE_RESET.md)** — ✅ Исправлено 2026-03-07
-  - [x] Рефакторинг `handleGeometryModeChange` в `useGeometryState.ts` (functional update)
-  - [x] Защита от сохранения "нулевых" данных в `simpleModeData`
-  - [x] Рефакторинг всех хендлеров в `useGeometryState.ts` на functional updates (`updateRoomById`)
-  - [x] Исправление обновления высоты в `GeometrySection.tsx` (functional update)
-  - [x] Все существующие тесты проходят (175 тестов)
 
 ### Фаза 3: Улучшение архитектуры — ВЫПОЛНЕНО ✅
 
 - [x] **3.1** Создать интерфейс `IStorageProvider` для абстракции storage ✅
 - [x] **3.2** Добавить React Error Boundaries ✅
-- [x] **3.3** Вынести глобальное состояние в Context API (решить prop drilling) ✅
+- [x] **3.3** Вынести глобальное состояние в Context API ✅
 - [x] **3.4** Добавить `React.memo` для тяжёлых компонентов ✅
-  - `RoomListItem`, `WorkListItem`, `SummaryView`, `NumberInput`
 
-### Фаза 4: Тестирование (1 неделя)
+### Фаза 4: Тестирование — ВЫПОЛНЕНО ✅
 
-- [x] **4.1** Unit-тесты для utils (geometry.ts, costs.ts, storage.ts) ✅ 113 тестов
-- [x] **4.2** Unit-тесты для хуков (useProjects, useWorkTemplates) ✅ 33 теста
-- [x] **4.3** Integration тесты для полного flow ✅ 4 теста (базовое покрытие)
-- [x] **4.4** Расширение E2E тестов (экспорт/импорт, шаблоны) ✅ 16 тестов
-  - room-input.spec.ts: 3 теста
-  - export-import.spec.ts: 6 тестов
-  - work-templates.spec.ts: 7 тестов
+- [x] **4.1** Unit-тесты для utils ✅
+- [x] **4.2** Unit-тесты для хуков ✅
+- [x] **4.3** Integration тесты ✅
+- [x] **4.4** Расширение E2E тестов ✅
 
----
+### Фаза 7: Миграция на базу данных — ✅ ВЫПОЛНЕНО
 
-## ⚠️ Замечания (Warnings) — Низкий приоритет
+- [x] **7.1** Express-сервер с MySQL + Knex
+- [x] **7.2** JWT-аутентификация
+- [x] **7.3** CRUD для projects, rooms, works, objects
+- [x] **7.4** CRUD для геометрии (25+ endpoints)
+- [x] **7.5** AI-интеграция (Gemini + Mistral)
+- [x] **7.6** Unit и integration тесты
 
-### Архитектура
+### Фаза 8: Update Service — ✅ ВЫПОЛНЕНО
 
-- [x] **Prop drilling** — ✅ Исправлено: React Context (`ProjectProvider`, `WorkTemplateProvider`)
-
-- [x] **Дублирование логики обновления** — ✅ Исправлено: созданы generic-хелперы в `src/utils/roomHelpers.ts`. Хук `useGeometryState` использует чистые функции для обновления данных.
-
-### Типизация
-
-- [x] **Скрытые `any` в `RoomEditor`** — ✅ Исправлено: используются `WorkTemplate` и `SaveResult`
-
-### Мелкие улучшения (Nitpicks)
-
-- [x] **Импорт типов из `App.tsx`** — ✅ Все компоненты используют `../../types`
-- [x] **`confirm()` в модалке удаления** — ✅ Заменён на `ConfirmDialog` с анимацией
-- [x] **Отсутствие анимации модального окна** — ✅ Добавлены CSS анимации `fade-in`, `scale-in`
-- [x] **`sessionStorage` для `isGeometryCollapsed`** — ✅ Реализовано в `useGeometryState.ts`
-
----
-
-## 🚀 Выполненные работы (2026-03-09)
-
-### ✅ Вариант А: Технический долг
-
-- [x] **А.1** Generic-хелперы в `src/utils/roomHelpers.ts` — уже существуют
-- [x] **А.2** Решение: архитектура функциональных обновлений несовместима с чистыми функциями
-
-### ✅ Вариант Б: Улучшение покрытия тестами
-
-- [x] **Б.1** Добавлены тесты для `roomHelpers.test.ts` — 38 тестов
-- [x] **Б.2** Всего тестов: 213 (было 175)
-
-### ✅ Исправление багов
-
-- [x] **Rules of Hooks** — исправлен в `App.tsx` (useEffect перемещён выше условного возврата)
-
----
-
-## 🚀 Фаза 6: Каталог материалов и расчёт — ✅ ВЫПОЛНЕНО
-
-**Спецификация:** [MATERIALS_CATALOG_FEATURE.md](./MATERIALS_CATALOG_FEATURE.md)
-
-### Этап 1-3: Типы данных, утилиты, каталог — ✅ ВЫПОЛНЕНО
-
-- [x] **1.1** Обновить `Material` в `src/types/workTemplate.ts`
-- [x] **1.2** Добавить `MaterialTemplate`, `WorkTemplateCatalog`, `ToolTemplate`
-- [x] **2.1** Создать `src/utils/materialCalculations.ts` с 5 формулами расчёта
-- [x] **2.2** Unit-тесты для формул расчёта (40+ тестов)
-- [x] **3.1** Создать `src/data/workTemplatesCatalog.ts` с 19 типовыми работами
-  - Пол: 4 работы (ламинат, плитка, линолеум, стяжка)
-  - Стены: 6 работ (обои, покраска, штукатурка, шпаклёвка, плитка, панели)
-  - Потолок: 3 работы (покраска, натяжной, ГКЛ)
-  - Проёмы: 3 работы (дверь, окно, откосы)
-  - Дополнительно: 3 работы (демонтаж, электрика, сантехника)
-
-### Этап 4: UI выбора из каталога — ✅ ВЫПОЛНЕНО
-
-- [x] **4.1** Создать `WorkCatalogPicker.tsx` (модальное окно)
-- [x] **4.2** Фильтр по категориям (пол/стены/потолок/проёмы/другое)
-- [x] **4.3** Поиск по названию работы
-- [x] **4.4** Карточки работ с превью материалов и инструментов
-- [x] **4.5** Интеграция в `RoomEditor.tsx` (кнопка "📋 Из каталога")
-- [x] **4.6** Integration-тесты (15 тестов)
-
-### Этап 5: UI расчёта материалов — ✅ ВЫПОЛНЕНО
-
-- [x] **5.1** Создать `MaterialCalculationCard.tsx` ✅
-- [x] **5.2** Создать `PaintMaterialCard.tsx` (поддержка слоёв) ✅
-- [x] **5.3** Создать `TileMaterialCard.tsx` (расчёт плитки) ✅
-- [x] **5.4** Хук `useMaterialCalculation` ✅
-- [x] **5.5** Интеграция в RoomEditor (импорты добавлены) ✅
-- [x] **5.6** Unit-тесты для компонентов ✅ (12 тестов)
-
-### Этап 6: Расширенная общая смета — ✅ ВЫПОЛНЕНО
-
-- [x] **6.1** Создать `src/components/summary/SummaryMaterials.tsx` ✅
-- [x] **6.2** Создать `src/components/summary/SummaryTools.tsx` ✅
-- [x] **6.3** Создать `src/components/summary/SummaryWorks.tsx` ✅
-- [x] **6.4** Обновить `SummaryView.tsx` ✅
-
-### Этап 7: Поиск цен через Gemini — ✅ ВЫПОЛНЕНО
-
-- [x] **7.1** Создать `src/api/prices/types.ts` ✅
-- [x] **7.2** Создать `src/api/prices/priceCache.ts` ✅
-- [x] **7.3** Создать `src/api/prices/geminiPriceSearch.ts` ✅
-- [x] **7.4** Создать `src/api/prices/index.ts` ✅
-- [x] **7.5** Тесты для API (22 теста) ✅
-- [x] **7.6** UI кнопки "Найти цену" в MaterialCalculationCard ✅
-- [x] **7.7** Добавить поле `city` в настройки проекта ✅
+- [x] **8.1** Миграции для таблиц Update Service
+- [x] **8.2** AI-парсеры (Gemini, Mistral)
+- [x] **8.3** Web Scraper парсеры
+- [x] **8.4** Оптимизации (кэш, batch, приоритеты)
+- [x] **8.5** Scheduler (cron)
+- [x] **8.6** Мониторинг (health, metrics)
+- [x] **8.7** Вебхуки, экспорт/импорт цен, A/B тестирование
 
 ---
 
@@ -189,291 +209,82 @@
 
 **Спецификация:** [PROJECTS_UI_PLAN.md](./PROJECTS_UI_PLAN.md)
 
-#### Этап 11.1: Модальное окно "Мои проекты" — приоритет: высокий
+#### Этап 11.1: Модальное окно "Мои проекты"
 
-- [ ] **11.1.1** Создать `src/components/projects/ProjectsModal.tsx`
-- [ ] **11.1.2** Перенести функционал из `BackupManager`:
-  - Список проектов с карточками
-  - Создать / переименовать / удалить / копировать проект
-  - Импорт / экспорт (JSON, CSV)
-  - Синхронизация с сервером
-- [ ] **11.1.3** Заменить кнопку "Данные" на "Мои проекты" (иконка: `FolderOpen`)
-- [ ] **11.1.4** Удалить BackupManager
+- [ ] **11.1.1** Создать `src/components/projects/ProjectsModal.tsx` ✅ (уже существует, 699 строк)
+- [ ] **11.1.2** Рефакторинг BackupManager (837 строк)
+- [ ] **11.1.3** Заменить кнопку "Данные" на "Мои проекты"
 
-#### Этап 11.2: Интеграция UI объектов в сайдбар — приоритет: высокий
+#### Этап 11.2: Интеграция UI объектов в сайдбар
 
-- [ ] **11.2.1** Добавить `ObjectSelector` в сайдбар (если `objects.length > 1`)
-- [ ] **11.2.2** Показывать название активного объекта под селектором проекта
-- [ ] **11.2.3** Добавить секцию "Другие объекты" внизу сайдбара
-- [ ] **11.2.4** Исправить терминологию:
-  - Проект → "Проект"
-  - ObjectData → "Объект ремонта"
-  - Кнопка "Новый объект" → "Новый проект"
+- [ ] **11.2.1** ObjectSelector в сайдбар
+- [ ] **11.2.2** Секция "Другие объекты" внизу сайдбара
 
-#### Этап 11.3: Обновление хедера и breadcrumbs — приоритет: средний
+#### Этап 11.3: Обновление SummaryView
 
-- [ ] **11.3.1** Desktop header: `{Проект} / {Объект} / {Комната}`
-- [ ] **11.3.2** Mobile header: breadcrumbs для навигации
-- [ ] **11.3.3** Показывать город активного объекта (не проекта)
-
-#### Этап 11.4: Обновление SummaryView — приоритет: средний
-
-- [ ] **11.4.1** Добавить проп `groupByObject?: boolean`
-- [ ] **11.4.2** Группировка итогов по объектам
-- [ ] **11.4.3** Показывать промежуточные итоги по каждому объекту
-- [ ] **11.4.4** Общий итог по всем объектам
-
-#### Этап 11.5: Тесты — приоритет: средний
-
-- [ ] **11.5.1** `tests/components/ProjectsModal.test.tsx`
-- [ ] **11.5.2** `tests/components/ObjectSelector.test.tsx`
-- [ ] **11.5.3** `tests/components/ObjectsList.test.tsx`
-- [ ] **11.5.4** `tests/components/ObjectCard.test.tsx`
-- [ ] **11.5.5** `tests/components/CreateObjectModal.test.tsx`
-
-#### Оценка времени
-
-| Этап | Часы | Приоритет |
-|------|------|-----------|
-| 11.1 Модальное окно "Мои проекты" | 3-4 | Высокий |
-| 11.2 Интеграция UI объектов | 3-4 | Высокий |
-| 11.3 Хедер + breadcrumbs | 1-2 | Средний |
-| 11.4 SummaryView группировка | 2-3 | Средний |
-| 11.5 Тесты | 2-3 | Средний |
-| **Всего** | **11-16** | |
-
----
-
-### Фаза 8: Служба обновления баз данных (Update Service) — ✅ ОСНОВА ВЫПОЛНЕЕНА
-
-**Спецификация:** [UPDATE_SERVICE_SPEC.md](./UPDATE_SERVICE_SPEC.md)
-
-#### Этап 8.1: Основа — ✅ ВЫПОЛНЕНО
-
-- [x] **8.1.1** Создать миграцию для таблиц Update Service ✅
-  - [x] `price_sources` — источники цен (AI, web scrapers, API)
-  - [x] `price_catalog` — каталог цен с индексами
-  - [x] `price_history` — история изменений цен
-  - [x] `update_jobs` — задачи обновления
-  - [x] `update_job_items` — детализация по элементам
-  - [x] `update_job_params` — параметры задач
-  - [x] `update_job_locks` — блокировки для конкурентности
-  - [x] `update_webhooks` — вебхуки
-  - [x] `scheduler_config` — конфигурация планировщика
-  - [x] `update_logs` — логи обновлений
-- [x] **8.1.2** Создать репозитории ✅
-  - [x] `server/src/db/repositories/priceCatalog.repo.ts`
-  - [x] `server/src/db/repositories/priceHistory.repo.ts`
-  - [x] `server/src/db/repositories/updateJob.repo.ts`
-- [x] **8.1.3** Реализовать базовый Runner (`runner.ts`) ✅
-- [x] **8.1.4** Реализовать API endpoints (`routes/update.ts`) ✅
-  - [x] `POST /api/update/run` — запуск обновления
-  - [x] `GET /api/update/status/:jobId` — статус задачи
-  - [x] `GET /api/update/jobs` — история задач
-  - [x] `POST /api/update/cancel/:jobId` — отмена задачи
-  - [x] `POST /api/update/retry/:jobId` — повтор задачи
-  - [x] `GET /api/prices` — поиск цен
-  - [x] `GET /api/prices/:id/history` — история цены
-  - [x] `POST/PUT/DELETE /api/prices` — CRUD для цен
-- [x] **8.1.5** Реализовать блокировки (`update_job_locks`) ✅
-
-#### Этап 8.2: AI-парсеры — ✅ ВЫПОЛНЕНО
-
-- [x] **8.2.1** Gemini Parser (`gemini.ts`) ✅
-- [x] **8.2.2** Mistral Parser (`mistral.ts`) ✅
-- [x] **8.2.3** Parser Manager (`parserManager.ts`) ✅
-- [x] **8.2.4** Интеграция Circuit Breaker ✅
-- [x] **8.2.5** Интеграция Rate Limiter ✅
-
-#### Этап 8.3: Web Scraper парсеры — ✅ ВЫПОЛНЕНО
-
-- [x] **8.3.1** Types & Interfaces (`parsers/types.ts`) ✅
-- [x] **8.3.2** Circuit Breaker (`parsers/circuitBreaker.ts`) ✅
-- [x] **8.3.3** Rate Limiter (`parsers/rateLimiter.ts`) ✅
-- [x] **8.3.4** Bazavit Parser (`parsers/bazavitParser.ts`) ✅
-- [x] **8.3.5** Lemana Parser (`parsers/lemanaParser.ts`) ✅
-- [x] **8.3.6** Web Scraper Aggregator (`webScraper.ts`) ✅
-
-#### Этап 8.4: Оптимизации — ✅ ВЫПОЛНЕНО
-
-- [x] **8.4.1** Кэширование результатов (in-memory) ✅
-- [x] **8.4.2** Batch-обработка для параллелизма ✅
-- [x] **8.4.3** Валидация аномалий цен ✅
-- [x] **8.4.4** Приоритетная очередь задач ✅ (2026-03-14)
-  - [x] Создан `server/src/services/update/utils/priority.ts`
-  - [x] Функция `calculateItemPriority()` для элементов (score: 0-180)
-  - [x] Функция `prioritizeItems()` для сортировки по приоритету
-  - [x] Класс `JobPriorityQueue` для задач
-  - [x] Интеграция в `runner.ts` и API endpoints
-  - [x] Тесты: 20+ тестов для priority.ts
-
-#### Этап 8.5: Scheduler — ✅ ВЫПОЛНЕНО
-
-- [x] **8.5.1** Интеграция cron ✅
-- [x] **8.5.2** Конфигурация через env переменные ✅
-- [x] **8.5.3** Обработка retry при сбоях ✅
-- [x] **8.5.4** Circuit Breaker для планировщика ✅
-
-#### Этап 8.6: Мониторинг — ✅ ВЫПОЛНЕНО
-
-- [x] **8.6.1** Health check endpoint (`GET /api/update/health`) ✅
-- [x] **8.6.2** Метрики (`GET /api/update/metrics`) ✅
-- [x] **8.6.3** Логирование в БД ✅
-- [ ] **8.6.4** Dashboard (Grafana, опционально)
-
-#### Этап 8.7: Дополнительные возможности — ✅ ВЫПОЛНЕНО
-
-- [x] **8.7.1** Вебхуки для уведомлений ✅ (2026-03-14)
-  - [x] Миграция `update_webhooks` таблицы
-  - [x] `WebhookRepository` для CRUD
-  - [x] `webhookService` для отправки с retry и HMAC-подписью
-  - [x] Endpoints: `GET/POST /api/update/webhooks`, `GET/PUT/DELETE /api/update/webhooks/:id`, `POST /api/update/webhooks/:id/test`
-- [x] **8.7.2** Экспорт цен (CSV/XLSX/JSON) ✅ (2026-03-14)
-  - [x] Endpoint `GET /api/prices/export?format=csv|xlsx|json`
-  - [x] exceljs для XLSX с стилизацией
-  - [x] CSV с BOM для кириллицы
-- [x] **8.7.3** Импорт цен из файла ✅ (2026-03-14)
-  - [x] Endpoint `POST /api/prices/import` (multipart/form-data)
-  - [x] Поддержка CSV, XLSX, JSON
-  - [x] Автоматический маппинг колонок (ru/en)
-  - [x] Upsert записей в БД
-- [x] **8.7.4** A/B тестирование парсеров ✅ (2026-03-14)
-  - [x] Миграция таблиц `ab_tests`, `ab_test_results`, `ab_test_daily_stats`
-  - [x] `ABTestRepository` для CRUD и статистики
-  - [x] Интеграция с `ParserManager` (автоматическое распределение трафика)
-  - [x] API endpoints: `GET/POST /api/update/ab-tests`, управление статусами, результаты, статистика
-  - [x] Автоматическое определение победителя на основе success rate и времени ответа
-  - [x] Unit тесты
-- [ ] **8.7.5** Аудит действий администраторов
-
-#### Оценка времени
-
-| Этап | Часы | Дни (8ч) | Статус |
-|------|------|----------|--------|
-| 8.1 Основа | 15 | ~2 | ✅ |
-| 8.2 AI-парсеры | 15 | ~2 | ✅ |
-| 8.3 Web Scrapers | 8 | ~1 | ✅ |
-| 8.4 Оптимизации | 12 | ~1.5 | ✅ |
-| 8.5 Scheduler | 7 | ~1 | ✅ |
-| 8.6 Мониторинг | 11 | ~1.5 | ✅ |
-| 8.7 Дополнительно | 16 | ~2 | ✅ |
-| **Всего** | **84** | **~11** | **~98%** |
-
----
-
-### Фаза 7: Миграция на базу данных — ПОДРОБНОЕ ТЗ
-
-**Полное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
-
-#### Фаза 7.1: Подготовка сервера (3-4 дня) — ✅ ВЫПОЛНЕНО
-
-- [x] **7.1.1** Создать структуру `server/` с TypeScript
-- [x] **7.1.2** Настроить Express + middleware (cors, errorHandler)
-- [x] **7.1.3** Настроить MySQL connection pool (mysql2/promise)
-- [x] **7.1.4** Создать Knex-миграции для всех таблиц (14 таблиц)
-- [x] **7.1.5** Написать репозитории (UserRepository, ProjectRepository, RoomRepository, WorkRepository)
-- [x] **7.1.6** Добавить zod-схемы валидации для всех входных данных
-
-#### Фаза 7.2: Аутентификация (2-3 дня) — ✅ ВЫПОЛНЕНО
-
-- [x] **7.2.1** Реализовать регистрацию (POST /api/auth/register)
-- [x] **7.2.2** Реализовать вход (POST /api/auth/login)
-- [x] **7.2.3** Реализовать JWT middleware
-- [x] **7.2.4** Создать AuthContext на клиенте
-- [x] **7.2.5** Создать страницы Login/Register
-- [x] **7.2.6** Добавить защиту роутов (PrivateRoute)
-
-#### Фаза 7.3: CRUD для проектов (3-4 дня) — ✅ ВЫПОЛНЕНО
-
-- [x] **7.3.1** GET /api/projects — список проектов пользователя
-- [x] **7.3.2** POST /api/projects — создать проект
-- [x] **7.3.3** GET /api/projects/:id — получить проект с вложениями
-- [x] **7.3.4** PUT /api/projects/:id — обновить проект
-- [x] **7.3.5** DELETE /api/projects/:id — удалить проект
-- [x] **7.3.6** Реализовать ApiStorageProvider на клиенте
-- [x] **7.3.7** Интегрировать в ProjectContext
-
-#### Фаза 7.4: CRUD для комнат и работ — ✅ ВЫПОЛНЕНО
-
-- [x] **7.4.1** Все CRUD для rooms (уже был реализован)
-- [x] **7.4.2** Все CRUD для works, materials, tools (уже был реализован)
-- [x] **7.4.3** CRUD для геометрии (openings, subsections, segments, obstacles, wall_sections) ✅
-  - Добавлены репозитории: OpeningRepository, SubSectionRepository, SegmentRepository, ObstacleRepository, WallSectionRepository
-  - Добавлены валидационные схемы в validation.ts
-  - Создан geometry.ts с 25+ endpoints
-- [x] **7.4.4** Drag-and-drop сортировка (rooms/order, works/order) ✅
-
-#### Фаза 7.5: AI-интеграция (3-4 дня) — ✅ ВЫПОЛНЕНО
-
-- [x] **7.5.1** Абстрактный AIProvider интерфейс ✅
-- [x] **7.5.2** GeminiProvider (@google/genai) ✅
-- [x] **7.5.3** MistralProvider (@mistralai/mistralai) ✅
-- [x] **7.5.4** POST /api/ai/estimate ✅
-- [x] **7.5.5** POST /api/ai/suggest-materials ✅
-- [x] **7.5.6** Кэширование ответов в ai_requests ✅
-
-#### Фаза 7.6: Тестирование (2-3 дня) — ✅ ВЫПОЛНЕНО
-
-- [x] **7.6.1** Unit-тесты для сервера (Vitest + Supertest) ✅ 34 теста
-- [x] **7.6.2** Integration-тесты API ✅
-
-**Итого: 12-17 рабочих дней**
+- [ ] **11.3.1** Группировка итогов по объектам
+- [ ] **11.3.2** Промежуточные итоги по каждому объекту
 
 ---
 
 ### Фаза 10: Offline-first (Опционально) — 2-3 дня
 
-**Цель:** Обеспечить работу приложения без интернета с последующей синхронизацией
-
-#### Компоненты:
-- **IndexedDB (idb)** — локальное хранилище для очереди изменений и кэша проектов
-- **OfflineQueue** — очередь изменений для синхронизации
-- **Sync API** — push/pull изменений между клиентом и сервером
-- **Online/Offline Detection** — детекция статуса подключения
-- **UI-индикатор** — отображение статуса синхронизации
-
-#### Задачи:
-
 - [ ] **10.1** Установить idb (IndexedDB wrapper)
-- [ ] **10.2** Реализовать OfflineQueue для хранения изменений
-- [ ] **10.3** Реализовать POST /api/sync/push
-- [ ] **10.4** Реализовать GET /api/sync/pull
-- [ ] **10.5** Добавить детекцию online/offline статуса
+- [ ] **10.2** Реализовать OfflineQueue
+- [ ] **10.3** POST /api/sync/push
+- [ ] **10.4** GET /api/sync/pull
+- [ ] **10.5** Детекция online/offline статуса
 - [ ] **10.6** UI-индикатор синхронизации
-
-#### Риски:
-- Конфликты синхронизации — решается optimistic locking (version) + timestamp
-- Ограничения IndexedDB — ~50MB в большинстве браузеров
 
 ---
 
 ### Фаза 9: PWA (Опционально) — 2-3 дня
 
-**Цель:** Сделать приложение устанавливаемым и работающим офлайн
-
 - [ ] **9.1** Установить vite-plugin-pwa
 - [ ] **9.2** Настроить service worker
-- [ ] **9.3** Создать иконки (192, 512, maskable)
+- [ ] **9.3** Создать иконки
 - [ ] **9.4** Протестировать offline-режим
-- [ ] **9.5** Тестировать установку на мобильных устройствах
 
 ---
 
 ## 📈 Метрики успеха
 
-| Метрика | Было | Стало | Целевое |
-|---------|------|-------|---------|
-| Размер App.tsx | ~2700 строк | ~170 строк | <300 строк ✅ |
-| Покрытие тестами | ~5% | ~50% (402 теста) | >60% 🟡 |
-| Типизация (any) | 3 места | 0 | 0 ✅ |
+| Метрика | v1.0 | v3.0 | v4.0 | Целевое | Статус |
+|---------|------|------|------|---------|--------|
+| Размер App.tsx | ~2700 | 557 | 489 | <300 | 🟡 Улучшен |
+| ProjectContext.tsx | — | 660 | 933 | <300 | 🔴 Ухудшение |
+| RoomEditor.tsx | — | 896 | 900 | <400 | 🔴 Не улучшен |
+| Покрытие тестами | ~5% | ~50% | ~55% | >70% | 🟡 |
+| Типизация (any) | 3 | 0 | ~12 | 0 | 🔴 Регрессия |
+| Failing тесты | 0 | 0 | 4 | 0 | 🔴 Регрессия |
+| console.* в prod | — | — | 53 | 0 | 🟡 Новое |
 
 ### Статистика тестов:
-- **Unit тесты (utils):** 220 тестов (включая materialCalculations: 40+)
-- **Unit тесты (hooks):** 72 теста
-- **Integration тесты:** 7 тестов
-- **API тесты:** 22 теста
-- **E2E тесты:** 16 тестов
-- **Итого:** 402 теста ✅
+
+- **Всего тестов:** 841 (+439 с v3.0, +109%)
+- **Тестовых файлов:** 51
+- **Passing:** 829
+- **Failing:** 4 🔴 (ObjectSettings.test.tsx)
+- **Skipped:** 8
+
+### Крупные файлы (>500 строк):
+
+| Файл | Строк | Статус |
+|------|-------|--------|
+| `data/workTemplatesCatalog.ts` | 1048 | 📊 Данные |
+| `contexts/ProjectContext.tsx` | 933 | 🔴 Требует декомпозиции |
+| `api/storage/apiStorageProvider.ts` | 933 | 🔴 Требует декомпозиции |
+| `components/RoomEditor.tsx` | 900 | 🔴 Не улучшен |
+| `components/BackupManager.tsx` | 837 | 🔴 Требует декомпозиции |
+| `utils/roomHelpers.ts` | 814 | 🟡 Утилиты |
+| `components/projects/ProjectsModal.tsx` | 699 | 🟡 |
+| `hooks/useGeometryState.ts` | 597 | 🟡 Хук |
+| `components/projects/CreateProjectModal.tsx` | 537 | 🟡 |
+| `App.tsx` | 489 | 🟡 |
+| `components/works/WorkCatalogPicker.tsx` | 453 | 🟡 |
+| `components/projects/DataManagementModal.tsx` | 437 | 🟡 |
+| `utils/materialCalculations.ts` | 416 | 🟡 Утилиты |
+| `api/httpClient.ts` | 408 | 🟡 |
 
 ---
 
