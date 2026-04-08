@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { config } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './middleware/logger.js';
@@ -8,6 +9,12 @@ import { router } from './routes/index.js';
 
 export function createApp(): express.Application {
   const app = express();
+
+  // Security headers
+  app.use(helmet({
+    contentSecurityPolicy: config.nodeEnv === 'development' ? false : undefined,
+    crossOriginEmbedderPolicy: false,
+  }));
 
   // Middleware
   const allowedOrigins = [
