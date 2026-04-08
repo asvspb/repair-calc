@@ -6,7 +6,7 @@ import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
 import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { LoginPage, RegisterPage, ProtectedRoute } from './components/auth';
+import { LoginPage, RegisterPage } from './components/auth';
 import { LeftSidebar } from './components/layout/LeftSidebar';
 import { RightSidebar } from './components/layout/RightSidebar';
 import type { ProjectData, RoomData, ObjectData } from './types';
@@ -22,7 +22,7 @@ import { DataManagementModal } from './components/projects/DataManagementModal';
 import { initialProjects } from './data/initialData';
 
 /**
- * Страниццы аутентификации
+ * Страницы аутентификации
  */
 function AuthPages() {
   const [isLogin, setIsLogin] = useState(true);
