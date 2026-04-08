@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Menu, Settings, Save, ChevronRight } from 'lucide-react';
+import { Calculator, Menu, Settings, ChevronRight } from 'lucide-react';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
 import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
@@ -286,20 +286,6 @@ function AppContent() {
               </>
             )}
           </div>
-          <div className="absolute right-4 flex items-center gap-4">
-            {lastSaved && (
-              <div className="flex items-center gap-1 text-xs"
-                title={lastSavedToServer ? 'Сохранено в базу данных' : 'Сохранено локально'}>
-                <Save className={`w-3 h-3 ${lastSavedToServer ? 'text-green-600' : 'text-gray-500'}`} />
-                <span className="text-gray-500">Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            )}
-            {saveError && (
-              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                {saveError}
-              </div>
-            )}
-          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
@@ -404,6 +390,9 @@ function AppContent() {
           setActiveTab('summary');
         }}
         onDeleteCancel={() => setProjectToDeleteId(null)}
+        lastSaved={lastSaved}
+        lastSavedToServer={lastSavedToServer}
+        saveError={saveError}
       />
 
       {/* Create Object Modal */}

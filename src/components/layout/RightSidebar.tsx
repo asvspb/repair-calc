@@ -1,4 +1,4 @@
-import { X, Settings, LayoutDashboard, Plus } from 'lucide-react';
+import { X, Settings, LayoutDashboard, Plus, Save } from 'lucide-react';
 import { ProjectsList } from '../projects/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '../../types';
@@ -26,6 +26,9 @@ type RightSidebarProps = {
   projectToDeleteId: string | null;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
+  lastSaved?: Date | null;
+  lastSavedToServer?: Date | null;
+  saveError?: string | null;
 };
 
 export function RightSidebar({
@@ -51,6 +54,9 @@ export function RightSidebar({
   projectToDeleteId,
   onDeleteConfirm,
   onDeleteCancel,
+  lastSaved,
+  lastSavedToServer,
+  saveError,
 }: RightSidebarProps) {
   return (
     <>
@@ -96,18 +102,33 @@ export function RightSidebar({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
-          <button
-            onClick={onDataManagement}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            title="Настройки"
-          >
-            <Settings className="w-5 h-5" />
-            <span className="text-sm">Настройки</span>
-          </button>
-          <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+        <div className="px-4 border-b border-gray-200 bg-white shrink-0 py-3">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onDataManagement}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              title="Настройки"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm">Настройки</span>
+            </button>
+            <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+          {/* Save status */}
+          {lastSaved && (
+            <div className="flex items-center gap-1 text-xs mt-1 px-3"
+              title={lastSavedToServer ? 'Сохранено в базу данных' : 'Сохранено локально'}>
+              <Save className={`w-3 h-3 ${lastSavedToServer ? 'text-green-600' : 'text-gray-500'}`} />
+              <span className="text-gray-500">Сохранено {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
+          {saveError && (
+            <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded mt-1">
+              {saveError}
+            </div>
+          )}
         </div>
 
         {/* Scrollable content */}
