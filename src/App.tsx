@@ -126,17 +126,6 @@ function AppContent() {
     );
   }
 
-  const handleDeleteActiveProject = () => {
-    const newProjects = projects.filter(p => p.id !== activeProjectId);
-    updateProjects(newProjects);
-    if (newProjects.length > 0) {
-      setActiveProjectId(newProjects[0].id);
-    } else {
-      setActiveProjectId('');
-    }
-    setActiveTab('summary');
-  };
-
   const handleImport = (importedProjects: ProjectData[], importedActiveId: string) => {
     // Выполняем миграцию импортированных проектов на новую структуру с objects
     const migratedProjects = importedProjects.map(project => migrateProjectToObjects(project));
