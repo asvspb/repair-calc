@@ -50,7 +50,7 @@ function generateId(prefix: string): string {
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
-  return {
+  const migrated = {
     ...room,
     // Гарантируем, что числовые поля определены
     length: room.length ?? 0,
@@ -65,6 +65,18 @@ function migrateRoom(room: RoomData): RoomData {
     doors: room.doors || [],
     works: room.works || []
   };
+
+  // Assertion: все числовые поля определены (only in development)
+  if (import.meta.env.DEV) {
+    const numericFields = ['length', 'width', 'height'] as const;
+    for (const field of numericFields) {
+      if (typeof migrated[field] !== 'number') {
+        console.warn(`[migrateRoom] Field "${field}" should be number after migration`);
+      }
+    }
+  }
+
+  return migrated;
 }
 
 // Миграция проекта для обеспечения наличия всех полей у комнат
@@ -371,25 +383,63 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         // Создаем задачу сохранения с персистентностью
         const saveTask = async () => {
           try {
-            // Сохранение в localStorage
-            StorageManager.saveProjects(projectsToSave);
-            setLastSaved(new Date());
-            logSuccess('Save', 'Сохранено в localStorage', {
-              count: projectsToSave.length,
-              projectIds: projectsToSave.map(p => p.id)
-            }, startTime);
+            // Инкрементальное сохранение: сохраняем только изменившиеся проекты
+            // Сравниваем с текущим состоянием projects, чтобы найти изменения
+            const changedProjects = projectsToSave.filter(newProj => {
+              const oldProj = projects.find(p => p.id === newProj.id);
+              if (!oldProj) return true; // Новый проект
+              // Сравниваем версии или используем глубокое сравнение
+              return JSON.stringify(oldProj) !== JSON.stringify(newProj);
+            });
 
-            // Если авторизован, сохраняем на сервер
-            if (isAuthenticated) {
-              const apiProvider = getApiProvider();
-              const serverStartTime = logStart('Save', 'Сохранение на сервер');
+            if (changedProjects.length === 1 && projectsToSave.length > 1) {
+              // Только один проект изменился — используем инкрементальное сохранение
+              const changedProject = changedProjects[0];
+              logSuccess('Save', 'Инкрементальное сохранение одного проекта', {
+                projectId: changedProject.id,
+                name: changedProject.name
+              });
 
-              await apiProvider.saveProjectsAsync(projectsToSave);
-              setLastSavedToServer(new Date());
-              logSuccess('Save', 'Сохранено на сервер', {
-                count: projectsToSave.length
-              }, serverStartTime);
-              setSaveError(null);
+              // Сохраняем только изменившийся проект
+              StorageManager.saveProject(changedProject);
+              setLastSaved(new Date());
+              logSuccess('Save', 'Сохранено в localStorage (инкрементально)', {
+                projectId: changedProject.id
+              }, startTime);
+
+              // Если авторизован, сохраняем на сервер
+              if (isAuthenticated) {
+                const apiProvider = getApiProvider();
+                const serverStartTime = logStart('Save', 'Сохранение проекта на сервер');
+
+                await apiProvider.saveProjectAsync(changedProject);
+                setLastSavedToServer(new Date());
+                logSuccess('Save', 'Проект сохранен на сервере (инкрементально)', {
+                  projectId: changedProject.id
+                }, serverStartTime);
+                setSaveError(null);
+              }
+            } else {
+              // Множественные изменения — полное сохран
+              StorageManager.saveProjects(projectsToSave);
+              setLastSaved(new Date());
+              logSuccess('Save', 'Сохранено в localStorage', {
+                count: projectsToSave.length,
+                projectIds: projectsToSave.map(p => p.id)
+              }, startTime);
+
+              // Если авторизован, сохраняем на сервер
+              if (isAuthenticated) {
+                const apiProvider = getApiProvider();
+                const serverStartTime = logStart('Save', 'Сохранение на сервер');
+
+                await apiProvider.saveProjectsAsync(projectsToSave);
+                setLastSavedToServer(new Date());
+                logSuccess('Save', 'Сохранено на сервер', {
+                  count: projectsToSave.length
+                }, serverStartTime);
+                setSaveError(null);
+              }
             }
             pendingSaveRef.current = null;
           } catch (err) {
@@ -406,7 +456,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         saveQueue.enqueue(saveTask, projectsToSave);
       }
     }, SAVE_DEBOUNCE_MS);
-  }, [isAuthenticated, getApiProvider]);
+  }, [isAuthenticated, getApiProvider, projects]);
 
   // Обновление проектов
   const updateProjects = useCallback((newProjects: ProjectData[]) => {

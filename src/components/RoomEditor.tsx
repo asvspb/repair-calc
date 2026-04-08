@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen, Droplet, Grid3X3 } from 'lucide-react';
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
@@ -51,14 +51,13 @@ export function RoomEditor({
   onOpenTemplatePicker,
   onCloseTemplatePicker,
 }: RoomEditorProps) {
-  // Normalize room data to ensure all fields exist
-  const normalizedRoom = {
+  // Room data is already normalized by migrateRoom() in ProjectContext.
+  // We use useMemo to avoid recalculating metrics and costs on every render.
+  const normalizedRoom = useMemo(() => ({
     ...room,
-    // Гарантируем, что числовые поля определены
     length: room.length ?? 0,
     width: room.width ?? 0,
     height: room.height ?? 0,
-    // Гарантируем, что массивы существуют
     segments: room.segments || [],
     obstacles: room.obstacles || [],
     wallSections: room.wallSections || [],
@@ -66,10 +65,10 @@ export function RoomEditor({
     windows: room.windows || [],
     doors: room.doors || [],
     works: room.works || [],
-  };
+  }), [room]);
 
-  const metrics = calculateRoomMetrics(normalizedRoom);
-  const { costs, total } = calculateRoomCosts(normalizedRoom);
+  const metrics = useMemo(() => calculateRoomMetrics(normalizedRoom), [normalizedRoom]);
+  const { costs, total } = useMemo(() => calculateRoomCosts(normalizedRoom), [normalizedRoom]);
 
   // Work expansion state
   const [expandedWorks, setExpandedWorks] = useState<Set<string>>(new Set());

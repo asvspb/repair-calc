@@ -67,6 +67,36 @@ export class StorageManager {
     }
   }
 
+  /**
+   * Incremental save: save only a single project to localStorage
+   * This is more efficient than saveProjects when only one project changes
+   */
+  static saveProject(project: ProjectData): void {
+    try {
+      const projects = this.loadProjects() || [];
+      const index = projects.findIndex(p => p.id === project.id);
+
+      if (index >= 0) {
+        // Update existing project
+        projects[index] = project;
+      } else {
+        // Add new project
+        projects.push(project);
+      }
+
+      StorageManager.provider.set(STORAGE_KEYS.PROJECTS, projects);
+      StorageManager.provider.set(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+    } catch (error) {
+      if (error instanceof StorageProviderError) {
+        throw {
+          type: error.type,
+          message: error.message
+        } as StorageError;
+      }
+      throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
+    }
+  }
+
   static async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
     try {
       await StorageManager.provider.setAsync(STORAGE_KEYS.PROJECTS, projects);

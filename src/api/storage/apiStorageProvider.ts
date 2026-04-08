@@ -570,6 +570,103 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
+   * Incremental save: save only a single project to server
+   * More efficient than saveProjectsAsync when only one project changes
+   */
+  async saveProjectAsync(project: ProjectData): Promise<ProjectData> {
+    const startTime = logStart('ApiStorage', 'Инкрементальное сохранение проекта', {
+      projectId: project.id,
+      name: project.name
+    });
+
+    try {
+      // Update cache immediately
+      this.projectsCache.set(project.id, project);
+
+      // Save to localStorage as backup
+      const projects = this.loadProjectsFromLocal() || [];
+      const index = projects.findIndex(p => p.id === project.id);
+      if (index >= 0) {
+        projects[index] = project;
+      } else {
+        projects.push(project);
+      }
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+
+      // Check if project exists on server
+      const isServerProject = isServerIdUtil(project.id);
+      const mappedServerId = !isServerProject ? idMapper.getServerId(project.id) : null;
+
+      let resultProject: ProjectData;
+
+      if (mappedServerId) {
+        // Update existing migrated project
+        const projectWithServerId = { ...project, id: mappedServerId };
+        resultProject = await this.enqueueRequest(() => this.updateProjectAsync(projectWithServerId));
+        logSuccess('ApiStorage', 'Мигрированный проект обновлен', {
+          localId: project.id,
+          serverId: mappedServerId
+        }, startTime);
+      } else if (isServerProject) {
+        // Update server project directly
+        resultProject = await this.enqueueRequest(() => this.updateProjectAsync(project));
+        logSuccess('ApiStorage', 'Проект обновлен на сервере', { projectId: project.id }, startTime);
+      } else {
+        // Create new project on server
+        const newProject = await this.enqueueRequest(() => this.createProjectAsync({
+          name: project.name,
+          city: project.city,
+        }));
+
+        // Save mapping
+        idMapper.addMapping(project.id, newProject.id);
+
+        // Save rooms/objects to new project
+        if (project.objects && project.objects.length > 0) {
+          const objectsData = {
+            name: project.name,
+            city: project.city,
+            objects: project.objects.map(obj => ({
+              id: obj.id,
+              name: obj.name,
+              city: obj.city ?? null,
+              sort_order: obj.sortOrder ?? 0,
+              rooms: (obj.rooms || []).map(room => ({
+                id: room.id,
+                name: room.name,
+                geometry_mode: room.geometryMode,
+                length: Number(room.length) || 0,
+                width: Number(room.width) || 0,
+                height: Number(room.height) || 0,
+                segments: room.segments ?? [],
+                obstacles: room.obstacles ?? [],
+                wall_sections: room.wallSections ?? [],
+                sub_sections: room.subSections ?? [],
+                windows: room.windows ?? [],
+                doors: room.doors ?? [],
+                works: room.works ?? [],
+                sort_order: room.sortOrder ?? 0,
+              }))
+            }))
+          };
+          await this.enqueueRequest(() => projectsApi.updateProjectWithObjects(newProject.id, objectsData));
+        }
+
+        resultProject = newProject;
+        logSuccess('ApiStorage', 'Новый проект создан на сервере', {
+          localId: project.id,
+          serverId: newProject.id
+        }, startTime);
+      }
+
+      return resultProject;
+    } catch (error) {
+      logError('ApiStorage', 'Ошибка инкрементального сохранения', error, { projectId: project.id });
+      throw StorageProviderError.fromError(error);
+    }
+  }
+
+  /**
    * Синхронизация комнат проекта с debounce для предотвращения rate limiting
    * Возвращает массив ошибок для комнат, которые не удалось синхронизировать
    */
@@ -629,6 +726,20 @@ export class ApiStorageProvider implements IStorageProvider {
    */
   clearRoomSyncErrors(): void {
     this.roomSyncErrors.clear();
+  }
+
+  /**
+   * Load projects from localStorage only (synchronous, no server call)
+   * Helper for incremental saves
+   */
+  private loadProjectsFromLocal(): ProjectData[] | null {
+    try {
+      const cached = this.loadFromLocalStorage<ProjectData[]>(STORAGE_KEYS.PROJECTS);
+      return cached;
+    } catch (error) {
+      logError('ApiStorage', 'Ошибка загрузки из localStorage', error);
+      return null;
+    }
   }
 
   /**
