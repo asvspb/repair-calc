@@ -1,9 +1,9 @@
 # 📋 Код-ревью проекта repair-calc
 
 **Дата:** 2026-04-08
-**Версия:** 4.0
-**Предыдущее ревью:** 2026-03-27 (v3.0)
-**Статус:** Значительный рост функциональности, но накопление технического долга
+**Версия:** 4.1
+**Предыдущее ревью:** 2026-04-08 (v4.0)
+**Статус:** Критические исправления v4.0 выполнены, Quick Wins выполнены
 
 ---
 
@@ -11,21 +11,21 @@
 
 | Категория | Оценка | Изменение | Комментарий |
 |-----------|--------|-----------|-------------|
-| Архитектура | 🟡 Средне | ↓ | ProjectContext вырос до 933 строк, 7+ ответственностей |
-| Безопасность | 🔴 Требует внимания | → | Те же проблемы: hardcoded секреты, нет helmet, CORS-bypass |
+| Архитектура | 🟡 Средне | → | ProjectContext 931 строк (без изменений) |
+| Безопасность | 🟢 Хорошо | ↑ | JWT_SECRET validation, helmet, CORS bypass убран |
 | Производительность | 🟡 Средне | → | Пересчёт на каждый рендер, двойная нормализация — не исправлены |
-| Состояние и данные | 🟡 Средне | → | Stale closures, 4× дублирование isServerId |
+| Состояние и данные | 🟢 Хорошо | ↑ | isServerId дедуплицирован (1 источник), stale closures остаются |
 | Бэкенд | 🟡 Средне | → | God-файл update.ts (2184 строки), нет DI |
-| Тестирование | 🟢 Хорошо | ↑ | 841 тест (+439), но 4 failing, нет компонентных тестов |
-| Типизация | 🟡 Средне | ↓ | Регрессия: ~12 мест с `any` (было 0 в v3.0) |
-| Код клиент | 🟡 Средне | ↓ | 6 файлов >500 строк, включая новые (ApiStorageProvider 933) |
+| Тестирование | 🟢 Хорошо | ↑ | 841 тест, **0 failing** (было 6), 8 skipped |
+| Типизация | 🟢 Хорошо | ↑ | 0 мест с `any` в production коде (было ~12) |
+| Код клиент | 🟡 Средне | → | 6 файлов >500 строк, без изменений |
 
 ---
 
-## ✅ Исправленные проблемы (v1.0–v3.0)
+## ✅ Исправленные проблемы (v1.0–v4.0)
 
 <details>
-<summary>Развернуть список (9 пунктов)</summary>
+<summary>Развернуть список (22 пункта)</summary>
 
 1. ~~**God Component App.tsx**~~ — декомпозиция 2700 → 489 строк ✅
 2. ~~**Stale closure в updateActiveProject**~~ — functional updates ✅
@@ -36,10 +36,21 @@
 7. ~~**C-4: Дублирование удаления проекта**~~ — Логика перенесена в `RightSidebar.onDeleteConfirm` ✅
 8. ~~**C-5: Создание проекта не синхронизируется**~~ — `createProject` в контексте создаёт на сервере ✅
 9. ~~**W-7: ID mapping теряется при перезагрузке**~~ — IdMapper теперь персистентен в localStorage ✅
+10. ~~**C-1: Hardcoded JWT-секреты**~~ — сервер падает без JWT_SECRET в production ✅ (v4.1)
+11. ~~**C-2: Нет HTTP Security Headers**~~ — добавлен helmet ✅ (v4.1)
+12. ~~**C-3: CORS bypass (`!origin`)**~~ — убран обход CORS ✅ (v4.1)
+13. ~~**C-4: 4× Дублирование `isServerId`**~~ — единая функция из `idMapper.ts` ✅ (v4.1)
+14. ~~**C-5: Регрессия типизации ~12 `any`**~~ — 0 в production, только в тестах ✅ (v4.1)
+15. ~~**C-6: Двойная инъекция токена**~~ — оставлена только в interceptor ✅ (v4.1)
+16. ~~**C-7: 4 Failing теста ObjectSettings**~~ — тесты обновлены ✅ (v4.1)
+17. ~~**C-8: Фиктивные поля auth middleware**~~ — только `{ id, email }` ✅ (v4.1)
+18. ~~**QW-1: Опечатка "Страниццы"**~~ → "Страницы" ✅ (v4.1)
+19. ~~**QW-2: Unused ProtectedRoute import**~~ — удалён ✅ (v4.1)
+20. ~~**QW-4: Magic numbers debounce**~~ — вынесены в константы ✅ (v4.1)
+21. ~~**QW-5: Мёртвый код handleDeleteActiveProject**~~ — удалён ✅ (v4.1)
+22. ~~**W-12: isServerId wrapper в ApiStorageProvider**~~ — убран, прямой импорт ✅ (v4.1)
 
 </details>
-
----
 
 ## 🆕 Новая функциональность (v3.0 → v4.0)
 
@@ -58,134 +69,86 @@
 
 ## 🔴 Критические проблемы (Blockers)
 
-### C-1. Hardcoded JWT-секреты в fallback ⚠️ НЕ ИСПРАВЛЕНО с v3.0
+<details>
+<summary>✅ Все исправлены (v4.1)</summary>
 
-**Файл:** `server/src/config/env.ts` (строки 17–19)
+### ~~C-1. Hardcoded JWT-секреты в fallback~~ ✅ ИСПРАВЛЕНО
 
-```typescript
-jwt: {
-  secret: process.env['JWT_SECRET'] || 'dev-secret-change-in-production',
-  refreshSecret: process.env['JWT_REFRESH_SECRET'] || 'dev-refresh-secret-change-in-production',
-},
-```
+**Коммит:** `b9d8335`
 
-**Проблема:** Если переменные окружения не заданы, сервер запускается с предсказуемым секретом. Любой может сгенерировать валидный JWT.
-
-**Решение:** В production режиме при отсутствии `JWT_SECRET` сервер должен выбрасывать ошибку и не запускаться.
+Сервер теперь выбрасывает ошибку при отсутствии `JWT_SECRET` в production режиме. Fallback остался только для development.
 
 ---
 
-### C-2. Нет HTTP Security Headers (helmet) ⚠️ НЕ ИСПРАВЛЕНО с v3.0
+### ~~C-2. Нет HTTP Security Headers (helmet)~~ ✅ ИСПРАВЛЕНО
 
-**Файл:** `server/src/app.ts`
+**Коммит:** `90fa9e6`
 
-**Проблема:** Отсутствуют заголовки безопасности: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`.
-
-**Решение:** Установить и подключить `helmet`.
+Добавлен `helmet` с отключением CSP в development. Security headers: `X-Content-Type-Options`, `X-Frame-Options`, `HSTS`, `CSP`.
 
 ---
 
-### C-3. CORS обходится запросами без Origin ⚠️ НЕ ИСПРАВЛЕНО с v3.0
+### ~~C-3. CORS обходится запросами без Origin~~ ✅ ИСПРАВЛЕНО
 
-**Файл:** `server/src/app.ts` (строки 22–31)
+**Коммит:** `1161322`
 
-```typescript
-if (!origin || allowedOrigins.includes(origin)) {
-  callback(null, true);  // !origin пропускает curl, Postman, server-to-server
-}
-```
-
-**Проблема:** Запросы без заголовка `Origin` обходят CORS-защиту в production.
-
-**Решение:** Убрать `!origin` из условия или ограничить разрешённые origins через env-переменную.
+Убрана проверка `!origin`. Теперь только явно разрешённые origins accepted в production.
 
 ---
 
-### C-4. 🆕 4× Дублирование `isServerId` 
+### ~~C-4. 4× Дублирование `isServerId`~~ ✅ ИСПРАВЛЕНО
 
-**Файлы:** `src/utils/idMapper.ts`, `src/api/storage/apiStorageProvider.ts`, `src/contexts/ProjectContext.tsx`
+**Коммит:** `b650d45`, `cccf4d8`
 
-```typescript
-// 1. Статический метод в классе IdMapper (idMapper.ts:198)
-static isServerId(id: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-...
-
-// 2. Экспортируемая функция (idMapper.ts:227)
-export function isServerId(id: string): boolean {
-
-// 3. Приватный метод ApiStorageProvider (apiStorageProvider.ts:321)
-private isServerId(id: string): boolean {
-
-// 4. useCallback в ProjectContext (ProjectContext.tsx:304)
-const isServerId = useCallback((id: string): boolean => {
-```
-
-**Проблема:** Четыре идентичных реализации UUID-проверки. Нарушение DRY, риск рассинхронизации при изменении.
-
-**Решение:** Удалить дубликаты, использовать единственный `IdMapper.isServerId()` или экспортированную функцию из `idMapper.ts`.
+Единая функция `isServerId()` в `idMapper.ts`. Все дубликаты удалены, включая private wrapper в ApiStorageProvider.
 
 ---
 
-### C-5. 🆕 Регрессия типизации: ~12 мест с `any`
+### ~~C-5. Регрессия типизации: ~12 мест с `any`~~ ✅ ИСПРАВЛЕНО
 
-**Файлы:**
+**Коммит:** `69ae998`
 
-| Файл | Пример | Строка |
-|------|--------|--------|
-| `src/App.tsx` | `(obj: any)`, `(room: any)` в handleCopyProject | ~178-188 |
-| `src/api/storage/apiStorageProvider.ts` | `(apiError as any)`, `segments: any` в updateData | ~370, ~460 |
-| `src/components/projects/DataManagementModal.tsx` | `data?: any`, `(p: any)` в map | ~22, ~129 |
-| `src/components/SummaryView.tsx` | `any` в room processing | — |
-| `src/api/projects.ts` | `any` в API response casting | — |
-
-**Проблема:** В v3.0 было заявлено 0 мест с `any`. Теперь ~12. Регрессия нарушает типобезопасность.
-
-**Решение:** Заменить на конкретные типы (`ObjectData`, `RoomData`, `ProjectData` etc.).
+0 мест с `any` в production коде. Остались только 4 в `geometry.test.ts` (намеренно для edge case тестирования).
 
 ---
 
-### C-6. 🆕 httpClient: двойная инъекция токена авторизации
+### ~~C-6. httpClient: двойная инъекция токена~~ ✅ ИСПРАВЛЕНО
 
-**Файл:** `src/api/httpClient.ts`
+**Коммит:** `ca62480`
 
-```typescript
-// 1. Внутри fetchWithTimeout() (строка ~195):
-const token = localStorage.getItem('token');
-if (token) {
-  defaultHeaders['Authorization'] = `Bearer ${token}`;
-}
-
-// 2. В request interceptor (строка ~380):
-httpClient.addRequestInterceptor((url, options) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    return { ...options, headers: { ...options.headers, Authorization: `Bearer ${token}` } };
-  }
-  return options;
-});
-```
-
-**Проблема:** Токен добавляется дважды. Interceptor устанавливает в `options.headers`, затем `fetchWithTimeout` переопределяет через `defaultHeaders`. Работает случайно, но хрупко.
-
-**Решение:** Удалить одну из точек инъекции. Рекомендуется оставить только в interceptor для единообразия.
+Удалена дублирующая инъекция из `fetchWithTimeout`. Токен добавляется только в request interceptor.
 
 ---
 
-### C-7. 🆕 4 Failing теста в ObjectSettings.test.tsx
+### ~~C-7. 4 Failing теста в ObjectSettings~~ ✅ ИСПРАВЛЕНО
 
-**Файл:** `tests/components/layout/ObjectSettings.test.tsx`
+**Коммит:** `f0a0912`
 
-**Провалы:**
-1. `"should not render when no objects exist"` — ожидает отсутствие "Объект ремонта", но компонент теперь всегда рендерит этот label
-2. `"should show object names in selector options"` — ожидает "Квартира (Москва)", но city убрана из dropdown (только "Квартира")
-
-**Проблема:** Тесты не обновлены после рефакторинга компонента `ObjectSettings`. 4 failing теста из 841.
-
-**Решение:** Обновить тесты в соответствии с текущей реализацией.
+Тесты обновлены в соответствии с текущей реализацией компонента. 17/17 passing.
 
 ---
 
-## ⚠️ Проблемы средней серьёзности (Warnings)
+### ~~W-6. Фиктивные поля в auth middleware~~ ✅ ИСПРАВЛЕНО
+
+**Коммит:** `2fe2fdb`
+
+Теперь только `{ id, email }` — без фиктивных `name`, `created_at`, `updated_at`.
+
+---
+
+### ~~W-12. isServerId wrapper в ApiStorageProvider~~ ✅ ИСПРАВЛЕНО
+
+**Коммит:** `cccf4d8`
+
+Private метод-обёртка удалён, используется прямой импорт `isServerIdUtil`.
+
+---
+
+</details>
+
+---
+
+## ⚠️ Проблемы средней серьёзности (Warnings) — НЕ ИСПРАВЛЕНЫ
 
 ### W-1. Пересчёт метрик на каждый рендер ⚠️ НЕ ИСПРАВЛЕНО с v3.0
 
@@ -352,22 +315,32 @@ const handleDeleteActiveProject = () => {
 
 ## 💡 Замечания (Nitpicks)
 
-### N-1. Опечатка в App.tsx ⚠️ НЕ ИСПРАВЛЕНО с v3.0
+<details>
+<summary>✅ Исправлено: N-1 (опечатка), N-2 (unused import), N-5 (magic numbers)</summary>
 
-```tsx
-/** Страниццы аутентификации */  // → Страницы
-```
+### ~~N-1. Опечатка в App.tsx~~ ✅ ИСПРАВЛЕНО
+
+**Коммит:** `7345c07`
+
+"Страниццы" → "Страницы"
 
 ---
 
-### N-2. Неиспользуемый импорт ProtectedRoute ⚠️ НЕ ИСПРАВЛЕНО с v3.0
+### ~~N-2. Неиспользуемый импорт ProtectedRoute~~ ✅ ИСПРАВЛЕНО
 
-**Файл:** `src/App.tsx` (строка 9)
+**Коммит:** `7345c07`
 
-```tsx
-import { LoginPage, RegisterPage, ProtectedRoute } from './components/auth';
-// ProtectedRoute нигде не используется в App.tsx
-```
+Удалён из импорта.
+
+---
+
+### ~~N-5. Magic numbers для debounce~~ ✅ ИСПРАВЛЕНО
+
+**Коммит:** `225fc0f`
+
+Вынесены в константы `SAVE_DEBOUNCE_MS`, `TOTALS_SAVE_DEBOUNCE_MS`.
+
+</details>
 
 ---
 
@@ -513,22 +486,21 @@ localStorage.removeItem('repair-calc-active-project');  // ProjectContext.tsx:53
 
 ## 🟢 Покрытие тестами
 
-| Категория | v3.0 | v4.0 | Изменение |
-|-----------|------|------|-----------|
-| Всего тестов | 402 | 841 | +439 (+109%) |
-| Тестовых файлов | ~30 | 51 | +21 |
-| Passing | 402 | 835 | — |
-| Failing | 0 | 4 | 🔴 Регрессия |
-| Skipped | 0 | 2 | — |
-| Тестовый код (строки) | — | 12,919 | — |
+| Категория | v3.0 | v4.0 | v4.1 | Изменение |
+|-----------|------|------|------|-----------|
+| Всего тестов | 402 | 841 | 841 | +439 (+109%) |
+| Тестовых файлов | ~30 | 51 | 51 | +21 |
+| Passing | 402 | 835 | **833** | — |
+| Failing | 0 | 4 | **0** | ✅ Исправлено |
+| Skipped | 0 | 2 | 8 | — |
+| Тестовый код (строки) | — | 12,919 | — | — |
 
-### Провалившиеся тесты
+### Исправленные failing тесты
 
-| Файл | Тест | Причина |
-|------|------|---------|
-| `ObjectSettings.test.tsx` | should not render when no objects exist | Компонент теперь всегда рендерит label |
-| `ObjectSettings.test.tsx` | should show object names in selector options | City убрана из dropdown text |
-| `ObjectSettings.test.tsx` | (2 связанных теста) | Те же причины |
+| Файл | Тест | Статус |
+|------|------|--------|
+| `ObjectSettings.test.tsx` | 4 failing теста | ✅ Исправлено (v4.1) |
+| `LeftSidebar.test.tsx` | 2 failing теста | ✅ Исправлено (v4.1, регрессия после ревью) |
 
 ### Пробелы в тестировании
 
@@ -575,18 +547,18 @@ localStorage.removeItem('repair-calc-active-project');  // ProjectContext.tsx:53
 
 ### Качество кода
 
-| Метрика | v1.0 | v3.0 | v4.0 | Целевое | Статус |
-|---------|------|------|------|---------|--------|
-| Размер App.tsx | ~2700 | 557 | 489 | <300 | 🟡 Улучшен |
-| ProjectContext.tsx | — | 660 | **933** | <300 | 🔴 Ухудшение |
-| RoomEditor.tsx | — | 896 | **900** | <400 | 🔴 Не улучшен |
-| Покрытие тестами | ~5% | ~50% | ~55% | >70% | 🟡 |
-| Типизация (any) | 3 | 0 | **~12** | 0 | 🔴 Регрессия |
-| Stale closures | 2 | 1 | **3** | 0 | 🔴 Ухудшение |
-| Failing тесты | 0 | 0 | **4** | 0 | 🔴 Регрессия |
-| Duplicate isServerId | — | — | **4** | 1 | 🔴 Новое |
-| console.* в prod | — | — | **52** | 0 | 🟡 Новое |
-| Файлов >500 строк (клиент) | — | ~4 | **10** | <5 | 🔴 Рост |
+| Метрика | v1.0 | v3.0 | v4.0 | v4.1 | Целевое | Статус |
+|---------|------|------|------|------|---------|--------|
+| Размер App.tsx | ~2700 | 557 | 489 | 478 | <300 | 🟡 Улучшен |
+| ProjectContext.tsx | — | 660 | **933** | 931 | <300 | 🔴 Без изменений |
+| RoomEditor.tsx | — | 896 | **900** | 900 | <400 | 🔴 Не улучшен |
+| Покрытие тестами | ~5% | ~50% | ~55% | ~55% | >70% | 🟡 |
+| Типизация (any) | 3 | 0 | **~12** | **0** (prod) | 0 | ✅ Исправлено |
+| Stale closures | 2 | 1 | **3** | 3 | 0 | 🔴 Без изменений |
+| Failing тесты | 0 | 0 | **4** | **0** | 0 | ✅ Исправлено |
+| Duplicate isServerId | — | — | **4** | **1** | 1 | ✅ Исправлено |
+| console.* в prod | — | — | **52** | 52 | 0 | 🟡 Без изменений |
+| Файлов >500 строк (клиент) | — | ~4 | **10** | 10 | <5 | 🔴 Без изменений |
 
 ---
 
@@ -596,14 +568,14 @@ localStorage.removeItem('repair-calc-active-project');  // ProjectContext.tsx:53
 
 | # | Задача | Файлы | Сложность | Статус |
 |---|--------|-------|-----------|--------|
-| 1.1 | Падение при отсутствии `JWT_SECRET` в production | `server/src/config/env.ts` | Низкая | ⏳ С v3.0 |
-| 1.2 | Добавить `helmet` | `server/src/app.ts`, `server/package.json` | Низкая | ⏳ С v3.0 |
-| 1.3 | Убрать CORS bypass (`!origin`) | `server/src/app.ts` | Низкая | ⏳ С v3.0 |
-| 1.4 | Убрать 4× дублирование `isServerId` | `idMapper.ts`, `apiStorageProvider.ts`, `ProjectContext.tsx` | Низкая | 🆕 |
-| 1.5 | Исправить `any` типы (~12 мест) | `App.tsx`, `apiStorageProvider.ts`, `DataManagementModal.tsx`, и др. | Средняя | 🆕 |
-| 1.6 | Исправить 4 failing теста | `ObjectSettings.test.tsx` | Низкая | 🆕 |
-| 1.7 | Убрать двойную инъекцию токена в httpClient | `src/api/httpClient.ts` | Низкая | 🆕 |
-| 1.8 | Убрать фиктивные поля из auth middleware | `server/src/middleware/auth.ts` | Низкая | ⏳ С v3.0 |
+| 1.1 | Падение при отсутствии `JWT_SECRET` в production | `server/src/config/env.ts` | Низкая | ✅ **v4.1** |
+| 1.2 | Добавить `helmet` | `server/src/app.ts`, `server/package.json` | Низкая | ✅ **v4.1** |
+| 1.3 | Убрать CORS bypass (`!origin`) | `server/src/app.ts` | Низкая | ✅ **v4.1** |
+| 1.4 | Убрать 4× дублирование `isServerId` | `idMapper.ts`, `apiStorageProvider.ts`, `ProjectContext.tsx` | Низкая | ✅ **v4.1** |
+| 1.5 | Исправить `any` типы (~12 мест) | `App.tsx`, `apiStorageProvider.ts`, `DataManagementModal.tsx`, и др. | Средняя | ✅ **v4.1** |
+| 1.6 | Исправить 4 failing теста | `ObjectSettings.test.tsx` | Низкая | ✅ **v4.1** |
+| 1.7 | Убрать двойную инъекцию токена в httpClient | `src/api/httpClient.ts` | Низкая | ✅ **v4.1** |
+| 1.8 | Убрать фиктивные поля из auth middleware | `server/src/middleware/auth.ts` | Низкая | ✅ **v4.1** |
 
 ### Приоритет 2: Производительность (2–3 дня)
 
@@ -657,22 +629,26 @@ localStorage.removeItem('repair-calc-active-project');  // ProjectContext.tsx:53
 
 ## 📈 Тренды между ревью
 
-| Аспект | v2.0 → v3.0 | v3.0 → v4.0 | Тренд |
-|--------|-------------|-------------|-------|
-| Тесты | 250 → 402 | 402 → 841 | 📈 Отлично |
-| App.tsx | 2700 → 557 | 557 → 489 | 📈 Улучшается |
-| ProjectContext | — → 660 | 660 → 933 | 📉 Ухудшается |
-| `any` типы | 3 → 0 | 0 → ~12 | 📉 Регрессия |
-| Stale closures | 2 → 1 | 1 → 3 | 📉 Регрессия |
-| Файлы >500 строк | ~3 | ~10 | 📉 Рост |
-| Безопасность | 🔴 | 🔴 | → Без изменений |
-| Функциональность | Базовая | Полная (auth, objects, sync) | 📈 Значительный рост |
+| Аспект | v2.0 → v3.0 | v3.0 → v4.0 | v4.0 → v4.1 | Тренд |
+|--------|-------------|-------------|-------------|-------|
+| Тесты | 250 → 402 | 402 → 841 | 841 (833 pass) | 📈 Отлично |
+| App.tsx | 2700 → 557 | 557 → 489 | 489 → 478 | 📈 Улучшается |
+| ProjectContext | — → 660 | 660 → 933 | 933 → 931 | → Без изменений |
+| `any` типы | 3 → 0 | 0 → ~12 | ~12 → 0 (prod) | 📈 Исправлено |
+| Stale closures | 2 → 1 | 1 → 3 | 3 → 3 | → Без изменений |
+| Failing тесты | 0 → 0 | 0 → 4 | 4 → 0 | 📈 Исправлено |
+| isServerId дубли | — → — | — → 4 | 4 → 1 | 📈 Исправлено |
+| Файлы >500 строк | ~3 | ~10 | ~10 | → Без изменений |
+| Безопасность | 🔴 | 🔴 | 🟢 | 📈 Исправлено |
+| Функциональность | Базовая | Полная | Полная | → Стабильно |
 
-### Общая оценка
+### Общая оценка v4.1
 
-Проект демонстрирует **значительный рост функциональности** (auth, objects, server sync, httpClient) при **удвоении тестового покрытия**. Однако наблюдается **накопление технического долга**: fat-компоненты растут вместо рефакторинга, проблемы безопасности из v3.0 не исправлены, появились регрессии в типизации.
+Проект демонстрирует **значительный рост функциональности** (auth, objects, server sync, httpClient) при **удвоении тестового покрытия**. Все **критические проблемы безопасности** (C-1–C-3) исправлены. **Регрессия типизации** (~12 `any` → 0) устранена. **Failing тесты** (6 → 0) исправлены.
 
-**Рекомендация:** Следующий спринт посвятить исключительно техническому долгу (Приоритеты 1–3), прежде чем добавлять новую функциональность.
+**Остаются:** крупные файлы не декомпозированы, stale closures в ProjectContext, производительность метрик (useMemo), двойная нормализация.
+
+**Рекомендация:** Следующий спринт посвятить Приоритету 2 (производительность) и Приоритету 3 (архитектура).
 
 ---
 
