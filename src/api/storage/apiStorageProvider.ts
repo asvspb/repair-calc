@@ -9,6 +9,7 @@ import type { ProjectData, RoomData } from '../../types';
 import * as projectsApi from '../projects';
 import * as roomsApi from '../rooms';
 import { getAllRooms } from '../../utils/projectObjects';
+import { isServerId as isServerIdUtil } from '../../utils/idMapper';
 import {
   logApiRequest,
   logApiSuccess,
@@ -319,9 +320,7 @@ export class ApiStorageProvider implements IStorageProvider {
    * Проверка, является ли ID серверным UUID
    */
   private isServerId(id: string): boolean {
-    // UUID формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(id);
+    return isServerIdUtil(id);
   }
 
   /**

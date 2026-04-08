@@ -18,7 +18,7 @@ import {
   logDebug,
 } from '../utils/logger';
 import { runMigrations, needsMigration } from '../utils/migration';
-import { idMapper, IdMapper } from '../utils/idMapper';
+import { idMapper, IdMapper, isServerId } from '../utils/idMapper';
 import { saveQueue } from '../utils/saveQueue';
 import {
   migrateProjectToObjects,
@@ -303,12 +303,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
     loadData();
   }, [isAuthenticated, authLoading, getApiProvider]);
-
-  // Проверка, является ли ID серверным UUID
-  const isServerId = useCallback((id: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(id);
-  }, []);
 
   // Расчёт и сохранение итогов проекта
   const saveCalculatedTotals = useCallback(async (project: ProjectData) => {
