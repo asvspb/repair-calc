@@ -77,6 +77,7 @@ describe('LeftSidebar', () => {
     onAddObject: vi.fn(),
     city: 'Москва',
     onCityChange: vi.fn(),
+    hasProjects: true,
   };
 
   beforeEach(() => {

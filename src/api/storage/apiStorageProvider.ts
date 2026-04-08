@@ -317,13 +317,6 @@ export class ApiStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Проверка, является ли ID серверным UUID
-   */
-  private isServerId(id: string): boolean {
-    return isServerIdUtil(id);
-  }
-
-  /**
    * Асинхронное сохранение проектов
    * Синхронизирует проекты и комнаты с сервером
    * Использует маппинг ID для предотвращения дублирования
@@ -354,7 +347,7 @@ export class ApiStorageProvider implements IStorageProvider {
       const syncPromises: Promise<void>[] = [];
       
       for (const project of projects) {
-        const isServerProject = this.isServerId(project.id);
+        const isServerProject = isServerIdUtil(project.id);
         const existsOnServer = existingProjectIds.has(project.id);
 
         // Проверяем есть ли маппинг для локального ID
@@ -551,7 +544,7 @@ export class ApiStorageProvider implements IStorageProvider {
 
         // Удаляем локальные дубликаты из localStorage
         const localIdsToRemove = new Set(migratedProjects.map(m => m.localId));
-        const cleanedProjects = updatedProjects.filter(p => !localIdsToRemove.has(p.id) || this.isServerId(p.id));
+        const cleanedProjects = updatedProjects.filter(p => !localIdsToRemove.has(p.id) || isServerIdUtil(p.id));
 
         // Обновляем localStorage только серверными версиями
         localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(cleanedProjects));
@@ -589,7 +582,7 @@ export class ApiStorageProvider implements IStorageProvider {
 
     // Синхронизируем комнаты последовательно с rate limiting
     for (const room of allRooms) {
-      const roomExistsOnServer = this.isServerId(room.id) && existingRoomIds.has(room.id);
+      const roomExistsOnServer = isServerIdUtil(room.id) && existingRoomIds.has(room.id);
 
       try {
         if (roomExistsOnServer) {
