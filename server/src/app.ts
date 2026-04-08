@@ -25,12 +25,10 @@ export function createApp(): express.Application {
   ];
   
   app.use(cors({
-    origin: config.nodeEnv === 'development' 
+    origin: config.nodeEnv === 'development'
       ? allowedOrigins
       : (origin, callback) => {
-          // Разрешаем запросы без origin (например, от мобильных приложений)
-          // или от разрешённых origins
-          if (!origin || allowedOrigins.includes(origin)) {
+          if (allowedOrigins.includes(origin)) {
             callback(null, true);
           } else {
             callback(new Error('Not allowed by CORS'));
