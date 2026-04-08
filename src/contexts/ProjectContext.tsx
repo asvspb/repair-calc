@@ -39,6 +39,10 @@ import {
 // Default object name when none is provided
 const DEFAULT_OBJECT_NAME = 'Основной объект';
 
+// Debounce delays for auto-save (ms)
+const SAVE_DEBOUNCE_MS = 2000;
+const TOTALS_SAVE_DEBOUNCE_MS = 2000;
+
 // Generate a unique ID with collision resistance
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).substring(2, 10)}`;
@@ -354,7 +358,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
 
     totalsSaveTimeoutRef.current = setTimeout(() => {
       saveCalculatedTotals(project);
-    }, 2000); // 2 секунды задержка после последнего изменения
+    }, TOTALS_SAVE_DEBOUNCE_MS);
   }, [saveCalculatedTotals]);
 
   // Автосохранение с debounce и персистентной очередью
@@ -407,7 +411,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         // Добавляем в очередь с персистентностью
         saveQueue.enqueue(saveTask, projectsToSave);
       }
-    }, 2000); // Увеличено с 1000 до 2000ms для предотвращения rate limiting
+    }, SAVE_DEBOUNCE_MS);
   }, [isAuthenticated, getApiProvider]);
 
   // Обновление проектов
