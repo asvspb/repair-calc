@@ -173,11 +173,11 @@ function AppContent() {
 
     // Re-generate IDs for objects and rooms to avoid conflicts
     if (copiedProject.objects) {
-      copiedProject.objects = copiedProject.objects.map((obj: any) => ({
+      copiedProject.objects = copiedProject.objects.map((obj: ObjectData) => ({
         ...obj,
         id: `obj-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         projectId: copiedProject.id,
-        rooms: obj.rooms?.map((room: any) => ({
+        rooms: obj.rooms?.map((room: RoomData) => ({
           ...room,
           id: `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           objectId: obj.id,

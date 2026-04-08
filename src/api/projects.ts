@@ -39,6 +39,18 @@ interface ApiProject {
   }>;
 }
 
+interface ApiObjectWithRooms {
+  id: string;
+  project_id: string;
+  name: string;
+  city: string | null;
+  sort_order: number;
+  use_ai_pricing: boolean;
+  last_ai_price_update: string | null;
+  version: number;
+  rooms: ApiRoom[];
+}
+
 interface ApiRoom {
   id: string;
   project_id: string;
@@ -67,7 +79,7 @@ interface ApiRoom {
  */
 function apiToClientProject(apiProject: ApiProject): ProjectData {
   // Если сервер вернул objects, используем новую структуру
-  if ((apiProject as any).objects) {
+  if (apiProject.objects) {
     return {
       id: apiProject.id,
       name: apiProject.name,
@@ -75,7 +87,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
       useAiPricing: apiProject.use_ai_pricing,
       lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
       version: apiProject.version,
-      objects: ((apiProject as any).objects || []).map((obj: any) => ({
+      objects: (apiProject.objects || []).map((obj) => ({
         id: obj.id,
         projectId: obj.project_id,
         name: obj.name,
@@ -336,8 +348,8 @@ export async function updateProjectWithObjects(
       rooms?: RoomData[];
     }>;
   }
-): Promise<{ status: string; data: ApiProject & { objects: any[] } }> {
-  return fetchJson<{ status: string; data: ApiProject & { objects: any[] } }>(
+): Promise<{ status: string; data: ApiProject & { objects: ApiObjectWithRooms[] } }> {
+  return fetchJson<{ status: string; data: ApiProject & { objects: ApiObjectWithRooms[] } }>(
     `/api/projects/${id}/with-objects`,
     {
       method: 'PUT',

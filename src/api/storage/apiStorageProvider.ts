@@ -453,14 +453,14 @@ export class ApiStorageProvider implements IStorageProvider {
             } catch (error) {
               // Детальное логирование ошибки 400
               if (error instanceof Error) {
-                const apiError = error as any;
-                if (apiError.statusCode === 400 || apiError.data) {
+                const apiError = error as Record<string, unknown>;
+                if (apiError['statusCode'] === 400 || apiError['data']) {
                   logError('ApiStorage', 'Ошибка 400 при миграции проекта', error, {
                     projectId: project.id,
                     projectName: project.name,
-                    statusCode: apiError.statusCode,
-                    errorData: apiError.data,
-                    errorMessage: apiError.message,
+                    statusCode: apiError['statusCode'],
+                    errorData: apiError['data'],
+                    errorMessage: apiError['message'],
                   });
                 } else {
                   logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
@@ -716,13 +716,13 @@ export class ApiStorageProvider implements IStorageProvider {
           length: number;
           width: number;
           height: number;
-          segments: any;
-          obstacles: any;
-          wall_sections: any;
-          sub_sections: any;
-          windows: any;
-          doors: any;
-          works: any;
+          segments: unknown;
+          obstacles: unknown;
+          wall_sections: unknown;
+          sub_sections: unknown;
+          windows: unknown;
+          doors: unknown;
+          works: unknown;
           sort_order?: number;
         }>;
       }>;

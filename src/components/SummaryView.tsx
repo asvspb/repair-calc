@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import type { ProjectData, ObjectData } from '../types';
+import type { ProjectData, ObjectData, RoomData } from '../types';
 import { calculateRoomMetrics } from '../utils/geometry';
 import { calculateRoomCosts } from '../utils/costs';
 import { SummaryMaterials, SummaryTools, SummaryWorks } from './summary';
@@ -22,7 +22,7 @@ type ObjectSummary = {
   totalToolsCost: number;
   grandTotal: number;
   rooms: Array<{
-    room: any;
+    room: RoomData;
     costs: ReturnType<typeof calculateRoomCosts>;
     metrics: ReturnType<typeof calculateRoomMetrics>;
   }>;
@@ -39,7 +39,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
   const shouldGroupByObject = groupByObject && hasMultipleObjects;
 
   // Calculate room-level metrics
-  const calculateRoomData = (rooms: any[]) => {
+  const calculateRoomData = (rooms: RoomData[]) => {
     let totalFloorArea = 0;
     let totalWallArea = 0;
     let totalVolume = 0;

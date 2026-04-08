@@ -23,7 +23,13 @@ export interface ApiObject {
 }
 
 export interface ApiObjectWithRooms extends ApiObject {
-  rooms: any[];
+  rooms: Array<{
+    id: string;
+    object_id: string;
+    name: string;
+    sort_order: number;
+    [key: string]: unknown;
+  }>;
 }
 
 // ═══════════════════════════════════════════════════════

@@ -20,7 +20,7 @@ type ImportStatus = {
   type: 'success' | 'error' | 'confirm';
   message: string;
   data?: {
-    projects: any[];
+    projects: ProjectData[];
     activeProjectId: string;
     workTemplates?: WorkTemplate[];
   };
@@ -216,7 +216,7 @@ function DataTabContent() {
       const serverProjects = await apiProvider.loadProjectsAsync();
 
       if (serverProjects.length > 0) {
-        const migratedProjects = serverProjects.map((p: any) => migrateProjectToObjects(p));
+        const migratedProjects = serverProjects.map((p) => migrateProjectToObjects(p));
         updateProjects(migratedProjects);
 
         setImportStatus({
