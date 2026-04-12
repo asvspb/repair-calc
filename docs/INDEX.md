@@ -310,13 +310,12 @@ npm run lint         # TypeScript type check
 
 | Document | Description |
 |----------|-------------|
-| [TODO.md](./TODO.md) | Текущие задачи |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | Техническое задание |
-| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты code review |
-| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [TODO.md](./TODO.md) | Рабочий бэклог |
+| [PROGRESS.md](./PROGRESS.md) | Сводка этапов и статуса |
 | [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
-| [OBJECT_MANAGEMENT_SPEC.md](./OBJECT_MANAGEMENT_SPEC.md) | Спецификация управления объектами |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | Базовое ТЗ (v1.1) |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | 🆕 Правила ведения документации |
 
 ---
 

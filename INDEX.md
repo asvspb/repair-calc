@@ -131,11 +131,11 @@ repair-calc/
 
 | Файл | Назначение |
 |------|----------|
-| `docs/TECHNICAL-SPECIFICATION.md` | 🆕 Техническое задание на архитектуру |
-| `docs/LOGGING.md` | 🆕 Полное руководство по логированию |
-| `docs/LOGGING-CHEATSHEET.md` | 🆕 Шпаргалка по командам логирования |
-| `docs/README.md` | 🆕 Индекс документации |
-| `docs/OBJECTS_SAVE_FIX_COMPLETED.md` | 🆕 Отчёт о завершении Objects Save Fix (2026-04-04) |
+| `docs/TECHNICAL-SPECIFICATION.md` | Техническое задание на архитектуру |
+| `docs/LOGGING.md` | Полное руководство по логированию |
+| `docs/LOGGING-CHEATSHEET.md` | Шпаргалка по командам логирования |
+| `docs/README.md` | Индекс документации |
+| `docs/AI_DOCUMENTATION_GUIDELINES.md` | 🆕 Инструкция для будущих ИИ |
 
 ---
 
@@ -397,8 +397,7 @@ npm run test:e2e:ui
 - [docs/LOGGING-CHEATSHEET.md](./docs/LOGGING-CHEATSHEET.md) — Шпаргалка
 - [docs/README.md](./docs/README.md) — Индекс документации
 - [docs/TECHNICAL-SPECIFICATION.md](./docs/TECHNICAL-SPECIFICATION.md) — ТЗ (v1.1)
-- [docs/IMPLEMENTATION_PLAN.md](./docs/IMPLEMENTATION_PLAN.md) — План реализации
-- [docs/MIGRATION-COMPLETE.md](./docs/MIGRATION-COMPLETE.md) — ✅ Отчёт о миграции
+- [docs/AI_DOCUMENTATION_GUIDELINES.md](./docs/AI_DOCUMENTATION_GUIDELINES.md) — 🆕 Правила по ведению документации
 
 ---
 
