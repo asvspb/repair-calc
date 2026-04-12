@@ -109,6 +109,7 @@ export function RightSidebar({
               onClick={onDataManagement}
               className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               title="Настройки"
+              data-testid="settings-btn"
             >
               <Settings className="w-5 h-5" />
               <span className="text-sm">Настройки</span>
@@ -175,6 +176,7 @@ export function RightSidebar({
           <button
             onClick={onNewProject}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+            data-testid="new-project-btn"
           >
             <Plus className="w-4 h-4" />
             Новый проект

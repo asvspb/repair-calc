@@ -428,6 +428,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
               {/* Add button */}
               <button
                 onClick={handleAdd}
+                data-testid="add-work-btn"
                 className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors cursor-pointer"
               >
                 Добавить работу

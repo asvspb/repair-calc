@@ -42,7 +42,7 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const displayError = validationError || error;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4" data-testid="login-form">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -72,6 +72,7 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
                 <input
                   id="email"
                   type="email"
+                  data-testid="login-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
@@ -91,6 +92,7 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
                 <input
                   id="password"
                   type="password"
+                  data-testid="login-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"

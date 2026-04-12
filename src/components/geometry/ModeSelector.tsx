@@ -19,6 +19,7 @@ export function ModeSelector({ currentMode, onModeChange }: ModeSelectorProps) {
         <button
           key={mode.value}
           onClick={() => onModeChange(mode.value)}
+          data-testid={`geom-mode-${mode.value}`}
           className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
             currentMode === mode.value
               ? 'bg-white text-indigo-600 shadow-sm'

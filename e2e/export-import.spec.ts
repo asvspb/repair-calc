@@ -1,7 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Export/Import Functionality', () => {
   test.beforeEach(async ({ page }) => {
+    // Clear localStorage to start fresh (but keep test mode)
+    await page.addInitScript(() => {
+      const testMode = localStorage.getItem('e2e-test-mode');
+      localStorage.clear();
+      if (testMode) localStorage.setItem('e2e-test-mode', testMode);
+    });
     await page.goto('/');
   });
 
@@ -91,41 +97,39 @@ test.describe('Export/Import Functionality', () => {
 
   test('should create backup', async ({ page }) => {
     await page.click('button:has-text("Экспорт/Импорт")');
-    
+
     // Кнопка создания резервной копии
-    const createBackupBtn = page.locator('button:has-text("Создать резервную копию")');
+    const createBackupBtn = page.getByRole('button', { name: 'Создать резервную копию' });
+    await expect(createBackupBtn).toBeVisible();
     
-    if (await createBackupBtn.isVisible()) {
-      await createBackupBtn.click();
-      await expect(page.locator('text=Резервная копия создана')).toBeVisible();
-    }
+    await createBackupBtn.click();
+    await expect(page.locator('text=Резервная копия создана')).toBeVisible();
   });
 
   test('should restore from backup', async ({ page }) => {
     // Сначала создаем резервную копию
     await page.click('button:has-text("Экспорт/Импорт")');
+
+    const createBackupBtn = page.getByRole('button', { name: 'Создать резервную копию' });
+    await expect(createBackupBtn).toBeVisible();
     
-    const createBackupBtn = page.locator('button:has-text("Создать резервную копию")');
-    
-    if (await createBackupBtn.isVisible()) {
-      await createBackupBtn.click();
-      await expect(page.locator('text=Резервная копия создана')).toBeVisible();
-      
-      // Изменяем данные
-      await page.click('button:has-text("Закрыть")');
-      await page.click('button:has-text("Комната 1")');
-      
-      const lengthInput = page.locator('label:has-text("Длина (м)") + input[type="number"]');
-      await lengthInput.fill('10');
-      await page.locator('h3:has-text("Габариты помещения")').click();
-      
-      // Восстанавливаем из резервной копии
-      await page.click('button:has-text("Экспорт/Импорт")');
-      await page.click('button:has-text("Восстановить из резервной копии")');
-      
-      // Проверяем, что данные восстановлены
-      await page.click('button:has-text("Закрыть")');
-      await expect(lengthInput).not.toHaveValue('10');
-    }
+    await createBackupBtn.click();
+    await expect(page.locator('text=Резервная копия создана')).toBeVisible();
+
+    // Изменяем данные
+    await page.click('button:has-text("Закрыть")');
+    await page.click('button:has-text("Комната 1")');
+
+    const lengthInput = page.locator('label:has-text("Длина (м)") + input[type="number"]');
+    await lengthInput.fill('10');
+    await page.locator('h3:has-text("Габариты помещения")').click();
+
+    // Восстанавливаем из резервной копии
+    await page.click('button:has-text("Экспорт/Импорт")');
+    await page.click('button:has-text("Восстановить из резервной копии")');
+
+    // Проверяем, что данные восстановлены
+    await page.click('button:has-text("Закрыть")');
+    await expect(lengthInput).not.toHaveValue('10');
   });
 });

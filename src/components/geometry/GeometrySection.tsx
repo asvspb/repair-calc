@@ -195,6 +195,7 @@ export function GeometrySection({
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
                   <NumberInput
+                    data-testid="geom-length"
                     value={room.length}
                     onChange={(v: number) => updateSimpleField('length', v)}
                     className="w-full"
@@ -204,6 +205,7 @@ export function GeometrySection({
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
                   <NumberInput
+                    data-testid="geom-width"
                     value={room.width}
                     onChange={(v: number) => updateSimpleField('width', v)}
                     className="w-full"
@@ -222,6 +224,7 @@ export function GeometrySection({
             <div>
               <label className="block text-sm text-gray-500 mb-1">Высота (м)</label>
               <NumberInput
+                data-testid="geom-height"
                 value={room.height}
                 onChange={(v: number) => updateRoomById(room.id, prev => ({ ...prev, height: v }))}
                 className="w-full"

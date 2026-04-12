@@ -292,12 +292,14 @@ export function RoomEditor({
       {/* Room header */}
       <div id="room-header-title" className="group flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <input
+          data-testid="room-header-title"
           className="text-2xl font-semibold bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full max-w-md"
           value={room.name}
           onChange={(e) => updateRoom({ ...room, name: e.target.value })}
         />
         <button
           onClick={deleteRoom}
+          data-testid="delete-room-btn"
           className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
           title="Удалить комнату"
         >
@@ -507,6 +509,7 @@ export function RoomEditor({
                         <div className="flex items-center gap-1">
                           <div className="relative flex-1">
                             <NumberInput
+                              data-testid="work-price-input"
                               value={work.workUnitPrice}
                               onChange={(v: number) =>
                                 handleWorkChange(work.id, 'workUnitPrice', v)

@@ -132,7 +132,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
         isGrandTotal ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-gray-100'
       }`}>
         <div className={`text-sm mb-1 ${isGrandTotal ? 'text-indigo-100' : 'text-gray-500'}`}>Стоимость, ₽</div>
-        <div className="text-2xl font-semibold">{Math.ceil(data.grandTotal).toLocaleString('ru-RU')}</div>
+        <div className="text-2xl font-semibold" data-testid="summary-total-cost">{Math.ceil(data.grandTotal).toLocaleString('ru-RU')}</div>
       </div>
     </div>
   );
@@ -157,10 +157,11 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
       {/* Rooms list */}
       <div className="divide-y divide-gray-100">
         {objSummary.rooms.map(({ room, costs }) => (
-          <div key={room.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div key={room.id} data-testid={`summary-room-${room.id}`} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <button
                 onClick={() => onRoomClick(room.id)}
+                data-testid={`summary-room-btn-${room.id}`}
                 className="font-medium text-left hover:text-indigo-600 transition-colors cursor-pointer"
               >
                 {room.name}
@@ -171,7 +172,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
                 )}
               </div>
             </div>
-            <div className="text-xl font-light">
+            <div className="text-xl font-light" data-testid={`room-cost-${room.id}`}>
               {Math.ceil(costs.total).toLocaleString('ru-RU')} ₽
             </div>
           </div>
@@ -220,10 +221,11 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
             {allRooms.map(room => {
               const costs = calculateRoomCosts(room);
               return (
-                <div key={room.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div key={room.id} data-testid={`summary-room-${room.id}`} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <button
                       onClick={() => onRoomClick(room.id)}
+                      data-testid={`summary-room-btn-${room.id}`}
                       className="font-medium text-lg text-left hover:text-indigo-600 transition-colors cursor-pointer"
                     >
                       {room.name}
@@ -234,7 +236,7 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="text-2xl font-light">
+                  <div className="text-2xl font-light" data-testid={`room-cost-${room.id}`}>
                     {Math.ceil(costs.total).toLocaleString('ru-RU')} ₽
                   </div>
                 </div>

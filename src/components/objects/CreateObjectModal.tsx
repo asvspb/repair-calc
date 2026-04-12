@@ -58,7 +58,7 @@ export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
           onClick={onClose}
         />
         
-        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in">
+        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in" data-testid="create-object-modal">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-xl font-semibold text-gray-900">

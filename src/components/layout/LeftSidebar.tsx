@@ -85,6 +85,7 @@ export function LeftSidebar({
         <button
           onClick={onAddRoom}
           disabled={!hasProjects}
+          data-testid="add-room-btn"
           title={!hasProjects ? 'Сначала создайте проект' : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all shadow-sm ${
             hasProjects
@@ -98,6 +99,7 @@ export function LeftSidebar({
         <button
           onClick={onAddObject}
           disabled={!hasProjects}
+          data-testid="add-object-btn"
           title={!hasProjects ? 'Сначала создайте проект' : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all ${
             hasProjects

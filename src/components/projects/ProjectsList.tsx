@@ -80,6 +80,7 @@ export function ProjectsList({
           return (
             <div
               key={project.id}
+              data-testid={`project-item-${project.id}`}
               className={`group px-4 py-2.5 border-t border-gray-100 transition-colors ${
                 isActive
                   ? 'bg-indigo-50'

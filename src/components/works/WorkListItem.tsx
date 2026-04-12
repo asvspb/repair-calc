@@ -52,6 +52,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
     <div
       ref={setNodeRef}
       style={style}
+      data-testid={`work-item-${work.id}`}
       className={`group rounded-xl border transition-colors duration-200 ${
         work.enabled
           ? 'border-indigo-100 bg-indigo-50/30'
@@ -98,6 +99,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
           >
             <div className="font-medium text-gray-900 truncate hover:text-indigo-600 transition-colors">
               <input
+                data-testid="work-name-input"
                 value={work.name}
                 onChange={(e) => onNameChange(work.id, e.target.value)}
                 onClick={(e) => e.stopPropagation()}

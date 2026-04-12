@@ -227,7 +227,7 @@ export function CreateProjectModal({
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
-        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in" data-testid="create-project-modal" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-xl font-semibold text-gray-900">

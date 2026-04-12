@@ -5,6 +5,7 @@ interface GeometryMetricsProps {
   area: number;
   perimeter: number;
   height?: number;
+  wallArea?: number;
   showVolume?: boolean;
   showSkirting?: boolean;
   doorsWidth?: number;
@@ -15,6 +16,7 @@ export function GeometryMetrics({
   area,
   perimeter,
   height = 0,
+  wallArea,
   showVolume = false,
   showSkirting = false,
   doorsWidth = 0,
@@ -25,11 +27,18 @@ export function GeometryMetrics({
 
   return (
     <div className={`flex flex-wrap gap-4 text-xs text-gray-500 ${className}`}>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" data-testid="metric-floor-area">
         <Square className="w-3.5 h-3.5 text-indigo-500" />
         <span className="font-medium">{area.toFixed(1)} м²</span>
         <span className="text-gray-400">площадь</span>
       </div>
+      {wallArea !== undefined && (
+        <div className="flex items-center gap-1.5" data-testid="metric-wall-area">
+          <Square className="w-3.5 h-3.5 text-indigo-500" />
+          <span className="font-medium">{wallArea.toFixed(1)} м²</span>
+          <span className="text-gray-400">стены</span>
+        </div>
+      )}
       <div className="flex items-center gap-1.5">
         <Ruler className="w-3.5 h-3.5 text-indigo-500" />
         <span className="font-medium">{perimeter.toFixed(1)} м</span>
