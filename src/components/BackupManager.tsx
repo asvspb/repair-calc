@@ -407,7 +407,9 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
             className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4">
+          <div 
+            data-testid="export-import-modal"
+            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Управление данными</h2>
               <button
@@ -496,6 +498,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Экспорт данных</h3>
                 <div className="space-y-2">
                   <button
+                    data-testid="export-json-btn"
                     onClick={handleExportJSON}
                     className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors cursor-pointer"
                   >
@@ -508,6 +511,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                   </button>
 
                   <button
+                    data-testid="export-csv-btn"
                     onClick={handleExportCSV}
                     className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
                   >
@@ -525,6 +529,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
               <div>
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Импорт данных</h3>
                 <input
+                  data-testid="import-file-input"
                   ref={fileInputRef}
                   type="file"
                   accept=".json"
@@ -532,6 +537,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                   className="hidden"
                 />
                 <button
+                  data-testid="restore-backup-btn"
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
                 >

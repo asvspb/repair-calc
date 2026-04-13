@@ -5,8 +5,12 @@ test.describe('Export/Import Functionality', () => {
     // Clear localStorage to start fresh (but keep test mode)
     await page.addInitScript(() => {
       const testMode = localStorage.getItem('e2e-test-mode');
+      const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
       localStorage.clear();
       if (testMode) localStorage.setItem('e2e-test-mode', testMode);
+      if (token) localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     });
     await page.goto('/');
   });

@@ -12,6 +12,7 @@ type ObjectSettingsProps = {
   city: string;
   onCityChange: (city: string) => void;
   hasProjects: boolean;
+  onDeleteObject?: (id: string) => void;
 };
 
 export function ObjectSettings({
@@ -23,6 +24,7 @@ export function ObjectSettings({
   city,
   onCityChange,
   hasProjects,
+  onDeleteObject,
 }: ObjectSettingsProps) {
   const hasObjects = objects && objects.length > 0;
 
@@ -35,13 +37,25 @@ export function ObjectSettings({
             Объект ремонта
           </label>
           {hasObjects && objects.length > 1 && (
-            <button
-              onClick={onAddObject}
-              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-              title="Добавить объект"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onAddObject}
+                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                title="Добавить объект"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                data-testid="delete-object-btn"
+                onClick={() => activeObjectId && onDeleteObject && onDeleteObject(activeObjectId)}
+                className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                title="Удалить объект"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           )}
         </div>
 
@@ -52,6 +66,7 @@ export function ObjectSettings({
           </div>
         ) : objects.length > 1 ? (
           <select
+            data-testid="object-selector"
             value={activeObjectId || objects[0]?.id || ''}
             onChange={(e) => onObjectChange(e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
@@ -76,6 +91,7 @@ export function ObjectSettings({
           Город
         </label>
         <input
+          data-testid="city-select"
           type="text"
           value={city}
           onChange={(e) => onCityChange(e.target.value)}

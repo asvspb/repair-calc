@@ -1,13 +1,22 @@
 import { test, expect } from './fixtures';
+import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Work Templates Functionality', () => {
   test.beforeEach(async ({ page }) => {
     // Clear localStorage to start fresh (but keep test mode)
-    await page.addInitScript(() => {
+    await page.addInitScript((projectData) => {
       const testMode = localStorage.getItem('e2e-test-mode');
+      const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
       localStorage.clear();
       if (testMode) localStorage.setItem('e2e-test-mode', testMode);
-    });
+      if (token) localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      
+      // Inject TEST_PROJECT so tests have a room to work with
+      localStorage.setItem('repair-calc-projects', JSON.stringify([projectData]));
+      localStorage.setItem('repair-calc-active-project', projectData.id);
+    }, TEST_PROJECT);
     await page.goto('/');
   });
 

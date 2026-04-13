@@ -1,0 +1,128 @@
+
+Running 4 tests using 4 workers
+
+  ✘  1 [chromium] › e2e/objects.spec.ts:90:3 › Object Management › should delete object with confirmation (32.4s)
+  ✘  3 [chromium] › e2e/objects.spec.ts:54:3 › Object Management › should create object via CreateObjectModal (32.4s)
+  ✘  2 [chromium] › e2e/objects.spec.ts:112:3 › Object Management › should save city for object (32.4s)
+  ✘  4 [chromium] › e2e/objects.spec.ts:74:3 › Object Management › should switch between objects (32.5s)
+
+
+  1) [chromium] › e2e/objects.spec.ts:54:3 › Object Management › should create object via CreateObjectModal 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByTestId('add-object-btn')[22m
+
+
+      54 |   test('should create object via CreateObjectModal', async ({ page }) => {
+      55 |     // Click add object
+    > 56 |     await page.getByTestId('add-object-btn').click();
+         |                                              ^
+      57 |
+      58 |     // Modal should appear
+      59 |     const modal = page.getByTestId('create-object-modal');
+        at /home/asv-spb/Dev/my-coding/repair-calc/e2e/objects.spec.ts:56:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/objects-Object-Management--5af65-bject-via-CreateObjectModal-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/objects-Object-Management--5af65-bject-via-CreateObjectModal-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/objects-Object-Management--5af65-bject-via-CreateObjectModal-chromium/error-context.md
+
+  2) [chromium] › e2e/objects.spec.ts:74:3 › Object Management › should switch between objects ─────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Комната 1' })[22m
+
+
+      74 |   test('should switch between objects', async ({ page }) => {
+      75 |     // Create first object (default exists)
+    > 76 |     await page.getByRole('button', { name: 'Комната 1' }).click();
+         |                                                           ^
+      77 |
+      78 |     // Create second object
+      79 |     await page.getByTestId('add-object-btn').click();
+        at /home/asv-spb/Dev/my-coding/repair-calc/e2e/objects.spec.ts:76:59
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/objects-Object-Management-should-switch-between-objects-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/objects-Object-Management-should-switch-between-objects-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/objects-Object-Management-should-switch-between-objects-chromium/error-context.md
+
+  3) [chromium] › e2e/objects.spec.ts:90:3 › Object Management › should delete object with confirmation 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByTestId('add-object-btn')[22m
+
+
+      90 |   test('should delete object with confirmation', async ({ page }) => {
+      91 |     // Create second object first
+    > 92 |     await page.getByTestId('add-object-btn').click();
+         |                                              ^
+      93 |     await page.getByTestId('create-object-modal').getByLabel('Название объекта *').fill('Офис');
+      94 |     await page.getByRole('button', { name: 'Создать' }).click();
+      95 |
+        at /home/asv-spb/Dev/my-coding/repair-calc/e2e/objects.spec.ts:92:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/objects-Object-Management--702eb-te-object-with-confirmation-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/objects-Object-Management--702eb-te-object-with-confirmation-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/objects-Object-Management--702eb-te-object-with-confirmation-chromium/error-context.md
+
+  4) [chromium] › e2e/objects.spec.ts:112:3 › Object Management › should save city for object ──────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByTestId('add-object-btn')[22m
+
+
+      112 |   test('should save city for object', async ({ page }) => {
+      113 |     // Create object with city
+    > 114 |     await page.getByTestId('add-object-btn').click();
+          |                                              ^
+      115 |     await page.getByTestId('create-object-modal').getByLabel('Название объекта *').fill('Квартира в СПб');
+      116 |     await page.getByTestId('create-object-modal').getByLabel('Город').fill('Санкт-Петербург');
+      117 |     await page.getByRole('button', { name: 'Создать' }).click();
+        at /home/asv-spb/Dev/my-coding/repair-calc/e2e/objects.spec.ts:114:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/objects-Object-Management-should-save-city-for-object-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/objects-Object-Management-should-save-city-for-object-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/objects-Object-Management-should-save-city-for-object-chromium/error-context.md
+
+  4 failed
+    [chromium] › e2e/objects.spec.ts:54:3 › Object Management › should create object via CreateObjectModal 
+    [chromium] › e2e/objects.spec.ts:74:3 › Object Management › should switch between objects ──────
+    [chromium] › e2e/objects.spec.ts:90:3 › Object Management › should delete object with confirmation 
+    [chromium] › e2e/objects.spec.ts:112:3 › Object Management › should save city for object ───────
+
+  Serving HTML report at http://localhost:33659. Press Ctrl+C to quit.

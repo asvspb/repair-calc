@@ -157,6 +157,7 @@ export function WorkTemplatePickerModal({
               {sortedTemplates.map((template) => (
                 <div
                   key={template.id}
+                  data-testid="work-template-item"
                   onClick={() => handleSelect(template)}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors group"
                 >

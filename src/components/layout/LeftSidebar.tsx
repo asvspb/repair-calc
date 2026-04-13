@@ -20,6 +20,7 @@ type LeftSidebarProps = {
   city: string;
   onCityChange: (city: string) => void;
   hasProjects: boolean;
+  onDeleteObject?: (id: string) => void;
 };
 
 export function LeftSidebar({
@@ -38,6 +39,7 @@ export function LeftSidebar({
   city,
   onCityChange,
   hasProjects,
+  onDeleteObject,
 }: LeftSidebarProps) {
   return (
     <aside
@@ -66,6 +68,7 @@ export function LeftSidebar({
           city={city}
           onCityChange={onCityChange}
           hasProjects={hasProjects}
+          onDeleteObject={onDeleteObject}
         />
 
         {/* Rooms section */}

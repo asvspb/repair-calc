@@ -314,8 +314,10 @@ npm run lint         # TypeScript type check
 | [PROGRESS.md](./PROGRESS.md) | Сводка этапов и статуса |
 | [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | Базовое ТЗ (v1.1) |
-| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | 🆕 Правила ведения документации |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Код-ревью v5.0 |
+| [spec/SPEC-001-SYSTEM.md](./spec/SPEC-001-SYSTEM.md) | 🆕 Полное техзадание (детализированное) |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
 
 ---
 

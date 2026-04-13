@@ -229,13 +229,18 @@ function AppContent() {
           }
         }}
         hasProjects={projects.length > 0}
+        onDeleteObject={(id) => {
+          if (window.confirm('Удалить объект? Все комнаты в этом объекте будут удалены.')) {
+            deleteObject(id);
+          }
+        }}
       />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Mobile header */}
         <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-          <button onClick={() => setIsLeftMobileMenuOpen(true)} className="cursor-pointer">
+          <button data-testid="mobile-menu-btn" onClick={() => setIsLeftMobileMenuOpen(true)} className="cursor-pointer">
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
           <div className="flex-1 min-w-0">

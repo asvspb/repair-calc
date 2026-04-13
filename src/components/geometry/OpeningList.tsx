@@ -28,6 +28,7 @@ export function OpeningList({
         <h4 className="text-sm font-medium text-gray-700">{title}</h4>
         <button
           onClick={onAdd}
+          data-testid={`add-${title === 'Окна' ? 'window' : 'door'}-btn`}
           className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer"
         >
           + Добавить

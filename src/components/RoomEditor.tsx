@@ -489,6 +489,7 @@ export function RoomEditor({
                         </label>
                         {work.calculationType === 'customCount' ? (
                           <NumberInput
+                            data-testid="work-quantity-input"
                             value={work.count || 0}
                             onChange={(v: number) =>
                               handleWorkChange(work.id, 'count', v)
@@ -534,7 +535,7 @@ export function RoomEditor({
                       <div className="flex items-end">
                         <div className="text-sm text-gray-600">
                           Стоимость работы:{' '}
-                          <span className="font-semibold text-indigo-900">
+                          <span data-testid="work-cost" className="font-semibold text-indigo-900">
                             {Math.ceil(qty * work.workUnitPrice).toLocaleString(
                               'ru-RU'
                             )}{' '}
@@ -578,6 +579,7 @@ export function RoomEditor({
                                   {i + 1}.
                                 </span>
                                 <input
+                                  data-testid="material-name-input"
                                   value={material.name}
                                   onChange={(e) =>
                                     handleMaterialChange(
@@ -605,6 +607,7 @@ export function RoomEditor({
                                     step={0.1}
                                   />
                                   <input
+                                    data-testid="material-unit-input"
                                     value={material.unit}
                                     onChange={(e) =>
                                       handleMaterialChange(
@@ -676,6 +679,7 @@ export function RoomEditor({
 
                       <button
                         onClick={() => addMaterial(work.id)}
+                        data-testid="add-material-btn"
                         className="text-sm text-emerald-600 font-medium hover:text-emerald-700"
                       >
                         + Добавить материал
@@ -859,6 +863,7 @@ export function RoomEditor({
 
             <button
               onClick={onOpenTemplatePicker}
+              data-testid="templates-btn"
               disabled={templates.length === 0}
               className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               title={

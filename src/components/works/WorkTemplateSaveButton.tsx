@@ -68,6 +68,7 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
 
   return (
     <button
+      data-testid="save-template-btn"
       onClick={handleClick}
       className={`flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer ${className}`}
       title="Сохранить как шаблон"

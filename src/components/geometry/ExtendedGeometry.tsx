@@ -86,6 +86,7 @@ export function ExtendedGeometry({
 
       <button
         onClick={addSubSection}
+        data-testid="add-section-btn"
         className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 transition-all cursor-pointer"
       >
         <Plus className="w-4 h-4" />
