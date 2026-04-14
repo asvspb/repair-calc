@@ -171,26 +171,30 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       const content = e.target?.result as string;
       const result = StorageManager.importFromJSON(content);
 
-      if (result.success) {
-        // Подсчитываем общее количество объектов
-        const objectCount = result.data.projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
-        
-        // Сохраняем данные и открываем диалог
-        setPendingImportData({
-          projects: result.data.projects,
-          activeProjectId: result.data.activeProjectId,
-          workTemplates: result.data.workTemplates,
-          objectCount,
-        });
-        setImportProjectName(getDefaultImportName());
-        setShowImportDialog(true);
-        setIsOpen(false);
-      } else {
+      if ('error' in result) {
         setImportStatus({
           type: 'error',
           message: result.error,
         });
+        return;
       }
+
+      // TypeScript should now recognize result as the success branch
+      const data = result.data;
+      
+      // Подсчитываем общее количество объектов
+      const objectCount = data.projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
+      
+      // Сохраняем данные и открываем диалог
+      setPendingImportData({
+        projects: data.projects,
+        activeProjectId: data.activeProjectId,
+        workTemplates: data.workTemplates,
+        objectCount,
+      });
+      setImportProjectName(getDefaultImportName());
+      setShowImportDialog(true);
+      setIsOpen(false);
     };
     reader.readAsText(file);
     
