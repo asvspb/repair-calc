@@ -2,7 +2,13 @@ import { test, expect } from './fixtures';
 
 test.describe('Project Management', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
+    // Mock API to prevent network errors
+    await page.route('**/api/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [] }),
+      });
     });
 
     await page.goto('/');

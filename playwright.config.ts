@@ -9,19 +9,20 @@ export default defineConfig({
   reporter: [['html'], ['list']],
 
   use: {
-    baseURL: 'http://localhost:3993',
+    baseURL: 'http://localhost:4567',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    testIdAttribute: 'data-testid',
   },
 
   // Автозапуск dev-сервера
   // NB: npm run dev содержит grep-пайп, поэтому используем vite напрямую
   webServer: {
-    command: 'npx vite --port=3993',
-    url: 'http://localhost:3993',
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    command: 'node_modules/.bin/vite --port=4567 --host',
+    url: 'http://localhost:4567',
+    reuseExistingServer: false,
+    timeout: 60_000,
   },
 
   projects: [

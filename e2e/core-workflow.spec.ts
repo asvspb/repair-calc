@@ -133,7 +133,7 @@ test.describe('Core Workflow - End-to-End Tests', () => {
     const initialCost = await summary.getTotalCost();
     
     // 3. Возвращаемся к комнате и изменяем цену работы
-    await page.getByRole('button', { name: 'Назад' }).or(page.locator('button:has-text("Ванная")')).click();
+    await page.getByRole('button', { name: 'Назад' }).or(page.locator('button:has-text("Комната 1")')).click();
     
     // Раскрываем работу
     const workItem = page.getByTestId('work-item-test-work-1');
@@ -157,7 +157,7 @@ test.describe('Core Workflow - End-to-End Tests', () => {
     expect(newValue).toBeGreaterThan(initialValue);
 
     // 5. Изменяем размеры комнаты
-    await page.getByRole('button', { name: 'Назад' }).or(page.locator('button:has-text("Ванная")')).click();
+    await page.getByRole('button', { name: 'Назад' }).or(page.locator('button:has-text("Комната 1")')).click();
     await roomEditor.setDimensions(5, 4, 3);
 
     // 6. Проверяем пересчет площадей

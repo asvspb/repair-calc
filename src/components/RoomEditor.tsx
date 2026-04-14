@@ -308,14 +308,14 @@ export function RoomEditor({
 
       {/* Room metrics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center" data-testid="metric-floor-area">
           <div className="text-sm text-gray-500 mb-1">Площадь пола</div>
           <div className="text-xl font-light">
             {metrics.floorArea.toFixed(2)}{' '}
             <span className="text-sm text-gray-400">м²</span>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center" data-testid="metric-wall-area">
           <div className="text-sm text-gray-500 mb-1">Площадь стен</div>
           <div className="text-xl font-light">
             {metrics.netWallArea.toFixed(2)}{' '}

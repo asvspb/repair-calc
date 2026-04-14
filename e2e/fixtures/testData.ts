@@ -9,7 +9,7 @@ export const TEST_PROJECT: ProjectData = {
     projectId: 'test-project-1',
     rooms: [{
       id: 'test-room-1',
-      name: 'Кухня',
+      name: 'Комната 1',
       length: 4, width: 3, height: 2.7,
       geometryMode: 'simple',
       windows: [], doors: [],
@@ -29,7 +29,7 @@ export const TEST_PROJECT_MULTI_OBJECT: ProjectData = {
       projectId: 'test-project-2',
       rooms: [{
         id: 'test-room-1',
-        name: 'Кухня',
+        name: 'Комната 1',
         length: 4, width: 3, height: 2.7,
         geometryMode: 'simple',
         windows: [], doors: [],
@@ -43,7 +43,7 @@ export const TEST_PROJECT_MULTI_OBJECT: ProjectData = {
       projectId: 'test-project-2',
       rooms: [{
         id: 'test-room-2',
-        name: 'Рабочая комната',
+        name: 'Комната 2',
         length: 6, width: 4, height: 3,
         geometryMode: 'simple',
         windows: [], doors: [],
@@ -63,7 +63,7 @@ export const TEST_PROJECT_WITH_WORK: ProjectData = {
     projectId: 'test-project-3',
     rooms: [{
       id: 'test-room-1',
-      name: 'Ванная',
+      name: 'Комната 1',
       length: 3, width: 2.5, height: 2.7,
       geometryMode: 'simple',
       windows: [], doors: [],

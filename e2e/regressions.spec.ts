@@ -3,8 +3,10 @@ import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Regression Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-    });
+    await page.addInitScript((data) => {
+      localStorage.setItem('repair-calc-projects', JSON.stringify(data.projects));
+      localStorage.setItem('repair-calc-active-project', data.activeId);
+    }, { projects: [TEST_PROJECT], activeId: TEST_PROJECT.id });
 
     await page.goto('/');
   });
@@ -12,7 +14,8 @@ test.describe('Regression Tests', () => {
   test('should not copy room parameters when switching rooms (known bug fix)', async ({ page }) => {
     // Add new room
     await page.getByTestId('add-room-btn').click();
-    await page.getByRole('button', { name: 'Новая комната' }).click();
+    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
+    await newRoomBtn.click();
 
     // Enter unique dimensions
     const lengthInput = page.getByTestId('geom-length');
@@ -32,14 +35,15 @@ test.describe('Regression Tests', () => {
     await expect(heightInput).toHaveValue('3');
 
     // Switch to room 1
-    await page.getByRole('button', { name: 'Комната 1' }).click();
+    await page.getByTestId('room-item-test-room-1').click();
 
     // Room 1 should have different values
     const room1Length = page.getByTestId('geom-length');
     await expect(room1Length).toHaveValue('4');
 
     // Switch back to new room
-    await page.getByRole('button', { name: 'Новая комната' }).click();
+    const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
+    await newRoomBtn2.click();
 
     // Values should still be 7, 5, 3 (not copied from room 1)
     await expect(lengthInput).toHaveValue('7');
@@ -48,7 +52,8 @@ test.describe('Regression Tests', () => {
   });
 
   test('should not lose focus when typing values', async ({ page }) => {
-    await page.getByRole('button', { name: 'Комната 1' }).click();
+    // Navigate to room
+    await page.getByTestId('room-item-test-room-1').click();
 
     const lengthInput = page.getByTestId('geom-length');
 
@@ -67,7 +72,8 @@ test.describe('Regression Tests', () => {
   });
 
   test('should correctly recalculate area with openings', async ({ page }) => {
-    await page.getByRole('button', { name: 'Комната 1' }).click();
+    // Navigate to room
+    await page.getByTestId('room-item-test-room-1').click();
 
     // Get initial wall area
     const initialWallArea = page.getByTestId('metric-wall-area');
@@ -85,24 +91,25 @@ test.describe('Regression Tests', () => {
     // Wall area should decrease
     const newWallArea = page.getByTestId('metric-wall-area');
     const newText = await newWallArea.textContent();
-    
+
     const initialValue = parseFloat(initialText ?? '0');
     const newValue = parseFloat(newText ?? '0');
     expect(newValue).toBeLessThan(initialValue);
   });
 
   test('should handle CSV export with extended/advanced modes', async ({ page }) => {
-    await page.getByRole('button', { name: 'Комната 1' }).click();
+    // Navigate to room
+    await page.getByTestId('room-item-test-room-1').click();
 
     // Switch to extended mode
     await page.getByTestId('geom-mode-extended').click();
 
-    // Export as CSV
-    await page.click('button:has-text("Экспорт/Импорт")');
-    
+    // Export as CSV via settings
+    await page.getByTestId('settings-btn').click();
+
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.click('button:has-text("Экспорт CSV")'),
+      page.getByRole('button', { name: 'CSV (Excel)' }).click(),
     ]);
 
     expect(download).toBeTruthy();
@@ -122,15 +129,14 @@ test.describe('Regression Tests', () => {
 
     // Check no duplicates in object selector
     const objectSelector = page.getByTestId('object-selector');
-    await objectSelector.click();
 
-    const options = page.locator('option');
+    const options = objectSelector.locator('option');
     const count = await options.count();
-    
+
     // Count occurrences of each object name
     const objectNames = await options.allTextContents();
     const uniqueNames = new Set(objectNames);
-    
+
     // No duplicates
     expect(uniqueNames.size).toBe(count);
   });
