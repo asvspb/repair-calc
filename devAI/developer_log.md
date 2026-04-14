@@ -3,14 +3,14 @@
 ## 2026-04-14 - Fix TypeScript Narrowing in BackupManager
 
 ### Accomplishments:
-- **Fixed Typing Error**: Resolved the issue where `Property 'error' does not exist on type...` in `BackupManager.tsx`.
-- **Robust Narrowing**: Implemented narrowing using the `in` operator (`'error' in result`), which is more resilient in various TypeScript configurations than simple boolean checks.
-- **Code Refactoring**: Cleaned up the `handleFileSelect` callback to use early returns, improving readability and ensuring type safety for the `data` object.
+- **Fixed Typing Error in BackupManager**: Resolved narrowing issues with `StorageManager.importFromJSON` using the `in` operator.
+- **Fixed Type Mismatch in RoomEditor**: Corrected the signature of `handleLoadTemplate` to accept `WorkData`, matching the props of `WorkTemplatePickerModal`.
+- **Fixed Narrowing in WorkTemplateSaveButton**: Resolved `Property 'needsConfirm' does not exist on type 'SaveResult'` by using property check narrowing (`'needsConfirm' in result`).
 
 ### Technical Details:
-- The problem was caused by fragile type narrowing of the discriminated union returned by `StorageManager.importFromJSON`. 
-- By checking for the presence of the `error` property explicitly, we forced TypeScript to correctly identify the failure branch.
-- Restored and verified the `objectCount` calculation logic.
+- Discriminated unions with boolean literal discriminants (`success: true | false`) can be fragile in some TypeScript versions/environments, especially in `else` blocks.
+- The `in` operator provides a more robust guard for property existence in union types.
+- Corrected a logic mismatch where a modal was expected to pass back `WorkData` but the receiving function expected `WorkTemplate`.
 
 ### Next Steps:
 - Monitor for any similar narrowing issues in other components using `StorageManager`.

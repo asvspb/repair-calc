@@ -21,7 +21,7 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
     if (result.success) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
-    } else if (result.needsConfirm) {
+    } else if ('needsConfirm' in result && result.needsConfirm) {
       setShowConfirm(true);
     }
   };

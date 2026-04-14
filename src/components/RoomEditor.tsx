@@ -275,8 +275,7 @@ export function RoomEditor({
     return onSaveTemplate(work, forceReplace, workVolume);
   };
 
-  const handleLoadTemplate = (template: WorkTemplate) => {
-    const work = onLoadTemplate(template, metrics);
+  const handleLoadTemplate = (work: WorkData) => {
     updateRoom({
       ...room,
       works: [...(room.works || []), work],
