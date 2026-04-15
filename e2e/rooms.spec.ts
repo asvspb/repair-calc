@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
 import { RoomEditorPage } from './pages/RoomEditorPage';
+import { getRoomItemByName } from './helpers/roomHelpers';
 
 test.describe('Room Management', () => {
   test.beforeEach(async ({ page }) => {
@@ -34,8 +35,7 @@ test.describe('Room Management', () => {
     await page.getByTestId('add-room-btn').click();
 
     // Select the new room via the sidebar (it appears as "Новая комната")
-    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn.click();
+    await getRoomItemByName(page, 'Новая комната').click();
 
     // Edit new room
     await roomEditor.setDimensions(7, 5, 3);
@@ -48,8 +48,7 @@ test.describe('Room Management', () => {
     await expect(room1Length).toHaveValue('4');
 
     // Switch back to new room
-    const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn2.click();
+    await getRoomItemByName(page, 'Новая комната').click();
 
     // Verify new room data persisted
     const newRoomLength = page.getByTestId('geom-length');
@@ -67,7 +66,7 @@ test.describe('Room Management', () => {
     await roomTitle.blur();
 
     // Verify name updated in sidebar
-    await expect(page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Гостиная' })).toBeVisible();
+    await expect(getRoomItemByName(page, 'Гостиная')).toBeVisible();
   });
 
   test('should delete room with confirmation', async ({ page }) => {
@@ -75,8 +74,7 @@ test.describe('Room Management', () => {
     await page.getByTestId('add-room-btn').click();
 
     // Select the new room
-    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn.click();
+    await getRoomItemByName(page, 'Новая комната').click();
 
     // Delete room
     const roomEditor = new RoomEditorPage(page);

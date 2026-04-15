@@ -32,6 +32,13 @@ export interface StorageError {
 }
 
 /**
+ * Count total objects (rooms, walls, etc.) across all projects in import data.
+ */
+export function countImportedObjects(projects: ProjectData[]): number {
+  return projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
+}
+
+/**
  * Storage manager with pluggable storage provider
  */
 export class StorageManager {

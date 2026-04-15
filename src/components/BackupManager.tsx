@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, X, Database, Trash2, RefreshCw, Save, FolderOpen, Edit2 } from 'lucide-react';
 import type { ProjectData } from '../types';
 import type { WorkTemplate } from '../types/workTemplate';
-import { StorageManager } from '../utils/storage';
+import { StorageManager, countImportedObjects } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiStorageProvider } from '../api/storage/apiStorageProvider';
 import { getProjects, getProject, createProject, updateProject } from '../api/projects';
@@ -181,9 +181,9 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
       // TypeScript should now recognize result as the success branch
       const data = result.data;
-      
+
       // Подсчитываем общее количество объектов
-      const objectCount = data.projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
+      const objectCount = countImportedObjects(data.projects);
       
       // Сохраняем данные и открываем диалог
       setPendingImportData({
