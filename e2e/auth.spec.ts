@@ -2,17 +2,22 @@ import { test, expect } from './fixtures';
 
 test.describe('Authorization', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage to ensure we're not logged in
+    // Auth tests MUST NOT have e2e-test-mode set — otherwise the app
+    // skips the login page. We only clear tokens and navigate.
     await page.addInitScript(() => {
-      localStorage.clear();
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('e2e-test-mode');
     });
-    await page.goto('/');
   });
 
   test('should display login form by default', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
     // Проверяем, что форма логина отображается
     const loginForm = page.getByTestId('login-form');
-    await expect(loginForm).toBeVisible();
+    await expect(loginForm).toBeVisible({ timeout: 10000 });
 
     // Проверяем наличие полей
     await expect(page.getByTestId('login-email')).toBeVisible();
@@ -20,8 +25,19 @@ test.describe('Authorization', () => {
   });
 
   test('should show error with invalid credentials', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for login form
+    await expect(page.getByTestId('login-form')).toBeVisible({ timeout: 10000 });
+
     // Mock API to return error for invalid login
     await page.route('**/api/auth/login', async (route) => {
+      const url = new URL(route.request().url());
+      if (!url.pathname.startsWith('/api/')) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 401,
         contentType: 'application/json',
@@ -46,8 +62,19 @@ test.describe('Authorization', () => {
   });
 
   test('should login with valid credentials', async ({ page }) => {
-    // Mock API responses
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for login form
+    await expect(page.getByTestId('login-form')).toBeVisible({ timeout: 10000 });
+
+    // Mock API responses — must not intercept Vite modules
     await page.route('**/api/auth/login', async (route) => {
+      const url = new URL(route.request().url());
+      if (!url.pathname.startsWith('/api/')) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -65,6 +92,11 @@ test.describe('Authorization', () => {
 
     // Mock getCurrentUser
     await page.route('**/api/auth/me', async (route) => {
+      const url = new URL(route.request().url());
+      if (!url.pathname.startsWith('/api/')) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -80,6 +112,11 @@ test.describe('Authorization', () => {
 
     // Mock projects API
     await page.route('**/api/projects**', async (route) => {
+      const url = new URL(route.request().url());
+      if (!url.pathname.startsWith('/api/')) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -94,8 +131,7 @@ test.describe('Authorization', () => {
     // Отправляем форму
     await page.getByRole('button', { name: 'Войти' }).click();
 
-    // Проверяем, что приложение загрузилось (появился основной интерфейс)
-    // Должен появиться either sidebar, создание проекта или другой элемент
+    // Проверяем, что приложение загрузилось
     const mainContent = page.locator('text=Нет проектов').or(
       page.locator('text=Создать проект')
     ).or(

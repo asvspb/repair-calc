@@ -612,13 +612,19 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 |-----------|--------|
 | auth.spec.ts | ✅ 3/3 |
 | objects.spec.ts | ✅ 4/4 |
-| export-import.spec.ts | ✅ 3/3 |
-| core-workflow.spec.ts | 🔧 skipped |
-| costs.spec.ts | 🔧 skipped |
-| geometry.spec.ts | 🔧 skipped |
-| projects.spec.ts | 🔧 skipped |
-| rooms.spec.ts | 🔧 skipped |
-| works.spec.ts | 🔧 skipped |
+| export-import.spec.ts | 🔧 восстановлен (6 тестов) |
+| core-workflow.spec.ts | 🔧 восстановлен (3 теста) |
+| costs.spec.ts | 🔧 восстановлен (3 теста) |
+| geometry.spec.ts | 🔧 восстановлен (4 теста) |
+| projects.spec.ts | 🔧 восстановлен (3 теста) |
+| rooms.spec.ts | 🔧 восстановлен (5 тестов) |
+| works.spec.ts | 🔧 восстановлен (4 теста) |
+| work-templates.spec.ts | 🔧 восстановлен (7 тестов) |
+| regressions.spec.ts | 🔧 восстановлен (5 тестов) |
+| responsive.spec.ts | 🔧 восстановлен (2 теста) |
+| room-input.spec.ts | 🔧 восстановлен (3 теста) |
+
+> **E2E стабилизация (2026-04-17):** Все `test.describe.skip` сняты. Тесты переведены на унифицированные фикстуры (`setupTestEnvironment`/`setupCleanEnvironment`) с API-моками через `page.route()`. Убраны хардкод JWT-токены. Селекторы обновлены на `data-testid`. Убраны `waitForTimeout` в пользу `toPass()` и `expect().toBeVisible()`.
 
 ### 7.4 Покрытие по файлам
 
@@ -731,4 +737,4 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
 ---
 
-**Последнее обновление:** 2026-04-16
+**Последнее обновление:** 2026-04-17

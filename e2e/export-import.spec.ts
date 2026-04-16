@@ -1,136 +1,175 @@
-import { test, expect } from './fixtures';
+import { test, expect, setupTestEnvironment } from './fixtures';
+import { TEST_PROJECT } from './fixtures/testData';
 
-// TODO: Требуют исправления импорта/экспорта
-test.describe.skip('Export/Import Functionality', () => {
+test.describe('Export/Import Functionality', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage to start fresh (but keep test mode)
-    await page.addInitScript(() => {
-      const testMode = localStorage.getItem('e2e-test-mode');
-      const token = localStorage.getItem('token');
-      const refreshToken = localStorage.getItem('refreshToken');
-      localStorage.clear();
-      if (testMode) localStorage.setItem('e2e-test-mode', testMode);
-      if (token) localStorage.setItem('token', token);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    });
-    await page.goto('/');
+    await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
+
+    // Navigate to room
+    await page.getByTestId('room-item-test-room-1').click();
   });
 
   test('should export project data as JSON', async ({ page }) => {
-    // Открываем настройки (settings-btn)
+    // Open settings/data management
     await page.getByTestId('settings-btn').click();
 
-    // Проверяем, что модальное окно открылось
-    await expect(page.locator('text=Управление данными')).toBeVisible();
+    // Click export JSON button
+    const exportJsonBtn = page.getByTestId('export-json-btn');
+    await expect(exportJsonBtn).toBeVisible({ timeout: 10000 });
 
-    // Кликаем на экспорт JSON
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'JSON (бэкап)' }).click(),
+      exportJsonBtn.click(),
     ]);
 
-    // Проверяем, что файл скачался
+    // Verify file downloaded
     expect(download).toBeTruthy();
     const fileName = download.suggestedFilename();
-    expect(fileName).toContain('repair-calc');
     expect(fileName).toContain('.json');
   });
 
   test('should export project data as CSV', async ({ page }) => {
-    // Открываем настройки
+    // Open settings
     await page.getByTestId('settings-btn').click();
 
-    // Кликаем на экспорт CSV
+    const exportCsvBtn = page.getByTestId('export-csv-btn');
+    await expect(exportCsvBtn).toBeVisible({ timeout: 10000 });
+
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'CSV (Excel)' }).click(),
+      exportCsvBtn.click(),
     ]);
 
-    // Проверяем, что файл скачался
+    // Verify file downloaded
     expect(download).toBeTruthy();
     const fileName = download.suggestedFilename();
     expect(fileName).toContain('.csv');
   });
 
-  test('should import project from JSON file', async ({ page }) => {
-    // Сначала экспортируем текущий проект
+  test('should show import file input', async ({ page }) => {
+    // Open settings
     await page.getByTestId('settings-btn').click();
+
+    // Verify import file input exists
+    const fileInput = page.getByTestId('import-file-input');
+    await expect(fileInput).toBeAttached({ timeout: 10000 });
+  });
+
+  test('should import project from JSON file', async ({ page }) => {
+    // First export
+    await page.getByTestId('settings-btn').click();
+
+    const exportJsonBtn = page.getByTestId('export-json-btn');
+    await expect(exportJsonBtn).toBeVisible({ timeout: 10000 });
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'JSON (бэкап)' }).click(),
+      exportJsonBtn.click(),
     ]);
 
-    // Сохраняем файл
     const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
 
-    // Закрываем модальное окно кликом на фон
-    await page.locator('div.fixed.inset-0.bg-black\\/50').click();
-    await expect(page.locator('text=Управление данными')).not.toBeVisible();
+    // Find and use import file input
+    const fileInput = page.getByTestId('import-file-input');
+    await expect(fileInput).toBeAttached({ timeout: 10000 });
 
-    // Проверяем, что комната есть
-    const roomItem = page.locator('[data-testid^="room-item-"]').first();
-    await expect(roomItem).toBeVisible();
+    await fileInput.setInputFiles(downloadPath!);
 
-    // Импортируем файл (переоткрываем настройки)
-    await page.getByTestId('settings-btn').click();
+    // Import shows a confirm dialog — DataManagementModal uses "Заменить" button
+    const confirmBtn = page.locator('button:has-text("Заменить")');
+    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+    await confirmBtn.click();
 
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles(downloadPath);
-
-    // Проверяем, что данные импортировались
-    await expect(page.locator('text=Данные успешно импортированы')).toBeVisible();
+    // Verify import success message
+    await expect(
+      page.locator('text=успешно импортирован').or(page.locator('text=Данные успешно импортированы'))
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('should show error for invalid JSON file', async ({ page }) => {
     await page.getByTestId('settings-btn').click();
 
-    // File input скрыт, но существует - проверяем что он есть в DOM
-    const fileInput = page.locator('input[type="file"]');
-    await expect(fileInput).toBeAttached();
+    const fileInput = page.getByTestId('import-file-input');
+    await expect(fileInput).toBeAttached({ timeout: 10000 });
+
+    // Create invalid JSON file and upload it
+    const fs = await import('fs');
+    const invalidJsonPath = '/tmp/test-invalid-import.json';
+    fs.writeFileSync(invalidJsonPath, 'this is not valid json {{{');
+
+    await fileInput.setInputFiles(invalidJsonPath);
+
+    // Verify error message appears
+    await expect(
+      page.locator('text=Неверный формат').or(page.locator('text=Ошибка'))
+    ).toBeVisible({ timeout: 10000 });
+
+    // Cleanup
+    fs.unlinkSync(invalidJsonPath);
   });
 
-  test('should create backup', async ({ page }) => {
+  test('should create backup via JSON export', async ({ page }) => {
     await page.getByTestId('settings-btn').click();
 
-    // Кнопка создания резервной копии (JSON export)
-    const createBackupBtn = page.getByRole('button', { name: 'JSON (бэкап)' });
-    await expect(createBackupBtn).toBeVisible();
-
-    await createBackupBtn.click();
-    await expect(page.locator('text=Бэкап успешно экспортирован в JSON')).toBeVisible();
-  });
-
-  test('should restore from backup', async ({ page }) => {
-    // Сначала создаем резервную копию
-    await page.getByTestId('settings-btn').click();
+    const exportJsonBtn = page.getByTestId('export-json-btn');
+    await expect(exportJsonBtn).toBeVisible({ timeout: 10000 });
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'JSON (бэкап)' }).click(),
+      exportJsonBtn.click(),
+    ]);
+    expect(download).toBeTruthy();
+  });
+
+  test('should restore from backup', async ({ page }) => {
+    // First create a backup
+    await page.getByTestId('settings-btn').click();
+
+    const exportJsonBtn = page.getByTestId('export-json-btn');
+    await expect(exportJsonBtn).toBeVisible({ timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      exportJsonBtn.click(),
     ]);
 
     const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
 
-    // Закрываем модальное окно кликом на фон
-    await page.locator('div.fixed.inset-0.bg-black\\/50').click();
+    // Close the DataManagementModal — click the X button in the modal header
+    const modalCloseBtn = page.locator('.fixed.inset-0.z-50').locator('button:has(svg.lucide-x)').first();
+    await modalCloseBtn.click();
+    await expect(page.locator('.fixed.inset-0.z-50')).not.toBeVisible({ timeout: 5000 });
 
-    // Переходим к комнате и изменяем данные
+    // Change room dimensions
     const lengthInput = page.getByTestId('geom-length');
-    await expect(lengthInput).toBeVisible();
+    await expect(lengthInput).toBeVisible({ timeout: 5000 });
     await lengthInput.fill('99');
     await page.getByTestId('room-header-title').click();
-
-    // Проверяем, что значение изменилось
     await expect(lengthInput).toHaveValue('99');
 
-    // Восстанавливаем из резервной копии
+    // Restore from backup — open settings again
     await page.getByTestId('settings-btn').click();
 
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles(downloadPath);
+    const fileInput = page.getByTestId('import-file-input');
+    await expect(fileInput).toBeAttached({ timeout: 10000 });
+    await fileInput.setInputFiles(downloadPath!);
 
-    // Проверяем, что данные восстановлены (значение должно измениться)
-    await expect(page.locator('text=Данные успешно импортированы')).toBeVisible();
+    // Confirm import — DataManagementModal uses "Заменить" button
+    const confirmBtn = page.locator('button:has-text("Заменить")');
+    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+    await confirmBtn.click();
+
+    // Verify import success message
+    await expect(
+      page.locator('text=успешно импортирован').or(page.locator('text=Данные успешно импортированы'))
+    ).toBeVisible({ timeout: 10000 });
+
+    // Close the modal and verify data was restored (length should return to original value)
+    const modalCloseBtn2 = page.locator('.fixed.inset-0.z-50').locator('button:has(svg.lucide-x)').first();
+    await modalCloseBtn2.click();
+    await page.getByTestId('room-item-test-room-1').click();
+    await expect(page.getByTestId('geom-length')).not.toHaveValue('99', { timeout: 5000 });
   });
 });

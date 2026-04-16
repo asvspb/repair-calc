@@ -39,7 +39,7 @@ export function OpeningList({
       ) : (
         <div className="space-y-3">
           {openings.map((opening, i) => (
-            <div key={opening.id} className="p-2 bg-white rounded border border-gray-200">
+            <div key={opening.id} data-testid={`opening-item-${opening.id}`} className="p-2 bg-white rounded border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
                 <NumberInput

@@ -75,6 +75,7 @@ const RoomListItemInternal: React.FC<RoomListItemProps> = ({
 export const RoomListItem = memo(RoomListItemInternal, (prevProps, nextProps) => {
   return (
     prevProps.room.id === nextProps.room.id &&
+    prevProps.room.name === nextProps.room.name &&
     prevProps.isActive === nextProps.isActive
   );
 });

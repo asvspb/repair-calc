@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import type { WorkTemplate } from '../types/workTemplate';
 import type { RoomMetrics } from '../types';
 import type { WorkData } from '../types';
@@ -27,6 +27,10 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
   const [templates, setTemplates] = useState<WorkTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Ref to always access latest templates in callbacks (avoids stale closures)
+  const templatesRef = useRef<WorkTemplate[]>([]);
+  templatesRef.current = templates;
+
   // Загрузка шаблонов при монтировании
   useEffect(() => {
     const loadedTemplates = TemplateStorage.loadTemplates();
@@ -35,16 +39,19 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
   }, []);
 
   // Сохранение шаблона
+  // Uses templatesRef to avoid stale closure — callback reference is stable
   const saveTemplate = useCallback((work: WorkData, forceReplace: boolean, workVolume?: number): SaveResult => {
+    const currentTemplates = templatesRef.current;
     const migratedWork = migrateWorkData(work);
     
     // Масштабируем количества материалов если передан объём
     let scaledMaterials = migratedWork.materials || [];
     if (workVolume && workVolume > 0 && migratedWork.materials?.length) {
-      const scaleFactor = workVolume / (migratedWork.templateVolume || workVolume);
+      const sourceVol = (migratedWork as Record<string, unknown>).sourceVolume as number | undefined;
+      const scaleFactor = workVolume / (sourceVol || workVolume);
       scaledMaterials = migratedWork.materials.map(m => ({
         ...m,
-        quantity: Math.ceil(m.quantity * scaleFactor * 10) / 10 // Округляем до 0.1
+        quantity: Math.ceil(m.quantity * scaleFactor * 10) / 10
       }));
     }
     
@@ -59,28 +66,36 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       tools: migratedWork.tools || [],
       createdAt: migratedWork.templateCreatedAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      templateVolume: workVolume,
+      sourceVolume: workVolume,
     };
 
-    // Проверяем, есть ли уже шаблон с таким ID
-    const existingIndex = templates.findIndex(t => t.id === template.id);
-    
+    // Проверяем, есть ли уже шаблон с таким названием (case-insensitive)
+    const existingIndex = currentTemplates.findIndex(
+      t => t.name.toLowerCase() === template.name.toLowerCase()
+    );
+
     if (existingIndex >= 0 && !forceReplace) {
-      return { success: false, error: 'Шаблон с таким ID уже существует', needsConfirm: true };
+      return { success: false, error: 'Шаблон с таким названием уже существует', needsConfirm: true };
     }
 
     let newTemplates: WorkTemplate[];
     if (existingIndex >= 0) {
-      newTemplates = templates.map(t => t.id === template.id ? template : t);
+      // Replace existing template, keeping original ID and createdAt
+      newTemplates = currentTemplates.map((t, i) =>
+        i === existingIndex
+          ? { ...template, id: t.id, createdAt: t.createdAt }
+          : t
+      );
     } else {
-      newTemplates = [...templates, template];
+      newTemplates = [...currentTemplates, template];
     }
 
     setTemplates(newTemplates);
+    templatesRef.current = newTemplates; // Update ref immediately
     TemplateStorage.saveTemplates(newTemplates);
     
-    return { success: true };
-  }, [templates]);
+    return { success: true, isUpdate: existingIndex >= 0 };
+  }, []);
 
   // Загрузка шаблона
   const loadTemplate = useCallback((template: WorkTemplate, metrics?: RoomMetrics): WorkData => {
@@ -103,8 +118,8 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
 
     // Масштабируем количества материалов
     let scaledMaterials = template.materials || [];
-    if (workVolume > 0 && template.templateVolume && template.templateVolume > 0) {
-      const scaleFactor = workVolume / template.templateVolume;
+    if (workVolume > 0 && template.sourceVolume && template.sourceVolume > 0) {
+      const scaleFactor = workVolume / template.sourceVolume;
       scaledMaterials = template.materials.map(m => ({
         ...m,
         quantity: Math.ceil(m.quantity * scaleFactor * 10) / 10
@@ -126,28 +141,30 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       isCustom: false,
       templateId: template.id,
       templateCreatedAt: template.createdAt,
-      templateVolume: template.templateVolume,
+      sourceVolume: template.sourceVolume,
     };
   }, []);
 
   // Удаление шаблона
   const deleteTemplate = useCallback((id: string) => {
-    const newTemplates = templates.filter(t => t.id !== id);
+    const newTemplates = templatesRef.current.filter(t => t.id !== id);
     setTemplates(newTemplates);
+    templatesRef.current = newTemplates;
     TemplateStorage.saveTemplates(newTemplates);
-  }, [templates]);
+  }, []);
 
   // Импорт шаблонов
   const importTemplates = useCallback((importedTemplates: WorkTemplate[]) => {
     // Объединяем с существующими, новые перезаписывают
     const existingIds = new Set(importedTemplates.map(t => t.id));
     const mergedTemplates = [
-      ...templates.filter(t => !existingIds.has(t.id)),
+      ...templatesRef.current.filter(t => !existingIds.has(t.id)),
       ...importedTemplates
     ];
     setTemplates(mergedTemplates);
+    templatesRef.current = mergedTemplates;
     TemplateStorage.saveTemplates(mergedTemplates);
-  }, [templates]);
+  }, []);
 
   const value: WorkTemplateContextValue = {
     templates,

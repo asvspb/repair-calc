@@ -251,6 +251,7 @@ function DataTabContent() {
         <div className="space-y-2">
           <button
             onClick={handleExportJSON}
+            data-testid="export-json-btn"
             className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <FileJson className="w-4 h-4 text-indigo-600" />
@@ -261,6 +262,7 @@ function DataTabContent() {
           </button>
           <button
             onClick={handleExportCSV}
+            data-testid="export-csv-btn"
             className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4 text-green-600" />
@@ -292,6 +294,7 @@ function DataTabContent() {
           ref={fileInputRef}
           type="file"
           accept=".json"
+          data-testid="import-file-input"
           onChange={handleFileSelect}
           className="hidden"
         />

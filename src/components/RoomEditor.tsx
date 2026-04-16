@@ -341,9 +341,9 @@ export function RoomEditor({
             <span className="text-sm text-gray-400">м³</span>
           </div>
         </div>
-        <div className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center items-center text-center">
+        <div data-testid="room-cost-card" className="bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col justify-center items-center text-center">
           <div className="text-sm text-indigo-600 mb-1">Стоимость, ₽</div>
-          <div className="text-xl font-semibold text-indigo-900">
+          <div data-testid="room-cost-value" className="text-xl font-semibold text-indigo-900">
             {Math.ceil(total).toLocaleString('ru-RU')}{' '}
             <span className="text-sm text-indigo-400"></span>
           </div>
@@ -845,6 +845,7 @@ export function RoomEditor({
 
             <button
               onClick={addCustomWork}
+              data-testid="add-work-custom-btn"
               className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all cursor-pointer"
             >
               <Plus className="w-5 h-5" />

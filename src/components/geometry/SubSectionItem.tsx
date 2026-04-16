@@ -67,7 +67,7 @@ export const SubSectionItem = React.memo(function SubSectionItem({
                     subSection.shape === 'parallelogram' ? Parallelogram : Square;
 
   return (
-    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+    <div data-testid={`subsection-item-${subSection.id}`} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
       <div className="flex items-center gap-3 mb-4">
         <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">{index + 1}</span>
         <ShapeIcon className="w-4 h-4 text-indigo-500" />

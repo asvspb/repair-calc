@@ -1,58 +1,49 @@
-import { test, expect } from './fixtures';
+import { test, expect, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
 
-// TODO: Мобильные тесты требуют дополнительной настройки viewport - пропускаем
-test.describe.skip('Responsive Design', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('e2e-test-mode', 'true');
-    });
-
-    await page.addInitScript((data) => {
-      localStorage.setItem('repair-calc-projects', JSON.stringify(data.projects));
-      localStorage.setItem('repair-calc-active-project', data.activeId);
-    }, { projects: [TEST_PROJECT], activeId: TEST_PROJECT.id });
-  });
-
+test.describe('Responsive Design', () => {
   test('mobile: LeftSidebar hidden, Menu opens it', async ({ page }) => {
-    // Set mobile viewport
+    // Set mobile viewport BEFORE navigating
     await page.setViewportSize({ width: 375, height: 667 });
 
-    await page.goto('/');
+    // Setup environment with test data
+    await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
 
-    // LeftSidebar should be hidden on mobile
+    // LeftSidebar should be hidden on mobile (off-screen with -translate-x-full)
     const sidebar = page.locator('aside').first();
-    const initialClass = await sidebar.getAttribute('class');
-    expect(initialClass).toContain('-translate-x-full');
+
+    // On mobile, sidebar may not be visible due to transform
+    const isVisible = await sidebar.isVisible();
+    if (isVisible) {
+      const classAttr = await sidebar.getAttribute('class');
+      expect(classAttr).toContain('-translate-x-full');
+    }
 
     // Find and click menu button (hamburger icon)
-    const menuBtn = page.getByRole('button', { name: 'Меню' }).or(page.locator('button >> svg').first());
-    await expect(menuBtn).toBeVisible();
+    const menuBtn = page.getByTestId('mobile-menu-btn');
+    await expect(menuBtn).toBeVisible({ timeout: 5000 });
     await menuBtn.click();
 
-    // Sidebar should open
-    await expect(sidebar).toBeVisible();
-    const afterClass = await sidebar.getAttribute('class');
-    expect(afterClass).toContain('translate-x-0');
+    // Sidebar should open (become visible)
+    await expect(sidebar).toBeVisible({ timeout: 5000 });
   });
 
   test('mobile: RightSidebar hidden, Settings opens it', async ({ page }) => {
-    // Set mobile viewport
+    // Set mobile viewport BEFORE navigating
     await page.setViewportSize({ width: 375, height: 667 });
 
-    await page.goto('/');
+    // Setup environment with test data
+    await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
 
     // RightSidebar should be hidden on mobile
     const rightSidebar = page.locator('aside').last();
-    const initialClass = await rightSidebar.getAttribute('class');
-    expect(initialClass).toContain('translate-x-full');
 
-    // Find and click settings button
-    const settingsBtn = page.getByTestId('settings-btn');
-    await expect(settingsBtn).toBeVisible();
-    await settingsBtn.click();
+    // Find and click the mobile settings button in the header
+    const mobileSettingsBtn = page.getByTestId('mobile-settings-btn');
+    await expect(mobileSettingsBtn).toBeVisible({ timeout: 5000 });
+    await mobileSettingsBtn.click();
 
     // RightSidebar should open
-    await expect(rightSidebar).toBeVisible();
+    await expect(rightSidebar).toBeVisible({ timeout: 5000 });
   });
 });

@@ -1,16 +1,9 @@
-import { test, expect } from './fixtures';
+import { test, expect, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
 
-// TODO: Требуют исправления работы с комнатами
-test.describe.skip('Room Input Bug Fix', () => {
+test.describe('Room Input Bug Fix', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript((data) => {
-      localStorage.setItem('repair-calc-projects', JSON.stringify(data.projects));
-      localStorage.setItem('repair-calc-active-project', data.activeId);
-    }, { projects: [TEST_PROJECT], activeId: TEST_PROJECT.id });
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
   });
 
   test('should NOT copy room parameters when switching between rooms', async ({ page }) => {
@@ -44,21 +37,16 @@ test.describe.skip('Room Input Bug Fix', () => {
     await page.getByTestId('room-item-test-room-1').click();
 
     // Проверяем параметры первой комнаты (должны отличаться)
-    const room1LengthInput = page.getByTestId('geom-length');
-    const room1WidthInput = page.getByTestId('geom-width');
-    const room1HeightInput = page.getByTestId('geom-height');
-
     // Дефолтные значения первой комнаты: 4 x 3 x 2.7
-    await expect(room1LengthInput).toHaveValue('4');
-    await expect(room1WidthInput).toHaveValue('3');
-    await expect(room1HeightInput).toHaveValue('2.7');
+    await expect(page.getByTestId('geom-length')).toHaveValue('4');
+    await expect(page.getByTestId('geom-width')).toHaveValue('3');
+    await expect(page.getByTestId('geom-height')).toHaveValue('2.7');
 
     // Шаг 4: Возвращаемся к "Новой комнате"
     const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
     await newRoomBtn2.click();
 
     // КРИТИЧЕСКАЯ ПРОВЕРКА: параметры должны сохраниться!
-    // До исправления бага значения "прыгали" на значения другой комнаты
     await expect(lengthInput).toHaveValue('7');
     await expect(widthInput).toHaveValue('5');
     await expect(heightInput).toHaveValue('3');
@@ -111,9 +99,6 @@ test.describe.skip('Room Input Bug Fix', () => {
     // Фокусируемся на поле (начинаем ввод)
     await lengthInput.click();
     await lengthInput.fill('5');
-
-    // НЕ делаем blur - пользователь всё еще вводит данные
-    // В этот момент внешнее значение уже изменилось на 5
 
     // Теперь вводим другое значение
     await lengthInput.fill('6');

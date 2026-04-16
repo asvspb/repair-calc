@@ -83,7 +83,7 @@ export const WorkList: React.FC<WorkListProps> = ({
                 onSaveTemplate={onSaveTemplate}
               />
               {renderExpandedContent && expandedWorks.has(work.id) && (
-                <div className="mt-3 ml-8 pl-4 border-l-2 border-indigo-100">
+                <div data-testid={`work-expanded-${work.id}`} className="mt-3 ml-8 pl-4 border-l-2 border-indigo-100">
                   {renderExpandedContent(work)}
                 </div>
               )}
