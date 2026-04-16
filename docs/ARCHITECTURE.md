@@ -26,7 +26,7 @@
 | Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
 | AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
 | Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
-| Тесты | ✅ 841 тест | 823 passed, 10 failed, 8 skipped |
+| Тесты | ✅ 841 тест | 833 passed, 0 failed, 8 skipped |
 
 ---
 
@@ -507,9 +507,11 @@ export class GeminiProvider implements AIProvider {
 
 ### 6.2 Результаты (2026-04-16)
 
-- **Passed:** 823
-- **Failed:** 10 (syncPull API — localStorage mock issues)
+- **Passed:** 833
+- **Failed:** 0
 - **Skipped:** 8
+
+> **Примечание:** Добавлен мок `localStorage` в `tests/setup.ts` для совместимости с Vitest 4.x + jsdom 26, где `globalThis.localStorage` — пустой объект без Storage-методов. Это исправило 10 падений в `apiStorageProvider.test.ts` и `syncPull.test.ts`.
 
 ### 6.3 E2E тесты (Playwright)
 

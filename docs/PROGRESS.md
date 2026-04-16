@@ -36,6 +36,13 @@
 - Устранены flaky-тесты (переход со скрытых skip на строгие `.toBeVisible()`).
 - Кроссбраузерное тестирование: **Chromium**, **Firefox**, **Mobile (Pixel 5)**.
 
+### 6. Фикс unit-тестов — мок localStorage (2026-04-16)
+**Проблема:** Vitest 4.1.3 + jsdom 26 предоставляет `localStorage` как пустой объект без Storage-методов (`clear`, `getItem`, `setItem`, `removeItem` — `undefined`). Это вызывало падение 10 тестов в `apiStorageProvider.test.ts` и `syncPull.test.ts`.
+
+**Решение:** Добавлен полноценный мок `localStorage` в `tests/setup.ts` с реализацией всех методов Storage API.
+
+**Результат:** 841 тест — 833 passed, 0 failed, 8 skipped (было 823 passed, 10 failed).
+
 ---
 
 ## 📊 Актуальные метрики кода

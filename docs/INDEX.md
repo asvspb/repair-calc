@@ -246,9 +246,11 @@ npm run lint         # TypeScript type check
 | **Total** | **841** |
 
 ### Results
-- **Passed:** 823
-- **Failed:** 10
+- **Passed:** 833
+- **Failed:** 0
 - **Skipped:** 8
+
+> **Fix (2026-04-16):** Added `localStorage` mock in `tests/setup.ts` — Vitest 4.x + jsdom 26 provides an empty object without Storage methods, causing 10 test failures.
 
 ### E2E Status
 - ✅ auth.spec.ts — 3/3
