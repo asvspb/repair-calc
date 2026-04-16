@@ -3,10 +3,7 @@
  */
 
 import type { ProjectData, RoomData } from '../types';
-import { logApiRequest, logApiSuccess, logApiError, logDebug } from '../utils/logger';
 import { httpClient, ApiError } from './httpClient';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
 export class ProjectsApiError extends Error {
   constructor(message: string, public statusCode: number) {
@@ -155,7 +152,7 @@ function parseJSON<T>(value: string | any | null | undefined, defaultValue: T): 
 /**
  * Преобразование проекта из клиентского формата в API
  */
-function clientToApiProject(project: ProjectData, userId: string): Partial<ApiProject> {
+function clientToApiProject(project: ProjectData, _userId: string): Partial<ApiProject> {
   return {
     name: project.name,
     city: project.city || null,
@@ -163,8 +160,6 @@ function clientToApiProject(project: ProjectData, userId: string): Partial<ApiPr
     last_ai_price_update: project.lastAiPriceUpdate || null,
   };
 }
-
-const DEFAULT_TIMEOUT = 30000; // 30 секунд
 
 /**
  * Выполнение HTTP запроса с использованием единого клиента
@@ -182,51 +177,6 @@ async function fetchJson<T>(
       throw new ProjectsApiError(error.message, error.statusCode);
     }
     throw error;
-  }
-}
-
-/**
- * Попытка обновления токена при 401 ошибке
- * Возвращает true если токен успешно обновлен
- * @deprecated Используется httpClient для автоматического обновления токена
- */
-async function tryRefreshToken(): Promise<boolean> {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    logDebug('API', 'Refresh token отсутствует, невозможно обновить');
-    // Очищаем невалидные токены
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    return false;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
-      logDebug('API', 'Не удалось обновить токен');
-      // Очищаем невалидные токены
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      return false;
-    }
-
-    const data = await response.json();
-    localStorage.setItem('token', data.data.token);
-    localStorage.setItem('refreshToken', data.data.refreshToken);
-    logDebug('API', 'Токен успешно обновлен');
-    return true;
-  } catch (error) {
-    logDebug('API', 'Ошибка при обновлении токена', error);
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    return false;
   }
 }
 

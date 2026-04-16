@@ -277,16 +277,10 @@ class HttpClient {
         if (!url.includes('/api/auth/refresh')) {
           const refreshSucceeded = await performTokenRefresh();
           
-          if (refreshSucceeded) {
-            // Retry the original request with new token
-            logDebug('HTTPClient', 'Повторный запрос с новым токеном');
-            try {
+            if (refreshSucceeded) {
+              logDebug('HTTPClient', 'Повторный запрос с новым токеном');
               return await this.fetchWithTimeout<T>(url, options, startTime, method, endpoint);
-            } catch (retryError) {
-              // If retry also fails, throw the error
-              throw retryError;
             }
-          }
         }
       }
 

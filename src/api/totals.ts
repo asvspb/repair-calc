@@ -22,8 +22,6 @@ export interface TotalsResponse {
   calculated_at: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
-
 export class TotalsApiError extends Error {
   constructor(message: string, public statusCode: number) {
     super(message);
@@ -31,11 +29,6 @@ export class TotalsApiError extends Error {
   }
 }
 
-const DEFAULT_TIMEOUT = 30000; // 30 секунд
-
-/**
- * Выполнение HTTP запроса с использованием единого клиента
- */
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}

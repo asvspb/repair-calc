@@ -11,9 +11,6 @@ import type {
   RoomSegment,
   Obstacle,
   WallSection,
-  SimpleModeData,
-  ExtendedModeData,
-  AdvancedModeData,
   GeometryMode,
 } from '../types';
 
@@ -34,7 +31,7 @@ export function updateRoomField<K extends keyof RoomData>(
  */
 function syncModeData(
   room: RoomData,
-  mode: GeometryMode,
+  _mode: GeometryMode,
   _field: keyof RoomData
 ): RoomData {
   // Note: This is called after field update, mode-specific sync is handled

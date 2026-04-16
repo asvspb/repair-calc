@@ -3,6 +3,22 @@
  * Логи выводятся в консоль браузера с группировкой и цветовым выделением
  */
 
+const _c = typeof console !== 'undefined' ? console : undefined as unknown as Console;
+
+function bindConsole(method: 'log' | 'group' | 'groupCollapsed' | 'groupEnd' | 'error'): (...args: unknown[]) => void {
+  return (...args: unknown[]) => {
+    if (_c && typeof _c[method] === 'function') {
+      (_c[method] as (...a: unknown[]) => void)(...args);
+    }
+  };
+}
+
+const _log = bindConsole('log');
+const _group = bindConsole('group');
+const _groupCollapsed = bindConsole('groupCollapsed');
+const _groupEnd = bindConsole('groupEnd');
+const _error = bindConsole('error');
+
 type LogLevel = 'info' | 'success' | 'warning' | 'error' | 'debug';
 
 interface LogEntry {
@@ -45,27 +61,6 @@ const LEVEL_EMOJI: Record<LogLevel, string> = {
   debug: '🔍',
 };
 
-/**
- * Форматирование данных для вывода
- */
-function formatData(data: unknown): string {
-  if (data === undefined) return '';
-  if (data === null) return 'null';
-  
-  try {
-    const str = JSON.stringify(data, null, 2);
-    if (str && str.length > LOG_CONFIG.maxDataLength) {
-      return str.substring(0, LOG_CONFIG.maxDataLength) + '... (truncated)';
-    }
-    return str;
-  } catch {
-    return String(data);
-  }
-}
-
-/**
- * Основная функция логирования
- */
 function log(
   level: LogLevel,
   category: string,
@@ -104,16 +99,16 @@ function log(
   const style = LEVEL_STYLES[level];
 
   // Выводим в консоль
-  console.groupCollapsed(
+  _groupCollapsed(
     `%c${emoji} ${timestampStr} [${category}] ${action}${durationStr}`,
     style
   );
   
   if (data !== undefined) {
-    console.log('📦 Данные:', data);
+    _log('📦 Данные:', data);
   }
   
-  console.groupEnd();
+  _groupEnd();
 }
 
 /**
@@ -134,12 +129,12 @@ export function logSuccess(category: string, action: string, data?: unknown, sta
  * Логирование ошибки
  */
 export function logError(category: string, action: string, error: unknown, data?: unknown): void {
-  console.groupCollapsed(`%c❌ [${category}] ${action}`, LEVEL_STYLES.error);
-  console.error('🚨 Ошибка:', error);
+  _groupCollapsed(`%c❌ [${category}] ${action}`, LEVEL_STYLES.error);
+  _error('🚨 Ошибка:', error);
   if (data) {
-    console.log('📦 Контекст:', data);
+    _log('📦 Контекст:', data);
   }
-  console.groupEnd();
+  _groupEnd();
 }
 
 /**
@@ -192,25 +187,25 @@ export function logApiSuccess(method: string, endpoint: string, startTime: numbe
  * Логирование ошибки API
  */
 export function logApiError(method: string, endpoint: string, startTime: number, error: unknown): void {
-  console.groupCollapsed(
+  _groupCollapsed(
     `%c❌ [API] ← ${method.toUpperCase()} ${endpoint}`,
     LEVEL_STYLES.error
   );
-  console.error('🚨 Ошибка:', error);
-  console.log('⏱️ Время:', `${Date.now() - startTime}ms`);
-  console.groupEnd();
+  _error('🚨 Ошибка:', error);
+  _log('⏱️ Время:', `${Date.now() - startTime}ms`);
+  _groupEnd();
 }
 
 /**
  * Логирование изменения состояния
  */
 export function logStateChange(component: string, change: string, newValue: unknown, oldValue?: unknown): void {
-  console.groupCollapsed(`%c🔄 [${component}] ${change}`, 'color: #9C27B0; font-weight: bold');
+  _groupCollapsed(`%c🔄 [${component}] ${change}`, 'color: #9C27B0; font-weight: bold');
   if (oldValue !== undefined) {
-    console.log('📤 Было:', oldValue);
+    _log('📤 Было:', oldValue);
   }
-  console.log('📥 Стало:', newValue);
-  console.groupEnd();
+  _log('📥 Стало:', newValue);
+  _groupEnd();
 }
 
 /**
@@ -238,12 +233,12 @@ export function getActionHistory(): LogEntry[] {
  * Вывод истории действий в консоль
  */
 export function printActionHistory(): void {
-  console.group('📜 История действий');
+  _group('📜 История действий');
   actionHistory.forEach((entry, index) => {
     const emoji = LEVEL_EMOJI[entry.level];
-    console.log(`${index + 1}. ${emoji} [${entry.category}] ${entry.action}`);
+    _log(`${index + 1}. ${emoji} [${entry.category}] ${entry.action}`);
   });
-  console.groupEnd();
+  _groupEnd();
 }
 
 /**

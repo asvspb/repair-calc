@@ -126,7 +126,7 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
   });
 }
 
-const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByObject = false }) => {
+const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByObject: _groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [expandedWorks, setExpandedWorks] = React.useState<Set<string>>(new Set());
 

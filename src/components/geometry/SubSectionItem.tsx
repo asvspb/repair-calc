@@ -3,7 +3,6 @@ import { Trash2, HelpCircle, Square } from 'lucide-react';
 import type { RoomSubSection, Opening, WallSection } from '../../types';
 import { NumberInput } from '../ui/NumberInput';
 import { OpeningList } from './OpeningList';
-import { GeometryMetrics } from './GeometryMetrics';
 import { calculateSectionMetrics } from '../../utils/geometry';
 
 // Custom SVG icons for shapes

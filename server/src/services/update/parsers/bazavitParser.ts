@@ -11,7 +11,7 @@
  */
 
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
-import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData, ParsedCategory } from './types.js';
+import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData } from './types.js';
 import { ParserError } from './types.js';
 import { winstonLogger } from '../../../middleware/logger.js';
 

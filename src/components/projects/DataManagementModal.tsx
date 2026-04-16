@@ -104,7 +104,6 @@ function DataTabContent() {
     activeProjectId,
     setActiveProjectId,
     updateProjects,
-    isSyncing,
   } = useProjectContext();
 
   const { isAuthenticated } = useAuth();
@@ -369,7 +368,7 @@ function DataTabContent() {
 export function DataManagementModal({
   isOpen,
   onClose,
-  onImportTemplates,
+  onImportTemplates: _onImportTemplates,
 }: DataManagementModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('data');
 

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
-import { notFound, forbidden, badRequest } from '../middleware/errorHandler.js';
+import { notFound } from '../middleware/errorHandler.js';
 import { winstonLogger } from '../middleware/logger.js';
 import type { AuthRequest } from '../types/index.js';
 

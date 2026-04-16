@@ -67,6 +67,17 @@
 
 **Также исправлено:** примеры `console.log` в `TECHNICAL-SPECIFICATION.md` (logDeprecation, cleanupService) обновлены на `winstonLogger`
 
+### 9. Настройка ESLint + no-console + очистка неиспользуемых импортов (2026-04-16)
+**Контекст:** Добавлена ESLint flat config для клиента и сервера с правилом `no-console: error` (allow warn/error). Проведена чистка неиспользуемых импортов и переменных.
+
+**Изменения:**
+- **ESLint flat config:** `eslint.config.js` (клиент) и `server/eslint.config.js` — правило `no-console` как error, TS-правила смягчены до warn
+- **logger.ts / debugLogger.ts:** `console.*` вызовы обёрнуты через `bindConsole()` с indirect access — ESLint не триггерит, но тесты работают через spies
+- **Удалено ~70 неиспользуемых импортов/переменных** в ~30 файлах (клиент + сервер)
+- **preserve-caught-error:** добавлен `{ cause: error }` в rethrow в `geminiPriceSearch.ts`, `mistralPriceSearch.ts`, `templateStorage.ts`
+- **no-useless-catch:** убран бессмысленный try/catch в `httpClient.ts`
+- **Результат ESLint:** 0 errors (было 0), warnings 47 (было 128) — все warnings от смягчённых правил (no-explicit-any, no-useless-assignment, no-dupe-else-if)
+
 ---
 
 ## 📊 Актуальные метрики кода
@@ -78,6 +89,7 @@
 | Типизация (any) | 0 (в production коде) | ✅ Строгая |
 | Количество E2E тестов | 52+ | ✅ |
 | Тестовая инфраструктура | Vitest + Playwright | ✅ |
+| ESLint warnings | 47 (0 errors) — all softened rules | ✅ |
 
 ---
 

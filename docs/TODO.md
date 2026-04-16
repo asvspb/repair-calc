@@ -81,7 +81,7 @@
 ### 1.3 Утилиты и консистентность
 - `[ ]` Единая утилита генерации ID — `utils/factories.ts` (заменить 4+ разных способа генерации ID на `generateId(prefix)`)
 - `[x]` Заменить `console.*` на встроенный logger ✅ 2026-04-16 (клиент → `src/utils/logger.ts`, сервер → `winstonLogger`. Миграции оставлены на `console.log`)
-- `[ ]` Добавить ESLint правило `no-console` для предотвращения новых `console.*`
+- `[x]` Добавить ESLint правило `no-console` для предотвращения новых `console.*` ✅ 2026-04-16 (клиент + сервер, миграции освобождены, logger.ts/debugLogger.ts с eslint-disable)
 - `[ ]` Использовать единые константы для localStorage keys (вынести `STORAGE_KEYS` в общий модуль)
 
 ---

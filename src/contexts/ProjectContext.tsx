@@ -804,7 +804,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       
       if (errors.size > 0) {
         const errorMessages = Array.from(errors.entries()).map(([key, value]) => {
-          const [projectId, roomId] = key.split(':');
+          const [_projectId, roomId] = key.split(':');
           return `Комната ${roomId}: ${value.error.message}`;
         });
         setRoomSyncError(`Ошибка синхронизации комнат: ${errorMessages.join('; ')}`);

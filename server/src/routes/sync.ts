@@ -4,9 +4,7 @@ import { syncPushSchema } from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { RoomRepository } from '../db/repositories/room.repo.js';
-import { transaction } from '../db/pool.js';
 import type { AuthRequest, Conflict, ChangeLogEntry, Room } from '../types/index.js';
-import type { RowDataPacket } from 'mysql2/promise';
 import { winstonLogger } from '../middleware/logger.js';
 
 const router = Router();
@@ -47,7 +45,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
     for (const change of changes) {
       try {
         const changeData = change as ChangeLogEntry & { id: string };
-        const { id, entity, entityId, data, timestamp } = changeData;
+        const { id, entity, entityId, data, timestamp: _timestamp } = changeData;
         const clientVersion = (data as { version?: number })?.version ?? 0;
         const roomData = data as Partial<Room>;
         const projectData = data as { name?: string; city?: string; use_ai_pricing?: boolean };

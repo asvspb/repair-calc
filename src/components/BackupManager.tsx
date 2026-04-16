@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, X, Database, Trash2, RefreshCw, Save, FolderOpen, Edit2 } from 'lucide-react';
+import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, X, Database, Trash2, RefreshCw, Save, FolderOpen } from 'lucide-react';
 import type { ProjectData } from '../types';
 import type { WorkTemplate } from '../types/workTemplate';
 import { StorageManager, countImportedObjects } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiStorageProvider } from '../api/storage/apiStorageProvider';
-import { getProjects, getProject, createProject, updateProject } from '../api/projects';
+import { getProjects, getProject } from '../api/projects';
 import { getAllRooms } from '../utils/projectObjects';
 import { logError } from '../utils/logger';
 

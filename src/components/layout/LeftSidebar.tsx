@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, X, LayoutDashboard } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { RoomList } from '../rooms/RoomList';
 import { ObjectSettings } from './ObjectSettings';
 import type { RoomData, ObjectData } from '../../types';

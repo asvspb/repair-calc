@@ -2,10 +2,8 @@
  * API клиент для работы с комнатами
  */
 
-import type { RoomData, Opening, RoomSegment, Obstacle, WallSection, RoomSubSection, WorkData } from '../types';
+import type { RoomData } from '../types';
 import { httpClient, ApiError } from './httpClient';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
 export class RoomsApiError extends Error {
   constructor(message: string, public statusCode: number) {
@@ -95,11 +93,6 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
   };
 }
 
-const DEFAULT_TIMEOUT = 30000; // 30 секунд
-
-/**
- * Выполнение HTTP запроса с использованием единого клиента
- */
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}

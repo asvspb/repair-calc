@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { User, AuthState, LoginCredentials, RegisterCredentials } from '../types/auth';
+import type { AuthState, LoginCredentials, RegisterCredentials } from '../types/auth';
 import * as authApi from '../api/auth';
 import { StorageManager } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage/apiStorageProvider';

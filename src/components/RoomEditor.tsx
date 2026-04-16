@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen, Droplet, Grid3X3 } from 'lucide-react';
+import { ChevronUp, Wrench, Package, ClipboardList, X, Plus, Trash2, BookOpen } from 'lucide-react';
 import { WorkList } from './works/WorkList';
 import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
 import { WorkCatalogPicker } from './works/WorkCatalogPicker';
-import { MaterialCalculationCard, PaintMaterialCard, TileMaterialCard, MaterialPriceSearch, WorkPriceSearch } from './works';
+import { MaterialPriceSearch, WorkPriceSearch } from './works';
 import { NumberInput } from './ui/NumberInput';
 import type {
-  Opening,
   CalculationType,
   Material,
   Tool,

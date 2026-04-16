@@ -8,7 +8,7 @@ import { X, Search, Package, Wrench, Clock, Star, Info } from 'lucide-react';
 import type { WorkTemplateCatalog, WorkCategory, Difficulty } from '../../types/workTemplate';
 import { WORK_CATEGORY_LABELS, DIFFICULTY_LABELS } from '../../types/workTemplate';
 import type { WorkData, Material, Tool, RoomMetrics } from '../../types';
-import { WORK_TEMPLATES_CATALOG, searchWorks, getWorksByCategory, getPopularWorks } from '../../data/workTemplatesCatalog';
+import { WORK_TEMPLATES_CATALOG, getWorksByCategory, getPopularWorks } from '../../data/workTemplatesCatalog';
 
 type Props = {
   isOpen: boolean;
@@ -40,23 +40,22 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
 /**
  * Конвертирует WorkTemplateCatalog в WorkData с расчётом материалов по метрикам помещения
  */
-export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMetrics): WorkData {
-  // Определяем объём работы на основе типа расчёта
-  let workVolume = 0;
+  export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMetrics): WorkData {
+  let _workVolume = 0;
   let perimeter = 0;
   
   switch (template.calculationType) {
     case 'floorArea':
-      workVolume = metrics.floorArea;
+      _workVolume = metrics.floorArea;
       break;
     case 'netWallArea':
-      workVolume = metrics.netWallArea;
+      _workVolume = metrics.netWallArea;
       break;
     case 'skirtingLength':
-      workVolume = metrics.skirtingLength;
+      _workVolume = metrics.skirtingLength;
       break;
     case 'customCount':
-      workVolume = 1; // По умолчанию 1 штука
+      _workVolume = 1;
       break;
   }
   

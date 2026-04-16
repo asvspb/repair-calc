@@ -18,11 +18,11 @@ export function ProjectSettings({
   projects,
   activeProjectId,
   activeProject,
-  isSyncing,
+  isSyncing: _isSyncing,
   onProjectChange,
   onRename,
   onDelete,
-  onNewProject,
+  onNewProject: _onNewProject,
 }: ProjectSettingsProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');

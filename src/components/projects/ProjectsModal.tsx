@@ -39,7 +39,6 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     updateProjects,
     createProject,
     deleteProject,
-    isSyncing,
   } = useProjectContext();
 
   const { isAuthenticated } = useAuth();

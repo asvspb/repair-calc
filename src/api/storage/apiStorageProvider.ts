@@ -11,9 +11,6 @@ import * as roomsApi from '../rooms';
 import { getAllRooms } from '../../utils/projectObjects';
 import { isServerId as isServerIdUtil } from '../../utils/idMapper';
 import {
-  logApiRequest,
-  logApiSuccess,
-  logApiError,
   logStart,
   logSuccess,
   logError,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator, Menu, Settings, ChevronRight } from 'lucide-react';
 import { SummaryView } from './components/SummaryView';
 import { RoomEditor } from './components/RoomEditor';
@@ -9,12 +9,11 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './components/auth';
 import { LeftSidebar } from './components/layout/LeftSidebar';
 import { RightSidebar } from './components/layout/RightSidebar';
-import type { ProjectData, RoomData, ObjectData } from './types';
+import type { RoomData, ObjectData } from './types';
 import type { WorkTemplate } from './types/workTemplate';
-import { createNewProject, createNewRoom } from './utils/factories';
-import { StorageManager } from './utils/storage';
+import { createNewRoom } from './utils/factories';
 import { IdMapper } from './utils/idMapper';
-import { getAllRooms, migrateProjectToObjects } from './utils/projectObjects';
+import { getAllRooms } from './utils/projectObjects';
 import { CreateObjectModal } from './components/objects/CreateObjectModal';
 import { ProjectsModal } from './components/projects';
 import { DataManagementModal } from './components/projects/DataManagementModal';
@@ -61,10 +60,8 @@ function AppContent() {
     activeObjectId,
     activeObject,
     setActiveObjectId,
-    createObject,
     updateObject,
     deleteObject,
-    copyObject,
   } = useProjectContext();
 
   const {
@@ -84,7 +81,6 @@ function AppContent() {
   const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isDataManagementModalOpen, setIsDataManagementModalOpen] = useState(false);
-  const roomHeaderRef = useRef<HTMLDivElement | null>(null);
 
   // Track room header visibility - must be called before any early returns
   useEffect(() => {
@@ -125,21 +121,6 @@ function AppContent() {
       </div>
     );
   }
-
-  const handleImport = (importedProjects: ProjectData[], importedActiveId: string) => {
-    // Выполняем миграцию импортированных проектов на новую структуру с objects
-    const migratedProjects = importedProjects.map(project => migrateProjectToObjects(project));
-    updateProjects(migratedProjects);
-    setActiveProjectId(importedActiveId);
-    setActiveTab('summary');
-  };
-
-  const handleClearAll = () => {
-    StorageManager.clearAll();
-    updateProjects([]);
-    setActiveProjectId('');
-    setActiveTab('summary');
-  };
 
   const handleDeleteRoom = (roomId: string) => {
     deleteRoom(roomId);

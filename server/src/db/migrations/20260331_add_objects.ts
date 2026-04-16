@@ -80,14 +80,14 @@ export async function up(knex: Knex): Promise<void> {
       await knex.schema.alterTable('rooms', (table) => {
         table.index(['object_id'], 'idx_room_object_id');
       });
-    } catch (e) {
+    } catch (_e) {
       // Индекс уже существует - игнорируем
     }
     try {
       await knex.schema.alterTable('rooms', (table) => {
         table.index(['object_id', 'sort_order'], 'idx_object_sort');
       });
-    } catch (e) {
+    } catch (_e) {
       // Индекс уже существует - игнорируем
     }
   }

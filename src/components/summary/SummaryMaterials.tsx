@@ -59,7 +59,7 @@ function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
   return Array.from(materialMap.values()).sort((a, b) => b.totalPrice - a.totalPrice);
 }
 
-const SummaryMaterialsInternal: React.FC<Props> = ({ project, groupByObject = false }) => {
+const SummaryMaterialsInternal: React.FC<Props> = ({ project, groupByObject: _groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const materials = useMemo(() => aggregateMaterials(project), [project]);

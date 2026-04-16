@@ -225,7 +225,7 @@ export class StorageManager {
       }
 
       return { success: true, data };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Неверный формат JSON файла' };
     }
   }

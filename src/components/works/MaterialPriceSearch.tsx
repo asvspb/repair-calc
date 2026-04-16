@@ -5,7 +5,6 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Check, RefreshCw } from 'lucide-react';
 import { usePriceSearch } from '../../api/prices';
-import type { PriceSearchResult, PriceSearchError } from '../../api/prices';
 
 type Props = {
   materialName: string;
@@ -24,7 +23,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
   disabled = false,
 }) => {
   const [showModal, setShowModal] = useState(false);
-  const { search, isLoading, result, error, reset, isConfigured, provider } = usePriceSearch();
+  const { search, isLoading, result, error, reset, isConfigured } = usePriceSearch();
 
   // Обработчик поиска
   const handleSearch = useCallback(() => {

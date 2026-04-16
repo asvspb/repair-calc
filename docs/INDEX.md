@@ -15,7 +15,8 @@
 - **Backend:** Express + MySQL + Knex
 - **Styling:** Tailwind CSS 4
 - **State Management:** React Context + localStorage + API sync
-- **Testing:** Vitest (841 тест) + Playwright (E2E)
+- **Testing:** Vitest (841 тест, 833 passed) + Playwright (E2E)
+- **Linting:** ESLint 10 (flat config, no-console: error, typescript-eslint)
 - **Icons:** Lucide React
 
 **Key Features:**

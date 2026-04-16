@@ -4,7 +4,7 @@ import { createProjectSchema, updateProjectSchema, idParamSchema, updateProjectW
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
 import { winstonLogger } from '../middleware/logger.js';
-import type { AuthRequest, Project, Room } from '../types/index.js';
+import type { AuthRequest, Project } from '../types/index.js';
 
 const router = Router();
 

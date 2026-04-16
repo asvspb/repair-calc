@@ -1,5 +1,5 @@
-import { query, execute, getConnection, transaction } from '../pool.js';
-import type { Project, Room, ProjectWithRooms, Object, ObjectWithRooms, ProjectWithObjects } from '../../types/index.js';
+import { query, execute, transaction } from '../pool.js';
+import type { Project, Room, ProjectWithRooms, Object, ProjectWithObjects } from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
 import { winstonLogger } from '../../middleware/logger.js';

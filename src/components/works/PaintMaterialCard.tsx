@@ -7,7 +7,6 @@ import React, { memo, useState, useMemo } from 'react';
 import { Droplet, Layers, Info, RefreshCw } from 'lucide-react';
 import { NumberInput } from '../ui/NumberInput';
 import type { Material, RoomMetrics } from '../../types';
-import { calculateByConsumption } from '../../utils/materialCalculations';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 

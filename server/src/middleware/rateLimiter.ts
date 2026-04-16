@@ -1,5 +1,3 @@
-import rateLimit from 'express-rate-limit';
-
 // Отключаем rate limiting полностью
 const disabledLimiter = (_req: any, _res: any, next: any) => next();
 

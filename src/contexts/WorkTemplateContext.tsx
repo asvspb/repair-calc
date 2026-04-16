@@ -3,7 +3,7 @@ import type { WorkTemplate } from '../types/workTemplate';
 import type { RoomMetrics } from '../types';
 import type { WorkData } from '../types';
 import { TemplateStorage } from '../utils/templateStorage';
-import { migrateWorkData, calculateWorkQuantity } from '../utils/costs';
+import { migrateWorkData } from '../utils/costs';
 import type { SaveResult } from '../hooks/useWorkTemplates';
 
 interface WorkTemplateContextValue {

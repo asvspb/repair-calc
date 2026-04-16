@@ -69,7 +69,7 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
   });
 }
 
-const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject = false }) => {
+const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject: _groupByObject = false }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const tools = useMemo(() => aggregateTools(project), [project]);

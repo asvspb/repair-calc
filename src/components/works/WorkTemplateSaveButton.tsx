@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Check, X } from 'lucide-react';
+import { Save, Check } from 'lucide-react';
 import type { WorkData } from '../../types';
 import type { SaveResult } from '../../hooks/useWorkTemplates';
 

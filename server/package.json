@@ -11,7 +11,7 @@
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "seed": "knex seed:run",
-    "lint": "eslint src/**/*.ts",
+    "lint": "eslint src/",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -36,6 +36,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/exceljs": "^0.5.3",
@@ -44,10 +45,12 @@
     "@types/node": "^22.14.0",
     "@types/supertest": "^7.2.0",
     "@types/uuid": "^10.0.0",
+    "eslint": "^10.2.0",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^4.0.18"
   }
 }

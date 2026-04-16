@@ -55,7 +55,7 @@ export class TemplateStorage {
       TemplateStorage.provider.set(STORAGE_KEYS.WORK_TEMPLATES, templates);
     } catch (error) {
       if (error instanceof StorageProviderError && error.type === 'quota_exceeded') {
-        throw new Error('Превышен лимит хранилища. Удалите ненужные шаблоны.');
+        throw new Error('Превышен лимит хранилища. Удалите ненужные шаблоны.', { cause: error });
       }
       throw error;
     }

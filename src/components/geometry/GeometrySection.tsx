@@ -56,7 +56,7 @@ interface GeometrySectionProps {
 
 export function GeometrySection({
   room,
-  updateRoom,
+  updateRoom: _updateRoom,
   updateRoomById,
   isGeometryCollapsed,
   isExtendedGeometryCollapsed,

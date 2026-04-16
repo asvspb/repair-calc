@@ -3,7 +3,7 @@
  * Поддерживает различные типы расчёта и показывает рекомендованное количество
  */
 
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState } from 'react';
 import { RefreshCw, Info, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-react';
 import { NumberInput } from '../ui/NumberInput';
 import type { Material, RoomMetrics } from '../../types';

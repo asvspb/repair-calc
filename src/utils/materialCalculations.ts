@@ -43,7 +43,7 @@ export function calculateByCoverage(
   area: number,
   coveragePerUnit: number,
   wastePercent: number = 10,
-  roundUp: boolean = true
+  _roundUp: boolean = true
 ): CalculationResult {
   if (coveragePerUnit <= 0) {
     throw new Error('coveragePerUnit must be greater than 0');

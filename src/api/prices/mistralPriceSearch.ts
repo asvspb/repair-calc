@@ -109,7 +109,7 @@ function parseMistralResponse(response: unknown): PriceSearchResult {
       disclaimer: parsed.disclaimer || 'Данные ориентировочные, уточните цены в магазинах',
     };
   } catch (error) {
-    throw new Error(`Ошибка парсинга ответа: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+    throw new Error(`Ошибка парсинга ответа: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`, { cause: error });
   }
 }
 

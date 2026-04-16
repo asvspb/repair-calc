@@ -2,14 +2,13 @@
  * Хук для расчёта материалов с поддержкой авто-расчёта
  */
 
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import type { Material, RoomMetrics } from '../types';
 import {
   calculateByCoverage,
   calculateByConsumption,
   calculateByPerimeter,
   calculateByCount,
-  calculateVolumetric,
   type CalculationResult,
 } from '../utils/materialCalculations';
 
@@ -101,7 +100,7 @@ function calculateMaterial(
   metrics: RoomMetrics,
   calculationType?: string,
   customCount?: number,
-  thickness?: number
+  _thickness?: number
 ): CalculationResult {
   // Определяем площадь для расчёта
   const area = getAreaForType(calculationType, metrics);
