@@ -1,30 +1,32 @@
 # Архитектура проекта Repair Calculator
 
-**Дата:** 2026-03-13
+**Дата:** 2026-04-16
 **Статус:** Актуально
 **Версия клиента:** React 19 + Vite 6
+**Версия сервера:** Express + MySQL + Knex
 
 ---
 
 ## 1. Обзор проекта
 
 **Repair Calculator** — PWA-приложение для расчёта стоимости ремонтных работ. Позволяет:
-- Создавать проекты с несколькими комнатами
+- Создавать проекты с несколькими объектами недвижимости
 - Рассчитывать площади стен, полов, потолков с учётом проёмов
 - Вести каталог работ с материалами и инструментами
 - Искать цены через AI (Gemini/Mistral)
 - Экспортировать данные в CSV/JSON
 
-### 1.1 Текущий статус (2026-03-13)
+### 1.1 Текущий статус (2026-04-16)
 
 | Компонент | Статус | Описание |
 |-----------|--------|----------|
 | Клиент | ✅ Готов | React 19, Vite 6, TailwindCSS 4 |
-| Хранилище | ✅ Готов | localStorage + IStorageProvider |
-| Тесты | ✅ Готов | 402 теста (~50% покрытие) |
-| Сервер | ❌ Не реализован | Планируется (см. DATABASE_MIGRATION.md) |
-| База данных | ❌ Не реализована | MySQL (планируется) |
-| AI-интеграция | 🟡 Частично | Клиентская реализация через Gemini API |
+| Сервер | ✅ Готов | Express, MySQL, Knex, JWT |
+| База данных | ✅ Готова | MySQL 8 с миграциями |
+| Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
+| AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
+| Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
+| Тесты | ✅ 841 тест | 823 passed, 10 failed, 8 skipped |
 
 ---
 
@@ -34,67 +36,92 @@
 
 ```
 src/
-├── App.tsx                    # Главный компонент (~170 строк)
+├── App.tsx                    # Главный компонент (~475 строк)
 ├── main.tsx                   # Entry point
 ├── index.css                  # Глобальные стили (TailwindCSS)
 │
 ├── api/                       # API-интеграции
+│   ├── auth.ts                # Аутентификация
+│   ├── projects.ts            # Projects API
+│   ├── rooms.ts               # Rooms API
+│   ├── sync.ts                # Sync API (pull/push)
+│   ├── users.ts               # Users API
+│   ├── storage/
+│   │   └── apiStorageProvider.ts  # Storage через API
 │   └── prices/                # Поиск цен через AI
 │       ├── geminiPriceSearch.ts
 │       ├── mistralPriceSearch.ts
 │       ├── priceCache.ts
 │       ├── unifiedSearch.ts
-│       ├── types.ts
-│       └── index.ts
+│       └── types.ts
 │
 ├── components/                # React-компоненты
-│   ├── BackupManager.tsx      # Экспорт/импорт проектов
-│   ├── RoomEditor.tsx         # Редактор комнаты (~843 строки)
-│   ├── SummaryView.tsx        # Общая смета
+│   ├── auth/                  # Аутентификация (3 файла)
+│   │   ├── LoginPage.tsx
+│   │   ├── RegisterPage.tsx
+│   │   └── ProtectedRoute.tsx
 │   │
-│   ├── geometry/              # Модуль геометрии
-│   │   ├── index.ts
-│   │   ├── GeometrySection.tsx    # Контейнер геометрии
-│   │   ├── ModeSelector.tsx       # Выбор режима (simple/extended/advanced)
-│   │   ├── SimpleGeometry.tsx     # Простая геометрия
-│   │   ├── ExtendedGeometry.tsx   # Расширенная (секции)
-│   │   ├── AdvancedGeometry.tsx    # Продвинутая (сегменты/препятствия)
-│   │   ├── SubSectionItem.tsx     # Элемент секции
-│   │   ├── OpeningList.tsx        # Окна/двери
-│   │   └── GeometryMetrics.tsx    # Метрики площади
+│   ├── geometry/              # Модуль геометрии (8 файлов)
+│   │   ├── GeometrySection.tsx
+│   │   ├── ModeSelector.tsx
+│   │   ├── SimpleGeometry.tsx
+│   │   ├── ExtendedGeometry.tsx
+│   │   ├── AdvancedGeometry.tsx
+│   │   ├── SubSectionItem.tsx
+│   │   ├── OpeningList.tsx
+│   │   └── GeometryMetrics.tsx
 │   │
-│   ├── rooms/                 # Список комнат
-│   │   ├── index.ts
+│   ├── layout/                # Layout компоненты (4 файла)
+│   │   ├── LeftSidebar.tsx
+│   │   ├── RightSidebar.tsx
+│   │   ├── ObjectSettings.tsx
+│   │   └── ProjectSettings.tsx
+│   │
+│   ├── objects/               # Управление объектами (4 файла)
+│   │   ├── ObjectCard.tsx
+│   │   ├── ObjectSelector.tsx
+│   │   ├── ObjectsList.tsx
+│   │   └── CreateObjectModal.tsx
+│   │
+│   ├── projects/              # Управление проектами (3 файла)
+│   │   ├── ProjectsList.tsx
+│   │   ├── ProjectsModal.tsx
+│   │   └── DataManagementModal.tsx
+│   │
+│   ├── rooms/                 # Список комнат (2 файла)
 │   │   ├── RoomList.tsx
 │   │   └── RoomListItem.tsx
 │   │
-│   ├── works/                 # Работы и материалы
-│   │   ├── index.ts
+│   ├── works/                 # Работы и материалы (10 файлов)
 │   │   ├── WorkList.tsx
 │   │   ├── WorkListItem.tsx
-│   │   ├── WorkCatalogPicker.tsx      # Выбор из каталога
+│   │   ├── WorkCatalogPicker.tsx
 │   │   ├── WorkTemplatePickerModal.tsx
 │   │   ├── WorkTemplateSaveButton.tsx
-│   │   ├── WorkPriceSearch.tsx         # Поиск цен работ
-│   │   ├── MaterialCalculationCard.tsx # Расчёт материалов
-│   │   ├── PaintMaterialCard.tsx       # Карточка краски
-│   │   ├── TileMaterialCard.tsx        # Карточка плитки
-│   │   └── MaterialPriceSearch.tsx      # Поиск цен материалов
+│   │   ├── WorkPriceSearch.tsx
+│   │   ├── MaterialCalculationCard.tsx
+│   │   ├── MaterialPriceSearch.tsx
+│   │   ├── PaintMaterialCard.tsx
+│   │   └── TileMaterialCard.tsx
 │   │
-│   ├── summary/               # Сводка по проекту
-│   │   ├── index.ts
+│   ├── summary/               # Сводка по проекту (3 файла)
 │   │   ├── SummaryMaterials.tsx
 │   │   ├── SummaryTools.tsx
 │   │   └── SummaryWorks.tsx
 │   │
-│   └── ui/                    # UI-компоненты
-│       ├── ConfirmDialog.tsx
-│       ├── ErrorBoundary.tsx
-│       └── NumberInput.tsx
+│   ├── ui/                    # UI-компоненты (3 файла)
+│   │   ├── ConfirmDialog.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   └── NumberInput.tsx
+│   │
+│   ├── BackupManager.tsx      # Экспорт/импорт проектов
+│   ├── RoomEditor.tsx         # Редактор комнаты (~906 строк)
+│   └── SummaryView.tsx        # Общая смета
 │
 ├── contexts/                  # React Context
 │   ├── index.ts
-│   ├── ProjectContext.tsx    # Состояние проекта
+│   ├── AuthContext.tsx        # Аутентификация (JWT)
+│   ├── ProjectContext.tsx     # Состояние проекта (~981 строка)
 │   └── WorkTemplateContext.tsx
 │
 ├── data/                      # Статические данные
@@ -102,13 +129,14 @@ src/
 │   └── workTemplatesCatalog.ts # Каталог типовых работ
 │
 ├── hooks/                     # Кастомные хуки
-│   ├── useGeometryState.ts   # Состояние геометрии
+│   ├── useGeometryState.ts    # Состояние геометрии
 │   ├── useMaterialCalculation.ts
 │   ├── useProjects.ts
 │   └── useWorkTemplates.ts
 │
 ├── types/                     # TypeScript типы
-│   ├── index.ts               # Основные типы (ProjectData, RoomData, WorkData...)
+│   ├── index.ts               # Основные типы (ProjectData, ObjectData, RoomData...)
+│   ├── auth.ts                # Типы аутентификации
 │   ├── storage.ts             # IStorageProvider
 │   └── workTemplate.ts        # Шаблоны работ
 │
@@ -120,7 +148,11 @@ src/
     ├── materialCalculations.ts # Формулы расчёта материалов
     ├── roomHelpers.ts         # Хелперы для комнат
     ├── storage.ts             # StorageManager
-    └── templateStorage.ts     # Хранилище шаблонов
+    ├── templateStorage.ts     # Хранилище шаблонов
+    ├── idMapper.ts            # Маппинг локальных/серверных ID
+    ├── projectObjects.ts      # Object-based helpers
+    ├── migration.ts           # Миграция данных
+    └── projectContextPatch.ts  # Context patches
 ```
 
 ### 2.2 Основные типы данных
@@ -128,14 +160,33 @@ src/
 ```typescript
 // src/types/index.ts
 
-// Проект
+// Проект (группа объектов)
 type ProjectData = {
   id: string;
   name: string;
+  description?: string;
+  isPremium?: boolean;
+  objects: ObjectData[];      // Объекты недвижимости
+  version?: number;
+  // Deprecated (для обратной совместимости)
+  rooms?: RoomData[];
+  city?: string;
+  useAiPricing?: boolean;
+  lastAiPriceUpdate?: string;
+};
+
+// Объект недвижимости
+type ObjectData = {
+  id: string;
+  projectId: string;
+  name: string;
+  city?: string;
+  address?: string;
+  useAiPricing?: boolean;
+  lastAiPriceUpdate?: string;
   rooms: RoomData[];
-  city?: string;              // Город для поиска цен
-  useAiPricing?: boolean;     // Использовать AI для цен
-  lastAiPriceUpdate?: string; // Дата последнего обновления
+  version?: number;
+  sortOrder?: number;
 };
 
 // Комната
@@ -171,6 +222,18 @@ type WorkData = {
 };
 ```
 
+### 2.3 Иерархия данных
+
+```
+Пользователь (users)
+└── Проект (projects) — группа объектов
+    └── Объект (objects) — недвижимость
+        └── Комната (rooms)
+            └── Работа (works)
+                ├── Материал (materials)
+                └── Инструмент (tools)
+```
+
 ### 2.3 Хранилище (Storage)
 
 **Абстракция:** `IStorageProvider` в `src/types/storage.ts`
@@ -191,21 +254,37 @@ export interface IStorageProvider {
 - `ApiStorageProvider` — сохранение через REST API
 - `IndexedDBProvider` — оффлайн-хранение
 
-### 2.4 Контекст проекта (ProjectContext)
+### 2.4 Контексты
 
+#### AuthContext
+```typescript
+interface AuthContextValue {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+}
+```
+
+#### ProjectContext
 ```typescript
 interface ProjectContextValue {
   // State
   projects: ProjectData[];
   activeProjectId: string;
   activeProject: ProjectData | null;
+  activeObjectId: string;
+  activeObject: ObjectData | null;
   isLoading: boolean;
-  error: StorageError | null;
-  lastSaved: Date | null;
-  saveError: string | null;
+  isSyncing: boolean;
   
   // Actions
   setActiveProjectId: (id: string) => void;
+  setActiveObjectId: (id: string) => void;
   updateProjects: (projects: ProjectData[]) => void;
   updateActiveProject: (project: ProjectData) => void;
   updateRoom: (room: RoomData) => void;
@@ -213,65 +292,121 @@ interface ProjectContextValue {
   deleteRoom: (roomId: string) => void;
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
+  
+  // Object management
+  createObject: (object: ObjectData) => void;
+  updateObject: (object: ObjectData) => void;
+  deleteObject: (objectId: string) => void;
+  copyObject: (objectId: string) => void;
 }
 ```
 
 **Особенности:**
-- Автосохранение с debounce (1 сек)
+- Автосохранение с debounce (1-2 сек)
 - Защита от потери данных при закрытии (`beforeunload`)
 - Миграция данных при загрузке
+- Синхронизация с сервером при авторизации
 
 ---
 
-## 3. Серверная архитектура (ПЛАНИРУЕТСЯ)
+## 3. Серверная архитектура
 
-**Подробное ТЗ:** [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
-
-### 3.1 Целевая архитектура
-
-```
-┌─────────────────┐     HTTP/REST      ┌─────────────────┐
-│   React Client  │ ◄───────────────► │  Express Server  │
-│   (port 3993)   │                    │   (port 3994)    │
-└─────────────────┘                    └────────┬────────┘
-                                                │
-                                                ▼
-                                       ┌─────────────────┐
-                                       │    MySQL DB     │
-                                       │   (port 3306)   │
-                                       └─────────────────┘
-```
-
-### 3.2 Структура сервера (план)
+### 3.1 Структура сервера
 
 ```
 server/
 ├── src/
-│   ├── index.ts                    -- Entry point
-│   ├── app.ts                      -- Express app setup
-│   ├── config/                     -- Конфигурация
-│   ├── routes/                     -- API роуты
-│   ├── middleware/                 -- Auth, validation, error handling
-│   ├── services/                   -- Бизнес-логика
-│   │   ├── calculations.ts         -- Общие расчёты (из src/utils/)
-│   │   └── ai/                     -- AI-провайдеры
+│   ├── index.ts                    # Entry point
+│   ├── app.ts                      # Express app setup
+│   │
+│   ├── config/                     # Конфигурация
+│   │   ├── database.ts
+│   │   └── jwt.ts
+│   │
+│   ├── routes/                     # API роуты
+│   │   ├── index.ts                # Роутер
+│   │   ├── auth.ts                 # Аутентификация
+│   │   ├── projects.ts             # CRUD проектов
+│   │   ├── objects.ts              # CRUD объектов
+│   │   ├── rooms.ts                # CRUD комнат
+│   │   ├── works.ts                # CRUD работ
+│   │   ├── geometry.ts             # Геометрические расчёты
+│   │   ├── ai.ts                   # AI-провайдеры
+│   │   ├── sync.ts                 # Синхронизация
+│   │   ├── totals.ts               # Итоги
+│   │   ├── users.ts                # Пользователи
+│   │   └── update.ts               # Обновления
+│   │
+│   ├── middleware/                 # Middleware
+│   │   ├── auth.ts                 # JWT аутентификация
+│   │   ├── validation.ts           # Валидация (Zod)
+│   │   ├── rateLimiter.ts          # Rate limiting
+│   │   ├── logger.ts               # Логирование
+│   │   └── errorHandler.ts         # Обработка ошибок
+│   │
 │   ├── db/
-│   │   ├── pool.ts                 -- MySQL pool
-│   │   ├── migrations/             -- Knex миграции
-│   │   └── repositories/           -- Data access
-│   └── types/                       -- TypeScript типы
+│   │   ├── pool.ts                 # MySQL pool
+│   │   ├── migrations/             # Knex миграции
+│   │   └── repositories/           # Data access
+│   │       ├── user.repo.ts
+│   │       ├── project.repo.ts
+│   │       ├── room.repo.ts
+│   │       └── object.repo.ts
+│   │
+│   ├── services/                   # Бизнес-логика
+│   │   ├── calculations.ts
+│   │   └── ai/                     # AI-провайдеры
+│   │
+│   └── types/                      # TypeScript типы
+│
 ├── knexfile.ts
 ├── tsconfig.json
 └── package.json
 ```
+
+### 3.2 API Endpoints
+
+#### Аутентификация
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/auth/register` | Регистрация |
+| POST | `/api/auth/login` | Вход |
+| POST | `/api/auth/refresh` | Обновление токена |
+| GET | `/api/auth/me` | Текущий пользователь |
+| POST | `/api/auth/logout` | Выход |
+
+#### Проекты
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/projects` | Список проектов |
+| POST | `/api/projects` | Создание |
+| GET | `/api/projects/:id` | Проект с объектами |
+| PUT | `/api/projects/:id` | Обновление |
+| DELETE | `/api/projects/:id` | Удаление |
+
+#### Объекты
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/objects` | Список объектов |
+| POST | `/api/projects/:projectId/objects` | Создание объекта |
+| GET | `/api/objects/:id` | Объект с комнатами |
+| PUT | `/api/objects/:id` | Обновление |
+| DELETE | `/api/objects/:id` | Удаление |
+
+#### Синхронизация
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/sync/pull` | Получить данные |
+| POST | `/api/sync/push` | Отправить изменения |
 
 ### 3.3 База данных (MySQL)
 
 **ER-диаграмма:**
 
 ```
-users 1──∞ projects 1──∞ rooms 1──∞ works 1──∞ materials
-                                      └──∞ tools
+users 1──∞ projects 1──∞ objects 1──∞ rooms 1──∞ works
+                                              ├──∞ materials
+                                              └──∞ tools
 rooms 1──∞ openings
 rooms 1──∞ room_subsections (extended)
 rooms 1──∞ room_segments (advanced)
@@ -280,19 +415,22 @@ rooms 1──∞ wall_sections (advanced)
 ```
 
 **Ключевые таблицы:**
-- `users` — пользователи
-- `projects` — проекты (user_id → users)
-- `rooms` — комнаты (project_id → projects)
-- `works` — работы (room_id → rooms)
-- `materials` — материалы (work_id → works)
-- `tools` — инструменты (work_id → works)
+- `users` — пользователи (id, email, name, password_hash, is_premium)
+- `projects` — проекты (user_id, name, description)
+- `objects` — объекты недвижимости (project_id, name, city, address, use_ai_pricing)
+- `rooms` — комнаты (object_id, name, geometry_mode, dimensions)
+- `works` — работы (room_id, name, price, materials)
+- `materials` — материалы (work_id, name, quantity, price)
+- `tools` — инструменты (work_id, name, price, is_rent)
+- `openings` — окна/двери (room_id, type, dimensions)
 - `ai_requests` — лог AI-запросов
+- `deleted_entities` — отслеживание удалений (30 дней)
 
 ---
 
 ## 4. AI-интеграция
 
-### 4.1 Текущая реализация (клиентская)
+### 4.1 Клиентская реализация
 
 ```typescript
 // src/api/prices/geminiPriceSearch.ts
@@ -301,29 +439,19 @@ export async function searchPrices(
   city?: string
 ): Promise<PriceSearchResult[]> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  // ... запрос к Gemini API напрямую из браузера
+  // ... запрос к Gemini API
 }
 ```
 
-**Ограничения:**
-- API-ключ виден в бандле
-- Нет кэширования на сервере
-- Нет rate limiting
-
-### 4.2 Планируемая реализация (серверная)
+### 4.2 Серверная реализация
 
 ```typescript
 // server/src/services/ai/gemini.ts
 export class GeminiProvider implements AIProvider {
   name = 'gemini' as const;
-  private client: GoogleGenAI;
-
-  constructor(apiKey: string) {
-    this.client = new GoogleGenAI({ apiKey });
-  }
-
+  
   async chat(messages: ChatMessage[]): Promise<string> {
-    // ... серверный запрос
+    // ... серверный запрос с защитой API-ключа
   }
 }
 ```
@@ -331,52 +459,36 @@ export class GeminiProvider implements AIProvider {
 **API endpoints:**
 - `POST /api/ai/estimate` — оценка стоимости по описанию
 - `POST /api/ai/suggest-materials` — предложить материалы
-- `POST /api/ai/generate-template` — шаблон работ для комнаты
 
 ---
 
-## 5. PWA и Offline-first (ПЛАНИРУЕТСЯ)
+## 5. Синхронизация данных
 
-### 5.1 Стратегия синхронизации
+### 5.1 Архитектура синхронизации
 
 ```
 ┌──────────────────┐    immediate     ┌───────────────┐
 │   React State    │ ──────────────→  │  localStorage  │  ← Первичное хранилище
 │   (UI)           │ ←──────────────  │  (persistent)  │
-└──────────────────┘                  └───────┬────────┘
-                                              │ async queue
-                                      ┌───────▼────────┐
-                                      │   Sync Queue    │  ← IndexedDB
-                                      │   (pending ops) │
-                                      └───────┬────────┘
-                                              │ when online
-                                      ┌───────▼────────┐
-                                      │  Express API    │
-                                      │  + MySQL        │
-                                      └────────────────┘
+└──────────────────┘                  └───────┬───────┘
+                                              │ async (when authenticated)
+                                      ┌───────▼───────┐
+                                      │   Sync API    │
+                                      │  /pull /push  │
+                                      └───────┬───────┘
+                                              │
+                                      ┌───────▼───────┐
+                                      │  Express API  │
+                                      │  + MySQL      │
+                                      └──────────────┘
 ```
 
-### 5.2 Конфигурация PWA
+### 5.2 Механизм синхронизации
 
-```typescript
-// vite.config.ts (план)
-VitePWA({
-  registerType: 'autoUpdate',
-  workbox: {
-    globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-    runtimeCaching: [{
-      urlPattern: /^\/api\/.*/,
-      handler: 'NetworkFirst',
-    }],
-  },
-  manifest: {
-    name: 'Мой ремонт — Калькулятор',
-    short_name: 'Мой ремонт',
-    theme_color: '#4f46e5',
-    // ...
-  },
-})
-```
+- **Optimistic updates:** UI обновляется мгновенно, сохранение в фоне
+- **Debounce:** 1-2 секунды задержка перед сохранением
+- **Conflict resolution:** server wins при конфликтах
+- **Offline support:** данные сохраняются в localStorage
 
 ---
 
@@ -386,14 +498,34 @@ VitePWA({
 
 | Категория | Количество |
 |-----------|------------|
-| Unit тесты (utils) | 220 |
-| Unit тесты (hooks) | 72 |
-| Integration тесты | 7 |
-| API тесты | 22 |
-| E2E тесты | 16 |
-| **Итого** | **402** |
+| Unit тесты (utils) | 220+ |
+| Unit тесты (hooks) | 72+ |
+| Integration тесты | 7+ |
+| API тесты | 22+ |
+| E2E тесты | 13 файлов |
+| **Итого** | **841 тест** |
 
-### 6.2 Покрытие по файлам
+### 6.2 Результаты (2026-04-16)
+
+- **Passed:** 823
+- **Failed:** 10 (syncPull API — localStorage mock issues)
+- **Skipped:** 8
+
+### 6.3 E2E тесты (Playwright)
+
+| Категория | Статус |
+|-----------|--------|
+| auth.spec.ts | ✅ 3/3 |
+| objects.spec.ts | ✅ 4/4 |
+| export-import.spec.ts | ✅ 3/3 |
+| core-workflow.spec.ts | 🔧 skipped |
+| costs.spec.ts | 🔧 skipped |
+| geometry.spec.ts | 🔧 skipped |
+| projects.spec.ts | 🔧 skipped |
+| rooms.spec.ts | 🔧 skipped |
+| works.spec.ts | 🔧 skipped |
+
+### 6.4 Покрытие по файлам
 
 - `src/utils/geometry.ts` — 100%
 - `src/utils/costs.ts` — 100%
@@ -423,7 +555,7 @@ VitePWA({
 }
 ```
 
-### 7.2 Планируемые зависимости (сервер)
+### 7.2 Зависимости (сервер)
 
 ```json
 {
@@ -440,20 +572,33 @@ VitePWA({
 }
 ```
 
+### 7.3 Development зависимости
+
+```json
+{
+  "devDependencies": {
+    "typescript": "~5.8.2",
+    "vitest": "^4.0.18",
+    "@playwright/test": "^1.58.2",
+    "@testing-library/react": "^16.3.2"
+  }
+}
+```
+
 ---
 
 ## 8. Документация
 
 | Файл | Описание |
 |------|----------|
+| [INDEX.md](../INDEX.md) | Главный индексный файл |
 | [TODO.md](./TODO.md) | Актуальные задачи и прогресс |
-| [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md) | ТЗ миграции на БД |
-| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода v5.0 |
 | [PROGRESS.md](./PROGRESS.md) | История прогресса |
-| [MATERIALS_CATALOG_FEATURE.md](./MATERIALS_CATALOG_FEATURE.md) | Спецификация каталога материалов |
-| [REFACTORING_GEOMETRY_BLOCK.md](./REFACTORING_GEOMETRY_BLOCK.md) | ТЗ рефакторинга геометрии |
-| [TECHNICAL_SPECS.md](./TECHNICAL_SPECS.md) | Технические спецификации |
-| [WORK_TEMPLATES_SPEC.md](./WORK_TEMPLATES_SPEC.md) | Спецификация шаблонов работ |
+| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
+| [LOGGING.md](./LOGGING.md) | Руководство по логированию |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
 
 ---
 
@@ -461,27 +606,33 @@ VitePWA({
 
 ### Выполнено ✅
 
-1. ✅ Декомпозиция App.tsx (2700 → 170 строк)
+1. ✅ Декомпозиция App.tsx (2700 → 475 строк)
 2. ✅ Рефакторинг геометрии (GeometrySection, useGeometryState)
 3. ✅ IStorageProvider абстракция
 4. ✅ Каталог материалов и расчёт
-5. ✅ Поиск цен через AI (клиентский)
-6. ✅ 402 теста
+5. ✅ Поиск цен через AI (клиентский + серверный)
+6. ✅ Backend на Express + MySQL
+7. ✅ JWT аутентификация
+8. ✅ Объектная модель (Project → Objects → Rooms)
+9. ✅ Синхронизация localStorage ↔ API
+10. ✅ 841 тест
 
 ### Планируется 🚧
 
-1. **Фаза 7:** Миграция на БД (15-20 дней) — см. [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
-   - Сервер на Express + MySQL
-   - Аутентификация (JWT)
-   - REST API для всех сущностей
-   - Offline-first синхронизация
-   - PWA
+1. **Декомпозиция:**
+   - ProjectContext (981 строк → 3 модуля)
+   - RoomEditor (906 строк → обработчики в хуки)
+   - BackupManager (837 строк → панели)
 
-2. **Фаза 8:** AI-интеграция (серверная)
-   - Защита API-ключей
-   - Rate limiting
-   - Кэширование ответов
+2. **Offline-first:**
+   - IndexedDB для pending changes
+   - PWA с Service Worker
+
+3. **Улучшения:**
+   - Request ID middleware
+   - Per-user rate limiting
+   - Swagger/OpenAPI документация
 
 ---
 
-**Последнее обновление:** 2026-03-13
+**Последнее обновление:** 2026-04-16
