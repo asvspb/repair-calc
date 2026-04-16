@@ -111,6 +111,10 @@ database/
 .blackbox/
 .blackboxcli/
 .qodo/
+.kilo/
+.cline/
+.qwen/
+
 
 playwright-profile
 test-results/
