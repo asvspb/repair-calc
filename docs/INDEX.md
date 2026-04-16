@@ -1,8 +1,8 @@
 # Application Index - Repair Calculator
 
-**Last Updated:** 2026-04-01
+**Last Updated:** 2026-04-16
 **Application Name:** Мой ремонт (Repair Calculator)
-**Version:** 1.0.0
+**Version:** 1.1.0
 
 ---
 
@@ -12,16 +12,18 @@
 
 **Tech Stack:**
 - **Frontend:** React 19 + TypeScript + Vite 6
+- **Backend:** Express + MySQL + Knex
 - **Styling:** Tailwind CSS 4
-- **State Management:** React Context + localStorage
-- **Testing:** Vitest (unit), Playwright (e2e) — 402 теста
+- **State Management:** React Context + localStorage + API sync
+- **Testing:** Vitest (841 тест) + Playwright (E2E)
 - **Icons:** Lucide React
 
 **Key Features:**
-- Multi-room project management
+- Multi-project management with objects (real estate)
 - Three geometry modes: Simple, Extended (multi-section), Advanced (professional)
 - Automatic cost calculation (works + materials + tools)
-- Auto-save to localStorage
+- Auto-save to localStorage with server sync
+- JWT Authentication
 - JSON backup/restore
 - CSV export for Excel
 - AI price search via Gemini API
@@ -38,90 +40,73 @@
 ### Core Structure
 ```
 src/
-├── App.tsx                    # Main app: routing, composition (~170 lines)
+├── App.tsx                    # Main app (~475 lines)
 ├── main.tsx                   # React root
 ├── index.css                  # TailwindCSS
 │
-├── api/prices/                # AI price search
-│   ├── geminiPriceSearch.ts
-│   ├── mistralPriceSearch.ts
-│   ├── priceCache.ts
-│   ├── unifiedSearch.ts
-│   └── types.ts
+├── api/                       # API clients
+│   ├── auth.ts                # Authentication
+│   ├── projects.ts, rooms.ts, sync.ts, users.ts
+│   ├── storage/apiStorageProvider.ts
+│   └── prices/                # AI price search
 │
 ├── components/
+│   ├── auth/                  # Login, Register, ProtectedRoute
 │   ├── geometry/              # Geometry module (8 files)
-│   │   ├── GeometrySection.tsx
-│   │   ├── ModeSelector.tsx
-│   │   ├── SimpleGeometry.tsx
-│   │   ├── ExtendedGeometry.tsx
-│   │   ├── AdvancedGeometry.tsx
-│   │   ├── SubSectionItem.tsx
-│   │   ├── OpeningList.tsx
-│   │   └── GeometryMetrics.tsx
-│   ├── rooms/                 # Room list (3 files)
-│   │   ├── RoomList.tsx
-│   │   └── RoomListItem.tsx
-│   ├── works/                 # Works and materials (10 files)
-│   │   ├── WorkList.tsx
-│   │   ├── WorkListItem.tsx
-│   │   ├── WorkCatalogPicker.tsx
-│   │   ├── MaterialCalculationCard.tsx
-│   │   ├── PaintMaterialCard.tsx
-│   │   └── TileMaterialCard.tsx
-│   ├── summary/               # Summary views (4 files)
-│   │   ├── SummaryMaterials.tsx
-│   │   ├── SummaryTools.tsx
-│   │   └── SummaryWorks.tsx
-│   ├── ui/                    # UI components (3 files)
-│   │   ├── ConfirmDialog.tsx
-│   │   ├── ErrorBoundary.tsx
-│   │   └── NumberInput.tsx
+│   ├── layout/                # LeftSidebar, RightSidebar, Settings
+│   ├── objects/               # ObjectCard, ObjectSelector, CreateModal
+│   ├── projects/              # ProjectsList, ProjectsModal
+│   ├── rooms/                 # RoomList, RoomListItem
+│   ├── works/                 # WorkList, MaterialCards (10 files)
+│   ├── summary/               # Summary views (3 files)
+│   ├── ui/                    # ConfirmDialog, ErrorBoundary, NumberInput
 │   ├── BackupManager.tsx
-│   ├── RoomEditor.tsx         # Room editor (~843 lines)
+│   ├── RoomEditor.tsx         # (~906 lines)
 │   └── SummaryView.tsx
 │
 ├── contexts/
-│   ├── ProjectContext.tsx     # Project state + persistence
+│   ├── AuthContext.tsx        # JWT authentication
+│   ├── ProjectContext.tsx     # Project state (~981 lines)
 │   └── WorkTemplateContext.tsx
 │
-├── data/
-│   ├── initialData.ts         # Initial project data
-│   └── workTemplatesCatalog.ts # Work catalog (19 items)
-│
-├── hooks/
-│   ├── useGeometryState.ts    # Geometry state management
-│   ├── useMaterialCalculation.ts
-│   ├── useProjects.ts
-│   └── useWorkTemplates.ts
-│
 ├── types/
-│   ├── index.ts               # Main types (ProjectData, RoomData, WorkData...)
-│   ├── storage.ts             # IStorageProvider interface
-│   └── workTemplate.ts        # Work templates
+│   ├── index.ts               # Main types (ProjectData, ObjectData...)
+│   ├── auth.ts, storage.ts, workTemplate.ts
 │
 └── utils/
-    ├── costs.ts               # Cost calculations
-    ├── factories.ts           # Entity factories
-    ├── geometry.ts            # Geometry calculations
-    ├── localStorageProvider.ts
-    ├── materialCalculations.ts # Material formulas
-    ├── roomHelpers.ts         # Room helpers
-    ├── storage.ts             # StorageManager
-    └── templateStorage.ts     # Template storage
+    ├── costs.ts, geometry.ts, factories.ts
+    ├── storage.ts, idMapper.ts, projectObjects.ts, migration.ts
 ```
 
 ### Data Model (TypeScript Types)
 
-**ProjectData:**
+**ProjectData (v2):**
 ```typescript
 {
   id: string
   name: string
+  description?: string
+  isPremium?: boolean
+  objects: ObjectData[]      // Objects (real estate)
+  version?: number
+  // Deprecated (backward compatibility)
+  rooms?: RoomData[]
+  city?: string
+  useAiPricing?: boolean
+}
+```
+
+**ObjectData:**
+```typescript
+{
+  id: string
+  projectId: string
+  name: string
+  city?: string
+  address?: string
+  useAiPricing?: boolean
   rooms: RoomData[]
-  city?: string              // City for price search
-  useAiPricing?: boolean     // Use AI for prices
-  lastAiPriceUpdate?: string
+  version?: number
 }
 ```
 
@@ -142,37 +127,10 @@ src/
 }
 ```
 
-**WorkData:**
-```typescript
-{
-  id: string
-  name: string
-  unit: string
-  enabled: boolean
-  workUnitPrice: number
-  calculationType: 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount'
-  materials?: Material[]
-  tools?: Tool[]
-  isCustom?: boolean
-  useManualQty?: boolean
-  manualQty?: number
-}
-```
+### Data Hierarchy
 
-**Material:**
-```typescript
-{
-  id: string
-  name: string
-  quantity: number
-  unit: string
-  pricePerUnit: number
-  coveragePerUnit?: number
-  consumptionRate?: number
-  layers?: number
-  wastePercent?: number
-  autoCalcEnabled?: boolean
-}
+```
+User → Project → Object → Room → Work → Material/Tool
 ```
 
 ### Geometry Modes
@@ -279,30 +237,24 @@ npm run lint         # TypeScript type check
 
 ## 🧪 Testing
 
-### Test Statistics
+### Test Statistics (2026-04-16)
 | Category | Count |
 |----------|-------|
-| Unit tests (utils) | 220 |
-| Unit tests (hooks) | 72 |
-| Integration tests | 7 |
-| API tests | 22 |
-| E2E tests | 16 |
-| **Total** | **402** |
+| Unit tests | 292+ |
+| Integration tests | 29+ |
+| E2E tests | 13 files |
+| **Total** | **841** |
 
-### Coverage: ~50%
+### Results
+- **Passed:** 823
+- **Failed:** 10
+- **Skipped:** 8
 
----
-
-## 📂 Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `src/App.tsx` | Main app composition (~170 lines) |
-| `src/components/RoomEditor.tsx` | Room editor (~843 lines) |
-| `src/contexts/ProjectContext.tsx` | Project state management |
-| `src/utils/geometry.ts` | Geometry calculations |
-| `src/utils/costs.ts` | Cost calculations |
-| `src/types/index.ts` | Type definitions |
+### E2E Status
+- ✅ auth.spec.ts — 3/3
+- ✅ objects.spec.ts — 4/4
+- ✅ export-import.spec.ts — 3/3
+- 🔧 Others — skipped (require backend mocks)
 
 ---
 
@@ -310,28 +262,29 @@ npm run lint         # TypeScript type check
 
 | Document | Description |
 |----------|-------------|
-| [TODO.md](./TODO.md) | Рабочий бэклог |
-| [PROGRESS.md](./PROGRESS.md) | Сводка этапов и статуса |
-| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
+| [../INDEX.md](../INDEX.md) | Главный индекс (наиболее актуальный) |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 |
+| [TODO.md](./TODO.md) | Рабочий бэклог |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
 | [CODE_REVIEW.md](./CODE_REVIEW.md) | Код-ревью v5.0 |
-| [spec/SPEC-001-SYSTEM.md](./spec/SPEC-001-SYSTEM.md) | 🆕 Полное техзадание (детализированное) |
-| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
+| [LOGGING.md](./LOGGING.md) | Руководство по логированию |
 
 ---
 
 ## 🚨 Notes for AI Agents
 
 ### Before Making Changes
-1. Read this index to understand current state
+1. Read `../INDEX.md` for current state
 2. Check `docs/TODO.md` for current tasks
-3. Check `docs/TECHNICAL-SPECIFICATION.md` for technical specs
+3. Check `docs/ARCHITECTURE.md` for architecture details
 
 ### After Making Changes
 1. Update relevant documentation
 2. Run tests: `npm test`
-3. Update this index if structure changed
+3. Update `../INDEX.md` if structure changed
+4. Update dates in modified documents
 
 ---
 
