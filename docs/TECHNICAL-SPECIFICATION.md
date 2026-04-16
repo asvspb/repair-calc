@@ -398,32 +398,45 @@ Authorization: Bearer {token}
 
 ## 9. Логирование
 
-### 9.1 Формат логов
+### 9.1 Архитектура логирования
+
+Проект использует **два структурированных логгера** вместо `console.*`:
+
+| Среда | Логгер | Модуль |
+|-------|--------|--------|
+| Сервер | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` |
+| Клиент | Функции логирования | `src/utils/logger.ts` |
+| Миграции Knex | `console.log` | CLI-контекст вне Express |
+
+### 9.2 Формат логов (Winston)
 
 ```
-📁 ПРОЕКТ: "Мои квартиры"
-   ID: uuid-проекта
-   Объектов: 2
-   
-   🏢 ОБЪЕКТ: "Квартира на Колумба"
-      ID: uuid-объекта
-      Город: Волгоград
-      Комнат: 3
-      Площадь: 45.5 м²
-      
-      🏠 Комната: "Спальня"
-         Размеры: 4м × 3.5м × 2.6м
-         Работ: 6
+2026-04-16 14:30:13 [info]: [POST /projects] Created project {"projectId":"uuid","name":"Мои квартиры","duration":13}
+2026-04-16 14:30:13 [info]: [POST /projects/:id/objects] Создание нового объекта {"name":"Квартира на Колумба","localId":null,"serverId":"uuid"}
+2026-04-16 14:30:14 [warn]: [GET /projects/:id] Project not found {"projectId":"uuid"}
+2026-04-16 14:30:14 [error]: Request error {"errorMessage":"...","errorName":"..."}
 ```
 
-### 9.2 Эндпоинты с логированием
+### 9.3 Эндпоинты с логированием
 
-Все эндпоинты из раздела 6 должны логировать:
-- ID пользователя
+Все эндпоинты из раздела 6 логируют через `winstonLogger` с метаданными:
+- ID пользователя (при авторизованных запросах)
 - ID проекта/объекта
 - Название объекта
-- Количество комнат
-- Время выполнения операции
+- Количество комнат/объектов
+- Время выполнения операции (`duration` ms)
+
+### 9.4 Клиентский логгер
+
+```typescript
+import { logError, logWarning, logDebug } from '../utils/logger';
+
+logError('ProjectContext', 'saveProject', error, { projectId });
+logWarning('Sync', 'Version conflict', { clientVersion, serverVersion });
+logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
+```
+
+> **Не используйте `console.*` напрямую.** Для предотвращения нарушений планируется ESLint правило `no-console`.
 
 ---
 
@@ -806,20 +819,21 @@ export const validateObjectLimit = async (req: AuthRequest, res: Response, next:
 // server/src/services/cleanupService.ts
 import { scheduleJob } from 'node-schedule';
 import { query } from '../db/pool.js';
+import { winstonLogger } from '../middleware/logger.js';
 
 const DELETED_ENTITY_TTL_DAYS = 30;
 
 export function startCleanupService() {
   // Запускаем каждый день в 3:00
   scheduleJob('0 3 * * *', async () => {
-    console.log('🧹 [CLEANUP] Начало очистки удалённых сущностей');
+    winstonLogger.info('[CLEANUP] Начало очистки удалённых сущностей');
     
     const result = await query(`
       DELETE FROM deleted_entities
       WHERE expires_at < NOW()
     `);
     
-    console.log(`🧹 [CLEANUP] Удалено записей: ${result.affectedRows}`);
+    winstonLogger.info('[CLEANUP] Очистка завершена', { deletedCount: result.affectedRows });
   });
 }
 ```
@@ -1024,9 +1038,12 @@ export const logDeprecation = (req: Request, res: Response, next: NextFunction) 
   const isV1 = req.headers.accept?.includes('v1') || !req.headers.accept;
   
   if (isV1) {
-    console.log(`⚠️ [DEPRECATION] V1 API запрос: ${req.method} ${req.path}`);
-    console.log(`   User-Agent: ${req.headers['user-agent']}`);
-    console.log(`   IP: ${req.ip}`);
+    winstonLogger.warn('[DEPRECATION] V1 API запрос', {
+      method: req.method,
+      path: req.path,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+    });
     
     // Добавляем заголовки депрекейшн
     res.setHeader('Deprecation', 'true');
@@ -1040,9 +1057,7 @@ export const logDeprecation = (req: Request, res: Response, next: NextFunction) 
 
 **Пример лога:**
 ```
-⚠️ [DEPRECATION] V1 API запрос: GET /api/projects/uuid
-   User-Agent: Mozilla/5.0...
-   IP: 192.168.1.1
+2026-04-16 14:30:15 [warn]: [DEPRECATION] V1 API запрос {"method":"GET","path":"/api/projects/uuid","userAgent":"Mozilla/5.0...","ip":"192.168.1.1"}
 ```
 
 #### 15.3.3 Параллельная работа старых и новых эндпоинтов

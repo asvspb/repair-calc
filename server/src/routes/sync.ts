@@ -7,26 +7,20 @@ import { RoomRepository } from '../db/repositories/room.repo.js';
 import { transaction } from '../db/pool.js';
 import type { AuthRequest, Conflict, ChangeLogEntry, Room } from '../types/index.js';
 import type { RowDataPacket } from 'mysql2/promise';
+import { winstonLogger } from '../middleware/logger.js';
 
 const router = Router();
 
 // Middleware для детального логирования всех запросов
 router.use((req, res, next) => {
   const userId = (req as AuthRequest).user?.id || 'ANONYMOUS';
-  const method = req.method;
-  const path = req.path;
-  const timestamp = new Date().toISOString();
   
-  console.log('\n' + '='.repeat(80));
-  console.log(`📡 [${timestamp}] API ЗАПРОС`);
-  console.log('='.repeat(80));
-  console.log(`   Метод: ${method}`);
-  console.log(`   Путь: ${path}`);
-  console.log(`   Пользователь: ${userId}`);
-  
-  if (method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
-    console.log(`   Тело запроса:`, JSON.stringify(req.body, null, 2).substring(0, 1000));
-  }
+  winstonLogger.info(`SYNC API ${req.method} ${req.path}`, {
+    userId,
+    body: req.method !== 'GET' && req.body && Object.keys(req.body).length > 0
+      ? JSON.stringify(req.body).substring(0, 1000)
+      : undefined,
+  });
   
   next();
 });
@@ -44,8 +38,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
   try {
     const { changes } = syncPushSchema.parse(req.body);
     
-    console.log(`\n🔄 [SYNC/PUSH] Начало синхронизации`);
-    console.log(`   Изменений: ${changes.length}`);
+    winstonLogger.info('[SYNC/PUSH] Начало синхронизации', { changesCount: changes.length });
     
     const synced: string[] = [];
     const conflicts: Conflict[] = [];
@@ -60,15 +53,12 @@ router.post('/push', async (req: AuthRequest, res, next) => {
         const projectData = data as { name?: string; city?: string; use_ai_pricing?: boolean };
 
         if (entity === 'project') {
-          console.log(`\n   📁 Проект: ${entityId}`);
-          console.log(`      Действие: ${projectData.name ? 'Обновление' : 'Пропуск'}`);
-          console.log(`      Название: ${projectData.name || 'N/A'}`);
-          console.log(`      Город: ${projectData.city || 'не указан'}`);
+          winstonLogger.info('[SYNC/PUSH] Проект', { entityId, name: projectData.name || 'N/A', city: projectData.city || null });
           
           const serverProject = await ObjectRepository.findByIdAndUserId(entityId, userId);
 
           if (!serverProject) {
-            console.log(`      ⚠️ Проект не найден на сервере`);
+            winstonLogger.warn('[SYNC/PUSH] Проект не найден на сервере', { entityId });
             conflicts.push({
               id,
               entity: 'project',
@@ -82,7 +72,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
           const serverVersion = serverProject.version;
           
           if (clientVersion && clientVersion < serverVersion) {
-            console.log(`      ⚠️ Конфликт версий (клиент: ${clientVersion}, сервер: ${serverVersion})`);
+            winstonLogger.warn('[SYNC/PUSH] Конфликт версий', { entityId, clientVersion, serverVersion });
             conflicts.push({
               id,
               entity: 'project',
@@ -100,30 +90,27 @@ router.post('/push', async (req: AuthRequest, res, next) => {
 
           await ProjectRepository.update(entityId, updateData);
           synced.push(id);
-          console.log(`      ✅ Обновлён`);
+          winstonLogger.info('[SYNC/PUSH] Проект обновлён', { entityId });
           
         } else if (entity === 'room') {
-          console.log(`\n   🏠 Комната: ${entityId}`);
-          console.log(`      Название: ${roomData.name || 'N/A'}`);
-          console.log(`      Размеры: ${roomData.length}×${roomData.width}×${roomData.height}`);
-          console.log(`      Работ: ${roomData.works?.length || 0}`);
+          winstonLogger.info('[SYNC/PUSH] Комната', { entityId, name: roomData.name || 'N/A', dimensions: `${roomData.length}×${roomData.width}×${roomData.height}` });
           
           const serverRoom = await RoomRepository.findById(entityId);
 
           if (!serverRoom) {
             if (!roomData.object_id) {
-              console.log(`      ❌ Ошибка: нет project_id`);
+              winstonLogger.error('[SYNC/PUSH] Нет project_id для комнаты', { entityId });
               throw new Error('project_id is required for room creation');
             }
             const roomId = await RoomRepository.create(roomData.object_id, roomData);
             synced.push(roomId.id);
-            console.log(`      ✅ Создана`);
+            winstonLogger.info('[SYNC/PUSH] Комната создана', { roomId: roomId.id });
             continue;
           }
 
           const project = await ObjectRepository.findByIdAndUserId(serverRoom.object_id, userId);
           if (!project) {
-            console.log(`      ❌ Проект не найден`);
+            winstonLogger.warn('[SYNC/PUSH] Проект комнаты не найден', { entityId });
             conflicts.push({
               id,
               entity: 'room',
@@ -136,7 +123,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
 
           const serverVersion = serverRoom.version ?? 0;
           if (clientVersion && clientVersion < serverVersion) {
-            console.log(`      ⚠️ Конфликт версий`);
+            winstonLogger.warn('[SYNC/PUSH] Конфликт версий комнаты', { entityId });
             conflicts.push({
               id,
               entity: 'room',
@@ -163,11 +150,11 @@ router.post('/push', async (req: AuthRequest, res, next) => {
 
           await RoomRepository.update(entityId, updateData);
           synced.push(id);
-          console.log(`      ✅ Обновлена`);
+          winstonLogger.info('[SYNC/PUSH] Комната обновлена', { entityId });
           
         }
       } catch (error) {
-        console.error('   ❌ Ошибка обработки изменения:', error);
+        winstonLogger.error('[SYNC/PUSH] Ошибка обработки изменения', { error });
         conflicts.push({
           id: change.id,
           entity: change.entity,
@@ -179,9 +166,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`\n✅ [SYNC/PUSH] Завершено за ${duration}ms`);
-    console.log(`   Успешно: ${synced.length}`);
-    console.log(`   Конфликты: ${conflicts.length}`);
+    winstonLogger.info('[SYNC/PUSH] Завершено', { duration, synced: synced.length, conflicts: conflicts.length });
 
     res.json({
       status: 'success',
@@ -192,7 +177,7 @@ router.post('/push', async (req: AuthRequest, res, next) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.log(`\n❌ [SYNC/PUSH] Ошибка за ${duration}ms:`, error);
+    winstonLogger.error('[SYNC/PUSH] Ошибка', { duration, error });
     next(error);
   }
 });
@@ -203,89 +188,20 @@ router.get('/pull', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
 
   try {
-    console.log(`\n📥 [SYNC/PULL] Загрузка данных пользователя`);
-    console.log(`   Пользователь: ${userId}`);
+    winstonLogger.info('[SYNC/PULL] Загрузка данных', { userId });
 
     // Get all projects for user with objects
     const projects = await ProjectRepository.findAllByUserIdWithObjects(userId);
 
     // Подробное логирование каждого проекта
-    console.log(`\n   📊 Найдено проектов: ${projects.length}`);
+    winstonLogger.info('[SYNC/PULL] Найдено проектов', { count: projects.length });
 
     for (const project of projects) {
       const totalRooms = project.objects?.reduce((sum, obj) => sum + (obj.rooms?.length || 0), 0) || 0;
-      const totalWorks = project.objects?.reduce((sum, obj) => {
-        return sum + (obj.rooms?.reduce((roomSum, room) => {
-          const works = typeof room.works === 'string' ? JSON.parse(room.works) : room.works;
-          return roomSum + (Array.isArray(works) ? works.filter((w: any) => w.enabled).length : 0);
-        }, 0) || 0);
-      }, 0) || 0;
-
-      console.log(`\n   📁 ПРОЕКТ: "${project.name}"`);
-      console.log(`      ID: ${project.id}`);
-      console.log(`      Город: ${project.city || 'не указан'}`);
-      console.log(`      AI Pricing: ${project.use_ai_pricing ? 'ВКЛ' : 'ВЫКЛ'}`);
-      console.log(`      Объектов: ${project.objects?.length || 0}`);
-      console.log(`      Комнат: ${totalRooms}`);
-      console.log(`      Активных работ: ${totalWorks}`);
-
-      if (project.objects && project.objects.length > 0) {
-        for (const obj of project.objects) {
-          console.log(`\n      ┌─ ОБЪЕКТ: "${obj.name}"`);
-          console.log(`      │   ID: ${obj.id}`);
-          console.log(`      │   Город: ${obj.city || 'не указан'}`);
-          console.log(`      │   Комнат: ${obj.rooms?.length || 0}`);
-
-          if (obj.rooms && obj.rooms.length > 0) {
-            for (const room of obj.rooms) {
-              const works = typeof room.works === 'string' ? JSON.parse(room.works) : room.works;
-              const worksArray = Array.isArray(works) ? works : [];
-              const enabledWorks = worksArray.filter((w: any) => w.enabled);
-
-              const floorAreaRoom = room.length * room.width;
-              const perimeter = (room.length + room.width) * 2;
-              const grossWallArea = perimeter * room.height;
-
-              // Parse windows and doors
-              const windows = typeof room.windows === 'string' ? JSON.parse(room.windows) : room.windows;
-              const doors = typeof room.doors === 'string' ? JSON.parse(room.doors) : room.doors;
-              const windowsArray = Array.isArray(windows) ? windows : [];
-              const doorsArray = Array.isArray(doors) ? doors : [];
-
-              const windowsArea = windowsArray.reduce((sum: any, w: any) => sum + w.width * w.height, 0);
-              const doorsArea = doorsArray.reduce((sum: any, d: any) => sum + d.width * d.height, 0);
-              const netWallArea = grossWallArea - windowsArea - doorsArea;
-
-              console.log(`      │   ┌─ 🏠 "${room.name}"`);
-              console.log(`      │   │   ID: ${room.id}`);
-              console.log(`      │   │   Режим: ${room.geometry_mode || 'simple'}`);
-              console.log(`      │   │   Размеры: ${room.length}м × ${room.width}м × ${room.height}м`);
-              console.log(`      │   │   Площадь пола: ${floorAreaRoom.toFixed(2)} м²`);
-              console.log(`      │   │   Периметр: ${perimeter.toFixed(2)} м`);
-              console.log(`      │   │   Стены (брутто): ${grossWallArea.toFixed(2)} м²`);
-              console.log(`      │   │   Стены (нетто): ${netWallArea.toFixed(2)} м²`);
-              console.log(`      │   │   Окна: ${windowsArray.length} шт. (${windowsArea.toFixed(2)} м²)`);
-              console.log(`      │   │   Двери: ${doorsArray.length} шт. (${doorsArea.toFixed(2)} м²)`);
-              console.log(`      │   │   Работ: ${enabledWorks.length}`);
-
-              if (enabledWorks.length > 0) {
-                console.log(`      │   │   ┌─ Список работ:`);
-                enabledWorks.forEach((w: any, i: number) => {
-                  const workTotal = w.work_unit_price * floorAreaRoom;
-                  console.log(`      │   │   ├─ ${i + 1}. ${w.name} — ${workTotal.toFixed(2)} руб.`);
-                });
-                console.log(`      │   │   └─`);
-              }
-              console.log(`      │   └─`);
-            }
-          } else {
-            console.log(`      │   ⚠️ КОМНАТ НЕТ`);
-          }
-          console.log(`      └─`);
-        }
-      } else {
-        console.log(`      ⚠️ ОБЪЕКТОВ НЕТ`);
-      }
+      winstonLogger.info('[SYNC/PULL] Проект', {
+        id: project.id, name: project.name, city: project.city || null,
+        objectsCount: project.objects?.length || 0, roomsCount: totalRooms,
+      });
     }
 
     const response = {
@@ -297,13 +213,12 @@ router.get('/pull', async (req: AuthRequest, res, next) => {
     };
 
     const duration = Date.now() - startTime;
-    console.log(`\n✅ [SYNC/PULL] Завершено за ${duration}ms`);
-    console.log(`   Размер ответа: ${JSON.stringify(response).length} байт`);
+    winstonLogger.info('[SYNC/PULL] Завершено', { duration, projectsCount: projects.length });
 
     res.json(response);
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.log(`\n❌ [SYNC/PULL] Ошибка за ${duration}ms:`, error);
+    winstonLogger.error('[SYNC/PULL] Ошибка', { duration, error });
     next(error);
   }
 });

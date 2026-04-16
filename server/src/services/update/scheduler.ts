@@ -6,6 +6,7 @@
 import { CronJob } from 'cron';
 import { getUpdateRunner } from './runner.js';
 import { UpdateJobRepository } from '../../db/repositories/updateJob.repo.js';
+import { winstonLogger } from '../../middleware/logger.js';
 
 // ═══════════════════════════════════════════════════════
 // КОНФИГУРАЦИЯ
@@ -56,7 +57,7 @@ class SchedulerImpl {
     }
 
     if (!this.config.enabled) {
-      console.log('[Scheduler] Disabled by config');
+      winstonLogger.info('[Scheduler] Disabled by config');
       return;
     }
 
@@ -69,10 +70,9 @@ class SchedulerImpl {
         this.config.timezone
       );
 
-      console.log(`[Scheduler] Started with cron: ${this.config.cron} (${this.config.timezone})`);
-      console.log(`[Scheduler] Next run: ${this.getNextRun()?.toISOString()}`);
+      winstonLogger.info('[Scheduler] Started', { cron: this.config.cron, timezone: this.config.timezone, nextRun: this.getNextRun()?.toISOString() });
     } catch (error) {
-      console.error('[Scheduler] Failed to start:', error);
+      winstonLogger.error('[Scheduler] Failed to start', { error });
     }
   }
 
@@ -83,7 +83,7 @@ class SchedulerImpl {
     if (this.cronJob) {
       this.cronJob.stop();
       this.cronJob = null;
-      console.log('[Scheduler] Stopped');
+      winstonLogger.info('[Scheduler] Stopped');
     }
 
     // Отменяем все retry таймеры
@@ -108,11 +108,11 @@ class SchedulerImpl {
    * Запускает плановое обновление
    */
   private async runScheduledUpdate(): Promise<void> {
-    console.log('[Scheduler] Starting scheduled update...');
+    winstonLogger.info('[Scheduler] Starting scheduled update');
 
     // Проверяем лимит одновременных задач
     if (this.runningJobs.size >= this.config.maxConcurrentJobs) {
-      console.warn('[Scheduler] Max concurrent jobs reached, skipping scheduled run');
+      winstonLogger.warn('[Scheduler] Max concurrent jobs reached, skipping scheduled run');
       return;
     }
 
@@ -125,14 +125,14 @@ class SchedulerImpl {
       // Ждём завершения
       await this.waitForCompletion(job.id);
 
-      console.log(`[Scheduler] Job ${job.id} completed with status: ${job.status}`);
+      winstonLogger.info('[Scheduler] Job completed', { jobId: job.id, status: job.status });
 
       // Обрабатываем retry при неудаче
       if (job.status === 'failed' && this.config.retryOnFailure) {
         await this.scheduleRetry(job.id);
       }
     } catch (error) {
-      console.error('[Scheduler] Scheduled update failed:', error);
+      winstonLogger.error('[Scheduler] Scheduled update failed', { error });
     } finally {
       this.runningJobs.clear();
     }
@@ -167,11 +167,11 @@ class SchedulerImpl {
    */
   private async scheduleRetry(jobId: string, attempt: number = 1): Promise<void> {
     if (attempt > this.config.maxRetries) {
-      console.log(`[Scheduler] Max retries (${this.config.maxRetries}) reached for job ${jobId}`);
+      winstonLogger.info('[Scheduler] Max retries reached', { jobId, maxRetries: this.config.maxRetries });
       return;
     }
 
-    console.log(`[Scheduler] Scheduling retry ${attempt}/${this.config.maxRetries} for job ${jobId}`);
+    winstonLogger.info('[Scheduler] Scheduling retry', { attempt, maxRetries: this.config.maxRetries, jobId });
 
     const timer = setTimeout(async () => {
       this.retryTimers.delete(jobId);
@@ -187,7 +187,7 @@ class SchedulerImpl {
           await this.scheduleRetry(jobId, attempt + 1);
         }
       } catch (error) {
-        console.error(`[Scheduler] Retry ${attempt} failed:`, error);
+        winstonLogger.error('[Scheduler] Retry failed', { attempt, error });
       } finally {
         this.runningJobs.clear();
       }

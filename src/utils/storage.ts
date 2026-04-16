@@ -4,6 +4,7 @@ import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
 import { LocalStorageProvider } from './localStorageProvider';
 import { TemplateStorage } from './templateStorage';
+import { logError } from './logger';
 import { calculateRoomMetrics } from './geometry';
 import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
 import { getAllRooms } from './projectObjects';
@@ -132,7 +133,7 @@ export class StorageManager {
 
       return projects;
     } catch (error) {
-      console.error('Error loading projects:', error);
+      logError('Storage', 'Error loading projects', error);
       return null;
     }
   }
@@ -150,7 +151,7 @@ export class StorageManager {
 
       return projects;
     } catch (error) {
-      console.error('Error loading projects:', error);
+      logError('Storage', 'Error loading projects', error);
       return null;
     }
   }
@@ -159,7 +160,7 @@ export class StorageManager {
     try {
       StorageManager.provider.set(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
     } catch (error) {
-      console.error('Error saving active project:', error);
+      logError('Storage', 'Error saving active project', error);
     }
   }
 
@@ -167,7 +168,7 @@ export class StorageManager {
     try {
       return StorageManager.provider.get<string>(STORAGE_KEYS.ACTIVE_PROJECT);
     } catch (error) {
-      console.error('Error loading active project:', error);
+      logError('Storage', 'Error loading active project', error);
       return null;
     }
   }

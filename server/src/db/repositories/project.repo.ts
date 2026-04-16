@@ -2,6 +2,7 @@ import { query, execute, getConnection, transaction } from '../pool.js';
 import type { Project, Room, ProjectWithRooms, Object, ObjectWithRooms, ProjectWithObjects } from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RowDataPacket } from 'mysql2/promise';
+import { winstonLogger } from '../../middleware/logger.js';
 
 export class ProjectRepository {
   static async create(userId: string, data: { name: string; city?: string; use_ai_pricing?: boolean }): Promise<ProjectWithObjects> {
@@ -504,7 +505,7 @@ export class ProjectRepository {
           // Create new object with a new server UUID
           // This handles both: no ID provided, or local ID (like "local-obj-...")
           objectId = uuidv4();
-          console.log(`   🆕 Создание нового объекта: ${objData.name || ''} (local ID: ${inputId || 'none'} → server ID: ${objectId})`);
+          winstonLogger.info('Создание нового объекта', { name: objData.name || '', localId: inputId || null, serverId: objectId });
           await conn.execute(
             `INSERT INTO objects (id, project_id, user_id, name, city, sort_order) VALUES (?, ?, ?, ?, ?, ?)`,
             [objectId, projectId, userId, objData.name || '', objData.city || null, objData.sort_order || 0]
@@ -606,7 +607,7 @@ export class ProjectRepository {
               // Create new room with a new server UUID
               // This handles both: no ID provided, or local ID (like "local-room-...")
               roomId = uuidv4();
-              console.log(`     🆕 Создание новой комнаты: ${room.name || 'Комната'} (local ID: ${inputRoomId || 'none'} → server ID: ${roomId})`);
+              winstonLogger.info('Создание новой комнаты', { name: room.name || 'Комната', localId: inputRoomId || null, serverId: roomId });
               await conn.execute(
                 `INSERT INTO rooms (id, object_id, project_id, name, geometry_mode, length, width, height, segments, obstacles, wall_sections, sub_sections, windows, doors, works, sort_order)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -637,7 +638,7 @@ export class ProjectRepository {
             `UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE object_id = ? AND id IN (${placeholders}) AND deleted_at IS NULL`,
             [objectId, ...roomIdsToDelete]
           );
-          console.log(`     🗑️ Удалено комнат: ${roomIdsToDelete.length}`);
+          winstonLogger.info('Удалено комнат', { count: roomIdsToDelete.length });
         }
       }
 

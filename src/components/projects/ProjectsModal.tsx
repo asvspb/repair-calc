@@ -15,6 +15,7 @@ import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
 import { dlog, derror } from '../../utils/debugLogger';
+import { logError } from '../../utils/logger';
 
 const LOG_PREFIX = '[ProjectsModal]';
 
@@ -218,7 +219,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
         message: 'Проект успешно удалён',
       });
     } catch (error) {
-      console.error('Error deleting project:', error);
+      logError('ProjectsModal', 'Error deleting project', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка удаления проекта',
@@ -336,7 +337,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
         message: `Все проекты (${projects.length}) успешно сохранены на сервере`,
       });
     } catch (error) {
-      console.error('Error saving to server:', error);
+      logError('ProjectsModal', 'Error saving to server', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка сохранения на сервер. Проверьте подключение.',
@@ -371,7 +372,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
         });
       }
     } catch (error) {
-      console.error('Error loading from server:', error);
+      logError('ProjectsModal', 'Error loading from server', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка загрузки с сервера. Проверьте подключение.',

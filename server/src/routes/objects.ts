@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound, forbidden, badRequest } from '../middleware/errorHandler.js';
+import { winstonLogger } from '../middleware/logger.js';
 import type { AuthRequest } from '../types/index.js';
 
 const router = Router();
@@ -22,22 +23,19 @@ router.post('/projects/:projectId/objects', async (req: AuthRequest, res, next) 
     const { name, city, address, use_ai_pricing } = req.body;
     const userId = req.user!.id;
 
-    console.log('\n📦 [POST /projects/:id/objects] Создание объекта');
-    console.log(`   Проект: ${projectId}`);
-    console.log(`   Название: "${name}"`);
-    console.log(`   Город: ${city || 'не указан'}`);
+    winstonLogger.info('[POST /projects/:id/objects] Создание объекта', { projectId, name, city: city || null });
 
     // Проверка существования проекта
     const project = await ProjectRepository.findByIdAndUserId(projectId, userId);
     if (!project) {
-      console.log(`   ❌ Проект не найден`);
+      winstonLogger.warn('[POST /projects/:id/objects] Проект не найден', { projectId });
       throw notFound('Project not found');
     }
 
     // Проверка лимита объектов
     const isLimitReached = await ObjectRepository.isLimitReached(projectId, userId);
     if (isLimitReached) {
-      console.log(`   ❌ Превышен лимит объектов (10 для бесплатных)`);
+      winstonLogger.warn('[POST /projects/:id/objects] Превышен лимит объектов');
       return res.status(403).json({
         status: 'error',
         error: 'Превышен лимит объектов (максимум 10 для бесплатных пользователей)',
@@ -54,14 +52,14 @@ router.post('/projects/:projectId/objects', async (req: AuthRequest, res, next) 
       use_ai_pricing: use_ai_pricing || false,
     });
 
-    console.log(`   ✅ Создан объект ${object.id} за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[POST /projects/:id/objects] Создан объект', { objectId: object.id, duration: Date.now() - startTime });
 
     res.status(201).json({
       status: 'success',
       data: object,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[POST /projects/:id/objects] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -76,19 +74,18 @@ router.get('/objects', async (req: AuthRequest, res, next) => {
   try {
     const userId = req.user!.id;
 
-    console.log('\n📋 [GET /api/objects] Список объектов');
-    console.log(`   Пользователь: ${userId}`);
+    winstonLogger.info('[GET /api/objects] Список объектов', { userId });
 
     const objects = await ObjectRepository.findByUserId(userId);
 
-    console.log(`   ✅ Найдено объектов: ${objects.length} за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[GET /api/objects] Найдено', { count: objects.length, duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: objects,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[GET /api/objects] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -104,26 +101,25 @@ router.get('/objects/:id', async (req: AuthRequest, res, next) => {
     const { id } = req.params;
     const userId = req.user!.id;
 
-    console.log('\n🔍 [GET /api/objects/:id] Объект с комнатами');
-    console.log(`   ID: ${id}`);
+    winstonLogger.info('[GET /api/objects/:id] Запрос объекта', { id });
 
     const object = await ObjectRepository.findByIdAndUserId(id, userId);
     if (!object) {
-      console.log(`   ❌ Объект не найден`);
+      winstonLogger.warn('[GET /api/objects/:id] Объект не найден', { id });
       throw notFound('Object not found');
     }
 
     // Загружаем комнаты
     const objectWithRooms = await ObjectRepository.findByIdWithRooms(id);
 
-    console.log(`   ✅ Комнат: ${objectWithRooms?.rooms.length || 0} за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[GET /api/objects/:id] Найден', { roomsCount: objectWithRooms?.rooms.length || 0, duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: objectWithRooms,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[GET /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -140,13 +136,12 @@ router.put('/objects/:id', async (req: AuthRequest, res, next) => {
     const userId = req.user!.id;
     const { name, city, address, use_ai_pricing, last_ai_price_update, sort_order } = req.body;
 
-    console.log('\n✏️  [PUT /api/objects/:id] Обновление объекта');
-    console.log(`   ID: ${id}`);
+    winstonLogger.info('[PUT /api/objects/:id] Обновление объекта', { id });
 
     // Проверка существования
     const existing = await ObjectRepository.findByIdAndUserId(id, userId);
     if (!existing) {
-      console.log(`   ❌ Объект не найден`);
+      winstonLogger.warn('[PUT /api/objects/:id] Объект не найден', { id });
       throw notFound('Object not found');
     }
 
@@ -162,14 +157,14 @@ router.put('/objects/:id', async (req: AuthRequest, res, next) => {
       sort_order: sort_order !== undefined ? sort_order : existing.sort_order,
     });
 
-    console.log(`   ✅ Обновлён за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /api/objects/:id] Обновлён', { duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: object,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -185,29 +180,24 @@ router.delete('/objects/:id', async (req: AuthRequest, res, next) => {
     const { id } = req.params;
     const userId = req.user!.id;
 
-    console.log('\n🗑️  [DELETE /api/objects/:id] Удаление объекта');
-    console.log(`   ID: ${id}`);
-
-    // Проверка существования
     const existing = await ObjectRepository.findByIdAndUserId(id, userId);
     if (!existing) {
-      console.log(`   ❌ Объект не найден`);
+      winstonLogger.warn('[DELETE /api/objects/:id] Объект не найден', { id });
       throw notFound('Object not found');
     }
 
-    console.log(`   Название: "${existing.name}"`);
+    winstonLogger.info('[DELETE /api/objects/:id] Удаление объекта', { id, name: existing.name });
 
-    // Мягкое удаление
     await ObjectRepository.delete(id);
 
-    console.log(`   ✅ Удалён за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[DELETE /api/objects/:id] Удалён', { id, duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       message: 'Object deleted',
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[DELETE /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });

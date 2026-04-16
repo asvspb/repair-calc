@@ -45,6 +45,25 @@
 
 ---
 
+## ✅ Завершено в этом цикле (2026-04-16)
+
+- `[x]` **Добавлен мок `localStorage` в `tests/setup.ts`** — исправил 10 падений ✅
+- `[x]` **Миграция `console.*` → структурированные логгеры** ✅
+  - Клиент: `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`)
+  - Сервер: `winstonLogger` (Winston) из `server/src/middleware/logger.ts`
+  - Миграции Knex оставлены на `console.log` (CLI-контекст)
+  - Затронуто 22 файла
+- `[x]` **Обновлена документация логирования** ✅
+  - `docs/LOGGING.md` — полная переработка v2.0
+  - `docs/LOGGING-CHEATSHEET.md` — новые форматы и паттерны
+  - `docs/ARCHITECTURE.md` — добавлена секция 5 «Логирование»
+  - `docs/INDEX.md` — structured logging в фичах
+  - `docs/DEBUG_INSTRUCTIONS.md` — logger вместо console.*
+  - `docs/TECHNICAL-SPECIFICATION.md` — секция 9 + примеры winstonLogger
+  - `docs/FRONTEND-STATUS.md` — секция «Логирование»
+
+---
+
 ## 🟠 Приоритет 1: Архитектура и Декомпозиция (5–8 дней)
 
 ### 1.1 Декомпозиция ProjectContext (982 → 3 модуля)
@@ -61,7 +80,8 @@
 
 ### 1.3 Утилиты и консистентность
 - `[ ]` Единая утилита генерации ID — `utils/factories.ts` (заменить 4+ разных способа генерации ID на `generateId(prefix)`)
-- `[ ]` Заменить 64 `console.*` на встроенный logger (добавить ESLint правило `no-console`)
+- `[x]` Заменить `console.*` на встроенный logger ✅ 2026-04-16 (клиент → `src/utils/logger.ts`, сервер → `winstonLogger`. Миграции оставлены на `console.log`)
+- `[ ]` Добавить ESLint правило `no-console` для предотвращения новых `console.*`
 - `[ ]` Использовать единые константы для localStorage keys (вынести `STORAGE_KEYS` в общий модуль)
 
 ---
@@ -89,6 +109,7 @@
 - `[x]` Создать детализированное ТЗ — `devAI/spec/SPEC-001-SYSTEM.md` ✅ 2026-04-13
 - `[x]` Обновить `docs/ARCHITECTURE.md` — добавить Objects model, Auth, HttpClient, сервер ✅ 2026-04-16
 - `[x]` Обновить `docs/INDEX.md` — актуализировать количество тестов, структуру, зависимости ✅ 2026-04-16
+- `[x]` Обновить документацию логирования — `docs/LOGGING.md` (v2.0), `docs/LOGGING-CHEATSHEET.md`, `docs/ARCHITECTURE.md` (секция 5), `docs/DEBUG_INSTRUCTIONS.md`, `docs/TECHNICAL-SPECIFICATION.md` (секция 9), `docs/FRONTEND-STATUS.md` ✅ 2026-04-16
 
 ---
 

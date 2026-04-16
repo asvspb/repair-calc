@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StorageManager } from '../../utils/storage';
 import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
 import { migrateProjectToObjects } from '../../utils/projectObjects';
+import { logError } from '../../utils/logger';
 
 type DataManagementModalProps = {
   isOpen: boolean;
@@ -196,7 +197,7 @@ function DataTabContent() {
         message: `Все проекты (${projects.length}) успешно сохранены на сервере`,
       });
     } catch (error) {
-      console.error('Error saving to server:', error);
+      logError('DataManagement', 'Error saving to server', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка сохранения на сервер. Проверьте подключение.',
@@ -230,7 +231,7 @@ function DataTabContent() {
         });
       }
     } catch (error) {
-      console.error('Error loading from server:', error);
+      logError('DataManagement', 'Error loading from server', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка загрузки с сервера. Проверьте подключение.',

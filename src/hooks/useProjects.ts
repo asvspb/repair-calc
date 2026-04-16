@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ProjectData, RoomData } from '../types';
 import { StorageManager, StorageError } from '../utils/storage';
+import { logError } from '../utils/logger';
 
 // Миграция данных комнаты для обеспечения наличия всех полей
 function migrateRoom(room: RoomData): RoomData {
@@ -72,7 +73,7 @@ export function useProjects(initialProjects: ProjectData[]): UseProjectsReturn {
         
         setIsLoading(false);
       } catch (err) {
-        console.error('Error loading data:', err);
+        logError('useProjects', 'Error loading data', err);
         setError({ type: 'unknown', message: 'Ошибка загрузки данных' });
         setIsLoading(false);
       }
@@ -99,7 +100,7 @@ export function useProjects(initialProjects: ProjectData[]): UseProjectsReturn {
         } catch (err) {
           const storageError = err as StorageError;
           setSaveError(storageError.message || 'Ошибка сохранения');
-          console.error('Save error:', err);
+          logError('useProjects', 'Save error', err);
         }
       }
     }, 1000); // Сохраняем через 1 секунду после последнего изменения

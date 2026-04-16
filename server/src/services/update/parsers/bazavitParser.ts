@@ -13,6 +13,7 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import type { PriceParser, PriceRequest, PriceResult, RateLimit, CatalogData, ParsedCategory } from './types.js';
 import { ParserError } from './types.js';
+import { winstonLogger } from '../../../middleware/logger.js';
 
 /**
  * Конфигурация парсера Bazavit
@@ -158,13 +159,13 @@ export class BazavitParser implements PriceParser {
 
     try {
       const baseUrl = url || this.config.baseUrl;
-      console.log(`Открываем главную страницу каталога: ${baseUrl}`);
+      winstonLogger.info('Открываем главную страницу каталога', { baseUrl });
       await this.page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await this.page.waitForTimeout(5000);
 
       // 1. Собираем все категории с главной страницы каталога
       const categories = await this.extractCategories();
-      console.log(`Найдено категорий: ${categories.length}`);
+      winstonLogger.info('Найдено категорий', { count: categories.length });
 
       const categoriesToParse = this.config.maxCategories && this.config.maxCategories > 0
         ? categories.slice(0, this.config.maxCategories)
@@ -174,7 +175,7 @@ export class BazavitParser implements PriceParser {
 
       // 2. Проходим по категориям
       for (const category of categoriesToParse) {
-        console.log(`Парсинг категории: ${category.name} (${category.href})`);
+        winstonLogger.info('Парсинг категории', { name: category.name, href: category.href });
         await this.parseCategory(category, catalogData);
       }
 
@@ -238,7 +239,7 @@ export class BazavitParser implements PriceParser {
       : Infinity;
 
     while (hasNextPage && pageNum <= maxPages) {
-      console.log(`  Страница ${pageNum}: ${currentPageUrl}`);
+      winstonLogger.info('Страница', { pageNum, url: currentPageUrl });
       await this.page.goto(currentPageUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await this.page.waitForTimeout(3000);
 
@@ -289,7 +290,7 @@ export class BazavitParser implements PriceParser {
         return { items, nextUrl };
       }, category.id);
 
-      console.log(`    Найдено товаров: ${pageData.items.length}`);
+      winstonLogger.info('Найдено товаров', { count: pageData.items.length });
 
       // Добавляем товары в каталог
       catalogData.products.push(...pageData.items.map((item: { id: string; category_id: string; name: string; price: number; raw_price: string; url: string }) => ({

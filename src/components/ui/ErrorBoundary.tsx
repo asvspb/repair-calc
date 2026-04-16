@@ -1,5 +1,6 @@
 import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
+import { logError } from '../../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -35,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
     
     // Логируем ошибку
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logError('ErrorBoundary', 'Caught an error', error, { componentStack: errorInfo.componentStack });
     
     // Вызываем колбэк если передан
     this.props.onError?.(error, errorInfo);

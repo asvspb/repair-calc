@@ -1,5 +1,6 @@
 import mysql, { type RowDataPacket, type ResultSetHeader, type PoolConnection } from 'mysql2/promise';
 import { config } from '../config/env.js';
+import { winstonLogger } from '../middleware/logger.js';
 
 // Create pool with proper typing and UTF-8 support
 export const pool = mysql.createPool({
@@ -52,7 +53,7 @@ export async function testConnection(): Promise<boolean> {
     connection.release();
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    winstonLogger.error('Database connection failed', { error });
     return false;
   }
 }

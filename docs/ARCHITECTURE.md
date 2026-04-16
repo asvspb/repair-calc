@@ -145,6 +145,7 @@ src/
     ├── factories.ts           # Фабрики создания сущностей
     ├── geometry.ts            # Геометрические расчёты
     ├── localStorageProvider.ts
+    ├── logger.ts             # Структурированный логгер (logError, logWarning, logDebug)
     ├── materialCalculations.ts # Формулы расчёта материалов
     ├── roomHelpers.ts         # Хелперы для комнат
     ├── storage.ts             # StorageManager
@@ -462,9 +463,99 @@ export class GeminiProvider implements AIProvider {
 
 ---
 
-## 5. Синхронизация данных
+## 5. Логирование
 
-### 5.1 Архитектура синхронизации
+### 5.1 Общая архитектура
+
+Проект использует **два структурированных логгера** вместо прямых вызовов `console.*`:
+
+| Среда | Логгер | Модуль | Уровни |
+|-------|--------|--------|--------|
+| **Сервер** | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug` |
+| **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
+| **Миграции Knex** | `console.log` | — | CLI-контекст, вне Express |
+
+> **Важно:** Для предотвращения возврата к `console.*` планируется добавить ESLint правило `no-console`.
+
+### 5.2 Сервер — winstonLogger (Winston)
+
+```typescript
+// server/src/middleware/logger.ts
+import winston from 'winston';
+import { config } from '../config/env.js';
+
+export const winstonLogger = winston.createLogger({
+  level: config.logging.level,  // Управляется через env
+  format: combine(
+    errors({ stack: true }),     // Автоматический стек-трейс
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    logFormat
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: combine(errors({ stack: true }), colorize(), timestamp(), logFormat),
+    }),
+  ],
+});
+```
+
+**Использование в маршрутах:**
+```typescript
+import { winstonLogger } from '../middleware/logger.js';
+
+winstonLogger.info('[POST /projects] Created project', {
+  projectId: project.id, name: project.name, duration: Date.now() - startTime,
+});
+winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
+winstonLogger.error('[POST /projects] Error', { duration, error });
+```
+
+**HTTP-логгер (middleware):**
+```typescript
+export function logger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const message = `${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`;
+    if (res.statusCode >= 400) {
+      winstonLogger.warn(message, { ip: req.ip, userAgent: req.get('user-agent') });
+    } else {
+      winstonLogger.info(message);
+    }
+  });
+  next();
+}
+```
+
+**Преимущества над console.*:**
+- Уровни логирования с фильтрацией через `config.logging.level`
+- Структурированные JSON-метаданные (парсимые ELK/Grafana)
+- Автоматические стек-трейсы через `errors({ stack: true })`
+- Расширяемые транспорты (файл, syslog, Elasticsearch, Datadog)
+- Цветовой вывод через `colorize()`
+
+### 5.3 Клиент — src/utils/logger.ts
+
+```typescript
+import { logError, logWarning, logDebug } from '../utils/logger';
+
+logError('ProjectContext', 'saveProject', error, { projectId });
+logWarning('Sync', 'Version conflict', { clientVersion, serverVersion });
+logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
+```
+
+**Ключевые возможности:**
+- Категории и контекст: каждый лог имеет `category` + `action`
+- История действий: последние 100 операций через `window.debugLogger`
+- Группировка: `console.groupCollapsed()` — компактный вывод в DevTools
+- Таймеры операций: `logStart/logEnd` — автоматический замер
+- Отключение: `LOG_CONFIG.enabled = false`
+
+---
+
+## 6. Синхронизация данных
+
+### 6.1 Архитектура синхронизации
 
 ```
 ┌──────────────────┐    immediate     ┌───────────────┐
@@ -483,7 +574,7 @@ export class GeminiProvider implements AIProvider {
                                       └──────────────┘
 ```
 
-### 5.2 Механизм синхронизации
+### 6.2 Механизм синхронизации
 
 - **Optimistic updates:** UI обновляется мгновенно, сохранение в фоне
 - **Debounce:** 1-2 секунды задержка перед сохранением
@@ -492,9 +583,9 @@ export class GeminiProvider implements AIProvider {
 
 ---
 
-## 6. Тестирование
+## 7. Тестирование
 
-### 6.1 Статистика тестов
+### 7.1 Статистика тестов
 
 | Категория | Количество |
 |-----------|------------|
@@ -505,15 +596,17 @@ export class GeminiProvider implements AIProvider {
 | E2E тесты | 13 файлов |
 | **Итого** | **841 тест** |
 
-### 6.2 Результаты (2026-04-16)
+### 7.2 Результаты (2026-04-16)
 
 - **Passed:** 833
 - **Failed:** 0
 - **Skipped:** 8
 
 > **Примечание:** Добавлен мок `localStorage` в `tests/setup.ts` для совместимости с Vitest 4.x + jsdom 26, где `globalThis.localStorage` — пустой объект без Storage-методов. Это исправило 10 падений в `apiStorageProvider.test.ts` и `syncPull.test.ts`.
+>
+> **Логирование (2026-04-16):** Все `console.*` в клиенте заменены на `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`), в сервере — на `winstonLogger` из `server/src/middleware/logger.ts`. Миграции Knex оставлены на `console.log` (CLI-контекст).
 
-### 6.3 E2E тесты (Playwright)
+### 7.3 E2E тесты (Playwright)
 
 | Категория | Статус |
 |-----------|--------|
@@ -527,7 +620,7 @@ export class GeminiProvider implements AIProvider {
 | rooms.spec.ts | 🔧 skipped |
 | works.spec.ts | 🔧 skipped |
 
-### 6.4 Покрытие по файлам
+### 7.4 Покрытие по файлам
 
 - `src/utils/geometry.ts` — 100%
 - `src/utils/costs.ts` — 100%
@@ -537,9 +630,9 @@ export class GeminiProvider implements AIProvider {
 
 ---
 
-## 7. Зависимости
+## 8. Зависимости
 
-### 7.1 Основные зависимости (клиент)
+### 8.1 Основные зависимости (клиент)
 
 ```json
 {
@@ -557,7 +650,7 @@ export class GeminiProvider implements AIProvider {
 }
 ```
 
-### 7.2 Зависимости (сервер)
+### 8.2 Зависимости (сервер)
 
 ```json
 {
@@ -569,12 +662,13 @@ export class GeminiProvider implements AIProvider {
     "zod": "^3.23.0",
     "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "winston": "^3.17.0"
   }
 }
 ```
 
-### 7.3 Development зависимости
+### 8.3 Development зависимости
 
 ```json
 {
@@ -589,7 +683,7 @@ export class GeminiProvider implements AIProvider {
 
 ---
 
-## 8. Документация
+## 9. Документация
 
 | Файл | Описание |
 |------|----------|
@@ -604,7 +698,7 @@ export class GeminiProvider implements AIProvider {
 
 ---
 
-## 9. Дорожная карта
+## 10. Дорожная карта
 
 ### Выполнено ✅
 

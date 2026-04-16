@@ -1,385 +1,355 @@
-# 📋 Руководство по логированию сервера
+# 📋 Руководство по логированию
+
+**Дата обновления:** 2026-04-16
+**Версия:** 2.0
+
+---
 
 ## Обзор
 
-Сервер приложения реализует **детальное логирование** всех операций с проектами и комнатами. Логи содержат полную информацию о состоянии данных, что позволяет отслеживать изменения и отлаживать проблемы.
+Проект использует **два структурированных логгера** вместо прямых вызовов `console.*`:
+
+| Среда | Логгер | Модуль | Уровни |
+|-------|--------|--------|--------|
+| **Сервер** | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug` |
+| **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
+| **Миграции Knex** | `console.log` | — | Только CLI-контекст, вне Express |
+
+> **Важно:** Прямые вызовы `console.*` в клиенте и сервере заменены на структурированные логгеры. Для предотвращения возврата к `console.*` планируется добавить ESLint правило `no-console`.
 
 ---
 
-## 🎯 Формат логов
+## 1. Серверное логирование (Winston)
 
-### Стандартные логи Express
+### 1.1 Конфигурация
+
+```typescript
+// server/src/middleware/logger.ts
+import winston from 'winston';
+import { config } from '../config/env.js';
+
+export const winstonLogger = winston.createLogger({
+  level: config.logging.level,  // Управляется через env
+  format: combine(
+    errors({ stack: true }),     // Автоматический стек-трейс
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    logFormat
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: combine(errors({ stack: true }), colorize(), timestamp(), logFormat),
+    }),
+  ],
+});
 ```
-2026-03-31 12:09:13 [info]: GET /api/sync/pull 200 14ms 
+
+### 1.2 Формат логов
+
+#### Стандартный HTTP-лог (middleware)
+```
+2026-04-16 14:30:13 [info]: GET /api/sync/pull 200 14ms
 ```
 
-### Расширенные логи с деталями
+#### Лог с метаданными (маршруты)
 ```
-================================================================================
-📡 [2026-03-31T12:09:13.901Z] API ЗАПРОС
-================================================================================
-   Метод: GET
-   Путь: /pull
-   Пользователь: 6b2b0699-3488-4f68-8c1d-c072873d2e67
-
-📥 [SYNC/PULL] Загрузка данных пользователя
-   Пользователь: 6b2b0699-3488-4f68-8c1d-c072873d2e67
-
-   📊 Найдено проектов: 2
-
-   📁 ПРОЕКТ: "Квартира на Колумба"
-      ID: 5f79cd77-ee73-4ca9-ac35-9a032cc8bd6c
-      Город: Волгоград
-      AI Pricing: ВЫКЛ
-      Комнат: 0
-      Общая площадь: 0.00 м²
-      Активных работ: 0
-      ⚠️ КОМНАТ НЕТ
-
-✅ [SYNC/PULL] Завершено за 9ms
-   Размер ответа: 690 байт
+2026-04-16 14:30:13 [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
 ```
+
+#### Лог ошибки (со стек-трейсом)
+```
+2026-04-16 14:30:14 [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
+2026-04-16 14:30:14 [debug]: Request error details {"error":{...}}
+Error: Project not found
+    at ProjectRepository.findByIdAndUserId (project.repo.ts:45:11)
+    ...
+```
+
+#### Ошибка валидации (ZodError)
+```
+2026-04-16 14:30:15 [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
+```
+
+### 1.3 Использование в маршрутах
+
+```typescript
+import { winstonLogger } from '../middleware/logger.js';
+
+// Информационный лог
+winstonLogger.info('[POST /projects] Created project', {
+  projectId: project.id,
+  name: project.name,
+  duration: Date.now() - startTime,
+});
+
+// Предупреждение
+winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
+
+// Ошибка
+winstonLogger.error('[POST /projects] Error', { duration: Date.now() - startTime, error });
+```
+
+### 1.4 Преимущества Winston над console.*
+
+| Свойство | `console.*` | `winstonLogger` |
+|----------|-------------|-----------------|
+| Уровни логирования | Нет фильтрации | `config.logging.level` — отключает debug на проде |
+| Структурированные данные | Строковая интерполяция | JSON-объекты — парсимые ELK/Grafana |
+| Стек-трейсы | `console.error(err)` теряет стек | `errors({ stack: true })` сохраняет стек |
+| Транспорты | Только консоль | Файл, syslog, Elasticsearch, Datadog |
+| Форматирование | Ручное | `printf`, `colorize`, `timestamp` |
+| Ротация логов | Нет | `winston-daily-rotate-file` *(планируется)* |
+| Контекст запроса | Разрозненные логи | Единый HTTP-логгер + контекст в маршрутах |
 
 ---
 
-## 📡 Эндпоинты с логированием
+## 2. Клиентское логирование
 
-### 1. GET /api/sync/pull
+### 2.1 Модуль `src/utils/logger.ts`
 
-**Назначение:** Получение всех проектов пользователя с комнатами
+Клиентский логгер обеспечивает **структурированное логирование** с категориями, контекстом и историей действий.
 
-**Пример лога:**
+#### Основные функции
+
+| Функция | Назначение | Уровень |
+|---------|-----------|---------|
+| `logError(category, action, error, data?)` | Ошибка | error |
+| `logWarning(category, action, data?)` | Предупреждение | warning |
+| `logDebug(category, action, data?)` | Отладка | debug |
+| `logSuccess(category, action, data?, startTime?)` | Успех | success |
+| `logUserAction(action, data?)` | Действие пользователя | info |
+| `logApiRequest(method, endpoint, data?)` | → API запрос | info |
+| `logApiSuccess(method, endpoint, startTime, data?)` | ← API ответ | success |
+| `logApiError(method, endpoint, startTime, error)` | ← API ошибка | error |
+| `logStateChange(component, change, newValue, oldValue?)` | Изменение состояния | info |
+| `logProjectSave(source, projectId, roomsCount, startTime)` | Сохранение проекта | success/info |
+
+### 2.2 Формат логов в браузере
+
+Логи выводятся в DevTools через `console.groupCollapsed()` — компактно, раскрываются по клику:
+
 ```
-📥 [SYNC/PULL] Загрузка данных пользователя
-   Пользователь: 6b2b0699-3488-4f68-8c1d-c072873d2e67
+▼ 📋 [12:30:13.456] [API] → GET /api/projects
+    📦 Данные: {projectId: "da07594f-..."}
 
-   📊 Найдено проектов: 2
+▼ ✅ [12:30:13.470] [API] ← GET /api/projects (14ms)
+    📦 Данные: {count: 2}
 
-   📁 ПРОЕКТ: "Квартира на Танкистов"
-      ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-      Город: Саратов
-      AI Pricing: ВЫКЛ
-      Комнат: 3
-      Общая площадь: 45.50 м²
-      Активных работ: 18
-      ┌─ Комнаты:
-      │
-      ├─ 🏠 "Спальня"
-      │   ID: room-1
-      │   Режим: simple
-      │   Размеры: 4м × 3.5м × 2.6м
-      │   Площадь пола: 14.00 м²
-      │   Периметр: 15.00 м
-      │   Стены (брутто): 39.00 м²
-      │   Стены (нетто): 35.50 м²
-      │   Окна: 1 шт. (2.10 м²)
-      │   Двери: 1 шт. (1.89 м²)
-      │   Работ: 6
-      │   ┌─ Список работ:
-      │   ├─ 1. Заливка стяжки — 8400.00 руб.
-      │   ├─ 2. Укладка ламината — 5600.00 руб.
-      │   ├─ 3. Поклейка обоев — 12000.00 руб.
-      │   └─
-      │
-      ├─ 🏠 "Гостиная"
-      │   ID: room-2
-      │   Размеры: 5.2м × 4м × 2.6м
-      │   Площадь пола: 20.80 м²
-      │   Работ: 6
-      └─
-
-✅ [SYNC/PULL] Завершено за 14ms
-   Размер ответа: 2048 байт
+▼ ❌ [ProjectSave] Ошибка сохранения
+    🚨 Ошибка: NetworkError
+    📦 Контекст: {source: "server", projectId: "..."}
 ```
 
----
+### 2.3 Настройки
 
-### 2. PUT /api/projects/:id/with-rooms
-
-**Назначение:** Обновление проекта и всех комнат в одной транзакции
-
-**Пример лога:**
-```
-🔄 [PUT /projects/:id/with-rooms] Обновление проекта с комнатами
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   Название: "Квартира на Танкистов" → "Квартира на Танкистов"
-   Комнат в запросе: 3
-   ┌─ Комнаты:
-   │
-   ├─ 🏠 #1: "Спальня"
-   │   ID: room-1
-   │   Размеры: 4м × 3.5м × 2.6м
-   │   Площадь: 14.00 м²
-   │   Работ: 6
-   │   Стоимость работ: 26000.00 руб.
-   │
-   ├─ 🏠 #2: "Гостиная"
-   │   ID: room-2
-   │   Размеры: 5.2м × 4м × 2.6м
-   │   Площадь: 20.80 м²
-   │   Работ: 6
-   │   Стоимость работ: 41600.00 руб.
-   └─
-
-✅ [PUT /projects/:id/with-rooms] Успешно обновлено
-   Завершено за 52ms
+```typescript
+const LOG_CONFIG = {
+  enabled: true,           // Глобальный переключатель
+  showTimestamp: true,      // Показывать время
+  showDuration: true,       // Показывать длительность
+  groupRelated: true,       // Группировать логи
+  maxDataLength: 1000,      // Усечь длинные данные
+};
 ```
 
----
+### 2.4 История действий
 
-### 3. POST /api/projects
+Логгер хранит последние 100 операций, доступных через консоль браузера:
 
-**Назначение:** Создание нового проекта
-
-**Пример лога:**
-```
-✅ [POST /projects] Создан проект
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   Название: "Квартира на Танкистов"
-   Город: Саратов
-   Завершено за 13ms
+```javascript
+// В DevTools:
+window.debugLogger.getHistory()    // Массив последних 100 действий
+window.debugLogger.printHistory()  // Вывести в консоль
+window.debugLogger.clearHistory()  // Очистить
 ```
 
----
+### 2.5 Использование в компонентах
 
-### 4. GET /api/projects
+```typescript
+import { logError, logWarning, logDebug, logApiRequest, logApiSuccess, logApiError } from '../utils/logger';
 
-**Назначение:** Получение списка всех проектов пользователя
+// Ошибка
+logError('ProjectContext', 'saveProject', error, { projectId });
 
-**Пример лога:**
-```
-📋 [GET /projects] Список проектов
-   Найдено: 2
-   • Квартира на Танкистов (Саратов)
-   • Квартира на Колумба (Волгоград)
+// Предупреждение
+logWarning('Sync', 'Version conflict', { clientVersion, serverVersion });
 
-✅ Завершено за 5ms
-```
+// Отладка
+logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
----
-
-### 5. GET /api/projects/:id
-
-**Назначение:** Получение проекта с комнатами по ID
-
-**Пример лога:**
-```
-📋 [GET /projects/:id] Проект с комнатами
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   Название: "Квартира на Танкистов"
-   Город: Саратов
-   Комнат: 3
-   • Спальня: 4×3.5×2.6, работ: 6
-   • Гостиная: 5.2×4×2.6, работ: 6
-   • Кухня: 3.5×3×2.6, работ: 5
-   Завершено за 8ms
-```
-
----
-
-### 6. PUT /api/projects/:id
-
-**Назначение:** Обновление проекта (без комнат)
-
-**Пример лога:**
-```
-✅ [PUT /projects/:id] Проект обновлён
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   Название: "Квартира на Танкистов"
-   Версия: 3
-   Завершено за 16ms
+// API запрос
+const startTime = logApiRequest('GET', '/api/projects');
+try {
+  const data = await fetchProjects();
+  logApiSuccess('GET', '/api/projects', startTime, data);
+} catch (error) {
+  logApiError('GET', '/api/projects', startTime, error);
+}
 ```
 
 ---
 
-### 7. DELETE /api/projects/:id
+## 3. Эндпоинты с логированием
 
-**Назначение:** Удаление проекта
+### 3.1 Серверные маршруты
 
-**Пример лога:**
-```
-🗑️ [DELETE /projects/:id] Удаление проекта
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   Название: "Квартира на Танкистов"
-   ✅ Удалён за 15ms
+Все маршруты логируют через `winstonLogger`:
+
+| Маршрут | Логируемые данные |
+|---------|-------------------|
+| `GET /api/sync/pull` | userId, count, duration |
+| `POST /api/projects` | projectId, name, duration |
+| `GET /api/projects` | count, duration |
+| `GET /api/projects/:id` | projectId, name, objectsCount, duration |
+| `PUT /api/projects/:id` | projectId, version, duration |
+| `DELETE /api/projects/:id` | projectId, name, duration |
+| `POST /api/projects/:projectId/objects` | projectId, name, city, objectId, duration |
+| `GET /api/objects` | userId, count, duration |
+| `GET /api/objects/:id` | id, roomsCount, duration |
+| `PUT /api/objects/:id` | id, duration |
+| `DELETE /api/objects/:id` | id, name, duration |
+| `POST /api/ai/estimate` | provider, duration |
+| `POST /api/ai/suggest-materials` | provider, duration |
+
+### 3.2 Middleware логирование
+
+HTTP-логгер (`logger()` middleware) автоматически логирует все запросы:
+
+- `status >= 400` → `winstonLogger.warn()` с IP и User-Agent
+- `status < 400` → `winstonLogger.info()`
+
+### 3.3 Обработка ошибок
+
+ErrorHandler middleware логирует через `winstonLogger`:
+
+```typescript
+winstonLogger.error('Request error', { errorMessage: err.message, errorName: err.name });
+winstonLogger.debug('Request error details', { error: err });
+
+if (err instanceof ZodError) {
+  winstonLogger.warn('Validation error', {
+    errors: err.errors.map(e => ({
+      field: e.path.join('.'),
+      message: e.message,
+      code: e.code,
+    })),
+  });
+}
 ```
 
 ---
 
-### 8. PUT /api/projects/:id/ai-settings
+## 4. Исключения: Knex-миграции
 
-**Назначение:** Обновление AI настроек проекта
+Миграции Knex выполняются в CLI-контексте (вне Express), поэтому они **оставлены на `console.log`**:
 
-**Пример лога:**
 ```
-✅ [PUT /projects/:id/ai-settings] Настройки AI обновлены
-   ID: da07594f-75d7-4c0e-ad48-4bacba6feff9
-   AI Pricing: ВКЛ
-   Город: Саратов
-   Завершено за 12ms
+[MIGRATION] Начало миграции данных
+[MIGRATION] Найдено пользователей: 2
+[MIGRATION] Пользователь user@email — миграция 3 проектов
+[MIGRATION] Объект "Квартира" — 5 комнат
+[MIGRATION] Завершено: 3 проектов, 15 комнат
 ```
+
+> **Причина:** Winston инициализируется в контексте Express-приложения. Миграции запускаются через `knex migrate:run` — отдельный CLI-процесс.
 
 ---
 
-## 🔍 Утилиты для работы с логами
+## 5. Утилиты для работы с логами
 
-### Прямой доступ к логам Docker
+### Docker
 
 ```bash
 # Последние 100 строк
 docker logs repair-calc-backend --tail 100
 
-# Последние 1000 строк с подробностями
-docker logs repair-calc-backend --tail 1000
-
 # Логи в реальном времени
 docker logs repair-calc-backend --tail 50 -f
+
+# Полный дамп
+docker logs repair-calc-backend --tail 1000
 ```
 
-### Фильтрация логов
+### Фильтрация (Winston JSON-формат)
 
 ```bash
 # Найти операции с конкретным проектом
 docker logs repair-calc-backend 2>&1 | grep "da07594f-"
 
-# Найти только ошибки
-docker logs repair-calc-backend 2>&1 | grep -E "(Error|401|403|404|500)"
+# Только ошибки и предупреждения
+docker logs repair-calc-backend 2>&1 | grep -E "\[(error|warn)\]"
 
-# Найти все запросы sync/pull
-docker logs repair-calc-backend 2>&1 | grep "SYNC/PULL"
+# Только валидационные ошибки
+docker logs repair-calc-backend 2>&1 | grep "Validation error"
+
+# Запросы конкретного эндпоинта
+docker logs repair-calc-backend 2>&1 | grep "POST /projects"
+
+# Ошибки авторизации
+docker logs repair-calc-backend 2>&1 | grep -E "(401|Invalid or expired token)"
+```
+
+### Клиент (DevTools)
+
+```javascript
+// В браузере:
+window.debugLogger.getHistory()    // Массив последних 100 действий
+window.debugLogger.printHistory()  // Вывести в консоль
+window.debugLogger.clearHistory()  // Очистить историю
 ```
 
 ---
 
-## 📊 Структура данных в логах
-
-### Проект
-| Поле | Описание |
-|------|----------|
-| ID | Уникальный идентификатор проекта (UUID) |
-| Название | Имя проекта (например, "Квартира на Танкистов") |
-| Город | Город для поиска цен |
-| AI Pricing | Статус использования ИИ для расчёта цен |
-| Комнат | Количество комнат в проекте |
-| Общая площадь | Суммарная площадь всех комнат (м²) |
-| Активных работ | Общее количество активных работ по всем комнатам |
-
-### Комната
-| Поле | Описание |
-|------|----------|
-| ID | Уникальный идентификатор комнаты (UUID) |
-| Название | Имя комнаты (например, "Спальня") |
-| Режим | Режим геометрии (simple/extended/advanced) |
-| Размеры | Длина × Ширина × Высота (м) |
-| Площадь пола | Длина × Ширина (м²) |
-| Периметр | (Длина + Ширина) × 2 (м) |
-| Стены (брутто) | Периметр × Высота (м²) |
-| Стены (нетто) | Стены (брутто) - Окна - Двери (м²) |
-| Окна | Количество и площадь окон |
-| Двери | Количество и площадь дверей |
-| Работ | Количество активных работ |
-| Стоимость работ | Общая стоимость всех работ (руб.) |
-
----
-
-## 🐛 Отладка проблем
-
-### Проблема: Токен истёк
-```
-Error: AppError: Invalid or expired token
-2026-03-31 12:09:12 [warn]: GET /api/auth/me 401 6ms
-```
-
-**Решение:** Клиент автоматически обновит токен через `/api/auth/refresh`
-
----
-
-### Проблема: Проект не найден
-```
-⚠️ [GET /projects/:id] Проект не найден: da07594f-...
-```
-
-**Возможные причины:**
-- Проект был удалён
-- Неверный ID проекта
-- Проект принадлежит другому пользователю
-
----
-
-### Проблема: Конфликт версий
-```
-⚠️ [PUT /projects/:id] Конфликт версий
-```
-
-**Решение:** Обновите данные с сервера и повторите операцию
-
----
-
-## 📈 Мониторинг
+## 6. Мониторинг
 
 ### Ключевые метрики для отслеживания
 
-1. **Время ответа API**
+1. **Время ответа API** (логируется в `duration` ms)
    - Норма: < 100ms
    - Внимание: 100-500ms
    - Критично: > 500ms
 
-2. **Количество проектов на пользователя**
-   - Типично: 1-5
-   - Внимание: > 10
+2. **Ошибки валидации** (ZodError → `warn` level)
+   - Единичные: норма
+   - Массовые: проблема на клиенте
 
-3. **Количество комнат в проекте**
-   - Типично: 1-10
-   - Внимание: > 20
+3. **401 ошибки** (токен истёк)
+   - Единичные: норма, клиент обновит токен
+   - Массовые: проблема JWT-конфигурации
 
-4. **Размер ответа sync/pull**
-   - Норма: < 10 KB
-   - Внимание: 10-100 KB
-   - Критично: > 100 KB
+4. **Конфликты версий** (optimistic locking)
+   - Единичные: норма
+   - Массовые: проблема синхронизации
 
 ---
 
-## 🔐 Безопасность
+## 7. Безопасность
 
 Логи содержат:
 - ✅ ID пользователей
-- ✅ ID проектов и комнат
+- ✅ ID проектов, объектов, комнат
 - ✅ Названия проектов
+- IP-адреса (только при `status >= 400`)
+- ✅ User-Agent (только при `status >= 400`)
 - ❌ **НЕ содержат** пароли, токены, персональные данные
 
 ---
 
-## 📝 Примеры использования
+## 8. Планы развития
 
-### 1. Проверка текущего состояния проектов
-```bash
-docker logs repair-calc-backend --tail 100
-```
-
-### 2. Отслеживание изменений в реальном времени
-```bash
-docker logs repair-calc-backend --tail 50 -f
-```
-
-### 3. Поиск операций с конкретным проектом
-```bash
-docker logs repair-calc-backend 2>&1 | grep "da07594f-75d7-4c0e-ad48-4bacba6feff9"
-```
-
-### 4. Анализ ошибок
-```bash
-docker logs repair-calc-backend 2>&1 | grep -E "(❌|Error|401|403|404|500)"
-```
+- [ ] Добавить ESLint правило `no-console` для предотвращения новых `console.*`
+- [ ] Подключить `winston-daily-rotate-file` для ротации файлов на сервере
+- [ ] Добавить транспорт Winston в файл/удалённый сервис для продакшена
+- [ ] Настроить структурированный JSON-вывод для ELK/Grafana Loki
 
 ---
 
 ## 📚 Связанные документы
 
-- [API Documentation](./API.md)
-- [Database Schema](./DATABASE.md)
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
+- [LOGGING-CHEATSHEET.md](./LOGGING-CHEATSHEET.md) — Шпаргалка по логам
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Архитектура проекта
+- [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md) — Инструкции по отладке
 
 ---
 
-**Версия документации:** 1.0  
-**Дата обновления:** 2026-03-31
+**Версия документации:** 2.0
+**Дата обновления:** 2026-04-16

@@ -3,6 +3,7 @@ import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
 import { LocalStorageProvider } from './localStorageProvider';
 import { STORAGE_KEYS } from './storage';
+import { logError } from './logger';
 
 /**
  * Storage utilities for work templates with pluggable storage provider
@@ -35,13 +36,13 @@ export class TemplateStorage {
       
       // Validate structure
       if (!Array.isArray(templates)) {
-        console.error('Invalid templates data structure');
+        logError('TemplateStorage', 'Invalid templates data structure');
         return [];
       }
       
       return templates;
     } catch (error) {
-      console.error('Error loading templates:', error);
+      logError('TemplateStorage', 'Error loading templates', error);
       return [];
     }
   }

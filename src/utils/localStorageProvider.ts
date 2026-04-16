@@ -1,5 +1,6 @@
 import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
+import { logError, logWarning, logDebug } from './logger';
 
 /**
  * LocalStorage-based implementation of IStorageProvider
@@ -37,10 +38,10 @@ export class LocalStorageProvider implements IStorageProvider {
         // If so, it's corrupted data that should be removed
         const trimmed = data.trim();
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          console.error(`Error reading from localStorage key "${key}": Corrupted JSON data`);
+          logWarning('LocalStorage', 'Corrupted JSON data', { key });
           try {
             localStorage.removeItem(key);
-            console.info(`Removed corrupted data from localStorage key "${key}"`);
+            logDebug('LocalStorage', 'Removed corrupted data', { key });
           } catch {
             // Ignore removal errors
           }
@@ -51,7 +52,7 @@ export class LocalStorageProvider implements IStorageProvider {
         return data as unknown as T;
       }
     } catch (error) {
-      console.error(`Error reading from localStorage key "${key}":`, error);
+      logError('LocalStorage', 'Error reading from localStorage', error, { key });
       return null;
     }
   }
@@ -91,7 +92,7 @@ export class LocalStorageProvider implements IStorageProvider {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`Error removing localStorage key "${key}":`, error);
+      logError('LocalStorage', 'Error removing localStorage key', error, { key });
     }
   }
 
@@ -110,7 +111,7 @@ export class LocalStorageProvider implements IStorageProvider {
     try {
       localStorage.clear();
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      logError('LocalStorage', 'Error clearing localStorage', error);
     }
   }
 
@@ -135,7 +136,7 @@ export class LocalStorageProvider implements IStorageProvider {
         }
       }
     } catch (error) {
-      console.error('Error calculating storage usage:', error);
+      logError('LocalStorage', 'Error calculating storage usage', error);
     }
     
     // Approximate localStorage limit (5-10 MB)

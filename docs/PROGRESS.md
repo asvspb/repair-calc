@@ -43,6 +43,30 @@
 
 **Результат:** 841 тест — 833 passed, 0 failed, 8 skipped (было 823 passed, 10 failed).
 
+### 7. Миграция console.* → logger (2026-04-16)
+**Проблема:** 64+ вызовов `console.*` в клиенте и сервере, затрудняющих управление логированием.
+
+**Решение:** Все `console.*` заменены на структурированные логгеры:
+- **Клиент:** `src/utils/logger.ts` — функции `logError`, `logWarning`, `logDebug` с категориями и контекстом
+- **Сервер:** `winstonLogger` из `server/src/middleware/logger.ts` — Winston с уровнями, форматированием, метаданными
+- **Миграции Knex:** оставлены на `console.log` (работают в CLI-контексте вне Express)
+
+**Затронутые файлы:** 22 файла (5 клиентских утилит, 7 клиентских компонентов, 5 серверных маршрутов, 1 middleware, 4 сервиса/парсера, 2 БД-файла)
+
+### 8. Обновление документации логирования (2026-04-16)
+**Контекст:** После миграции на структурированные логгеры документация отставала от реального кода.
+
+**Обновлённые файлы:**
+- `docs/LOGGING.md` — полная переработка v2.0 (Winston + клиентский logger, форматы, примеры, таблица преимуществ)
+- `docs/LOGGING-CHEATSHEET.md` — новые форматы Winston, фильтрация по уровням `[error]`/`[warn]`/`[info]`, клиентский DevTools
+- `docs/ARCHITECTURE.md` — добавлена секция 5 «Логирование» (winstonLogger + logger.ts), `winston` в зависимостях, `logger.ts` в структуре файлов
+- `docs/INDEX.md` — structured logging в Key Features, `logger.ts` в структуре, заметка о миграции
+- `docs/DEBUG_INSTRUCTIONS.md` — заменены `console.log` на `logDebug()`, формат DevTools `groupCollapsed`
+- `docs/TECHNICAL-SPECIFICATION.md` — секция 9 переписана под Winston, `logDeprecation` и `cleanupService` обновлены
+- `docs/FRONTEND-STATUS.md` — добавлена секция «Логирование», пункт о `no-console` ESLint
+
+**Также исправлено:** примеры `console.log` в `TECHNICAL-SPECIFICATION.md` (logDeprecation, cleanupService) обновлены на `winstonLogger`
+
 ---
 
 ## 📊 Актуальные метрики кода

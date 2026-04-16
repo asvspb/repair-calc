@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { winstonLogger } from './logger.js';
 
 export interface ApiError {
   status: number;
@@ -24,21 +25,17 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('Error:', err);
+  winstonLogger.error('Request error', { errorMessage: err.message, errorName: err.name });
+  winstonLogger.debug('Request error details', { error: err });
 
   if (err instanceof ZodError) {
-    // Детальное логирование ошибок валидации
-    console.log('\n' + '='.repeat(60));
-    console.log('❌ [VALIDATION ERROR] ZodError');
-    console.log('='.repeat(60));
-    err.errors.forEach((e, i) => {
-      console.log(`   ${i + 1}. Поле: "${e.path.join('.')}"`);
-      console.log(`      Сообщение: ${e.message}`);
-      console.log(`      Код: ${e.code}`);
-      if ('expected' in e) console.log(`      Ожидался: ${(e as any).expected}`);
-      if ('received' in e) console.log(`      Получен: ${(e as any).received}`);
+    winstonLogger.warn('Validation error', {
+      errors: err.errors.map(e => ({
+        field: e.path.join('.'),
+        message: e.message,
+        code: e.code,
+      })),
     });
-    console.log('='.repeat(60) + '\n');
 
     res.status(400).json({
       status: 'error',

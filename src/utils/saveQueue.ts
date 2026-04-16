@@ -14,6 +14,8 @@ interface SaveQueueState {
   lastError: Error | null;
 }
 
+import { logError, logWarning, logDebug } from './logger';
+
 const PENDING_SAVE_KEY = 'repair-calc-pending-save';
 
 /**
@@ -26,7 +28,7 @@ function persistPendingSave(data: unknown): void {
       data
     }));
   } catch (error) {
-    console.error('[SaveQueue] Ошибка сохранения pending данных:', error);
+    logError('SaveQueue', 'Ошибка сохранения pending данных', error);
   }
 }
 
@@ -43,14 +45,14 @@ function loadPendingSave(): { timestamp: number; data: unknown } | null {
     // Проверяем, не слишком ли старые данные (старше 1 часа)
     const ONE_HOUR = 60 * 60 * 1000;
     if (Date.now() - parsed.timestamp > ONE_HOUR) {
-      console.warn('[SaveQueue] Pending данные слишком старые, пропускаем');
+      logWarning('SaveQueue', 'Pending данные слишком старые, пропускаем');
       localStorage.removeItem(PENDING_SAVE_KEY);
       return null;
     }
     
     return parsed;
   } catch (error) {
-    console.error('[SaveQueue] Ошибка загрузки pending данных:', error);
+    logError('SaveQueue', 'Ошибка загрузки pending данных', error);
     return null;
   }
 }
@@ -62,7 +64,7 @@ function clearPendingSave(): void {
   try {
     localStorage.removeItem(PENDING_SAVE_KEY);
   } catch (error) {
-    console.error('[SaveQueue] Ошибка очистки pending данных:', error);
+    logError('SaveQueue', 'Ошибка очистки pending данных', error);
   }
 }
 
@@ -83,7 +85,7 @@ class SaveQueue {
     const pending = loadPendingSave();
     if (pending) {
       this.pendingData = pending.data;
-      console.log('[SaveQueue] Восстановлены pending данные', { timestamp: pending.timestamp });
+      logDebug('SaveQueue', 'Восстановлены pending данные', { timestamp: pending.timestamp });
     }
   }
 
@@ -131,7 +133,7 @@ class SaveQueue {
       clearPendingSave();
     } catch (error) {
       this.state.lastError = error instanceof Error ? error : new Error(String(error));
-      console.error('[SaveQueue] Ошибка сохранения:', error);
+      logError('SaveQueue', 'Ошибка сохранения', error);
       // Не очищаем pending данные при ошибке — они будут использованы при следующей попытке
     } finally {
       this.state.isProcessing = false;

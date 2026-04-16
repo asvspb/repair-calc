@@ -143,11 +143,11 @@ export async function up(knex: Knex): Promise<void> {
  * - Переносит комнаты в объекты
  */
 async function migrateExistingData(knex: Knex): Promise<void> {
-  console.log('🔄 [MIGRATION] Начало миграции данных...');
+  console.log('[MIGRATION] Начало миграции данных');
   
   // Получаем всех пользователей
   const users = await knex('users').select('id', 'email');
-  console.log(`📊 [MIGRATION] Найдено пользователей: ${users.length}`);
+  console.log(`[MIGRATION] Найдено пользователей: ${users.length}`);
   
   let migratedProjectsCount = 0;
   let migratedRoomsCount = 0;
@@ -160,11 +160,11 @@ async function migrateExistingData(knex: Knex): Promise<void> {
       .select('id', 'name', 'city', 'use_ai_pricing', 'last_ai_price_update', 'created_at');
     
     if (oldProjects.length === 0) {
-      console.log(`  ⏭️  [MIGRATION] Пользователь ${user.email} — нет проектов для миграции`);
+      console.log(`[MIGRATION] Пользователь ${user.email} — нет проектов для миграции`);
       continue;
     }
     
-    console.log(`  📦 [MIGRATION] Пользователь ${user.email} — миграция ${oldProjects.length} проектов`);
+    console.log(`[MIGRATION] Пользователь ${user.email} — миграция ${oldProjects.length} проектов`);
     
     // 1. Создаём проект-группу "Мои объекты"
     const defaultProjectId = uuidv4();
@@ -206,7 +206,7 @@ async function migrateExistingData(knex: Knex): Promise<void> {
       migratedRoomsCount += roomsResult;
       migratedProjectsCount++;
       
-      console.log(`    ✅ [MIGRATION] Объект "${oldProject.name}" — ${roomsResult} комнат`);
+      console.log(`[MIGRATION] Объект "${oldProject.name}" — ${roomsResult} комнат`);
       
       // 4. Помечаем старый проект как удалённый
       await knex('projects')
@@ -218,11 +218,11 @@ async function migrateExistingData(knex: Knex): Promise<void> {
     }
   }
   
-  console.log(`✅ [MIGRATION] Завершено: ${migratedProjectsCount} проектов, ${migratedRoomsCount} комнат`);
+  console.log(`[MIGRATION] Завершено: ${migratedProjectsCount} проектов, ${migratedRoomsCount} комнат`);
 }
 
 export async function down(knex: Knex): Promise<void> {
-  console.log('⏮️  [ROLLBACK] Начало отката миграции...');
+  console.log('[ROLLBACK] Начало отката миграции');
   
   // Откат в обратном порядке
   
@@ -267,5 +267,5 @@ export async function down(knex: Knex): Promise<void> {
     table.dropColumn('description');
   });
 
-  console.log('✅ [ROLLBACK] Завершено');
+  console.log('[ROLLBACK] Завершено');
 }

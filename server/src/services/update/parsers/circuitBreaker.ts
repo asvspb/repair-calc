@@ -6,6 +6,7 @@
 
 import type { CircuitBreakerState } from './types.js';
 import { CircuitBreakerOpenError } from './types.js';
+import { winstonLogger } from '../../../middleware/logger.js';
 
 /**
  * Конфигурация Circuit Breaker
@@ -44,7 +45,7 @@ export class CircuitBreaker {
       // Проверка на возможность перехода в half-open
       if (this.lastFailureTime && Date.now() - this.lastFailureTime > this.config.resetTimeoutMs) {
         this.state = 'half-open';
-        console.info(`Circuit breaker for ${this.parserType} entering half-open state`);
+        winstonLogger.info('Circuit breaker entering half-open state', { parserType: this.parserType });
       } else {
         throw new CircuitBreakerOpenError(
           `Circuit breaker for ${this.parserType} is open`
@@ -72,7 +73,7 @@ export class CircuitBreaker {
       this.state = 'closed';
       this.failures = 0;
       this.successes = 0;
-      console.info(`Circuit breaker for ${this.parserType} closed (recovered)`);
+      winstonLogger.info('Circuit breaker closed (recovered)', { parserType: this.parserType });
     } else if (this.state === 'closed') {
       // Сброс failures при успехе в closed состоянии
       this.failures = 0;
@@ -90,10 +91,10 @@ export class CircuitBreaker {
 
     if (this.state === 'half-open') {
       this.state = 'open';
-      console.warn(`Circuit breaker for ${this.parserType} opened from half-open`);
+      winstonLogger.warn('Circuit breaker opened from half-open', { parserType: this.parserType });
     } else if (this.failures >= this.config.threshold) {
       this.state = 'open';
-      console.warn(`Circuit breaker for ${this.parserType} opened after ${this.failures} failures`);
+      winstonLogger.warn('Circuit breaker opened', { parserType: this.parserType, failures: this.failures });
     }
   }
 
@@ -130,7 +131,7 @@ export class CircuitBreaker {
     this.failures = 0;
     this.successes = 0;
     this.lastFailureTime = null;
-    console.info(`Circuit breaker for ${this.parserType} manually reset`);
+    winstonLogger.info('Circuit breaker manually reset', { parserType: this.parserType });
   }
 
   /**

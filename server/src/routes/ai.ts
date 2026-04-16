@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import type { AuthRequest } from '../types/index.js';
+import { winstonLogger } from '../middleware/logger.js';
 import {
   getAvailableAIProvider,
   isAIAvailable,
@@ -188,7 +189,7 @@ router.post('/estimate', async (req: AuthRequest, res, next) => {
         'estimate',
         promptHash,
         result
-      ).catch(err => console.error('Failed to cache AI response:', err));
+      ).catch(err => winstonLogger.error('Failed to cache AI response', { error: err }));
     }
 
     res.json({
@@ -307,7 +308,7 @@ router.post('/suggest-materials', async (req: AuthRequest, res, next) => {
         'suggest-materials',
         promptHash,
         result
-      ).catch(err => console.error('Failed to cache AI response:', err));
+      ).catch(err => winstonLogger.error('Failed to cache AI response', { error: err }));
     }
 
     res.json({
@@ -448,7 +449,7 @@ router.post('/generate-template', async (req: AuthRequest, res, next) => {
         'generate-template',
         promptHash,
         result
-      ).catch(err => console.error('Failed to cache AI response:', err));
+      ).catch(err => winstonLogger.error('Failed to cache AI response', { error: err }));
     }
 
     res.json({

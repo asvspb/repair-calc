@@ -3,6 +3,8 @@
  * Используется для предотвращения дублирования проектов при синхронизации
  */
 
+import { logError, logWarning, logDebug } from './logger';
+
 const MAPPING_KEY = 'repair-calc-id-mappings';
 const DEVICE_ID_KEY = 'device-id';
 
@@ -47,7 +49,7 @@ class IdMapper {
       }
       this.initialized = true;
     } catch (error) {
-      console.error('[IdMapper] Ошибка загрузки маппингов:', error);
+      logError('IdMapper', 'Ошибка загрузки маппингов', error);
       this.mappings = new Map();
       this.initialized = true;
     }
@@ -65,7 +67,7 @@ class IdMapper {
       };
       localStorage.setItem(MAPPING_KEY, JSON.stringify(store));
     } catch (error) {
-      console.error('[IdMapper] Ошибка сохранения маппингов:', error);
+      logError('IdMapper', 'Ошибка сохранения маппингов', error);
     }
   }
 
@@ -86,7 +88,7 @@ class IdMapper {
    */
   addMapping(localId: string, serverId: string): void {
     if (!localId || !serverId) {
-      console.warn('[IdMapper] Попытка добавить пустой маппинг');
+      logWarning('IdMapper', 'Попытка добавить пустой маппинг');
       return;
     }
 
@@ -100,7 +102,7 @@ class IdMapper {
     this.mappings.set(localId, mapping);
     this.save();
     
-    console.log('[IdMapper] Добавлен маппинг:', { localId, serverId });
+    logDebug('IdMapper', 'Добавлен маппинг', { localId, serverId });
   }
 
   /**
@@ -142,7 +144,7 @@ class IdMapper {
   removeMapping(localId: string): void {
     if (this.mappings.delete(localId)) {
       this.save();
-      console.log('[IdMapper] Удалён маппинг:', { localId });
+      logDebug('IdMapper', 'Удалён маппинг', { localId });
     }
   }
 
@@ -178,7 +180,7 @@ class IdMapper {
 
     if (removed > 0) {
       this.save();
-      console.log(`[IdMapper] Очищено ${removed} старых маппингов`);
+      logDebug('IdMapper', 'Очищены старые маппинги', { removed });
     }
     return removed;
   }
@@ -189,7 +191,7 @@ class IdMapper {
   clear(): void {
     this.mappings.clear();
     localStorage.removeItem(MAPPING_KEY);
-    console.log('[IdMapper] Все маппинги очищены');
+    logDebug('IdMapper', 'Все маппинги очищены');
   }
 
   /**

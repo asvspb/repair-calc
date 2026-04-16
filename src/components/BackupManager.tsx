@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ApiStorageProvider } from '../api/storage/apiStorageProvider';
 import { getProjects, getProject, createProject, updateProject } from '../api/projects';
 import { getAllRooms } from '../utils/projectObjects';
+import { logError } from '../utils/logger';
 
 interface BackupManagerProps {
   projects: ProjectData[];
@@ -85,7 +86,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
         message: `${projects.length} проектов(а) успешно сохранены в базу данных`,
       });
     } catch (error) {
-      console.error('Error saving to database:', error);
+      logError('BackupManager', 'Error saving to database', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка сохранения в базу данных. Проверьте подключение к серверу.',
@@ -117,7 +118,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
         });
       }
     } catch (error) {
-      console.error('Error loading from database:', error);
+      logError('BackupManager', 'Error loading from database', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка загрузки из базы данных. Проверьте подключение к серверу.',
@@ -265,7 +266,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
           const { createRoom } = await import('../api/rooms');
           await createRoom(newProject.id, room);
         } catch (roomError) {
-          console.error('Error creating room:', roomError);
+          logError('BackupManager', 'Error creating room', roomError);
         }
       }
 
@@ -279,7 +280,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       });
       setShowSaveAsDialog(false);
     } catch (error) {
-      console.error('Error saving project as:', error);
+      logError('BackupManager', 'Error saving project as', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка сохранения проекта. Проверьте подключение к серверу.',
@@ -305,7 +306,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
         updated_at: p.updated_at,
       })));
     } catch (error) {
-      console.error('Error loading projects list:', error);
+      logError('BackupManager', 'Error loading projects list', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка загрузки списка проектов',
@@ -345,7 +346,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       });
       setShowLoadDialog(false);
     } catch (error) {
-      console.error('Error loading project:', error);
+      logError('BackupManager', 'Error loading project', error);
       setImportStatus({
         type: 'error',
         message: 'Ошибка загрузки проекта',

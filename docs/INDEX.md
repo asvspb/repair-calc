@@ -27,6 +27,7 @@
 - JSON backup/restore
 - CSV export for Excel
 - AI price search via Gemini API
+- Structured logging: Winston (server) + logger.ts (client)
 
 ---
 
@@ -75,6 +76,7 @@ src/
 │
 └── utils/
     ├── costs.ts, geometry.ts, factories.ts
+    ├── logger.ts           # Structured logger (logError, logWarning, logDebug)
     ├── storage.ts, idMapper.ts, projectObjects.ts, migration.ts
 ```
 
@@ -251,6 +253,8 @@ npm run lint         # TypeScript type check
 - **Skipped:** 8
 
 > **Fix (2026-04-16):** Added `localStorage` mock in `tests/setup.ts` — Vitest 4.x + jsdom 26 provides an empty object without Storage methods, causing 10 test failures.
+>
+> **Logging Migration (2026-04-16):** All `console.*` replaced with structured loggers — server uses `winstonLogger` (Winston), client uses `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`). Knex migrations remain on `console.log` (CLI context).
 
 ### E2E Status
 - ✅ auth.spec.ts — 3/3

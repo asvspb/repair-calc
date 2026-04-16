@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { UserRepository } from '../db/repositories/user.repo.js';
 import { notFound } from '../middleware/errorHandler.js';
+import { winstonLogger } from '../middleware/logger.js';
 import type { AuthRequest } from '../types/index.js';
 
 const router = Router();
@@ -19,12 +20,11 @@ router.get('/me', async (req: AuthRequest, res, next) => {
   try {
     const userId = req.user!.id;
 
-    console.log('\n👤 [GET /api/users/me] Текущий пользователь');
-    console.log(`   ID: ${userId}`);
+    winstonLogger.info('[GET /api/users/me] Запрос профиля', { userId });
 
     const user = await UserRepository.findById(userId);
     if (!user) {
-      console.log(`   ❌ Пользователь не найден`);
+      winstonLogger.warn('[GET /api/users/me] Пользователь не найден', { userId });
       throw notFound('User not found');
     }
 
@@ -41,14 +41,14 @@ router.get('/me', async (req: AuthRequest, res, next) => {
       },
     };
 
-    console.log(`   ✅ Email: ${user.email} за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[GET /api/users/me] Найден', { duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: responseData,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[GET /api/users/me] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -64,12 +64,11 @@ router.put('/me', async (req: AuthRequest, res, next) => {
     const userId = req.user!.id;
     const { name } = req.body;
 
-    console.log('\n✏️  [PUT /api/users/me] Обновление профиля');
-    console.log(`   ID: ${userId}`);
+    winstonLogger.info('[PUT /api/users/me] Обновление профиля', { userId });
 
     const user = await UserRepository.findById(userId);
     if (!user) {
-      console.log(`   ❌ Пользователь не найден`);
+      winstonLogger.warn('[PUT /api/users/me] Пользователь не найден', { userId });
       throw notFound('User not found');
     }
 
@@ -77,14 +76,14 @@ router.put('/me', async (req: AuthRequest, res, next) => {
       name: name !== undefined ? name : user.name,
     });
 
-    console.log(`   ✅ Обновлён за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /api/users/me] Обновлён', { duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: updatedUser,
     });
   } catch (error) {
-    console.log(`   ❌ Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /api/users/me] Ошибка', { duration: Date.now() - startTime, error });
     next(error);
   }
 });

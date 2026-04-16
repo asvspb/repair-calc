@@ -71,7 +71,7 @@ function migrateRoom(room: RoomData): RoomData {
     const numericFields = ['length', 'width', 'height'] as const;
     for (const field of numericFields) {
       if (typeof migrated[field] !== 'number') {
-        console.warn(`[migrateRoom] Field "${field}" should be number after migration`);
+        logWarning('migrateRoom', `Field "${field}" should be number after migration`);
       }
     }
   }
@@ -307,7 +307,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
         logEnd('ProjectContext', 'Загрузка данных завершена', startTime);
       } catch (err) {
         logError('ProjectContext', 'Ошибка загрузки данных', err);
-        console.error('Error loading data:', err);
         setError({ type: 'unknown', message: 'Ошибка загрузки данных' });
         setIsLoading(false);
       }
@@ -351,7 +350,7 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
       setLastTotalsSave(new Date());
       setTotalsSaveError(null);
     } catch (error) {
-      console.error('Error saving calculated totals:', error);
+      logError('ProjectContext', 'Ошибка сохранения расчётов', error);
       setTotalsSaveError(error instanceof Error ? error.message : 'Ошибка сохранения расчётов');
     }
   }, [isAuthenticated]);
@@ -446,7 +445,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
             const storageError = err as StorageError;
             setSaveError(storageError.message || 'Ошибка сохранения');
             logError('Save', 'Ошибка сохранения', err);
-            console.error('Save error:', err);
             // Пробрасываем ошибку для обработки в saveQueue
             throw err;
           }

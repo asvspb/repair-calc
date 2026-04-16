@@ -256,7 +256,7 @@ export class ApiStorageProvider implements IStorageProvider {
         const projects = await this.loadProjectsAsync();
         return projects as T;
       } catch (error) {
-        console.error('ApiStorage: ошибка загрузки проектов', error);
+        logError('ApiStorage', 'Ошибка загрузки проектов', error);
         return null;
       }
     }

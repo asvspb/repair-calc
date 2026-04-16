@@ -15,6 +15,7 @@ import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
 import { PriceSourceRepository } from '../../db/repositories/priceCatalog.repo.js';
 import { ABTestRepository, type ParserGroup, type ParserType as ABParserType } from '../../db/repositories/abTest.repo.js';
+import { winstonLogger } from '../../middleware/logger.js';
 import crypto from 'crypto';
 
 // ═══════════════════════════════════════════════════════
@@ -323,7 +324,7 @@ class ParserManagerImpl {
       }
     } catch (error) {
       // Игнорируем ошибки БД при обновлении состояния
-      console.error('Failed to update source state:', error);
+      winstonLogger.error('Failed to update source state', { error });
     }
   }
 
@@ -364,7 +365,7 @@ class ParserManagerImpl {
 
       return true;
     } catch (error) {
-      console.error('Failed to enable A/B test:', error);
+      winstonLogger.error('Failed to enable A/B test', { error });
       return false;
     }
   }
@@ -446,7 +447,7 @@ class ParserManagerImpl {
         },
       };
     } catch (error) {
-      console.error('A/B test selection error:', error);
+      winstonLogger.error('A/B test selection error', { error });
       return null;
     }
   }
@@ -558,7 +559,7 @@ class ParserManagerImpl {
       });
     } catch (dbError) {
       // Не прерываем выполнение при ошибке записи
-      console.error('Failed to record A/B test result:', dbError);
+      winstonLogger.error('Failed to record A/B test result', { error: dbError });
     }
   }
 
@@ -577,7 +578,7 @@ class ParserManagerImpl {
       const stats = await ABTestRepository.getStats(this.abTestConfig.testId);
       return { testId: this.abTestConfig.testId, stats };
     } catch (error) {
-      console.error('Failed to get A/B test stats:', error);
+      winstonLogger.error('Failed to get A/B test stats', { error });
       return { testId: this.abTestConfig.testId, stats: null };
     }
   }
@@ -625,7 +626,7 @@ class ParserManagerImpl {
 
       return { completed: false };
     } catch (error) {
-      console.error('Failed to check A/B test completion:', error);
+      winstonLogger.error('Failed to check A/B test completion', { error });
       return { completed: false };
     }
   }

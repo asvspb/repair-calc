@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import { createProjectSchema, updateProjectSchema, idParamSchema, updateProjectWithObjectsSchema } from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound, forbidden } from '../middleware/errorHandler.js';
+import { winstonLogger } from '../middleware/logger.js';
 import type { AuthRequest, Project, Room } from '../types/index.js';
 
 const router = Router();
@@ -10,19 +11,13 @@ const router = Router();
 // Middleware для детального логирования
 router.use((req, res, next) => {
   const userId = (req as AuthRequest).user?.id || 'ANONYMOUS';
-  const timestamp = new Date().toISOString();
   
-  console.log('\n' + '='.repeat(60));
-  console.log(`📡 [${timestamp}] PROJECTS API`);
-  console.log('='.repeat(60));
-  console.log(`   Метод: ${req.method}`);
-  console.log(`   Путь: ${req.path}`);
-  console.log(`   Пользователь: ${userId}`);
-  
-  if (req.method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
-    const bodyStr = JSON.stringify(req.body, null, 2);
-    console.log(`   Тело: ${bodyStr.substring(0, 500)}${bodyStr.length > 500 ? '...' : ''}`);
-  }
+  winstonLogger.info(`PROJECTS API ${req.method} ${req.path}`, {
+    userId,
+    body: req.method !== 'GET' && req.body && Object.keys(req.body).length > 0
+      ? JSON.stringify(req.body).substring(0, 500)
+      : undefined,
+  });
   
   next();
 });
@@ -36,20 +31,17 @@ router.get('/', async (req: AuthRequest, res, next) => {
   try {
     const projects = await ProjectRepository.findByUserId(req.user!.id);
     
-    console.log(`\n📋 [GET /projects] Список проектов`);
-    console.log(`   Найдено: ${projects.length}`);
-    projects.forEach(p => {
-      console.log(`   • ${p.name} (${p.city || 'без города'})`);
+    winstonLogger.info('[GET /projects] Found projects', {
+      count: projects.length,
+      duration: Date.now() - startTime,
     });
-    
-    console.log(`\n✅ Завершено за ${Date.now() - startTime}ms`);
     
     res.json({
       status: 'success',
       data: projects,
     });
   } catch (error) {
-    console.log(`\n❌ [GET /projects] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[GET /projects] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -59,34 +51,27 @@ router.post('/', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
   try {
     // Детальное логирование входящего запроса
-    console.log('\n' + '='.repeat(60));
-    console.log('📥 [POST /projects] Входящий запрос');
-    console.log('='.repeat(60));
-    console.log(`   Content-Type: ${req.headers['content-type']}`);
-    console.log(`   User ID: ${req.user?.id || 'NO USER'}`);
-    console.log(`   Body keys: ${Object.keys(req.body || {}).join(', ') || 'EMPTY'}`);
-    if (req.body && Object.keys(req.body).length > 0) {
-      console.log(`   Body: ${JSON.stringify(req.body, null, 2).substring(0, 500)}`);
-    } else {
-      console.log('   Body: ПУСТОЙ!');
-    }
-    console.log('='.repeat(60) + '\n');
+    winstonLogger.info('[POST /projects] Incoming request', {
+      userId: req.user?.id,
+      bodyKeys: Object.keys(req.body || {}).join(', ') || 'EMPTY',
+    });
 
     const data = createProjectSchema.parse(req.body);
     const project = await ProjectRepository.create(req.user!.id, data);
 
-    console.log(`\n✅ [POST /projects] Создан проект`);
-    console.log(`   ID: ${project.id}`);
-    console.log(`   Название: "${project.name}"`);
-    console.log(`   Город: ${project.city || 'не указан'}`);
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[POST /projects] Created project', {
+      projectId: project.id,
+      name: project.name,
+      city: project.city || null,
+      duration: Date.now() - startTime,
+    });
 
     res.status(201).json({
       status: 'success',
       data: project,
     });
   } catch (error) {
-    console.log(`\n❌ [POST /projects] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[POST /projects] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -99,40 +84,23 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
 
     const project = await ProjectRepository.findByIdWithObjects(id, req.user!.id);
     if (!project) {
-      console.log(`\n⚠️ [GET /projects/:id] Проект не найден: ${id}`);
+      winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
-    console.log(`\n📋 [GET /projects/:id] Проект с объектами`);
-    console.log(`   ID: ${project.id}`);
-    console.log(`   Название: "${project.name}"`);
-    console.log(`   Город: ${project.city || 'не указан'}`);
-    console.log(`   Объектов: ${project.objects?.length || 0}`);
-
-    if (project.objects && project.objects.length > 0) {
-      project.objects.forEach((obj, objIndex) => {
-        console.log(`   ┌─ Объект #${objIndex + 1}: "${obj.name}"`);
-        console.log(`   │   ID: ${obj.id}`);
-        console.log(`   │   Комнат: ${obj.rooms?.length || 0}`);
-        
-        if (obj.rooms && obj.rooms.length > 0) {
-          obj.rooms.forEach(r => {
-            const works = typeof r.works === 'string' ? JSON.parse(r.works) : r.works;
-            const worksArray = Array.isArray(works) ? works : [];
-            console.log(`   │   • ${r.name}: ${r.length}×${r.width}×${r.height}, работ: ${worksArray.filter(w => w.enabled).length}`);
-          });
-        }
-        console.log(`   └─`);
-      });
-    }
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[GET /projects/:id] Project with objects', {
+      projectId: project.id,
+      name: project.name,
+      objectsCount: project.objects?.length || 0,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: project,
     });
   } catch (error) {
-    console.log(`\n❌ [GET /projects/:id] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[GET /projects/:id] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -147,13 +115,13 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
     // Check ownership
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
-      console.log(`\n⚠️ [PUT /projects/:id] Проект не найден: ${id}`);
+      winstonLogger.warn('[PUT /projects/:id] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
     // Optimistic locking
     if (data.version && data.version !== existing.version) {
-      console.log(`\n⚠️ [PUT /projects/:id] Конфликт версий`);
+      winstonLogger.warn('[PUT /projects/:id] Version conflict', { projectId: id });
       throw forbidden('Version conflict - project has been modified');
     }
 
@@ -179,20 +147,18 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 
     const project = await ProjectRepository.update(id, updateData);
 
-    console.log(`\n✅ [PUT /projects/:id] Проект обновлён`);
-    if (project) {
-      console.log(`   ID: ${project.id}`);
-      console.log(`   Название: "${project.name}"`);
-      console.log(`   Версия: ${project.version}`);
-    }
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /projects/:id] Project updated', {
+      projectId: project?.id,
+      version: project?.version,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: project,
     });
   } catch (error) {
-    console.log(`\n❌ [PUT /projects/:id] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /projects/:id] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -206,24 +172,20 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
     // Check ownership
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
-      console.log(`\n⚠️ [DELETE /projects/:id] Проект не найден: ${id}`);
+      winstonLogger.warn('[DELETE /projects/:id] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
-    console.log(`\n🗑️ [DELETE /projects/:id] Удаление проекта`);
-    console.log(`   ID: ${id}`);
-    console.log(`   Название: "${existing.name}"`);
-
     await ProjectRepository.delete(id);
 
-    console.log(`   ✅ Удалён за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[DELETE /projects/:id] Deleted', { projectId: id, name: existing.name, duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       message: 'Project deleted',
     });
   } catch (error) {
-    console.log(`\n❌ [DELETE /projects/:id] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[DELETE /projects/:id] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -237,7 +199,7 @@ router.put('/:id/ai-settings', async (req: AuthRequest, res, next) => {
 
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
-      console.log(`\n⚠️ [PUT /projects/:id/ai-settings] Проект не найден: ${id}`);
+      winstonLogger.warn('[PUT /projects/:id/ai-settings] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
@@ -247,20 +209,19 @@ router.put('/:id/ai-settings', async (req: AuthRequest, res, next) => {
       last_ai_price_update: use_ai_pricing ? new Date() : null,
     });
 
-    console.log(`\n✅ [PUT /projects/:id/ai-settings] Настройки AI обновлены`);
-    if (project) {
-      console.log(`   ID: ${project.id}`);
-      console.log(`   AI Pricing: ${use_ai_pricing ? 'ВКЛ' : 'ВЫКЛ'}`);
-      console.log(`   Город: ${city || 'не указан'}`);
-    }
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /projects/:id/ai-settings] AI settings updated', {
+      projectId: project?.id,
+      aiPricing: use_ai_pricing,
+      city: city || null,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: project,
     });
   } catch (error) {
-    console.log(`\n❌ [PUT /projects/:id/ai-settings] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /projects/:id/ai-settings] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -275,38 +236,15 @@ router.put('/:id/with-rooms', async (req: AuthRequest, res, next) => {
     // Check ownership
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
-      console.log(`\n⚠️ [PUT /projects/:id/with-rooms] Проект не найден: ${id}`);
+      winstonLogger.warn('[PUT /projects/:id/with-rooms] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
-    console.log(`\n🔄 [PUT /projects/:id/with-rooms] Обновление проекта с комнатами`);
-    console.log(`   ID: ${id}`);
-    console.log(`   Название: "${existing.name}" → "${name || existing.name}"`);
-    console.log(`   Комнат в запросе: ${rooms?.length || 0}`);
-    
-    if (rooms && rooms.length > 0) {
-      console.log(`   ┌─ Комнаты:`);
-      rooms.forEach((r: Room, i: number) => {
-        const works = typeof r.works === 'string' ? JSON.parse(r.works) : r.works;
-        const worksArray = Array.isArray(works) ? works : [];
-        const enabledWorks = worksArray.filter((w: any) => w.enabled);
-        
-        console.log(`   │`);
-        console.log(`   ├─ 🏠 #${i + 1}: "${r.name}"`);
-        console.log(`   │   ID: ${r.id}`);
-        console.log(`   │   Размеры: ${r.length}м × ${r.width}м × ${r.height}м`);
-        console.log(`   │   Площадь: ${(r.length * r.width).toFixed(2)} м²`);
-        console.log(`   │   Работ: ${enabledWorks.length}`);
-        
-        if (enabledWorks.length > 0) {
-          const totalWorkCost = enabledWorks.reduce((sum: number, w: any) => {
-            return sum + (w.work_unit_price * r.length * r.width);
-          }, 0);
-          console.log(`   │   Стоимость работ: ${totalWorkCost.toFixed(2)} руб.`);
-        }
-      });
-      console.log(`   └─`);
-    }
+    winstonLogger.info('[PUT /projects/:id/with-rooms] Updating project with rooms', {
+      projectId: id,
+      name: name || existing.name,
+      roomsCount: rooms?.length || 0,
+    });
 
     const projectData: Partial<Project> = {};
     if (name !== undefined) projectData.name = name;
@@ -323,15 +261,14 @@ router.put('/:id/with-rooms', async (req: AuthRequest, res, next) => {
       rooms || []
     );
 
-    console.log(`\n✅ [PUT /projects/:id/with-rooms] Успешно обновлено`);
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /projects/:id/with-rooms] Updated', { duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: updated,
     });
   } catch (error) {
-    console.log(`\n❌ [PUT /projects/:id/with-rooms] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /projects/:id/with-rooms] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });
@@ -346,14 +283,15 @@ router.put('/:id/with-objects', async (req: AuthRequest, res, next) => {
     // Check ownership
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
     if (!existing) {
-      console.log(`\n⚠️ [PUT /projects/:id/with-objects] Проект не найден: ${id}`);
+      winstonLogger.warn('[PUT /projects/:id/with-objects] Project not found', { projectId: id });
       throw notFound('Project not found');
     }
 
-    console.log(`\n🔄 [PUT /projects/:id/with-objects] Обновление проекта с объектами`);
-    console.log(`   ID: ${id}`);
-    console.log(`   Название: "${existing.name}" → "${name || existing.name}"`);
-    console.log(`   Объектов в запросе: ${objects?.length || 0}`);
+    winstonLogger.info('[PUT /projects/:id/with-objects] Updating project with objects', {
+      projectId: id,
+      name: name || existing.name,
+      objectsCount: objects?.length || 0,
+    });
 
     const projectData: Partial<Project> = {};
     if (name !== undefined) projectData.name = name;
@@ -370,15 +308,14 @@ router.put('/:id/with-objects', async (req: AuthRequest, res, next) => {
       objects || []
     );
 
-    console.log(`\n✅ [PUT /projects/:id/with-objects] Успешно обновлено`);
-    console.log(`   Завершено за ${Date.now() - startTime}ms`);
+    winstonLogger.info('[PUT /projects/:id/with-objects] Updated', { duration: Date.now() - startTime });
 
     res.json({
       status: 'success',
       data: updated,
     });
   } catch (error) {
-    console.log(`\n❌ [PUT /projects/:id/with-objects] Ошибка за ${Date.now() - startTime}ms:`, error);
+    winstonLogger.error('[PUT /projects/:id/with-objects] Error', { duration: Date.now() - startTime, error });
     next(error);
   }
 });

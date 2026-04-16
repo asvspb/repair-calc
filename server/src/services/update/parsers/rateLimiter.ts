@@ -7,6 +7,8 @@
 /**
  * Конфигурация Rate Limiter
  */
+import { winstonLogger } from '../../../middleware/logger.js';
+
 export interface RateLimiterConfig {
   requestsPerMinute: number;
   requestsPerDay?: number;
@@ -76,7 +78,7 @@ export class RateLimiter {
       const waitTime = oldestTimestamp + 60 * 1000 - now;
 
       if (waitTime > 0) {
-        console.debug(`Rate limit: waiting ${waitTime}ms`);
+        winstonLogger.debug('Rate limit: waiting', { waitTimeMs: waitTime });
         await this.delay(waitTime);
         // Рекурсивная проверка после ожидания
         return this.throttlePerMinute();
@@ -115,7 +117,7 @@ export class RateLimiter {
     // Сброс через 24 часа
     this.dailyResetTimeout = setTimeout(() => {
       this.dailyRequestCount = 0;
-      console.info('RateLimiter: Daily request count reset');
+      winstonLogger.info('RateLimiter: Daily request count reset');
       this.scheduleDailyReset();
     }, 24 * 60 * 60 * 1000);
   }
