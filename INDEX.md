@@ -28,11 +28,9 @@ repair-calc/
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API
 │   │   │   └── index.ts
-│   │   └── prices/                   # AI поиск цен
-│   │       ├── geminiPriceSearch.ts
-│   │       ├── mistralPriceSearch.ts
-│   │       ├── priceCache.ts
-│   │       ├── unifiedSearch.ts
+│   │   └── prices/                   # AI поиск цен (через серверный прокси)
+│   │       ├── priceCache.ts         # Клиентский кэш (localStorage)
+│   │       ├── unifiedSearch.ts      # Унифицированный поиск → /api/ai/search-price
 │   │       ├── types.ts
 │   │       └── index.ts
 │   ├── components/                   # React компоненты
@@ -136,7 +134,7 @@ repair-calc/
 │   │   │       ├── webhook.repo.ts
 │   │   │       └── work.repo.ts
 │   │   ├── services/
-│   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache)
+│   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache, priceSearch)
 │   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner)
 │   │   │   └── webhook.service.ts
 │   │   └── types/
@@ -415,7 +413,7 @@ npm run lint         # TypeScript + ESLint
 ## Известные проблемы кода (Code Review 2026-04-17)
 
 ### Критические (Security)
-- **S1.** API ключи Gemini/Mistral доступны в клиентском бандле (VITE_GEMINI_API_KEY) — перенести AI-вызовы на сервер
+- **S1.** ~~API ключи Gemini/Mistral доступны в клиентском бандле~~ — **ИСПРАВЛЕНО**: AI-вызовы перенесены на серверный прокси `/api/ai/search-price`
 - **S2.** 19 admin endpoints без проверки прав в `server/src/routes/update.ts`
 - **S3.** Слабые fallback JWT секреты в `server/src/config/env.ts`
 
@@ -425,7 +423,7 @@ npm run lint         # TypeScript + ESLint
 - **H3.** `apiStorageProvider.ts` — `require()` в ESM-модуле
 
 ### Дублирование
-- `geminiPriceSearch.ts` / `mistralPriceSearch.ts` — идентичные структуры (prompt builder, parser, hook)
+- ~~`geminiPriceSearch.ts` / `mistralPriceSearch.ts`~~ — **УДАЛЕНО**: клиентские AI-модули удалены, поиск идёт через серверный прокси. Дублирование промптов устранено через `priceSearchHelpers.ts`
 - `parseJSON()` в `projects.ts` и `rooms.ts`
 - `STORAGE_KEYS` в `storage.ts` и `apiStorageProvider.ts`
 - `API_BASE` в `httpClient.ts` и `auth.ts`
@@ -443,3 +441,17 @@ npm run lint         # TypeScript + ESLint
 ---
 
 **ВАЖНО:** После каждого изменения обновляйте этот файл!
+
+---
+
+## История изменений (кодревью)
+
+### 2026-04-17: P0-SEC Исправление утечки API-ключей
+- **Удалено:** `src/api/prices/geminiPriceSearch.ts`, `src/api/prices/mistralPriceSearch.ts`, `tests/api/geminiPriceSearch.test.ts`
+- **Новое:** `server/src/services/ai/priceSearchHelpers.ts` — общий промпт и парсер для поиска цен
+- **Изменено:** `src/api/prices/unifiedSearch.ts` — запросы через серверный прокси `/api/ai/search-price`
+- **Изменено:** `server/src/routes/ai.ts` — добавлен эндпоинт `POST /api/ai/search-price` с кэшированием
+- **Изменено:** `server/src/services/ai/geminiProvider.ts`, `mistralProvider.ts` — добавлен `searchPrice()`, убрано дублирование
+- **Изменено:** `server/src/services/ai/aiCache.ts` — добавлен `'search-price'` в кэшируемые типы (TTL 6ч)
+- **Изменено:** `.env.example` — API-ключи без `VITE_` префикса (серверные)
+- **Новое:** `tests/api/unifiedSearch.test.ts` — тесты серверного прокси (7 тестов)

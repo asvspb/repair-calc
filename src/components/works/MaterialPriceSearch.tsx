@@ -43,6 +43,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
   };
 
   // Если API не настроен — не показываем кнопку
+  // null = ещё проверяем, false = недоступен
   if (!isConfigured) {
     return null;
   }

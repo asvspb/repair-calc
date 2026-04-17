@@ -188,7 +188,7 @@ export async function cleanupOldAIRecords(
  */
 export function shouldUseCache(requestType: string): boolean {
   // Кэшируем только определенные типы запросов
-  const cacheableTypes = ['estimate', 'suggest-materials', 'generate-template'];
+  const cacheableTypes = ['estimate', 'suggest-materials', 'generate-template', 'search-price'];
   return cacheableTypes.includes(requestType);
 }
 
@@ -200,6 +200,7 @@ export function getCacheTTL(requestType: string): number {
     estimate: 24 * 60 * 60 * 1000, // 24 часа
     'suggest-materials': 12 * 60 * 60 * 1000, // 12 часов
     'generate-template': 7 * 24 * 60 * 60 * 1000, // 7 дней
+    'search-price': 6 * 60 * 60 * 1000, // 6 часов
   };
 
   return ttlMap[requestType] || 24 * 60 * 60 * 1000;

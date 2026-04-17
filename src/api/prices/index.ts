@@ -1,6 +1,7 @@
 /**
  * API для поиска цен
- * Экспортирует типы и функции для поиска цен через AI провайдеров (Gemini, Mistral)
+ * Экспортирует типы и функции для поиска цен через серверный AI прокси
+ * API-ключи хранятся только на сервере — НЕ в клиентском бандле
  */
 
 export type {
@@ -19,28 +20,12 @@ export {
   getCacheStats,
 } from './priceCache';
 
-// Gemini
-export {
-  searchPrice as searchPriceGemini,
-  isGeminiConfigured,
-  isGeminiEnabled,
-  useGeminiPriceSearch,
-} from './geminiPriceSearch';
-
-// Mistral
-export {
-  searchPrice as searchPriceMistral,
-  isMistralConfigured,
-  isMistralEnabled,
-  getMistralModel,
-  useMistralPriceSearch,
-} from './mistralPriceSearch';
-
-// Универсальные функции (выбирают доступный провайдер)
+// Универсальные функции (вызывают серверный прокси /api/ai/search-price)
 export {
   type AIProvider,
   getAvailableProvider,
   getProvidersStatus,
   searchPrice,
   usePriceSearch,
+  isAnyProviderConfigured,
 } from './unifiedSearch';

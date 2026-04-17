@@ -1,47 +1,144 @@
 /**
  * Унифицированный поиск цен
- * Автоматически выбирает доступный AI провайдер (Gemini или Mistral)
+ * Все AI-вызовы проходят через серверный прокси /api/ai/search-price
+ * API-ключи хранятся только на сервере — НЕ в клиентском бандле
  */
 
 import React from 'react';
 import type { PriceSearchRequest, PriceSearchResult, PriceSearchError } from './types';
-import { searchPrice as searchPriceGemini, isGeminiEnabled } from './geminiPriceSearch';
-import { searchPrice as searchPriceMistral, isMistralEnabled, getMistralModel } from './mistralPriceSearch';
+import { buildCacheKey, getCachedPrice, setCachedPrice } from './priceCache';
+import { httpClient } from '../httpClient';
 
 export type AIProvider = 'gemini' | 'mistral' | null;
 
-/**
- * Получает приоритетный провайдер из переменной окружения
- */
-function getPrimaryProvider(): AIProvider {
-  const primary = import.meta.env.VITE_LLM_PRIMARY;
-  if (primary === 'gemini' || primary === 'mistral') {
-    return primary;
-  }
-  return null;
+/** Интерфейс ответа серверного эндпоинта */
+interface SearchPriceResponse {
+  status: 'success';
+  data: PriceSearchResult;
+  meta: {
+    provider: string;
+    cached: boolean;
+    cachedAt?: string;
+  };
+}
+
+/** Интерфейс ответа статуса AI */
+interface AIStatusResponse {
+  status: 'success';
+  data: {
+    available: boolean;
+    provider: { name: string; type: string } | null;
+  };
 }
 
 /**
- * Возвращает доступный AI провайдер
- * Учитывает:
- * 1. VITE_LLM_PRIMARY - приоритетный провайдер (если указан и доступен)
- * 2. VITE_GEMINI_ENABLED / VITE_MISTRAL_ENABLED - включён ли провайдер
- * 3. Наличие API ключей
+ * Кэшированный статус доступности AI
+ * Проверяется один раз при загрузке, обновляется при ошибке
+ */
+let cachedAvailable: boolean | null = null;
+let cachedProvider: AIProvider = null;
+let statusCheckPromise: Promise<void> | null = null;
+
+/**
+ * Проверяет доступность AI на сервере
+ * Результат кэшируется до перезагрузки страницы
+ */
+async function checkAIAvailability(): Promise<void> {
+  if (cachedAvailable !== null) return;
+
+  if (statusCheckPromise) {
+    await statusCheckPromise;
+    return;
+  }
+
+  statusCheckPromise = (async () => {
+    try {
+      const response = await httpClient.get<AIStatusResponse>('/api/ai/status');
+      cachedAvailable = response.data.available;
+      if (response.data.provider) {
+        const type = response.data.provider.type;
+        cachedProvider = type === 'ai_gemini' ? 'gemini' : type === 'ai_mistral' ? 'mistral' : null;
+      } else {
+        cachedProvider = null;
+      }
+    } catch {
+      cachedAvailable = false;
+      cachedProvider = null;
+    }
+  })();
+
+  await statusCheckPromise;
+}
+
+/**
+ * Преобразует ошибку серверного запроса в PriceSearchError
+ */
+function mapToPriceSearchError(error: unknown): PriceSearchError {
+  if (error instanceof Error) {
+    const message = error.message;
+
+    // Rate limit
+    if (message.includes('429') || message.includes('rate limit') || message.includes('quota')) {
+      return {
+        type: 'rateLimit',
+        message: 'Превышен лимит запросов к AI сервису',
+        retryable: true,
+      };
+    }
+
+    // Network ошибки
+    if (message.includes('network') || message.includes('fetch') || message.includes('ECONNREFUSED') || message.includes('Failed to fetch')) {
+      return {
+        type: 'network',
+        message: 'Ошибка сети при обращении к серверу',
+        retryable: true,
+      };
+    }
+
+    // Сервер вернул 503 — AI недоступен
+    if (message.includes('503') || message.includes('AI сервис недоступен')) {
+      return {
+        type: 'invalidKey',
+        message: 'AI сервис недоступен. Обратитесь к администратору.',
+        retryable: false,
+      };
+    }
+
+    // Parse ошибки
+    if (message.includes('парсинга') || message.includes('JSON') || message.includes('parse')) {
+      return {
+        type: 'parse',
+        message,
+        retryable: false,
+      };
+    }
+
+    return {
+      type: 'api',
+      message,
+      retryable: false,
+    };
+  }
+
+  return {
+    type: 'api',
+    message: 'Неизвестная ошибка',
+    retryable: false,
+  };
+}
+
+/**
+ * Задержка для retry
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Возвращает доступный AI провайдер (из кэша статуса сервера)
  */
 export function getAvailableProvider(): AIProvider {
-  const primary = getPrimaryProvider();
-  const geminiEnabled = isGeminiEnabled();
-  const mistralEnabled = isMistralEnabled();
-  
-  // Если указан приоритетный провайдер и он доступен — используем его
-  if (primary === 'gemini' && geminiEnabled) return 'gemini';
-  if (primary === 'mistral' && mistralEnabled) return 'mistral';
-  
-  // Иначе выбираем первый доступный (приоритет: Gemini -> Mistral)
-  if (geminiEnabled) return 'gemini';
-  if (mistralEnabled) return 'mistral';
-  
-  return null;
+  return cachedProvider;
 }
 
 /**
@@ -52,72 +149,110 @@ export function getProvidersStatus(): {
   mistral: { enabled: boolean; isPrimary: boolean; model?: string };
   primary: AIProvider;
 } {
-  const primary = getPrimaryProvider();
-  const geminiEnabled = isGeminiEnabled();
-  const mistralEnabled = isMistralEnabled();
-  
+  const provider = cachedProvider;
+
   return {
     gemini: {
-      enabled: geminiEnabled,
-      isPrimary: primary === 'gemini',
+      enabled: provider === 'gemini',
+      isPrimary: provider === 'gemini',
     },
     mistral: {
-      enabled: mistralEnabled,
-      isPrimary: primary === 'mistral',
-      model: mistralEnabled ? getMistralModel() : undefined,
+      enabled: provider === 'mistral',
+      isPrimary: provider === 'mistral',
     },
-    primary: getAvailableProvider(),
+    primary: provider,
   };
 }
 
 /**
- * Ищет цены используя доступный провайдер
+ * Ищет цены используя серверный AI прокси
+ * API-ключи не покидают сервер — запросы идут через /api/ai/search-price
  */
 export async function searchPrice(
   request: PriceSearchRequest,
-  options?: { skipCache?: boolean; maxRetries?: number; provider?: AIProvider }
+  options?: { skipCache?: boolean; maxRetries?: number }
 ): Promise<PriceSearchResult> {
-  const { provider = getAvailableProvider(), ...searchOptions } = options ?? {};
-  
-  if (provider === 'gemini') {
-    return searchPriceGemini(request, searchOptions);
+  const { skipCache = false, maxRetries = 2 } = options ?? {};
+
+  // Проверяем кэш на клиенте (localStorage)
+  const cacheKey = buildCacheKey(request);
+  if (!skipCache) {
+    const cached = getCachedPrice(cacheKey);
+    if (cached) {
+      return cached;
+    }
   }
-  
-  if (provider === 'mistral') {
-    return searchPriceMistral(request, searchOptions);
+
+  // Проверяем доступность AI
+  await checkAIAvailability();
+  if (!cachedAvailable) {
+    throw {
+      type: 'invalidKey',
+      message: 'AI сервис недоступен. Обратитесь к администратору для настройки API ключей на сервере.',
+      retryable: false,
+    } as PriceSearchError;
   }
-  
-  throw {
-    type: 'invalidKey',
-    message: 'Не настроен ни один AI провайдер. Добавьте VITE_GEMINI_API_KEY или VITE_MISTRAL_API_KEY в .env',
-    retryable: false,
-  } as PriceSearchError;
+
+  // Повторные попытки с exponential backoff
+  let lastError: PriceSearchError | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await httpClient.post<SearchPriceResponse>(
+        '/api/ai/search-price',
+        {
+          productName: request.productName,
+          city: request.city,
+          category: request.category,
+          brand: request.brand,
+          useCache: !skipCache, // передаём намерение клиента на сервер
+        }
+      );
+
+      const result = response.data;
+
+      // Сохраняем в клиентский кэш
+      setCachedPrice(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      lastError = mapToPriceSearchError(error);
+
+      if (!lastError.retryable || attempt === maxRetries) {
+        break;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s...
+      await delay(1000 * Math.pow(2, attempt));
+    }
+  }
+
+  throw lastError;
 }
 
 /**
- * Проверяет, настроен ли хотя бы один провайдер
+ * Проверяет, настроен ли хотя бы один провайдер на сервере
  */
 export function isAnyProviderConfigured(): boolean {
-  return getAvailableProvider() !== null;
+  // Если статус ещё не проверен — возвращаем false (безопасный подход)
+  // Реальная проверка произойдёт при первом запросе или через usePriceSearch
+  return cachedAvailable ?? false;
 }
 
 /**
  * Хук для использования в React компонентах
- * Автоматически использует доступный провайдер
+ * Автоматически использует серверный AI прокси
  */
 export function usePriceSearch() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [result, setResult] = React.useState<PriceSearchResult | null>(null);
   const [error, setError] = React.useState<PriceSearchError | null>(null);
-  
-  // Получаем провайдер один раз при монтировании
-  const provider = React.useMemo(() => getAvailableProvider(), []);
-  
+
   const search = React.useCallback(async (request: PriceSearchRequest) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
-    
+
     try {
       const data = await searchPrice(request);
       setResult(data);
@@ -129,20 +264,34 @@ export function usePriceSearch() {
       setIsLoading(false);
     }
   }, []);
-  
+
   const reset = React.useCallback(() => {
     setIsLoading(false);
     setResult(null);
     setError(null);
   }, []);
-  
+
+  // Проверяем доступность AI при монтировании
+  // null = ещё не проверено (показываем загрузку), true = доступен, false = недоступен
+  const [isConfigured, setIsConfigured] = React.useState<boolean | null>(cachedAvailable);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    checkAIAvailability().then(() => {
+      if (!cancelled) {
+        setIsConfigured(cachedAvailable ?? false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   return {
     search,
     isLoading,
     result,
     error,
     reset,
-    isConfigured: provider !== null,
-    provider,
+    isConfigured,
+    provider: cachedProvider,
   };
 }

@@ -5,19 +5,16 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type {
-  AIProvider,
-  AIProviderConfig,
-  AIProviderStats,
-  EstimateRequest,
-  EstimateResult,
-  SuggestMaterialsRequest,
   SuggestMaterialsResult,
   GenerateTemplateRequest,
   GenerateTemplateResult,
+  PriceSearchRequest,
+  PriceSearchResult,
   RecommendedWork,
   RecommendedMaterial,
   RecommendedTool,
 } from './types.js';
+import { buildPriceSearchPrompt, buildPriceSearchResult } from './priceSearchHelpers.js';
 import { AIProviderError } from './types.js';
 import { CircuitBreaker } from '../update/parsers/circuitBreaker.js';
 import { RateLimiter } from '../update/parsers/rateLimiter.js';
@@ -125,6 +122,17 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
     const prompt = this.buildGenerateTemplatePrompt(request);
     const response = await this.makeRequest(prompt);
     return this.parseGenerateTemplateResponse(response, request);
+  }
+
+  /**
+   * Поиск цены на товар/работу
+   */
+  async searchPrice(request: PriceSearchRequest): Promise<PriceSearchResult> {
+    const prompt = buildPriceSearchPrompt(request);
+    const response = await this.makeRequest(prompt);
+    const text = this.extractText(response);
+    const parsed = this.parseJsonFromText(text);
+    return buildPriceSearchResult(parsed as Parameters<typeof buildPriceSearchResult>[0], request, (c) => this.validateConfidence(c));
   }
 
   /**

@@ -143,6 +143,11 @@ export interface AIProvider {
    * Генерация шаблона работ для типа комнаты
    */
   generateTemplate(request: GenerateTemplateRequest): Promise<GenerateTemplateResult>;
+
+  /**
+   * Поиск цены на товар/работу
+   */
+  searchPrice(request: PriceSearchRequest): Promise<PriceSearchResult>;
 }
 
 /**
@@ -169,6 +174,34 @@ export interface AIProviderConfig {
   temperature?: number;
   maxTokens?: number;
   timeout?: number;
+}
+
+/**
+ * Запрос на поиск цены на товар
+ */
+export interface PriceSearchRequest {
+  productName: string;
+  city: string;
+  category?: string;
+  brand?: string;
+}
+
+/**
+ * Результат поиска цены
+ */
+export interface PriceSearchResult {
+  product: string;
+  city: string;
+  prices: {
+    min: number;
+    avg: number;
+    max: number;
+    currency: string;
+  };
+  sources: string[];
+  confidence: 'high' | 'medium' | 'low';
+  lastUpdated: string;
+  disclaimer: string;
 }
 
 /**
