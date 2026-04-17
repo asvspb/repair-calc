@@ -1,67 +1,66 @@
-# 📚 Документация Repair Calculator
+# Документация Repair Calculator
 
-## 🔧 Руководства
+**Версия:** 1.1
+**Обновлено:** 2026-04-17
+
+---
+
+## Руководства
 
 | Документ | Описание |
 |----------|----------|
-| [🚀 План реализации](./IMPLEMENTATION_PLAN.md) | Поэтапный план разработки (11 дней) |
-| [📋 ТЗ](./TECHNICAL-SPECIFICATION.md) | Техническое задание на многопользовательскую архитектуру (v1.1) |
-| [📋 Логирование](./LOGGING.md) | Полное руководство по логированию сервера |
-| [⚡ Шпаргалка по логам](./LOGGING-CHEATSHEET.md) | Быстрый доступ к логам и командам |
-| [📡 API](./API.md) | Документация REST API |
-| [🗄️ База данных](./DATABASE.md) | Схема базы данных и миграции |
-| [🐛 Отладка](./TROUBLESHOOTING.md) | Решение типичных проблем |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта (клиент + сервер) |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода v5.0 |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [TODO.md](./TODO.md) | Актуальные задачи |
+| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — многопользовательская архитектура |
+| [LOGGING.md](./LOGGING.md) | Полное руководство по логированию |
+| [LOGGING-CHEATSHEET.md](./LOGGING-CHEATSHEET.md) | Шпаргалка по логам |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
 
 ---
 
-## 🚀 Быстрый старт
+## Устаревшие документы
 
-### Просмотр логов
-
-```bash
-# Последние 100 строк
-docker logs repair-calc-backend --tail 100
-
-# Следить в реальном времени
-docker logs repair-calc-backend -f
-
-# Полный дамп
-docker logs repair-calc-backend --tail 1000
-```
-
-### Проверка состояния
-
-```bash
-# Здоровье сервера
-curl http://localhost:3994/api/health
-
-# Здоровье фронтенда
-curl http://localhost:3993/api/health
-```
+| Документ | Статус | Причина |
+|----------|--------|---------|
+| [TECHNICAL_SPECS.md](./TECHNICAL_SPECS.md) | Устарел | Описывает приложение как SPA-only без бэкенда (2026-03-12) |
+| [E2E_TEST_STATUS.md](./E2E_TEST_STATUS.md) | Устарел | Показывает "2 passing" — давно не обновлялся |
+| [E2E_FIXES_SUMMARY.md](./E2E_FIXES_SUMMARY.md) | Устарел | Показывает "2 passing" — давно не обновлялся |
+| [E2E_FIX_PROGRESS.md](./E2E_FIX_PROGRESS.md) | Устарел | Показывает "4/52 fixed" — стабилизация завершена |
+| [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md) | Исторический | Отладка конкретного бага (Section Dimensions) |
+| [developer_log.md](./developer_log.md) | Неактивен | Единственная запись от 2026-03-06 |
 
 ---
 
-## 📁 Структура документации
+## Структура документации
 
 ```
 docs/
 ├── README.md                      # Этот файл
+├── ARCHITECTURE.md                # Архитектура проекта
+├── CODE_REVIEW.md                 # Ревью кода v5.0
+├── PROGRESS.md                    # История прогресса
+├── TODO.md                        # Рабочий бэклог
+├── FRONTEND-STATUS.md             # Статус Frontend
+├── TECHNICAL-SPECIFICATION.md     # ТЗ v1.1
+├── TECHNICAL_SPECS.md             # [УСТАРЕЛ] Спецификация без бэкенда
 ├── LOGGING.md                     # Руководство по логированию
-├── LOGGING-CHEATSHEET.md          # Шпаргалка по логам
-├── API.md                         # API документация
-├── DATABASE.md                    # Схема БД
-└── TROUBLESHOOTING.md             # Отладка
+├── LOGGING-CHEATSHEET.md          # Шпаргалка
+├── AI_DOCUMENTATION_GUIDELINES.md # Правила документации
+├── INDEX.md                       # Индекс для AI-агентов (внутренний)
+├── E2E_TEST_STATUS.md             # [УСТАРЕЛ]
+├── E2E_FIXES_SUMMARY.md           # [УСТАРЕЛ]
+├── E2E_FIX_PROGRESS.md            # [УСТАРЕЛ]
+├── DEBUG_INSTRUCTIONS.md          # [ИСТОРИЧЕСКИЙ]
+├── developer_log.md               # [НЕАКТИВЕН]
+└── TODO_TEMPLATES.md               # Шаблоны задач
 ```
 
 ---
 
-## 🔗 Связанные документы
+## Связанные документы
 
 - [Главный README](../README.md)
 - [Индекс для AI-агентов](../INDEX.md)
-- [Правила разработки](../CONTRIBUTING.md)
-
----
-
-**Версия:** 1.0  
-**Обновлено:** 2026-03-31

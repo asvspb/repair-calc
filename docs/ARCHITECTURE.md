@@ -1,6 +1,6 @@
 # Архитектура проекта Repair Calculator
 
-**Дата:** 2026-04-16
+**Дата:** 2026-04-17
 **Статус:** Актуально
 **Версия клиента:** React 19 + Vite 6
 **Версия сервера:** Express + MySQL + Knex
@@ -16,17 +16,19 @@
 - Искать цены через AI (Gemini/Mistral)
 - Экспортировать данные в CSV/JSON
 
-### 1.1 Текущий статус (2026-04-16)
+### 1.1 Текущий статус (2026-04-17)
 
 | Компонент | Статус | Описание |
 |-----------|--------|----------|
 | Клиент | ✅ Готов | React 19, Vite 6, TailwindCSS 4 |
 | Сервер | ✅ Готов | Express, MySQL, Knex, JWT |
-| База данных | ✅ Готова | MySQL 8 с миграциями |
+| База данных | ✅ Готова | MySQL 8 с 6 миграциями |
 | Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
 | AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
 | Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
 | Тесты | ✅ 841 тест | 833 passed, 0 failed, 8 skipped |
+| Логирование | ✅ Готов | Winston (сервер) + logger.ts (клиент) |
+| ESLint | ✅ Готов | no-console: error, 0 errors / 47 warnings |
 
 ---
 
@@ -42,18 +44,22 @@ src/
 │
 ├── api/                       # API-интеграции
 │   ├── auth.ts                # Аутентификация
+│   ├── httpClient.ts          # HTTP-клиент (interceptors, retry, timeout)
+│   ├── objects.ts             # Objects API
 │   ├── projects.ts            # Projects API
 │   ├── rooms.ts               # Rooms API
-│   ├── sync.ts                # Sync API (pull/push)
+│   ├── totals.ts              # Totals API
 │   ├── users.ts               # Users API
 │   ├── storage/
-│   │   └── apiStorageProvider.ts  # Storage через API
+│   │   ├── apiStorageProvider.ts  # Storage через REST API (~1036 строк)
+│   │   └── index.ts
 │   └── prices/                # Поиск цен через AI
 │       ├── geminiPriceSearch.ts
 │       ├── mistralPriceSearch.ts
 │       ├── priceCache.ts
 │       ├── unifiedSearch.ts
-│       └── types.ts
+│       ├── types.ts
+│       └── index.ts
 │
 ├── components/                # React-компоненты
 │   ├── auth/                  # Аутентификация (3 файла)
@@ -235,7 +241,7 @@ type WorkData = {
                 └── Инструмент (tools)
 ```
 
-### 2.3 Хранилище (Storage)
+### 2.4 Хранилище (Storage)
 
 **Абстракция:** `IStorageProvider` в `src/types/storage.ts`
 
@@ -255,7 +261,7 @@ export interface IStorageProvider {
 - `ApiStorageProvider` — сохранение через REST API
 - `IndexedDBProvider` — оффлайн-хранение
 
-### 2.4 Контексты
+### 2.5 Контексты
 
 #### AuthContext
 ```typescript
@@ -321,8 +327,7 @@ server/
 │   ├── app.ts                      # Express app setup
 │   │
 │   ├── config/                     # Конфигурация
-│   │   ├── database.ts
-│   │   └── jwt.ts
+│   │   └── env.ts                  # DB, JWT, logging config
 │   │
 │   ├── routes/                     # API роуты
 │   │   ├── index.ts                # Роутер
@@ -348,15 +353,24 @@ server/
 │   ├── db/
 │   │   ├── pool.ts                 # MySQL pool
 │   │   ├── migrations/             # Knex миграции
-│   │   └── repositories/           # Data access
+│   │   └── repositories/           # Data access (12 файлов)
 │   │       ├── user.repo.ts
 │   │       ├── project.repo.ts
 │   │       ├── room.repo.ts
-│   │       └── object.repo.ts
+│   │       ├── object.repo.ts
+│   │       ├── work.repo.ts
+│   │       ├── abTest.repo.ts
+│   │       ├── aiRequest.repo.ts
+│   │       ├── calculatedTotals.repo.ts
+│   │       ├── priceCatalog.repo.ts
+│   │       ├── priceHistory.repo.ts
+│   │       ├── updateJob.repo.ts
+│   │       └── webhook.repo.ts
 │   │
 │   ├── services/                   # Бизнес-логика
-│   │   ├── calculations.ts
-│   │   └── ai/                     # AI-провайдеры
+│   │   ├── ai/                     # AI-провайдеры (Gemini, Mistral, cache)
+│   │   ├── update/                 # Сервис обновлений (parsers, scheduler, runner)
+│   │   └── webhook.service.ts
 │   │
 │   └── types/                      # TypeScript типы
 │
@@ -475,7 +489,7 @@ export class GeminiProvider implements AIProvider {
 | **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
 | **Миграции Knex** | `console.log` | — | CLI-контекст, вне Express |
 
-> **Важно:** Для предотвращения возврата к `console.*` планируется добавить ESLint правило `no-console`.
+> **Важно:** ESLint правило `no-console: error` добавлено (2026-04-16). Все `console.*` заменены на структурированные логгеры.
 
 ### 5.2 Сервер — winstonLogger (Winston)
 

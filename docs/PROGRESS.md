@@ -1,6 +1,6 @@
 # Прогресс проекта Repair Calculator
 
-**Последнее обновление:** 2026-04-16
+**Последнее обновление:** 2026-04-17
 
 Документ отражает исторические вехи развития приложения. Для просмотра текущих незавершенных задач обращайтесь к [TODO.md](./TODO.md).
 
@@ -77,6 +77,24 @@
 - **preserve-caught-error:** добавлен `{ cause: error }` в rethrow в `geminiPriceSearch.ts`, `mistralPriceSearch.ts`, `templateStorage.ts`
 - **no-useless-catch:** убран бессмысленный try/catch в `httpClient.ts`
 - **Результат ESLint:** 0 errors (было 0), warnings 47 (было 128) — все warnings от смягчённых правил (no-explicit-any, no-useless-assignment, no-dupe-else-if)
+
+### 10. Полный аудит документации и код-ревью (2026-04-17)
+**Контекст:** Documentation drift — INDEX.md, ARCHITECTURE.md, README.md содержали устаревшие ссылки на несуществующие файлы, неверную структуру сервера и устаревшие статусы E2E-тестов.
+
+**Изменения:**
+- **INDEX.md (корень):** полная переработка — актуальная структура файлов, исправлены ссылки, добавлен раздел известных проблем кода
+- **README.md:** удалены ссылки на несуществующие парсеры (`bazavit-parser.js`, `lemana-parser.js`) и директорию `database/`
+- **docs/README.md:** убраны ссылки на 6 несуществующих файлов (API.md, DATABASE.md, TROUBLESHOOTING.md, IMPLEMENTATION_PLAN.md, WORK_TEMPLATES_SPEC.md, CONTRIBUTING.md), добавлена секция устаревших документов
+- **docs/ARCHITECTURE.md:** исправлена структура сервера (config/env.ts вместо database.ts+jwt.ts), добавлены все 12 репозиториев, все routes, services
+- **docs/CODE_REVIEW.md:** отмечены как исправленные W-7 (console.*) и W-10 (ARCHITECTURE.md), добавлены новые security issues
+- **docs/INDEX.md:** исправлены счётчики файлов, убраны ссылки на несуществующий sync.ts, добавлены все недостающие файлы
+
+**Обнаруженные проблемы кода (42 пункта):**
+- 5 критических security (API keys в бандле, admin endpoints без auth)
+- 3 сломанных импорта (fetchJson, Rules of Hooks violation, require в ESM)
+- 9 случаев дублирования кода
+- 5 единиц мёртвого кода
+- 4 проблемы производительности
 
 ---
 

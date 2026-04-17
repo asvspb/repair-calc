@@ -1,133 +1,110 @@
 # Application Index - Repair Calculator
 
-**Last Updated:** 2026-04-16
+**Last Updated:** 2026-04-17
 **Application Name:** Мой ремонт (Repair Calculator)
 **Version:** 1.1.0
 
 ---
 
-## 📋 Quick Overview
+## Quick Overview
 
 **Purpose:** Web application for calculating renovation/repair costs for rooms with detailed breakdown of works and materials.
 
 **Tech Stack:**
-- **Frontend:** React 19 + TypeScript + Vite 6
-- **Backend:** Express + MySQL + Knex
-- **Styling:** Tailwind CSS 4
+- **Frontend:** React 19 + TypeScript 5.8 + Vite 6
+- **Backend:** Express 4 + MySQL 8 + Knex 3
+- **Styling:** TailwindCSS 4
 - **State Management:** React Context + localStorage + API sync
-- **Testing:** Vitest (841 тест, 833 passed) + Playwright (E2E)
-- **Linting:** ESLint 10 (flat config, no-console: error, typescript-eslint)
+- **Testing:** Vitest (841 tests) + Playwright (E2E, 13 files)
+- **Linting:** ESLint 10 (flat config, no-console: error)
 - **Icons:** Lucide React
+- **Logging:** Winston (server) + logger.ts (client)
 
 **Key Features:**
 - Multi-project management with objects (real estate)
-- Three geometry modes: Simple, Extended (multi-section), Advanced (professional)
+- Three geometry modes: Simple, Extended, Advanced
 - Automatic cost calculation (works + materials + tools)
 - Auto-save to localStorage with server sync
 - JWT Authentication
 - JSON backup/restore
 - CSV export for Excel
-- AI price search via Gemini API
-- Structured logging: Winston (server) + logger.ts (client)
+- AI price search via Gemini/Mistral API
+- Structured logging
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Entry Points
 - `index.html` - HTML entry point
 - `src/main.tsx` - React app bootstrap
-- `src/App.tsx` - Main application component (~170 lines) ✅ Декомпозирован
+- `src/App.tsx` - Main application component (~470 lines)
 
 ### Core Structure
 ```
 src/
-├── App.tsx                    # Main app (~475 lines)
+├── App.tsx                    # Main app (~470 lines)
 ├── main.tsx                   # React root
 ├── index.css                  # TailwindCSS
 │
-├── api/                       # API clients
+├── api/                       # API clients (9 файлов + prices/)
 │   ├── auth.ts                # Authentication
-│   ├── projects.ts, rooms.ts, sync.ts, users.ts
-│   ├── storage/apiStorageProvider.ts
-│   └── prices/                # AI price search
+│   ├── httpClient.ts          # HTTP client (interceptors, retry, timeout)
+│   ├── objects.ts             # Objects API
+│   ├── projects.ts            # Projects API
+│   ├── rooms.ts               # Rooms API
+│   ├── totals.ts              # Totals API
+│   ├── users.ts               # Users API
+│   ├── storage/
+│   │   ├── apiStorageProvider.ts  # REST API storage provider
+│   │   └── index.ts
+│   └── prices/                # AI price search (6 файлов)
 │
 ├── components/
-│   ├── auth/                  # Login, Register, ProtectedRoute
-│   ├── geometry/              # Geometry module (8 files)
-│   ├── layout/                # LeftSidebar, RightSidebar, Settings
-│   ├── objects/               # ObjectCard, ObjectSelector, CreateModal
-│   ├── projects/              # ProjectsList, ProjectsModal
-│   ├── rooms/                 # RoomList, RoomListItem
-│   ├── works/                 # WorkList, MaterialCards (10 files)
-│   ├── summary/               # Summary views (3 files)
-│   ├── ui/                    # ConfirmDialog, ErrorBoundary, NumberInput
-│   ├── BackupManager.tsx
-│   ├── RoomEditor.tsx         # (~906 lines)
+│   ├── auth/                  # (4 файла: Login, Register, ProtectedRoute, index)
+│   ├── geometry/              # (9 файлов: Section, Mode, Simple/Extended/Advanced)
+│   ├── layout/                # (4 файла: LeftSidebar, RightSidebar, Settings)
+│   ├── objects/               # (5 файлов: Card, Selector, List, CreateModal, index)
+│   ├── projects/              # (5 файлов: List, Modal, DataMgmt, Create, index)
+│   ├── rooms/                 # (3 файла: List, ListItem, index)
+│   ├── works/                 # (11 файлов: WorkList, Materials, PriceSearch, index)
+│   ├── summary/               # (4 файла: Materials, Tools, Works, index)
+│   ├── ui/                    # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
+│   ├── BackupManager.tsx      # (~837 строк)
+│   ├── RoomEditor.tsx         # (~906 строк)
 │   └── SummaryView.tsx
 │
-├── contexts/
-│   ├── AuthContext.tsx        # JWT authentication
-│   ├── ProjectContext.tsx     # Project state (~981 lines)
-│   └── WorkTemplateContext.tsx
+├── contexts/                  # (4 файла)
+│   ├── AuthContext.tsx         # JWT authentication
+│   ├── ProjectContext.tsx      # Project state (~981 строка)
+│   ├── WorkTemplateContext.tsx # Work templates
+│   └── index.ts
 │
-├── types/
-│   ├── index.ts               # Main types (ProjectData, ObjectData...)
-│   ├── auth.ts, storage.ts, workTemplate.ts
+├── types/                     # (5 файлов)
+│   ├── index.ts               # Main types (ProjectData, ObjectData, RoomData...)
+│   ├── auth.ts
+│   ├── storage.ts
+│   ├── workTemplate.ts
+│   └── vite-env.d.ts
 │
-└── utils/
+├── hooks/                     # (4 файла)
+│   ├── useGeometryState.ts
+│   ├── useMaterialCalculation.ts
+│   ├── useProjects.ts         # (legacy — дублирует ProjectContext)
+│   └── useWorkTemplates.ts
+│
+├── data/                      # (2 файла)
+│   ├── initialData.ts
+│   └── workTemplatesCatalog.ts
+│
+└── utils/                     # (17 файлов)
     ├── costs.ts, geometry.ts, factories.ts
-    ├── logger.ts           # Structured logger (logError, logWarning, logDebug)
-    ├── storage.ts, idMapper.ts, projectObjects.ts, migration.ts
-```
-
-### Data Model (TypeScript Types)
-
-**ProjectData (v2):**
-```typescript
-{
-  id: string
-  name: string
-  description?: string
-  isPremium?: boolean
-  objects: ObjectData[]      // Objects (real estate)
-  version?: number
-  // Deprecated (backward compatibility)
-  rooms?: RoomData[]
-  city?: string
-  useAiPricing?: boolean
-}
-```
-
-**ObjectData:**
-```typescript
-{
-  id: string
-  projectId: string
-  name: string
-  city?: string
-  address?: string
-  useAiPricing?: boolean
-  rooms: RoomData[]
-  version?: number
-}
-```
-
-**RoomData:**
-```typescript
-{
-  id: string
-  name: string
-  geometryMode: 'simple' | 'extended' | 'advanced'
-  length, width, height: number
-  windows: Opening[]
-  doors: Opening[]
-  works: WorkData[]
-  segments: RoomSegment[]        // Advanced mode
-  obstacles: Obstacle[]          // Advanced mode
-  wallSections: WallSection[]    // Advanced mode
-  subSections: RoomSubSection[]  // Extended mode
-}
+    ├── logger.ts, debugLogger.ts
+    ├── storage.ts, idMapper.ts, saveQueue.ts
+    ├── projectObjects.ts, projectContextPatch.ts, migration.ts
+    ├── roomHelpers.ts, materialCalculations.ts
+    ├── format.ts, localStorageProvider.ts, templateStorage.ts
+    └── geometry.test.ts
 ```
 
 ### Data Hierarchy
@@ -140,47 +117,13 @@ User → Project → Object → Room → Work → Material/Tool
 
 | Mode | Description | Key Features |
 |------|-------------|--------------|
-| **Simple** | Single rectangular room | Basic length×width, windows, doors |
+| **Simple** | Single rectangular room | Basic length x width, windows, doors |
 | **Extended** | Multiple subsections | Different shapes per subsection |
 | **Advanced** | Professional mode | Segments, obstacles, wall height variations |
 
-### Calculation Logic
-
-**Metrics** (`src/utils/geometry.ts`):
-- `floorArea` - Total floor area (m²)
-- `perimeter` - Room perimeter (m)
-- `netWallArea` - Wall area minus openings (m²)
-- `skirtingLength` - Perimeter minus door widths (m)
-- `volume` - Room volume (m³)
-
-**Costs** (`src/utils/costs.ts`):
-- Work cost = quantity × workUnitPrice
-- Material cost = Σ(quantity × pricePerUnit)
-- Tool cost = Σ(quantity × price) [× rentPeriod if rental]
-
 ---
 
-## 🔧 Key Components
-
-### App.tsx (~170 lines)
-- **Views:** `summary`, `room`, `projects`
-- **Composition:** Renders `ProjectProvider`, `WorkTemplateProvider`, navigation
-
-### RoomEditor.tsx (~843 lines)
-- **State:** Uses `useProjectContext`, `useGeometryState`
-- **Sections:** Geometry, Works, Materials
-
-### Contexts
-- `ProjectContext` — Projects, rooms, auto-save (1s debounce)
-- `WorkTemplateContext` — Work templates management
-
-### Hooks
-- `useGeometryState` — Geometry mode, dimensions, openings
-- `useMaterialCalculation` — Auto material quantity calculation
-
----
-
-## 🚀 Development
+## Development
 
 ### Prerequisites
 - Node.js 18+
@@ -193,18 +136,19 @@ npm run build        # Production build
 npm run preview      # Preview production build
 npm test             # Run Vitest tests
 npm run test:e2e     # Run Playwright e2e tests
-npm run lint         # TypeScript type check
+npm run lint         # TypeScript type check + ESLint
 ```
 
 ### Environment
-- **Port:** 3993
+- **Frontend port:** 3993
+- **Backend port:** 3994
 - **Env File:** `.env.local` with `VITE_GEMINI_API_KEY=your_key`
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
-### Production
+### Production (Frontend)
 | Package | Version | Purpose |
 |---------|---------|---------|
 | react, react-dom | ^19.0.0 | UI framework |
@@ -213,32 +157,27 @@ npm run lint         # TypeScript type check
 | tailwindcss | ^4.1.14 | Styling |
 | vite | ^6.2.0 | Build tool |
 
+### Production (Backend)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| express | ^4.21.0 | HTTP server |
+| mysql2 | ^3.11.0 | MySQL driver |
+| knex | ^3.1.0 | Query builder / migrations |
+| jsonwebtoken | ^9.0.2 | JWT auth |
+| winston | ^3.17.0 | Logging |
+| zod | ^3.23.0 | Validation |
+
 ### Development
 | Package | Version | Purpose |
 |---------|---------|---------|
 | typescript | ~5.8.2 | Type checking |
 | vitest | ^4.0.18 | Unit testing |
 | @playwright/test | ^1.58.2 | E2E testing |
-| @testing-library/react | ^16.3.2 | React testing |
+| eslint | ^10.2.0 | Linting |
 
 ---
 
-## 🗄️ Data Persistence
-
-### Current Architecture (MySQL + Backend)
-- **Server:** Express + MySQL (Docker)
-- **Auth:** JWT tokens
-- **Frontend:** Port 3993
-- **Backend:** Port 3994
-- **Database:** MySQL 8 (utf8mb4)
-
-### Offline Support
-- **Queue:** IndexedDB for pending changes
-- **Sync:** Auto-sync on reconnect
-
----
-
-## 🧪 Testing
+## Testing
 
 ### Test Statistics (2026-04-16)
 | Category | Count |
@@ -253,19 +192,16 @@ npm run lint         # TypeScript type check
 - **Failed:** 0
 - **Skipped:** 8
 
-> **Fix (2026-04-16):** Added `localStorage` mock in `tests/setup.ts` — Vitest 4.x + jsdom 26 provides an empty object without Storage methods, causing 10 test failures.
->
-> **Logging Migration (2026-04-16):** All `console.*` replaced with structured loggers — server uses `winstonLogger` (Winston), client uses `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`). Knex migrations remain on `console.log` (CLI context).
-
-### E2E Status
-- ✅ auth.spec.ts — 3/3
-- ✅ objects.spec.ts — 4/4
-- ✅ export-import.spec.ts — 3/3
-- 🔧 Others — skipped (require backend mocks)
+### E2E Status (2026-04-17)
+All `test.describe.skip` removed. Tests use unified fixtures with API mocks via `page.route()`.
+- auth.spec.ts — 3/3
+- objects.spec.ts — 4/4
+- export-import.spec.ts — restored
+- All other specs — restored with `data-testid` selectors
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -275,12 +211,13 @@ npm run lint         # TypeScript type check
 | [TODO.md](./TODO.md) | Рабочий бэклог |
 | [PROGRESS.md](./PROGRESS.md) | История прогресса |
 | [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
-| [CODE_REVIEW.md](./CODE_REVIEW.md) | Код-ревью v5.0 |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Код-ревью v5.1 |
 | [LOGGING.md](./LOGGING.md) | Руководство по логированию |
+| [README.md](./README.md) | Индекс документации |
 
 ---
 
-## 🚨 Notes for AI Agents
+## Notes for AI Agents
 
 ### Before Making Changes
 1. Read `../INDEX.md` for current state
