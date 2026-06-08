@@ -1,6 +1,6 @@
 # Архитектура проекта Repair Calculator
 
-**Дата:** 2026-04-17
+**Дата:** 2026-06-08
 **Статус:** Актуально
 **Версия клиента:** React 19 + Vite 6
 **Версия сервера:** Express + MySQL + Knex
@@ -313,6 +313,8 @@ interface ProjectContextValue {
 - Защита от потери данных при закрытии (`beforeunload`)
 - Миграция данных при загрузке
 - Синхронизация с сервером при авторизации
+
+> **Статус стейт-менеджмента (2026-06-08):** На этапе миграции. Монолитный `ProjectContext.tsx` (~981 строка) готовится к декомпозиции на доменные хуки (`useProjectDomain`, `useRoomDomain`, `useSyncDomain`) через паттерн Facade. Текущий контекст выполняет роль единого провайдера состояния для всех сущностей проекта.
 
 ---
 
@@ -711,9 +713,8 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 | [TODO.md](./TODO.md) | Актуальные задачи и прогресс |
 | [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
 | [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода v5.0 |
-| [PROGRESS.md](./PROGRESS.md) | История прогресса |
-| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
 | [LOGGING.md](./LOGGING.md) | Руководство по логированию |
+| [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md) | Инструкции по отладке |
 | [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
 
 ---
@@ -751,4 +752,4 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
 ---
 
-**Последнее обновление:** 2026-04-17
+**Последнее обновление:** 2026-06-08

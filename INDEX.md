@@ -1,6 +1,6 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-04-17
+**Последнее обновление:** 2026-06-08
 **Версия приложения:** 1.1
 
 ---
@@ -386,6 +386,7 @@ npm test             # Unit тесты (Vitest)
 npm run test:e2e     # E2E тесты (Playwright)
 npm run test:e2e:ui  # E2E с UI
 npm run lint         # TypeScript + ESLint
+npm run analyze:graph # Codegraph: переиндексация графа зависимостей
 ```
 
 ---
@@ -404,8 +405,8 @@ npm run lint         # TypeScript + ESLint
 - [README](./README.md) — Главная документация
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Архитектура проекта
 - [docs/CODE_REVIEW.md](./docs/CODE_REVIEW.md) — Результаты ревью кода
-- [docs/PROGRESS.md](./docs/PROGRESS.md) — История прогресса
 - [docs/LOGGING.md](./docs/LOGGING.md) — Логирование
+- [docs/DEBUG_INSTRUCTIONS.md](./docs/DEBUG_INSTRUCTIONS.md) — Инструкции по отладке
 - [docs/TECHNICAL-SPECIFICATION.md](./docs/TECHNICAL-SPECIFICATION.md) — ТЗ v1.1
 
 ---
