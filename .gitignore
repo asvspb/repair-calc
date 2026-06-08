@@ -114,6 +114,7 @@ database/
 .kilo/
 .cline/
 .qwen/
+.codegraph/
 
 
 playwright-profile
