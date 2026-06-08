@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useProjectContext } from '../../contexts/ProjectContext';
+import { useProjectStore } from '../../store/useProjectStore';
 import type { ObjectData } from '../../types';
 
 interface CreateObjectModalProps {
@@ -9,7 +9,8 @@ interface CreateObjectModalProps {
 }
 
 export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
-  const { createObject, updateObject } = useProjectContext();
+  const createObject = useProjectStore((s) => s.createObject);
+  const updateObject = useProjectStore((s) => s.updateObject);
   
   const isEditMode = !!object;
   

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import type { ProjectData, ObjectData, RoomData } from '../../types';
 import type { WorkTemplate } from '../../types/workTemplate';
-import { useProjectContext } from '../../contexts/ProjectContext';
+import { useProjectStore } from '../../store/useProjectStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorageManager } from '../../utils/storage';
 import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
@@ -32,14 +32,12 @@ type ImportStatus = {
 };
 
 export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsModalProps) {
-  const {
-    projects,
-    activeProjectId,
-    setActiveProjectId,
-    updateProjects,
-    createProject,
-    deleteProject,
-  } = useProjectContext();
+  const projects = useProjectStore((s) => s.projects);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId);
+  const updateProjects = useProjectStore((s) => s.updateProjects);
+  const createProject = useProjectStore((s) => s.createProject);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
 
   const { isAuthenticated } = useAuth();
 

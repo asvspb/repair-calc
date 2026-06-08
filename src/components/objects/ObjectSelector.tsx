@@ -1,5 +1,5 @@
 import React from 'react';
-import { useProjectContext } from '../../contexts/ProjectContext';
+import { useProjectStore } from '../../store/useProjectStore';
 import type { ObjectData } from '../../types';
 
 interface ObjectSelectorProps {
@@ -7,11 +7,9 @@ interface ObjectSelectorProps {
 }
 
 export function ObjectSelector({ className = '' }: ObjectSelectorProps) {
-  const { 
-    activeProject, 
-    activeObjectId, 
-    setActiveObjectId 
-  } = useProjectContext();
+  const activeProject = useProjectStore((s) => s.activeProject);
+  const activeObjectId = useProjectStore((s) => s.activeObjectId);
+  const setActiveObjectId = useProjectStore((s) => s.setActiveObjectId);
 
   const objects = activeProject?.objects || [];
 

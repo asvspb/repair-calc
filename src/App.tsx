@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
-import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
+import { useProjectStore, resetStore } from './store/useProjectStore';
 import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -28,14 +28,38 @@ function AuthPages() {
     : <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />;
 }
 
+function useStoreEffects() {
+  useEffect(() => {
+    const cleanup = useProjectStore.getState().initSyncListeners();
+    return cleanup;
+  }, []);
+}
+
 function AppContent() {
-  const {
-    projects, activeProjectId, activeProject, setActiveProjectId,
-    updateProjects, updateActiveProject, updateRoom, updateRoomById,
-    deleteRoom, deleteProject, addRoom, reorderRooms,
-    isLoading, lastSaved, lastSavedToServer, saveError, isSyncing,
-    activeObjectId, activeObject, setActiveObjectId, updateObject, deleteObject,
-  } = useProjectContext();
+  const projects = useProjectStore((s) => s.projects);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  const activeProject = useProjectStore((s) => s.activeProject);
+  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId);
+  const updateProjects = useProjectStore((s) => s.updateProjects);
+  const updateActiveProject = useProjectStore((s) => s.updateActiveProject);
+  const updateRoom = useProjectStore((s) => s.updateRoom);
+  const updateRoomById = useProjectStore((s) => s.updateRoomById);
+  const deleteRoom = useProjectStore((s) => s.deleteRoom);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
+  const addRoom = useProjectStore((s) => s.addRoom);
+  const reorderRooms = useProjectStore((s) => s.reorderRooms);
+  const isLoading = useProjectStore((s) => s.isLoading);
+  const lastSaved = useProjectStore((s) => s.lastSaved);
+  const lastSavedToServer = useProjectStore((s) => s.lastSavedToServer);
+  const saveError = useProjectStore((s) => s.saveError);
+  const isSyncing = useProjectStore((s) => s.isSyncing);
+  const activeObjectId = useProjectStore((s) => s.activeObjectId);
+  const activeObject = useProjectStore((s) => s.activeObject);
+  const setActiveObjectId = useProjectStore((s) => s.setActiveObjectId);
+  const updateObject = useProjectStore((s) => s.updateObject);
+  const deleteObject = useProjectStore((s) => s.deleteObject);
+
+  useStoreEffects();
 
   const { templates, saveTemplate, loadTemplate, deleteTemplate, importTemplates } = useWorkTemplateContext();
 
@@ -214,6 +238,13 @@ function AppWithAuth() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isTestMode = typeof window !== 'undefined' && localStorage.getItem('e2e-test-mode') === 'true';
 
+  useEffect(() => {
+    if (!isLoading) {
+      resetStore();
+      useProjectStore.getState().initialize(initialProjects, isAuthenticated);
+    }
+  }, [isLoading, isAuthenticated, user?.id]);
+
   if (isLoading && !isTestMode) {
     return (
       <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
@@ -228,11 +259,9 @@ function AppWithAuth() {
   if (!isAuthenticated && !isTestMode) return <AuthPages />;
 
   return (
-    <ProjectProvider key={user?.id} initialProjects={initialProjects}>
-      <WorkTemplateProvider>
-        <AppContent />
-      </WorkTemplateProvider>
-    </ProjectProvider>
+    <WorkTemplateProvider>
+      <AppContent />
+    </WorkTemplateProvider>
   );
 }
 

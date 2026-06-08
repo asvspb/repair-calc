@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useProjectContext } from '../../contexts/ProjectContext';
+import { useProjectStore } from '../../store/useProjectStore';
 import type { ObjectData } from '../../types';
 import { ObjectCard } from './ObjectCard';
 import { CreateObjectModal } from './CreateObjectModal';
@@ -9,13 +9,11 @@ interface ObjectsListProps {
 }
 
 export function ObjectsList({ className = '' }: ObjectsListProps) {
-  const { 
-    activeProject, 
-    activeObjectId, 
-    setActiveObjectId,
-    deleteObject,
-    copyObject
-  } = useProjectContext();
+  const activeProject = useProjectStore((s) => s.activeProject);
+  const activeObjectId = useProjectStore((s) => s.activeObjectId);
+  const setActiveObjectId = useProjectStore((s) => s.setActiveObjectId);
+  const deleteObject = useProjectStore((s) => s.deleteObject);
+  const copyObject = useProjectStore((s) => s.copyObject);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingObject, setEditingObject] = useState<ObjectData | null>(null);

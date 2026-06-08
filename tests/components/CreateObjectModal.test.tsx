@@ -7,16 +7,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { CreateObjectModal } from '../../src/components/objects/CreateObjectModal';
 
-// Mock context
-vi.mock('../../src/contexts/ProjectContext', () => ({
-  useProjectContext: vi.fn(),
+// Mock store
+vi.mock('../../src/store/useProjectStore', () => ({
+  useProjectStore: (selector: (s: any) => any) => selector(mockStoreState),
 }));
 
-import { useProjectContext } from '../../src/contexts/ProjectContext';
-
-const mockUseProjectContext = useProjectContext as any;
-
-const mockContextValue = {
+const mockStoreState: Record<string, any> = {
   createObject: vi.fn(),
   updateObject: vi.fn(),
   activeProject: {
@@ -29,7 +25,8 @@ const mockContextValue = {
 describe('CreateObjectModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseProjectContext.mockReturnValue(mockContextValue);
+    mockStoreState.createObject = vi.fn();
+    mockStoreState.updateObject = vi.fn();
   });
 
   it('should render modal', () => {
@@ -75,7 +72,7 @@ describe('CreateObjectModal', () => {
     const submitButton = screen.getByText('Создать');
     fireEvent.click(submitButton);
 
-    expect(mockContextValue.createObject).toHaveBeenCalledWith({
+    expect(mockStoreState.createObject).toHaveBeenCalledWith({
       name: 'Новая квартира',
       city: 'Санкт-Петербург',
     });
@@ -138,7 +135,7 @@ describe('CreateObjectModal', () => {
       const submitButton = screen.getByText('Сохранить');
       fireEvent.click(submitButton);
 
-      expect(mockContextValue.updateObject).toHaveBeenCalledWith('obj-1', {
+      expect(mockStoreState.updateObject).toHaveBeenCalledWith('obj-1', {
         name: 'Обновлённое название',
         city: 'Казань',
       });

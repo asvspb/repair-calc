@@ -1,20 +1,7 @@
-/**
- * Tests for ObjectSelector component
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { ObjectSelector } from '../../src/components/objects/ObjectSelector';
-
-// Mock context
-vi.mock('../../src/contexts/ProjectContext', () => ({
-  useProjectContext: vi.fn(),
-}));
-
-import { useProjectContext } from '../../src/contexts/ProjectContext';
-
-const mockUseProjectContext = useProjectContext as any;
 
 const createMockObject = (id: string, name: string, city?: string) => ({
   id,
@@ -24,7 +11,7 @@ const createMockObject = (id: string, name: string, city?: string) => ({
   rooms: [],
 });
 
-const mockContextValue = {
+const mockStoreState: Record<string, any> = {
   activeProject: {
     id: 'proj-1',
     name: 'Тестовый проект',
@@ -37,10 +24,23 @@ const mockContextValue = {
   setActiveObjectId: vi.fn(),
 };
 
+vi.mock('../../src/store/useProjectStore', () => ({
+  useProjectStore: (selector: (s: any) => any) => selector(mockStoreState),
+}));
+
 describe('ObjectSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseProjectContext.mockReturnValue(mockContextValue);
+    mockStoreState.setActiveObjectId = vi.fn();
+    mockStoreState.activeProject = {
+      id: 'proj-1',
+      name: 'Тестовый проект',
+      objects: [
+        createMockObject('obj-1', 'Квартира'),
+        createMockObject('obj-2', 'Гараж'),
+      ],
+    };
+    mockStoreState.activeObjectId = 'obj-1';
   });
 
   it('should render when multiple objects exist', () => {
@@ -63,46 +63,37 @@ describe('ObjectSelector', () => {
 
     fireEvent.change(select, { target: { value: 'obj-2' } });
 
-    expect(mockContextValue.setActiveObjectId).toHaveBeenCalledWith('obj-2');
+    expect(mockStoreState.setActiveObjectId).toHaveBeenCalledWith('obj-2');
   });
 
   it('should not render when only one object exists', () => {
-    mockUseProjectContext.mockReturnValue({
-      ...mockContextValue,
-      activeProject: {
-        ...mockContextValue.activeProject,
-        objects: [createMockObject('obj-1', 'Квартира')],
-      },
-    });
+    mockStoreState.activeProject = {
+      ...mockStoreState.activeProject,
+      objects: [createMockObject('obj-1', 'Квартира')],
+    };
 
     render(<ObjectSelector />);
     expect(screen.queryByText('Объект')).not.toBeInTheDocument();
   });
 
   it('should not render when no objects exist', () => {
-    mockUseProjectContext.mockReturnValue({
-      ...mockContextValue,
-      activeProject: {
-        ...mockContextValue.activeProject,
-        objects: [],
-      },
-    });
+    mockStoreState.activeProject = {
+      ...mockStoreState.activeProject,
+      objects: [],
+    };
 
     render(<ObjectSelector />);
     expect(screen.queryByText('Объект')).not.toBeInTheDocument();
   });
 
   it('should show city in option text', () => {
-    mockUseProjectContext.mockReturnValue({
-      ...mockContextValue,
-      activeProject: {
-        ...mockContextValue.activeProject,
-        objects: [
-          createMockObject('obj-1', 'Квартира', 'Москва'),
-          createMockObject('obj-2', 'Гараж'),
-        ],
-      },
-    });
+    mockStoreState.activeProject = {
+      ...mockStoreState.activeProject,
+      objects: [
+        createMockObject('obj-1', 'Квартира', 'Москва'),
+        createMockObject('obj-2', 'Гараж'),
+      ],
+    };
 
     render(<ObjectSelector />);
     const select = screen.getByRole('combobox');

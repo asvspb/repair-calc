@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
-import type { ObjectData, ProjectData } from '../../types';
+import type { StateCreator } from 'zustand';
+import type { ObjectSlice, StoreState } from './types';
+import type { ObjectData } from '../types';
 import {
   getObjectFromProject,
   createNewObject,
@@ -8,44 +9,33 @@ import {
   updateObjectInProject,
   deleteObjectFromProject,
   getFirstObject,
-} from '../../utils/projectObjects';
+} from '../utils/projectObjects';
 import {
   logUserAction,
   logSuccess,
   logError,
   logStateChange,
   logWarning,
-} from '../../utils/logger';
+} from '../utils/logger';
 
-export interface ObjectDomainState {
-  activeObjectId: string | null;
-  activeObject: ObjectData | null;
-  setActiveObjectId: (id: string | null) => void;
-  createObject: (data: { name: string; city?: string }) => string;
-  updateObject: (objectId: string, data: Partial<ObjectData>) => void;
-  deleteObject: (objectId: string) => boolean;
-  copyObject: (objectId: string) => string | null;
-}
+export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = (set, get) => ({
+  activeObjectId: null,
+  activeObject: null,
 
-interface ObjectDomainDeps {
-  activeProject: ProjectData | null;
-  updateActiveProject: (project: ProjectData) => void;
-}
-
-export function useObjectDomain({ activeProject, updateActiveProject }: ObjectDomainDeps): ObjectDomainState {
-  const [activeObjectId, setActiveObjectIdState] = useState<string | null>(null);
-
-  const activeObject = activeProject && activeObjectId
-    ? getObjectFromProject(activeProject, activeObjectId)
-    : activeProject?.objects?.[0] || null;
-
-  const setActiveObjectId = useCallback((id: string | null) => {
+  setActiveObjectId: (id: string | null) => {
     logUserAction('Переключение активного объекта', { objectId: id });
-    setActiveObjectIdState(id);
     logStateChange('ProjectContext', 'Активный объект', id);
-  }, []);
 
-  const createObject = useCallback((data: { name: string; city?: string }): string => {
+    set((state) => {
+      const activeObject = state.activeProject && id
+        ? getObjectFromProject(state.activeProject, id)
+        : state.activeProject?.objects?.[0] || null;
+      return { activeObjectId: id, activeObject };
+    });
+  },
+
+  createObject: (data: { name: string; city?: string }): string => {
+    const { activeProject } = get();
     if (!activeProject) {
       logError('ProjectContext', 'Cannot create object: no active project');
       return '';
@@ -56,26 +46,34 @@ export function useObjectDomain({ activeProject, updateActiveProject }: ObjectDo
     const newObject = createNewObject(activeProject.id, data);
     const updatedProject = addObjectToProject(activeProject, newObject);
 
-    updateActiveProject(updatedProject);
-    setActiveObjectIdState(newObject.id);
+    get().updateActiveProject(updatedProject);
+
+    set((state) => {
+      const activeObject = state.activeProject
+        ? getObjectFromProject(state.activeProject, newObject.id)
+        : null;
+      return { activeObjectId: newObject.id, activeObject };
+    });
 
     logSuccess('ProjectContext', 'Объект создан', { objectId: newObject.id, name: data.name });
 
     return newObject.id;
-  }, [activeProject, updateActiveProject]);
+  },
 
-  const updateObject = useCallback((objectId: string, data: Partial<ObjectData>) => {
+  updateObject: (objectId: string, data: Partial<ObjectData>) => {
+    const { activeProject } = get();
     if (!activeProject) return;
 
     logUserAction('Обновление объекта', { objectId, updates: data });
 
     const updatedProject = updateObjectInProject(activeProject, objectId, data);
-    updateActiveProject(updatedProject);
+    get().updateActiveProject(updatedProject);
 
     logSuccess('ProjectContext', 'Объект обновлён', { objectId });
-  }, [activeProject, updateActiveProject]);
+  },
 
-  const deleteObject = useCallback((objectId: string): boolean => {
+  deleteObject: (objectId: string): boolean => {
+    const { activeProject, activeObjectId } = get();
     if (!activeProject) return false;
 
     logUserAction('Удаление объекта', { objectId, projectId: activeProject.id });
@@ -87,19 +85,25 @@ export function useObjectDomain({ activeProject, updateActiveProject }: ObjectDo
       return false;
     }
 
-    updateActiveProject(updatedProject);
+    get().updateActiveProject(updatedProject);
 
     if (activeObjectId === objectId) {
       const firstObj = getFirstObject(updatedProject);
-      setActiveObjectIdState(firstObj?.id || null);
-      logStateChange('ProjectContext', 'Активный объект (после удаления)', firstObj?.id || null);
+      set((state) => {
+        const activeObject = state.activeProject && firstObj
+          ? getObjectFromProject(state.activeProject, firstObj.id)
+          : null;
+        return { activeObjectId: firstObj?.id || null, activeObject };
+      });
+      logStateChange('ProjectContext', 'Активный объект (после удаления)', get().activeObjectId);
     }
 
     logSuccess('ProjectContext', 'Объект удалён', { objectId });
     return true;
-  }, [activeProject, activeObjectId, updateActiveProject]);
+  },
 
-  const copyObject = useCallback((objectId: string): string | null => {
+  copyObject: (objectId: string): string | null => {
+    const { activeProject } = get();
     if (!activeProject) return null;
 
     logUserAction('Копирование объекта', { objectId, projectId: activeProject.id });
@@ -111,7 +115,7 @@ export function useObjectDomain({ activeProject, updateActiveProject }: ObjectDo
       return null;
     }
 
-    updateActiveProject(result.project);
+    get().updateActiveProject(result.project);
 
     logSuccess('ProjectContext', 'Объект скопирован', {
       sourceObjectId: objectId,
@@ -119,15 +123,5 @@ export function useObjectDomain({ activeProject, updateActiveProject }: ObjectDo
     });
 
     return result.newObjectId;
-  }, [activeProject, updateActiveProject]);
-
-  return {
-    activeObjectId,
-    activeObject,
-    setActiveObjectId,
-    createObject,
-    updateObject,
-    deleteObject,
-    copyObject,
-  };
-}
+  },
+});

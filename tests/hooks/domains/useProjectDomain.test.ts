@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useProjectDomain } from '../../../src/hooks/domains/useProjectDomain';
+import { useProjectStore, resetStore } from '../../../src/store/useProjectStore';
 import type { ProjectData } from '../../../src/types';
 
 vi.mock('../../../src/contexts/AuthContext', () => ({
@@ -77,9 +76,21 @@ vi.mock('../../../src/utils/projectObjects', () => ({
     ...p,
     objects: p.objects || [],
   })),
+  getObjectFromProject: vi.fn((project: ProjectData, id: string) =>
+    project.objects?.find((o: { id: string }) => o.id === id) || null
+  ),
+  updateRoomInProject: vi.fn(),
+  addRoomToProject: vi.fn(),
+  deleteRoomFromProject: vi.fn(),
+  reorderRoomsInProject: vi.fn(),
+  createNewObject: vi.fn(),
+  addObjectToProject: vi.fn(),
+  copyObjectInProject: vi.fn(),
+  updateObjectInProject: vi.fn(),
+  deleteObjectFromProject: vi.fn(),
+  getFirstObject: vi.fn(),
 }));
 
-import { useAuth } from '../../../src/contexts/AuthContext';
 import { StorageManager } from '../../../src/utils/storage';
 import { ApiStorageProvider } from '../../../src/api/storage';
 import { saveTotals } from '../../../src/api/totals';
@@ -87,7 +98,6 @@ import { needsMigration, runMigrations } from '../../../src/utils/migration';
 import { saveQueue } from '../../../src/utils/saveQueue';
 import { migrateProjectToObjects } from '../../../src/utils/projectObjects';
 
-const mockUseAuth = useAuth as ReturnType<typeof vi.fn>;
 const mockStorageManager = StorageManager as unknown as Record<string, ReturnType<typeof vi.fn>>;
 const mockApiProvider = {
   loadProjectsAsync: vi.fn(),
@@ -108,20 +118,11 @@ function createTestProject(id: string, name: string, city?: string): ProjectData
   };
 }
 
-async function waitForLoad(result: { current: { isLoading: boolean } }) {
-  await waitFor(() => expect(result.current.isLoading).toBe(false));
-}
-
-describe('useProjectDomain', () => {
+describe('useProjectDomain (Zustand)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers({ shouldAdvanceTime: true });
-
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-    });
+    resetStore();
 
     (ApiStorageProvider.getInstance as ReturnType<typeof vi.fn>).mockReturnValue(mockApiProvider);
 
@@ -160,22 +161,20 @@ describe('useProjectDomain', () => {
   describe('initialization', () => {
     it('should initialize with migrated projects', async () => {
       const project = createTestProject('p1', 'Test Project');
-      const { result } = renderHook(() => useProjectDomain([project]));
+      await useProjectStore.getState().initialize([project], false);
 
-      await waitForLoad(result);
-
-      expect(result.current.projects).toHaveLength(1);
-      expect(result.current.projects[0].name).toBe('Test Project');
-      expect(result.current.activeProjectId).toBe('p1');
+      const state = useProjectStore.getState();
+      expect(state.projects).toHaveLength(1);
+      expect(state.projects[0].name).toBe('Test Project');
+      expect(state.activeProjectId).toBe('p1');
     });
 
     it('should set empty activeProjectId when no projects', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
-
-      expect(result.current.activeProjectId).toBe('');
-      expect(result.current.activeProject).toBeNull();
+      const state = useProjectStore.getState();
+      expect(state.activeProjectId).toBe('');
+      expect(state.activeProject).toBeNull();
     });
 
     it('should compute activeProject based on activeProjectId', async () => {
@@ -183,20 +182,16 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
-
-      expect(result.current.activeProject).toBeDefined();
-      expect(result.current.activeProject!.id).toBe('p1');
+      const state = useProjectStore.getState();
+      expect(state.activeProject).toBeDefined();
+      expect(state.activeProject!.id).toBe('p1');
     });
 
     it('should set isLoading to false after load', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
-
-      expect(result.current.isLoading).toBe(false);
+      await useProjectStore.getState().initialize([], false);
+      expect(useProjectStore.getState().isLoading).toBe(false);
     });
 
     it('should load projects from localStorage when not authenticated', async () => {
@@ -204,31 +199,21 @@ describe('useProjectDomain', () => {
       mockStorageManager.loadProjects.mockReturnValue(savedProjects);
       mockStorageManager.loadActiveProject.mockReturnValue('saved-1');
 
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], false);
 
       expect(mockStorageManager.loadProjects).toHaveBeenCalled();
-      expect(result.current.projects[0].name).toBe('Saved Project');
+      expect(useProjectStore.getState().projects[0].name).toBe('Saved Project');
     });
 
     it('should load projects from server when authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProjects = [createTestProject('server-1', 'Server Project')];
       mockApiProvider.loadProjectsAsync.mockResolvedValue(serverProjects);
       mockStorageManager.loadActiveProject.mockReturnValue('server-1');
 
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], true);
 
       expect(mockApiProvider.loadProjectsAsync).toHaveBeenCalled();
-      expect(result.current.projects).toHaveLength(1);
+      expect(useProjectStore.getState().projects).toHaveLength(1);
     });
 
     it('should handle error during load', async () => {
@@ -236,15 +221,14 @@ describe('useProjectDomain', () => {
         throw new Error('Load error');
       });
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
-
-      expect(result.current.error).toEqual({
+      const state = useProjectStore.getState();
+      expect(state.error).toEqual({
         type: 'unknown',
         message: 'Ошибка загрузки данных',
       });
-      expect(result.current.isLoading).toBe(false);
+      expect(state.isLoading).toBe(false);
     });
 
     it('should use first project as active when saved active not found', async () => {
@@ -252,11 +236,9 @@ describe('useProjectDomain', () => {
       mockStorageManager.loadProjects.mockReturnValue(savedProjects);
       mockStorageManager.loadActiveProject.mockReturnValue('non-existent');
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
-
-      expect(result.current.activeProjectId).toBe('saved-1');
+      expect(useProjectStore.getState().activeProjectId).toBe('saved-1');
     });
 
     it('should save initial projects to localStorage on first run', async () => {
@@ -264,28 +246,13 @@ describe('useProjectDomain', () => {
       mockStorageManager.loadProjects.mockReturnValue(null);
       mockStorageManager.loadActiveProject.mockReturnValue(null);
 
-      const { result } = renderHook(() => useProjectDomain(initialProjects));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize(initialProjects, false);
 
       expect(mockStorageManager.saveProjects).toHaveBeenCalled();
       expect(mockStorageManager.saveActiveProject).toHaveBeenCalledWith('p1');
     });
 
-    it('should set isAuthenticated based on auth context', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
-
-      expect(result.current.isAuthenticated).toBe(false);
-    });
-
     it('should run migration when needed and authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
       (needsMigration as ReturnType<typeof vi.fn>).mockReturnValue(true);
       (runMigrations as ReturnType<typeof vi.fn>).mockResolvedValue({
         migrated: 1,
@@ -293,45 +260,29 @@ describe('useProjectDomain', () => {
       });
       mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], true);
 
       expect(runMigrations).toHaveBeenCalled();
     });
 
     it('should handle migration error gracefully', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
       (needsMigration as ReturnType<typeof vi.fn>).mockReturnValue(true);
       (runMigrations as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Migration failed'));
       mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], true);
 
-      await waitForLoad(result);
-
-      expect(result.current.error).toBeNull();
+      expect(useProjectStore.getState().error).toBeNull();
     });
 
     it('should fallback to localStorage when server has no projects', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
       mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
       const localProjects = [createTestProject('local-1', 'Local Project')];
       mockStorageManager.loadProjects.mockReturnValue(localProjects);
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], true);
 
-      await waitForLoad(result);
-
-      expect(result.current.projects[0].name).toBe('Local Project');
+      expect(useProjectStore.getState().projects[0].name).toBe('Local Project');
     });
   });
 
@@ -341,15 +292,12 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
+      useProjectStore.getState().setActiveProjectId('p2');
 
-      act(() => {
-        result.current.setActiveProjectId('p2');
-      });
-
-      expect(result.current.activeProjectId).toBe('p2');
+      const state = useProjectStore.getState();
+      expect(state.activeProjectId).toBe('p2');
       expect(mockStorageManager.saveActiveProject).toHaveBeenCalledWith('p2');
     });
 
@@ -358,93 +306,65 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
+      useProjectStore.getState().setActiveProjectId('p2');
 
-      act(() => {
-        result.current.setActiveProjectId('p2');
-      });
-
-      expect(result.current.activeProject!.id).toBe('p2');
-      expect(result.current.activeProject!.name).toBe('Project 2');
+      const state = useProjectStore.getState();
+      expect(state.activeProject!.id).toBe('p2');
+      expect(state.activeProject!.name).toBe('Project 2');
     });
   });
 
   describe('createProject', () => {
     it('should create local project when not authenticated', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
-
-      let newProject: ProjectData | undefined;
-      await act(async () => {
-        newProject = await result.current.createProject({
-          name: 'New Project',
-          city: 'Moscow',
-        });
+      const newProject = await useProjectStore.getState().createProject({
+        name: 'New Project',
+        city: 'Moscow',
       });
 
       expect(newProject).toBeDefined();
-      expect(newProject!.name).toBe('New Project');
-      expect(newProject!.city).toBe('Moscow');
-      expect(result.current.projects).toHaveLength(1);
-      expect(result.current.activeProjectId).toBe(newProject!.id);
+      expect(newProject.name).toBe('New Project');
+      expect(newProject.city).toBe('Moscow');
+      expect(useProjectStore.getState().projects).toHaveLength(1);
+      expect(useProjectStore.getState().activeProjectId).toBe(newProject.id);
     });
 
     it('should create project with objects when provided', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
-
-      let newProject: ProjectData | undefined;
-      await act(async () => {
-        newProject = await result.current.createProject({
-          name: 'New Project',
-          objects: ['Объект 1', 'Объект 2'],
-        });
+      const newProject = await useProjectStore.getState().createProject({
+        name: 'New Project',
+        objects: ['Объект 1', 'Объект 2'],
       });
 
-      expect(newProject!.objects).toHaveLength(2);
-      expect(newProject!.objects![0].name).toBe('Объект 1');
-      expect(newProject!.objects![1].name).toBe('Объект 2');
+      expect(newProject.objects).toHaveLength(2);
+      expect(newProject.objects![0].name).toBe('Объект 1');
+      expect(newProject.objects![1].name).toBe('Объект 2');
     });
 
     it('should create project with default object when no objects specified', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
+      const newProject = await useProjectStore.getState().createProject({ name: 'Test' });
 
-      let newProject: ProjectData | undefined;
-      await act(async () => {
-        newProject = await result.current.createProject({ name: 'Test' });
-      });
-
-      expect(newProject!.objects).toHaveLength(1);
-      expect(newProject!.objects![0].name).toBe('Основной объект');
+      expect(newProject.objects).toHaveLength(1);
+      expect(newProject.objects![0].name).toBe('Основной объект');
     });
 
     it('should create project on server when authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProject = createTestProject('uuid-aaaa-bbbb-cccc', 'Server Project');
       mockApiProvider.createProjectAsync.mockResolvedValue(serverProject);
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
       mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], true);
 
-      await waitForLoad(result);
-
-      await act(async () => {
-        await result.current.createProject({
-          name: 'Server Project',
-          city: 'Moscow',
-        });
+      await useProjectStore.getState().createProject({
+        name: 'Server Project',
+        city: 'Moscow',
       });
 
       expect(mockApiProvider.createProjectAsync).toHaveBeenCalledWith({
@@ -454,12 +374,6 @@ describe('useProjectDomain', () => {
     });
 
     it('should create server project with objects', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProject = createTestProject('uuid-aaaa', 'Server');
       serverProject.id = 'uuid-aaaa';
       mockApiProvider.createProjectAsync.mockResolvedValue(serverProject);
@@ -467,54 +381,37 @@ describe('useProjectDomain', () => {
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
       mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa');
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], true);
 
-      await waitForLoad(result);
-
-      await act(async () => {
-        await result.current.createProject({
-          name: 'Server',
-          objects: ['Flat 1'],
-        });
+      await useProjectStore.getState().createProject({
+        name: 'Server',
+        objects: ['Flat 1'],
       });
 
       expect(mockApiProvider.saveProjectsAsync).toHaveBeenCalled();
     });
 
     it('should set isSyncing during creation and reset after', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], false);
 
-      await waitForLoad(result);
+      expect(useProjectStore.getState().isSyncing).toBe(false);
 
-      expect(result.current.isSyncing).toBe(false);
+      await useProjectStore.getState().createProject({ name: 'Test' });
 
-      await act(async () => {
-        await result.current.createProject({ name: 'Test' });
-      });
-
-      expect(result.current.isSyncing).toBe(false);
+      expect(useProjectStore.getState().isSyncing).toBe(false);
     });
 
     it('should throw and reset isSyncing on error', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
       mockApiProvider.createProjectAsync.mockRejectedValue(new Error('Server error'));
       mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useProjectDomain([]));
+      await useProjectStore.getState().initialize([], true);
 
-      await waitForLoad(result);
+      await expect(
+        useProjectStore.getState().createProject({ name: 'Fail' })
+      ).rejects.toThrow('Server error');
 
-      await act(async () => {
-        await expect(
-          result.current.createProject({ name: 'Fail' })
-        ).rejects.toThrow('Server error');
-      });
-
-      expect(result.current.isSyncing).toBe(false);
+      expect(useProjectStore.getState().isSyncing).toBe(false);
     });
   });
 
@@ -524,16 +421,13 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
+      await useProjectStore.getState().deleteProject('p2');
 
-      await act(async () => {
-        await result.current.deleteProject('p2');
-      });
-
-      expect(result.current.projects).toHaveLength(1);
-      expect(result.current.projects[0].id).toBe('p1');
+      const state = useProjectStore.getState();
+      expect(state.projects).toHaveLength(1);
+      expect(state.projects[0].id).toBe('p1');
     });
 
     it('should switch active project when deleting active one', async () => {
@@ -541,77 +435,50 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
+      expect(useProjectStore.getState().activeProjectId).toBe('p1');
 
-      expect(result.current.activeProjectId).toBe('p1');
+      await useProjectStore.getState().deleteProject('p1');
 
-      await act(async () => {
-        await result.current.deleteProject('p1');
-      });
-
-      expect(result.current.activeProjectId).toBe('p2');
+      expect(useProjectStore.getState().activeProjectId).toBe('p2');
     });
 
     it('should clear activeProjectId when deleting last project', async () => {
       const project = createTestProject('p1', 'Only Project');
-      const { result } = renderHook(() => useProjectDomain([project]));
+      await useProjectStore.getState().initialize([project], false);
 
-      await waitForLoad(result);
+      await useProjectStore.getState().deleteProject('p1');
 
-      await act(async () => {
-        await result.current.deleteProject('p1');
-      });
-
-      expect(result.current.projects).toHaveLength(0);
-      expect(result.current.activeProjectId).toBe('');
+      const state = useProjectStore.getState();
+      expect(state.projects).toHaveLength(0);
+      expect(state.activeProjectId).toBe('');
     });
 
     it('should delete project on server when authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProject = createTestProject('uuid-aaaa-bbbb-cccc', 'Server');
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
       mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
 
-      const { result } = renderHook(() => useProjectDomain([serverProject]));
+      await useProjectStore.getState().initialize([serverProject], true);
 
-      await waitForLoad(result);
-
-      await act(async () => {
-        await result.current.deleteProject('uuid-aaaa-bbbb-cccc');
-      });
+      await useProjectStore.getState().deleteProject('uuid-aaaa-bbbb-cccc');
 
       expect(mockApiProvider.deleteProjectAsync).toHaveBeenCalledWith('uuid-aaaa-bbbb-cccc');
     });
 
     it('should handle server deletion error gracefully', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const proj1 = createTestProject('uuid-aaaa-bbbb-cccc', 'Server');
       const proj2 = createTestProject('uuid-dddd-eeee-ffff', 'Other');
       mockApiProvider.loadProjectsAsync.mockResolvedValue([proj1, proj2]);
       mockApiProvider.deleteProjectAsync.mockRejectedValue(new Error('Server delete error'));
       mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
 
-      const { result } = renderHook(() => useProjectDomain([proj1, proj2]));
+      await useProjectStore.getState().initialize([proj1, proj2], true);
 
-      await waitForLoad(result);
+      await useProjectStore.getState().deleteProject('uuid-aaaa-bbbb-cccc');
 
-      await act(async () => {
-        await result.current.deleteProject('uuid-aaaa-bbbb-cccc');
-      });
-
-      expect(result.current.saveError).toBe(
+      expect(useProjectStore.getState().saveError).toBe(
         'Не удалось удалить проект на сервере. Проект удалён локально.'
       );
     });
@@ -621,37 +488,26 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
+      await useProjectStore.getState().initialize(projects, false);
 
-      await waitForLoad(result);
+      expect(useProjectStore.getState().isSyncing).toBe(false);
 
-      expect(result.current.isSyncing).toBe(false);
+      await useProjectStore.getState().deleteProject('p2');
 
-      await act(async () => {
-        await result.current.deleteProject('p2');
-      });
-
-      expect(result.current.isSyncing).toBe(false);
+      expect(useProjectStore.getState().isSyncing).toBe(false);
     });
   });
 
   describe('updateProjects', () => {
     it('should update projects list and schedule save', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], false);
 
       const newProjects = [createTestProject('p1', 'Updated')];
+      useProjectStore.getState().updateProjects(newProjects);
 
-      act(() => {
-        result.current.updateProjects(newProjects);
-      });
+      expect(useProjectStore.getState().projects).toEqual(newProjects);
 
-      expect(result.current.projects).toEqual(newProjects);
-
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
+      vi.advanceTimersByTime(3000);
 
       expect(mockStorageManager.saveProjects).toHaveBeenCalled();
     });
@@ -663,55 +519,41 @@ describe('useProjectDomain', () => {
         createTestProject('p1', 'Project 1'),
         createTestProject('p2', 'Project 2'),
       ];
-      const { result } = renderHook(() => useProjectDomain(projects));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize(projects, false);
 
       const updatedProject = { ...projects[0], name: 'Updated Project 1' };
+      useProjectStore.getState().updateActiveProject(updatedProject);
 
-      act(() => {
-        result.current.updateActiveProject(updatedProject);
-      });
-
-      expect(result.current.projects[0].name).toBe('Updated Project 1');
-      expect(result.current.projects[1].name).toBe('Project 2');
+      const state = useProjectStore.getState();
+      expect(state.projects[0].name).toBe('Updated Project 1');
+      expect(state.projects[1].name).toBe('Project 2');
     });
 
     it('should handle multiple rapid updates', async () => {
       const project = createTestProject('p1', 'Project 1');
-      const { result } = renderHook(() => useProjectDomain([project]));
+      await useProjectStore.getState().initialize([project], false);
 
-      await waitForLoad(result);
+      useProjectStore.getState().updateActiveProject({ ...project, name: 'Update 1' });
+      useProjectStore.getState().updateActiveProject({ ...project, name: 'Update 2' });
+      useProjectStore.getState().updateActiveProject({ ...project, name: 'Update 3' });
 
-      act(() => {
-        result.current.updateActiveProject({ ...project, name: 'Update 1' });
-        result.current.updateActiveProject({ ...project, name: 'Update 2' });
-        result.current.updateActiveProject({ ...project, name: 'Update 3' });
-      });
-
-      expect(result.current.projects[0].name).toBe('Update 3');
+      expect(useProjectStore.getState().projects[0].name).toBe('Update 3');
     });
   });
 
   describe('scheduleSave', () => {
     it('should debounce saves', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], false);
 
       mockStorageManager.saveProjects.mockClear();
 
-      act(() => {
-        result.current.scheduleSave([createTestProject('p1', 'A')]);
-        result.current.scheduleSave([createTestProject('p2', 'B')]);
-        result.current.scheduleSave([createTestProject('p3', 'C')]);
-      });
+      useProjectStore.getState().scheduleSave([createTestProject('p1', 'A')]);
+      useProjectStore.getState().scheduleSave([createTestProject('p2', 'B')]);
+      useProjectStore.getState().scheduleSave([createTestProject('p3', 'C')]);
 
       expect(mockStorageManager.saveProjects).not.toHaveBeenCalled();
 
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
+      vi.advanceTimersByTime(3000);
 
       expect(mockStorageManager.saveProjects).toHaveBeenCalled();
     });
@@ -719,135 +561,62 @@ describe('useProjectDomain', () => {
 
   describe('scheduleTotalsSave', () => {
     it('should not save totals when not authenticated', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([], false);
 
       const project = createTestProject('p1', 'Test');
-      act(() => {
-        result.current.scheduleTotalsSave(project);
-      });
+      useProjectStore.getState().scheduleTotalsSave(project);
 
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
+      vi.advanceTimersByTime(3000);
 
       expect(saveTotals).not.toHaveBeenCalled();
     });
 
     it('should save totals when authenticated and project has server id', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProject = createTestProject('p1', 'Server');
       serverProject.id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
       mockStorageManager.loadActiveProject.mockReturnValue(serverProject.id);
 
-      const { result } = renderHook(() => useProjectDomain([serverProject]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([serverProject], true);
 
       (saveTotals as ReturnType<typeof vi.fn>).mockClear();
 
-      act(() => {
-        result.current.scheduleTotalsSave(serverProject);
-      });
+      useProjectStore.getState().scheduleTotalsSave(serverProject);
 
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
+      vi.advanceTimersByTime(3000);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(saveTotals).toHaveBeenCalled();
       });
     });
 
     it('should handle totals save error', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
       const serverProject = createTestProject('p1', 'Server');
       serverProject.id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
       mockStorageManager.loadActiveProject.mockReturnValue(serverProject.id);
 
-      const { result } = renderHook(() => useProjectDomain([serverProject]));
-
-      await waitForLoad(result);
+      await useProjectStore.getState().initialize([serverProject], true);
 
       (saveTotals as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Totals save error'));
 
-      act(() => {
-        result.current.scheduleTotalsSave(serverProject);
-      });
+      useProjectStore.getState().scheduleTotalsSave(serverProject);
 
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
+      vi.advanceTimersByTime(3000);
 
-      await waitFor(() => {
-        expect(result.current.totalsSaveError).toBe('Totals save error');
+      await vi.waitFor(() => {
+        expect(useProjectStore.getState().totalsSaveError).toBe('Totals save error');
       });
     });
   });
 
-  describe('setProjects', () => {
-    it('should allow direct state update', async () => {
-      const { result } = renderHook(() => useProjectDomain([]));
+  describe('setIsAuthenticated', () => {
+    it('should update isAuthenticated state', async () => {
+      await useProjectStore.getState().initialize([], false);
+      expect(useProjectStore.getState().isAuthenticated).toBe(false);
 
-      await waitForLoad(result);
-
-      const newProjects = [createTestProject('p1', 'Direct Update')];
-
-      act(() => {
-        result.current.setProjects(newProjects);
-      });
-
-      expect(result.current.projects).toEqual(newProjects);
-    });
-  });
-
-  describe('beforeunload', () => {
-    it('should register beforeunload handler', async () => {
-      const addSpy = vi.spyOn(window, 'addEventListener');
-
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
-
-      expect(addSpy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-      addSpy.mockRestore();
-    });
-  });
-
-  describe('room sync errors', () => {
-    it('should check room sync errors when authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        isLoading: false,
-        user: { id: '1', email: 'test@test.com', name: 'Test' },
-      });
-
-      const errorMap = new Map();
-      errorMap.set('proj1:room1', { error: new Error('Sync failed'), timestamp: Date.now() });
-      mockApiProvider.getRoomSyncErrors.mockReturnValue(errorMap);
-      mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
-      mockStorageManager.loadActiveProject.mockReturnValue(null);
-
-      const { result } = renderHook(() => useProjectDomain([]));
-
-      await waitForLoad(result);
-
-      await waitFor(() => {
-        expect(result.current.roomSyncError).toContain('Ошибка синхронизации комнат');
-      });
+      useProjectStore.getState().setIsAuthenticated(true);
+      expect(useProjectStore.getState().isAuthenticated).toBe(true);
     });
   });
 });

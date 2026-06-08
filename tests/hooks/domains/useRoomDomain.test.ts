@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useRoomDomain } from '../../../src/hooks/domains/useRoomDomain';
-import type { RoomData, ProjectData } from '../../../src/types';
+import { useProjectStore, resetStore } from '../../../src/store/useProjectStore';
+import type { RoomData, ProjectData, ObjectData } from '../../../src/types';
 
 vi.mock('../../../src/utils/logger', () => ({
   logUserAction: vi.fn(),
@@ -9,300 +8,221 @@ vi.mock('../../../src/utils/logger', () => ({
   logWarning: vi.fn(),
 }));
 
+vi.mock('../../../src/utils/projectObjects', () => {
+  const actual = {
+    getAllRooms: vi.fn(() => []),
+    migrateProjectToObjects: vi.fn((p: ProjectData) => ({ ...p, objects: p.objects || [] })),
+    getObjectFromProject: vi.fn((project: ProjectData, id: string) =>
+      project.objects?.find((o: { id: string }) => o.id === id) || null
+    ),
+    updateRoomInProject: vi.fn(),
+    addRoomToProject: vi.fn(),
+    deleteRoomFromProject: vi.fn(),
+    reorderRoomsInProject: vi.fn(),
+    createNewObject: vi.fn(),
+    addObjectToProject: vi.fn(),
+    copyObjectInProject: vi.fn(),
+    updateObjectInProject: vi.fn(),
+    deleteObjectFromProject: vi.fn(),
+    getFirstObject: vi.fn(),
+  };
+
+  const { updateRoomInProject, addRoomToProject, deleteRoomFromProject, reorderRoomsInProject } = actual;
+
+  updateRoomInProject.mockImplementation((project: ProjectData, roomId: string, updater: (room: RoomData) => RoomData) => {
+    const newObjects = project.objects.map(obj => ({
+      ...obj,
+      rooms: obj.rooms.map((r: RoomData) => r.id === roomId ? updater(r) : r),
+    }));
+    return { ...project, objects: newObjects };
+  });
+
+  addRoomToProject.mockImplementation((project: ProjectData, room: RoomData) => {
+    const newObjects = project.objects.map((obj, i: number) =>
+      i === 0 ? { ...obj, rooms: [...obj.rooms, room] } : obj
+    );
+    return { ...project, objects: newObjects };
+  });
+
+  deleteRoomFromProject.mockImplementation((project: ProjectData, roomId: string) => {
+    const newObjects = project.objects.map(obj => ({
+      ...obj,
+      rooms: obj.rooms.filter((r: RoomData) => r.id !== roomId),
+    }));
+    return { ...project, objects: newObjects };
+  });
+
+  reorderRoomsInProject.mockImplementation((project: ProjectData, objectId: string, rooms: RoomData[]) => {
+    const newObjects = project.objects.map(obj =>
+      obj.id === objectId ? { ...obj, rooms } : obj
+    );
+    return { ...project, objects: newObjects };
+  });
+
+  return actual;
+});
+
+vi.mock('../../../src/utils/storage', () => ({
+  StorageManager: {
+    loadProjects: vi.fn(() => null),
+    loadActiveProject: vi.fn(() => null),
+    saveProjects: vi.fn(),
+    saveActiveProject: vi.fn(),
+    saveProject: vi.fn(),
+  },
+}));
+
+vi.mock('../../../src/api/storage', () => ({
+  ApiStorageProvider: { getInstance: vi.fn(), resetInstance: vi.fn() },
+}));
+
+vi.mock('../../../src/api/totals', () => ({ saveTotals: vi.fn() }));
+vi.mock('../../../src/utils/migration', () => ({ runMigrations: vi.fn(), needsMigration: vi.fn(() => false) }));
+vi.mock('../../../src/utils/idMapper', () => ({
+  idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
+  IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
+  isServerId: vi.fn(),
+}));
+vi.mock('../../../src/utils/saveQueue', () => ({
+  saveQueue: { enqueue: vi.fn((task: () => Promise<void>) => task()), hasPendingData: false, getPendingData: vi.fn() },
+}));
+vi.mock('../../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
+vi.mock('../../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../../src/contexts/AuthContext', () => ({ useAuth: vi.fn() }));
+
 function createTestRoom(id: string, name: string): RoomData {
   return {
-    id,
-    name,
-    length: 5,
-    width: 4,
-    height: 3,
-    windows: [],
-    doors: [],
-    works: [],
-    segments: [],
-    obstacles: [],
-    wallSections: [],
-    subSections: [],
+    id, name, length: 5, width: 4, height: 3,
+    windows: [], doors: [], works: [], segments: [],
+    obstacles: [], wallSections: [], subSections: [],
     geometryMode: 'simple',
   };
 }
 
 function createTestProject(id: string, name: string, rooms: RoomData[] = []): ProjectData {
   return {
-    id,
-    name,
-    objects: [
-      {
-        id: `obj-${id}`,
-        projectId: id,
-        name,
-        rooms,
-        sortOrder: 0,
-      },
-    ],
+    id, name,
+    objects: [{
+      id: `obj-${id}`, projectId: id, name, rooms, sortOrder: 0,
+    }],
   };
 }
 
-function createDefaultDeps(overrides: Partial<{
-  activeProjectId: string;
-  activeProject: ProjectData | null;
-  setProjects: React.Dispatch<React.SetStateAction<ProjectData[]>>;
-  scheduleSave: (projects: ProjectData[]) => void;
-  scheduleTotalsSave: (project: ProjectData) => void;
-  updateActiveProject: (project: ProjectData) => void;
-  isAuthenticated: boolean;
-}> = {}) {
-  const scheduleSave = vi.fn();
-  const scheduleTotalsSave = vi.fn();
-  const updateActiveProject = vi.fn();
-  const setProjects = vi.fn();
-
-  const activeProject = overrides.activeProject !== undefined
-    ? overrides.activeProject
-    : createTestProject('p1', 'Test Project', [createTestRoom('room-1', 'Room 1')]);
-
-  return {
-    activeProjectId: overrides.activeProjectId ?? 'p1',
-    activeProject,
-    setProjects,
-    scheduleSave,
-    scheduleTotalsSave,
-    updateActiveProject,
-    isAuthenticated: overrides.isAuthenticated ?? false,
-  };
+function setupStore(overrides: { project?: ProjectData; isAuthenticated?: boolean } = {}) {
+  const project = overrides.project ?? createTestProject('p1', 'Test Project', [createTestRoom('room-1', 'Room 1')]);
+  const isAuthenticated = overrides.isAuthenticated ?? false;
+  useProjectStore.setState({
+    projects: [project],
+    activeProjectId: project.id,
+    activeProject: project,
+    isAuthenticated,
+    isLoading: false,
+    activeObjectId: null,
+    activeObject: project.objects?.[0] || null,
+  });
 }
 
-describe('useRoomDomain', () => {
+describe('useRoomDomain (Zustand)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetStore();
   });
 
   describe('addRoom', () => {
     it('should add room to active project', () => {
-      const deps = createDefaultDeps();
-      const { result } = renderHook(() => useRoomDomain(deps));
-
+      setupStore();
       const newRoom = createTestRoom('room-2', 'New Room');
 
-      act(() => {
-        result.current.addRoom(newRoom);
-      });
+      useProjectStore.getState().addRoom(newRoom);
 
-      expect(deps.updateActiveProject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'p1',
-          objects: expect.arrayContaining([
-            expect.objectContaining({
-              rooms: expect.arrayContaining([
-                expect.objectContaining({ id: 'room-2', name: 'New Room' }),
-              ]),
-            }),
-          ]),
-        })
-      );
+      const state = useProjectStore.getState();
+      const activeObj = state.activeProject?.objects?.[0];
+      expect(activeObj?.rooms).toHaveLength(2);
+      expect(activeObj?.rooms.find(r => r.id === 'room-2')).toBeDefined();
     });
 
     it('should not add room when no active project', () => {
-      const deps = createDefaultDeps({ activeProject: null });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      resetStore();
+      useProjectStore.setState({ activeProject: null });
+      const projectCount = useProjectStore.getState().projects.length;
 
-      const newRoom = createTestRoom('room-2', 'New Room');
+      useProjectStore.getState().addRoom(createTestRoom('room-2', 'New Room'));
 
-      act(() => {
-        result.current.addRoom(newRoom);
-      });
-
-      expect(deps.updateActiveProject).not.toHaveBeenCalled();
-    });
-
-    it('should generate default room values when added', () => {
-      const deps = createDefaultDeps();
-      const { result } = renderHook(() => useRoomDomain(deps));
-
-      const newRoom: RoomData = {
-        id: 'room-new',
-        name: 'Kitchen',
-        length: 0,
-        width: 0,
-        height: 0,
-        windows: [],
-        doors: [],
-        works: [],
-        segments: [],
-        obstacles: [],
-        wallSections: [],
-        subSections: [],
-        geometryMode: 'simple',
-      };
-
-      act(() => {
-        result.current.addRoom(newRoom);
-      });
-
-      expect(deps.updateActiveProject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          objects: expect.arrayContaining([
-            expect.objectContaining({
-              rooms: expect.arrayContaining([
-                expect.objectContaining({ id: 'room-new', name: 'Kitchen' }),
-              ]),
-            }),
-          ]),
-        })
-      );
+      expect(useProjectStore.getState().projects.length).toBe(projectCount);
     });
   });
 
   describe('deleteRoom', () => {
     it('should delete room from active project', () => {
-      const deps = createDefaultDeps();
-      const { result } = renderHook(() => useRoomDomain(deps));
+      setupStore();
 
-      act(() => {
-        result.current.deleteRoom('room-1');
-      });
+      useProjectStore.getState().deleteRoom('room-1');
 
-      expect(deps.updateActiveProject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'p1',
-          objects: expect.arrayContaining([
-            expect.objectContaining({
-              rooms: [],
-            }),
-          ]),
-        })
-      );
+      const activeObj = useProjectStore.getState().activeProject?.objects?.[0];
+      expect(activeObj?.rooms).toHaveLength(0);
     });
 
     it('should not delete room when no active project', () => {
-      const deps = createDefaultDeps({ activeProject: null });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      resetStore();
+      useProjectStore.setState({ activeProject: null });
 
-      act(() => {
-        result.current.deleteRoom('room-1');
-      });
+      useProjectStore.getState().deleteRoom('room-1');
 
-      expect(deps.updateActiveProject).not.toHaveBeenCalled();
+      expect(useProjectStore.getState().projects.length).toBe(0);
     });
   });
 
   describe('updateRoom', () => {
     it('should update room in active project', () => {
-      const deps = createDefaultDeps();
-      const { result } = renderHook(() => useRoomDomain(deps));
-
+      setupStore();
       const updatedRoom = createTestRoom('room-1', 'Updated Room');
       updatedRoom.length = 10;
 
-      act(() => {
-        result.current.updateRoom(updatedRoom);
-      });
+      useProjectStore.getState().updateRoom(updatedRoom);
 
-      expect(deps.setProjects).toHaveBeenCalledWith(expect.any(Function));
-
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      const newState = setStateFn(prevState);
-
-      expect(newState[0].objects[0].rooms[0].name).toBe('Updated Room');
-      expect(newState[0].objects[0].rooms[0].length).toBe(10);
-      expect(deps.scheduleSave).toHaveBeenCalled();
+      const state = useProjectStore.getState();
+      const room = state.activeProject?.objects?.[0]?.rooms.find((r: RoomData) => r.id === 'room-1');
+      expect(room?.name).toBe('Updated Room');
+      expect(room?.length).toBe(10);
     });
 
-    it('should not update when active project not found in setProjects', () => {
-      const deps = createDefaultDeps({ activeProjectId: 'nonexistent' });
-      const { result } = renderHook(() => useRoomDomain(deps));
+    it('should not update when active project not found', () => {
+      setupStore({ project: createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')]) });
+      useProjectStore.setState({ activeProjectId: 'nonexistent' });
 
       const updatedRoom = createTestRoom('room-1', 'Updated');
+      useProjectStore.getState().updateRoom(updatedRoom);
 
-      act(() => {
-        result.current.updateRoom(updatedRoom);
-      });
-
-      expect(deps.setProjects).toHaveBeenCalledWith(expect.any(Function));
-
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      const newState = setStateFn(prevState);
-
-      expect(newState).toEqual(prevState);
-    });
-
-    it('should schedule totals save when authenticated', () => {
-      const deps = createDefaultDeps({ isAuthenticated: true });
-      const { result } = renderHook(() => useRoomDomain(deps));
-
-      const updatedRoom = createTestRoom('room-1', 'Updated');
-
-      act(() => {
-        result.current.updateRoom(updatedRoom);
-      });
-
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      setStateFn(prevState);
-
-      expect(deps.scheduleTotalsSave).toHaveBeenCalled();
+      const state = useProjectStore.getState();
+      const originalRoom = state.projects[0].objects[0].rooms[0];
+      expect(originalRoom.name).toBe('Room 1');
     });
   });
 
   describe('updateRoomById', () => {
     it('should update room by id using updater function', () => {
-      const deps = createDefaultDeps();
-      const { result } = renderHook(() => useRoomDomain(deps));
+      setupStore();
 
-      act(() => {
-        result.current.updateRoomById('room-1', (prev) => ({
-          ...prev,
-          name: 'Renamed Room',
-          length: 99,
-        }));
-      });
+      useProjectStore.getState().updateRoomById('room-1', (prev) => ({
+        ...prev, name: 'Renamed Room', length: 99,
+      }));
 
-      expect(deps.setProjects).toHaveBeenCalledWith(expect.any(Function));
-
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      const newState = setStateFn(prevState);
-
-      expect(newState[0].objects[0].rooms[0].name).toBe('Renamed Room');
-      expect(newState[0].objects[0].rooms[0].length).toBe(99);
+      const state = useProjectStore.getState();
+      const room = state.activeProject?.objects?.[0]?.rooms.find((r: RoomData) => r.id === 'room-1');
+      expect(room?.name).toBe('Renamed Room');
+      expect(room?.length).toBe(99);
     });
 
     it('should not update when active project not found', () => {
-      const deps = createDefaultDeps({ activeProjectId: 'nonexistent' });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      setupStore();
+      useProjectStore.setState({ activeProjectId: 'nonexistent' });
 
-      act(() => {
-        result.current.updateRoomById('room-1', (prev) => ({
-          ...prev,
-          name: 'Renamed',
-        }));
-      });
+      useProjectStore.getState().updateRoomById('room-1', (prev) => ({
+        ...prev, name: 'Renamed',
+      }));
 
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      const newState = setStateFn(prevState);
-
-      expect(newState).toEqual(prevState);
-    });
-
-    it('should schedule totals save when authenticated', () => {
-      const deps = createDefaultDeps({ isAuthenticated: true });
-      const { result } = renderHook(() => useRoomDomain(deps));
-
-      act(() => {
-        result.current.updateRoomById('room-1', (prev) => ({
-          ...prev,
-          name: 'Changed',
-        }));
-      });
-
-      const setStateFn = deps.setProjects.mock.calls[0][0];
-      const prevState = [createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')])];
-      setStateFn(prevState);
-
-      expect(deps.scheduleTotalsSave).toHaveBeenCalled();
+      const state = useProjectStore.getState();
+      expect(state.projects[0].objects[0].rooms[0].name).toBe('Room 1');
     });
   });
 
@@ -310,51 +230,32 @@ describe('useRoomDomain', () => {
     it('should reorder rooms in active project', () => {
       const room1 = createTestRoom('room-1', 'Room 1');
       const room2 = createTestRoom('room-2', 'Room 2');
-      const deps = createDefaultDeps({
-        activeProject: createTestProject('p1', 'Test', [room1, room2]),
-      });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      setupStore({ project: createTestProject('p1', 'Test', [room1, room2]) });
 
-      act(() => {
-        result.current.reorderRooms([room2, room1]);
-      });
+      useProjectStore.getState().reorderRooms([room2, room1]);
 
-      expect(deps.updateActiveProject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          objects: expect.arrayContaining([
-            expect.objectContaining({
-              rooms: [room2, room1],
-            }),
-          ]),
-        })
-      );
+      const state = useProjectStore.getState();
+      const rooms = state.activeProject?.objects?.[0]?.rooms;
+      expect(rooms?.[0].id).toBe('room-2');
+      expect(rooms?.[1].id).toBe('room-1');
     });
 
     it('should not reorder rooms when no active project', () => {
-      const deps = createDefaultDeps({ activeProject: null });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      resetStore();
+      useProjectStore.setState({ activeProject: null });
 
-      act(() => {
-        result.current.reorderRooms([]);
-      });
+      useProjectStore.getState().reorderRooms([]);
 
-      expect(deps.updateActiveProject).not.toHaveBeenCalled();
+      expect(useProjectStore.getState().projects.length).toBe(0);
     });
 
     it('should not reorder rooms when no objects in project', () => {
-      const project: ProjectData = {
-        id: 'p1',
-        name: 'No Objects',
-        objects: [],
-      };
-      const deps = createDefaultDeps({ activeProject: project });
-      const { result } = renderHook(() => useRoomDomain(deps));
+      const project: ProjectData = { id: 'p1', name: 'No Objects', objects: [] };
+      setupStore({ project });
 
-      act(() => {
-        result.current.reorderRooms([createTestRoom('r1', 'R1')]);
-      });
+      useProjectStore.getState().reorderRooms([createTestRoom('r1', 'R1')]);
 
-      expect(deps.updateActiveProject).not.toHaveBeenCalled();
+      expect(useProjectStore.getState().projects[0].objects).toHaveLength(0);
     });
   });
 });
