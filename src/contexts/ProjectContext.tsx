@@ -1,101 +1,13 @@
-import React, { createContext, useContext, useCallback, useRef, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { ProjectData, RoomData, ObjectData } from '../types';
-import { StorageManager } from '../utils/storage';
 import type { StorageError } from '../utils/storage';
-import { useAuth } from './AuthContext';
-import { ApiStorageProvider } from '../api/storage';
-import { saveTotals } from '../api/totals';
-import { calculateRoomMetrics } from '../utils/geometry';
-import { calculateRoomCosts } from '../utils/costs';
-import {
-  logUserAction,
-  logSuccess,
-  logError,
-  logStart,
-  logEnd,
-  logStateChange,
-  logWarning,
-  logDebug,
-} from '../utils/logger';
-import { runMigrations, needsMigration } from '../utils/migration';
-import { idMapper, IdMapper, isServerId } from '../utils/idMapper';
-import { saveQueue } from '../utils/saveQueue';
-import {
-  migrateProjectToObjects,
-  updateRoomInProject,
-  addRoomToProject,
-  deleteRoomFromProject,
-  getAllRooms,
-  reorderRoomsInProject,
-  getObjectFromProject,
-  createNewObject,
-  addObjectToProject,
-  copyObjectInProject,
-  updateObjectInProject,
-  deleteObjectFromProject,
-  getFirstObject,
-} from '../utils/projectObjects';
-
-// Default object name when none is provided
-const DEFAULT_OBJECT_NAME = 'Основной объект';
-
-// Debounce delays for auto-save (ms)
-const SAVE_DEBOUNCE_MS = 2000;
-const TOTALS_SAVE_DEBOUNCE_MS = 2000;
-
-// Generate a unique ID with collision resistance
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).substring(2, 10)}`;
-}
-
-// Миграция данных комнаты для обеспечения наличия всех полей
-function migrateRoom(room: RoomData): RoomData {
-  const migrated = {
-    ...room,
-    // Гарантируем, что числовые поля определены
-    length: room.length ?? 0,
-    width: room.width ?? 0,
-    height: room.height ?? 0,
-    // Гарантируем, что массивы существуют
-    segments: room.segments || [],
-    obstacles: room.obstacles || [],
-    wallSections: room.wallSections || [],
-    subSections: room.subSections || [],
-    windows: room.windows || [],
-    doors: room.doors || [],
-    works: room.works || []
-  };
-
-  // Assertion: все числовые поля определены (only in development)
-  if (import.meta.env.DEV) {
-    const numericFields = ['length', 'width', 'height'] as const;
-    for (const field of numericFields) {
-      if (typeof migrated[field] !== 'number') {
-        logWarning('migrateRoom', `Field "${field}" should be number after migration`);
-      }
-    }
-  }
-
-  return migrated;
-}
-
-// Миграция проекта для обеспечения наличия всех полей у комнат
-// И миграция на новую структуру с objects
-function migrateProject(project: ProjectData): ProjectData {
-  // Сначала миграция комнат
-  const roomsWithDefaults = (project.rooms || []).map(migrateRoom);
-  
-  // Затем миграция на структуру с objects
-  const projectWithObjects = {
-    ...project,
-    rooms: roomsWithDefaults.length > 0 ? roomsWithDefaults : undefined,
-  };
-  
-  return migrateProjectToObjects(projectWithObjects);
-}
+import { getAllRooms } from '../utils/projectObjects';
+import { useProjectDomain, migrateProject } from '../hooks/domains/useProjectDomain';
+import { useObjectDomain } from '../hooks/domains/useObjectDomain';
+import { useRoomDomain } from '../hooks/domains/useRoomDomain';
+import { useSyncDomain } from '../hooks/domains/useSyncDomain';
 
 interface ProjectContextValue {
-  // State
   projects: ProjectData[];
   activeProjectId: string;
   activeProject: ProjectData | null;
@@ -108,11 +20,9 @@ interface ProjectContextValue {
   totalsSaveError: string | null;
   roomSyncError: string | null;
 
-  // Object state (new)
   activeObjectId: string | null;
   activeObject: ObjectData | null;
 
-  // Actions
   setActiveProjectId: (id: string) => void;
   updateProjects: (projects: ProjectData[]) => void;
   updateActiveProject: (project: ProjectData) => void;
@@ -121,12 +31,10 @@ interface ProjectContextValue {
   deleteRoom: (roomId: string) => void;
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
-  // Project management
   createProject: (data: { name: string; city?: string; objects?: string[] }) => Promise<ProjectData>;
   deleteProject: (projectId: string) => Promise<void>;
   isSyncing: boolean;
 
-  // Object management (new)
   setActiveObjectId: (id: string | null) => void;
   createObject: (data: { name: string; city?: string }) => string;
   updateObject: (objectId: string, data: Partial<ObjectData>) => void;
@@ -142,809 +50,94 @@ interface ProjectProviderProps {
 }
 
 export function ProjectProvider({ children, initialProjects }: ProjectProviderProps) {
-  // Получаем состояние авторизации
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-
-  // Миграция начальных данных
-  const migratedInitial = initialProjects.map(migrateProject);
-  const [projects, setProjects] = useState<ProjectData[]>(migratedInitial);
-  const [activeProjectId, setActiveProjectIdState] = useState<string>(migratedInitial[0]?.id || '');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<StorageError | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [lastSavedToServer, setLastSavedToServer] = useState<Date | null>(null);
-  const [lastTotalsSave, setLastTotalsSave] = useState<Date | null>(null);
-  const [totalsSaveError, setTotalsSaveError] = useState<string | null>(null);
-  const [roomSyncError, setRoomSyncError] = useState<string | null>(null);
-
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingSaveRef = useRef<ProjectData[] | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const totalsSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Состояние активного объекта
-  const [activeObjectId, setActiveObjectIdState] = useState<string | null>(null);
-
-  // Вычисляем активный проект
-  const activeProject = projects.find(p => p.id === activeProjectId) || null;
-
-  // Вычисляем активный объект
-  const activeObject = activeProject && activeObjectId
-    ? getObjectFromProject(activeProject, activeObjectId)
-    : activeProject?.objects?.[0] || null;
-
-  // Получение API провайдера
-  // Всегда возвращаем актуальный singleton instance,
-  // так как при логине/логауте instance сбрасывается через resetInstance()
-  const getApiProvider = useCallback((): ApiStorageProvider => {
-    return ApiStorageProvider.getInstance();
-  }, []);
-
-  // Загрузка данных при монтировании или изменении авторизации
-  useEffect(() => {
-    // Ждем завершения проверки авторизации
-    if (authLoading) return;
-    
-    const loadData = async () => {
-      const startTime = logStart('ProjectContext', 'Загрузка данных', { isAuthenticated });
-      
-      try {
-        // Если пользователь авторизован, загружаем с сервера
-        if (isAuthenticated) {
-          logUserAction('Загрузка проектов с сервера (авторизован)');
-          const apiProvider = getApiProvider();
-          let serverProjects = await apiProvider.loadProjectsAsync();
-          
-          // Запускаем миграцию для обнаружения и удаления дубликатов
-          if (needsMigration()) {
-            logDebug('ProjectContext', 'Требуется миграция данных');
-            try {
-              const migrationResult = await runMigrations(serverProjects);
-              if (migrationResult.duplicatesRemoved > 0) {
-                logSuccess('ProjectContext', 'Миграция выполнена', migrationResult);
-                // Перезагружаем проекты после миграции
-                serverProjects = await apiProvider.loadProjectsAsync();
-              }
-            } catch (migrationError) {
-              logError('ProjectContext', 'Ошибка миграции', migrationError);
-              // Продолжаем загрузку даже при ошибке миграции
-            }
-          }
-          
-          if (serverProjects.length > 0) {
-            const migratedProjects = serverProjects.map(migrateProject);
-            logSuccess('ProjectContext', 'Проекты загружены с сервера', { 
-              count: migratedProjects.length,
-              projectIds: migratedProjects.map(p => p.id) 
-            }, startTime);
-            setProjects(migratedProjects);
-            
-            // Загружаем активный проект из localStorage
-            const savedActiveProject = StorageManager.loadActiveProject();
-            
-            // Проверяем, не был ли активный проект мигрирован
-            let actualActiveId = savedActiveProject;
-            if (savedActiveProject && IdMapper.isLocalId(savedActiveProject)) {
-              const mappedId = idMapper.getServerId(savedActiveProject);
-              if (mappedId) {
-                actualActiveId = mappedId;
-                StorageManager.saveActiveProject(mappedId);
-                logDebug('ProjectContext', 'Активный проект мигрирован', { 
-                  oldId: savedActiveProject, 
-                  newId: mappedId 
-                });
-              }
-            }
-            
-            const activeExists = migratedProjects.some(p => p.id === actualActiveId);
-            
-            if (actualActiveId && activeExists) {
-              setActiveProjectIdState(actualActiveId);
-              logStateChange('ProjectContext', 'Активный проект', actualActiveId);
-            } else {
-              setActiveProjectIdState(migratedProjects[0].id);
-              logStateChange('ProjectContext', 'Активный проект', migratedProjects[0].id);
-            }
-          } else {
-            logWarning('ProjectContext', 'На сервере нет проектов, проверяем localStorage');
-            // На сервере нет проектов, пробуем загрузить из localStorage и синхронизировать
-            const localProjects = StorageManager.loadProjects();
-            if (localProjects && localProjects.length > 0) {
-              const migratedProjects = localProjects.map(migrateProject);
-              logSuccess('ProjectContext', 'Проекты загружены из localStorage', { 
-                count: migratedProjects.length 
-              }, startTime);
-              setProjects(migratedProjects);
-              setActiveProjectIdState(migratedProjects[0].id);
-            }
-          }
-        } else {
-          logUserAction('Загрузка проектов из localStorage (не авторизован)');
-          // Не авторизован — используем localStorage
-          const savedProjects = StorageManager.loadProjects();
-          const savedActiveProject = StorageManager.loadActiveProject();
-
-          if (savedProjects && savedProjects.length > 0) {
-            const migratedProjects = savedProjects.map(migrateProject);
-            logSuccess('ProjectContext', 'Проекты загружены из localStorage', { 
-              count: migratedProjects.length,
-              projectIds: migratedProjects.map(p => p.id) 
-            }, startTime);
-            setProjects(migratedProjects);
-
-            const activeExists = savedProjects.some(p => p.id === savedActiveProject);
-            if (savedActiveProject && activeExists) {
-              setActiveProjectIdState(savedActiveProject);
-              logStateChange('ProjectContext', 'Активный проект', savedActiveProject);
-            } else {
-              setActiveProjectIdState(savedProjects[0].id);
-              logStateChange('ProjectContext', 'Активный проект', savedProjects[0].id);
-            }
-          } else {
-            // Первый запуск - используем демонстрационные проекты и сохраняем их
-            logSuccess('ProjectContext', 'Первый запуск - используются демонстрационные проекты', { 
-              count: migratedInitial.length,
-              projectIds: migratedInitial.map(p => p.id) 
-            }, startTime);
-            
-            if (migratedInitial.length > 0) {
-              StorageManager.saveProjects(migratedInitial);
-              StorageManager.saveActiveProject(migratedInitial[0].id);
-              setProjects(migratedInitial);
-              setActiveProjectIdState(migratedInitial[0].id);
-              logStateChange('ProjectContext', 'Активный проект', migratedInitial[0].id);
-            } else {
-              // Нет начальных проектов - оставляем пустой список
-              setProjects([]);
-              setActiveProjectIdState('');
-              logStateChange('ProjectContext', 'Активный проект', null);
-            }
-          }
-        }
-        
-        setIsLoading(false);
-        logEnd('ProjectContext', 'Загрузка данных завершена', startTime);
-      } catch (err) {
-        logError('ProjectContext', 'Ошибка загрузки данных', err);
-        setError({ type: 'unknown', message: 'Ошибка загрузки данных' });
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [isAuthenticated, authLoading, getApiProvider]);
-
-  // Расчёт и сохранение итогов проекта
-  const saveCalculatedTotals = useCallback(async (project: ProjectData) => {
-    if (!isAuthenticated) return; // Сохраняем только для авторизованных пользователей
-
-    // Проверяем, что проект существует на сервере (ID должен быть UUID)
-    if (!isServerId(project.id)) return;
-
-    let totalArea = 0;
-    let totalWorks = 0;
-    let totalMaterials = 0;
-    let totalTools = 0;
-
-    const allRooms = getAllRooms(project);
-    allRooms.forEach(room => {
-      const metrics = calculateRoomMetrics(room);
-      const costs = calculateRoomCosts(room);
-      totalArea += metrics.floorArea;
-      totalWorks += costs.totalWork;
-      totalMaterials += costs.totalMaterial;
-      totalTools += costs.totalTools;
-    });
-
-    const grandTotal = totalWorks + totalMaterials + totalTools;
-
-    try {
-      await saveTotals(project.id, {
-        total_area: totalArea,
-        total_works: totalWorks,
-        total_materials: totalMaterials,
-        total_tools: totalTools,
-        grand_total: grandTotal,
-      });
-      setLastTotalsSave(new Date());
-      setTotalsSaveError(null);
-    } catch (error) {
-      logError('ProjectContext', 'Ошибка сохранения расчётов', error);
-      setTotalsSaveError(error instanceof Error ? error.message : 'Ошибка сохранения расчётов');
-    }
-  }, [isAuthenticated]);
-
-  // Автосохранение рассчитанных данных с debounce
-  const scheduleTotalsSave = useCallback((project: ProjectData) => {
-    if (totalsSaveTimeoutRef.current) {
-      clearTimeout(totalsSaveTimeoutRef.current);
-    }
-
-    totalsSaveTimeoutRef.current = setTimeout(() => {
-      saveCalculatedTotals(project);
-    }, TOTALS_SAVE_DEBOUNCE_MS);
-  }, [saveCalculatedTotals]);
-
-  // Автосохранение с debounce и персистентной очередью
-  const scheduleSave = useCallback((newProjects: ProjectData[]) => {
-    pendingSaveRef.current = newProjects;
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (pendingSaveRef.current) {
-        const startTime = logStart('Save', 'Автосохранение проектов');
-        const projectsToSave = pendingSaveRef.current;
-
-        // Создаем задачу сохранения с персистентностью
-        const saveTask = async () => {
-          try {
-            // Инкрементальное сохранение: сохраняем только изменившиеся проекты
-            // Сравниваем с текущим состоянием projects, чтобы найти изменения
-            const changedProjects = projectsToSave.filter(newProj => {
-              const oldProj = projects.find(p => p.id === newProj.id);
-              if (!oldProj) return true; // Новый проект
-              // Сравниваем версии или используем глубокое сравнение
-              return JSON.stringify(oldProj) !== JSON.stringify(newProj);
-            });
-
-            if (changedProjects.length === 1 && projectsToSave.length > 1) {
-              // Только один проект изменился — используем инкрементальное сохранение
-              const changedProject = changedProjects[0];
-              logSuccess('Save', 'Инкрементальное сохранение одного проекта', {
-                projectId: changedProject.id,
-                name: changedProject.name
-              });
-
-              // Сохраняем только изменившийся проект
-              StorageManager.saveProject(changedProject);
-              setLastSaved(new Date());
-              logSuccess('Save', 'Сохранено в localStorage (инкрементально)', {
-                projectId: changedProject.id
-              }, startTime);
-
-              // Если авторизован, сохраняем на сервер
-              if (isAuthenticated) {
-                const apiProvider = getApiProvider();
-                const serverStartTime = logStart('Save', 'Сохранение проекта на сервер');
-
-                await apiProvider.saveProjectAsync(changedProject);
-                setLastSavedToServer(new Date());
-                logSuccess('Save', 'Проект сохранен на сервере (инкрементально)', {
-                  projectId: changedProject.id
-                }, serverStartTime);
-                setSaveError(null);
-              }
-            } else {
-              // Множественные изменения — полное сохран
-              StorageManager.saveProjects(projectsToSave);
-              setLastSaved(new Date());
-              logSuccess('Save', 'Сохранено в localStorage', {
-                count: projectsToSave.length,
-                projectIds: projectsToSave.map(p => p.id)
-              }, startTime);
-
-              // Если авторизован, сохраняем на сервер
-              if (isAuthenticated) {
-                const apiProvider = getApiProvider();
-                const serverStartTime = logStart('Save', 'Сохранение на сервер');
-
-                await apiProvider.saveProjectsAsync(projectsToSave);
-                setLastSavedToServer(new Date());
-                logSuccess('Save', 'Сохранено на сервер', {
-                  count: projectsToSave.length
-                }, serverStartTime);
-                setSaveError(null);
-              }
-            }
-            pendingSaveRef.current = null;
-          } catch (err) {
-            const storageError = err as StorageError;
-            setSaveError(storageError.message || 'Ошибка сохранения');
-            logError('Save', 'Ошибка сохранения', err);
-            // Пробрасываем ошибку для обработки в saveQueue
-            throw err;
-          }
-        };
-
-        // Добавляем в очередь с персистентностью
-        saveQueue.enqueue(saveTask, projectsToSave);
-      }
-    }, SAVE_DEBOUNCE_MS);
-  }, [isAuthenticated, getApiProvider, projects]);
-
-  // Обновление проектов
-  const updateProjects = useCallback((newProjects: ProjectData[]) => {
-    setProjects(newProjects);
-    scheduleSave(newProjects);
-    // Save totals for active project
-    const active = newProjects.find(p => p.id === activeProjectId);
-    if (active && isAuthenticated) {
-      scheduleTotalsSave(active);
-    }
-  }, [scheduleSave, activeProjectId, isAuthenticated, scheduleTotalsSave]);
-
-  // Обновление активного проекта
-  const updateActiveProject = useCallback((updatedProject: ProjectData) => {
-    setProjects(prevProjects => {
-      const newProjects = prevProjects.map(p =>
-        p.id === updatedProject.id ? updatedProject : p
-      );
-      scheduleSave(newProjects);
-      // Save totals for updated project
-      if (isAuthenticated) {
-        scheduleTotalsSave(updatedProject);
-      }
-      return newProjects;
-    });
-  }, [scheduleSave, isAuthenticated, scheduleTotalsSave]);
-
-  // Установка активного проекта с сохранением
-  const setActiveProjectId = useCallback((id: string) => {
-    logUserAction('Переключение активного проекта', { projectId: id });
-    setActiveProjectIdState(id);
-    StorageManager.saveActiveProject(id);
-    logStateChange('ProjectContext', 'Активный проект', id);
-  }, []);
-
-  // Обновление комнаты в активном проекте (прямое значение)
-  const updateRoom = useCallback((updatedRoom: RoomData) => {
-    setProjects(prevProjects => {
-      const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
-      if (!prevActiveProject) {
-        return prevProjects;
-      }
-
-      // Используем новую функцию для работы с objects
-      const updatedProject = updateRoomInProject(prevActiveProject, updatedRoom.id, () => updatedRoom);
-
-      const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
-      scheduleSave(newProjects);
-      // Save totals for updated project
-      if (isAuthenticated) {
-        scheduleTotalsSave(updatedProject);
-      }
-      return newProjects;
-    });
-  }, [activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave]);
-
-  // Обновление комнаты по ID с функцией обновления (для корректной работы при быстрых изменениях)
-  const updateRoomById = useCallback((roomId: string, updater: (prev: RoomData) => RoomData) => {
-    setProjects(prevProjects => {
-      const prevActiveProject = prevProjects.find(p => p.id === activeProjectId);
-      if (!prevActiveProject) return prevProjects;
-
-      // Используем новую функцию для работы с objects
-      const updatedProject = updateRoomInProject(prevActiveProject, roomId, updater);
-
-      const newProjects = prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
-      scheduleSave(newProjects);
-      // Save totals for updated project
-      if (isAuthenticated) {
-        scheduleTotalsSave(updatedProject);
-      }
-      return newProjects;
-    });
-  }, [activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave]);
-
-  // Удаление комнаты
-  const deleteRoom = useCallback((roomId: string) => {
-    if (!activeProject) return;
-
-    logUserAction('Удаление комнаты', { roomId, projectId: activeProject.id });
-    
-    // Используем новую функцию для работы с objects
-    const updatedProject = deleteRoomFromProject(activeProject, roomId);
-    
-    updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комната удалена', { roomId });
-  }, [activeProject, updateActiveProject]);
-
-  // Добавление комнаты
-  const addRoom = useCallback((newRoom: RoomData) => {
-    if (!activeProject) return;
-
-    logUserAction('Добавление комнаты', { roomId: newRoom.id, name: newRoom.name, projectId: activeProject.id });
-    
-    // Используем новую функцию для работы с objects
-    const updatedProject = addRoomToProject(activeProject, newRoom);
-    
-    updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id });
-  }, [activeProject, updateActiveProject]);
-
-  // Переупорядочивание комнат
-  const reorderRooms = useCallback((newRooms: RoomData[]) => {
-    if (!activeProject) return;
-
-    // Get the first object (where rooms are stored for single-object projects)
-    const firstObject = activeProject.objects?.[0];
-    if (!firstObject) {
-      logWarning('ProjectContext', 'Cannot reorder rooms: no objects found');
-      return;
-    }
-
-    logUserAction('Переупорядочивание комнат', { 
-      projectId: activeProject.id, 
-      objectId: firstObject.id,
-      roomsOrder: newRooms.map(r => r.id) 
-    });
-    
-    const updatedProject = reorderRoomsInProject(activeProject, firstObject.id, newRooms);
-    updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комнаты переупорядочены', { roomsCount: newRooms.length });
-  }, [activeProject, updateActiveProject]);
-
-  // Создание нового проекта
-  const createProject = useCallback(async (data: { name: string; city?: string; objects?: string[] }): Promise<ProjectData> => {
-    logUserAction('Создание проекта', data);
-    setIsSyncing(true);
-    const startTime = logStart('ProjectContext', 'Создание проекта', data);
-    
-    try {
-      if (isAuthenticated) {
-        // Создаем на сервере
-        logDebug('ProjectContext', 'Создание проекта на сервере', data);
-        const apiProvider = getApiProvider();
-        const newProject = await apiProvider.createProjectAsync(data);
-        
-        // Если переданы объекты, создаём их в проекте
-        if (data.objects && data.objects.length > 0) {
-          const objects: ObjectData[] = data.objects.map((objName, index) => ({
-            id: generateId('obj'),
-            projectId: newProject.id,
-            name: objName,
-            city: data.city,
-            rooms: [],
-            sortOrder: index,
-          }));
-          newProject.objects = objects;
-          
-          // Сохраняем проект с объектами на сервере
-          await apiProvider.saveProjectsAsync([newProject]);
-        }
-        
-        logSuccess('ProjectContext', 'Проект создан на сервере', { 
-          id: newProject.id, 
-          name: newProject.name,
-          objectsCount: newProject.objects?.length || 0
-        }, startTime);
-        
-        setProjects(prev => {
-          const updated = [...prev, newProject];
-          scheduleSave(updated);
-          return updated;
-        });
-        
-        setActiveProjectIdState(newProject.id);
-        StorageManager.saveActiveProject(newProject.id);
-        logStateChange('ProjectContext', 'Активный проект', newProject.id);
-        
-        return newProject;
-      } else {
-        // Создаем локально
-        logDebug('ProjectContext', 'Создание локального проекта', data);
-        
-        // Создаём объекты, если переданы
-        const objects: ObjectData[] = (data.objects || [DEFAULT_OBJECT_NAME]).map((objName, index) => ({
-          id: generateId('obj'),
-          projectId: generateId('local'),
-          name: objName,
-          city: data.city,
-          rooms: [],
-          sortOrder: index,
-        }));
-
-        const newProject: ProjectData = {
-          id: generateId('local'),
-          name: data.name,
-          city: data.city,
-          objects: objects,
-        };
-
-        logSuccess('ProjectContext', 'Локальный проект создан', {
-          id: newProject.id,
-          name: newProject.name,
-          objectsCount: objects.length
-        }, startTime);
-        
-        setProjects(prev => {
-          const updated = [...prev, newProject];
-          scheduleSave(updated);
-          return updated;
-        });
-        
-        setActiveProjectIdState(newProject.id);
-        StorageManager.saveActiveProject(newProject.id);
-        logStateChange('ProjectContext', 'Активный проект', newProject.id);
-        
-        return newProject;
-      }
-    } catch (error) {
-      logError('ProjectContext', 'Ошибка создания проекта', error, data);
-      throw error;
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isAuthenticated, getApiProvider, scheduleSave]);
-
-  // Удаление проекта
-  const deleteProject = useCallback(async (projectId: string): Promise<void> => {
-    logUserAction('Удаление проекта', { projectId });
-    setIsSyncing(true);
-    const startTime = logStart('ProjectContext', 'Удаление проекта', { projectId });
-
-    try {
-      // Отменяем pending save для этого проекта
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      pendingSaveRef.current = null;
-
-      if (isAuthenticated) {
-        // Получаем свежий instance API провайдера
-        const apiProvider = ApiStorageProvider.getInstance();
-        
-        // Помечаем проект как удаленный в API провайдере перед удалением
-        apiProvider.markProjectDeleted(projectId);
-        
-        // Удаляем на сервере
-        logDebug('ProjectContext', 'Удаление проекта на сервере', { projectId });
-        try {
-          await apiProvider.deleteProjectAsync(projectId);
-          logSuccess('ProjectContext', 'Проект удалён с сервера', { projectId }, startTime);
-        } catch (serverError) {
-          // Логируем ошибку, но продолжаем с локальным удалением
-          logError('ProjectContext', 'Ошибка удаления на сервере, удаляем локально', serverError, { projectId });
-          // Устанавливаем ошибку сохранения для отображения пользователю
-          setSaveError('Не удалось удалить проект на сервере. Проект удалён локально.');
-          // Очищаем ошибку через 5 секунд
-          setTimeout(() => setSaveError(null), 5000);
-        }
-      }
-
-      // Удаляем локально (всегда, даже если сервер не ответил)
-      setProjects(prev => {
-        const updated = prev.filter(p => p.id !== projectId);
-        // Используем единый путь сохранения через scheduleSave для консистентности
-        scheduleSave(updated);
-        return updated;
-      });
-
-      // Если удалили активный проект, переключаемся на первый доступный
-      if (activeProjectId === projectId) {
-        const remaining = projects.filter(p => p.id !== projectId);
-        if (remaining.length > 0) {
-          setActiveProjectIdState(remaining[0].id);
-          StorageManager.saveActiveProject(remaining[0].id);
-          logStateChange('ProjectContext', 'Активный проект (после удаления)', remaining[0].id);
-        } else {
-          setActiveProjectIdState('');
-          localStorage.removeItem('repair-calc-active-project');
-          logStateChange('ProjectContext', 'Активный проект (после удаления)', null);
-        }
-      }
-
-      logEnd('ProjectContext', 'Удаление проекта завершено', startTime);
-    } catch (error) {
-      logError('ProjectContext', 'Критическая ошибка удаления проекта', error, { projectId });
-      setSaveError('Ошибка при удалении проекта');
-      setTimeout(() => setSaveError(null), 5000);
-      throw error;
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isAuthenticated, scheduleSave, activeProjectId, projects]);
-
-  // Сохранение перед закрытием страницы
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (pendingSaveRef.current) {
-        StorageManager.saveProjects(pendingSaveRef.current);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (totalsSaveTimeoutRef.current) {
-        clearTimeout(totalsSaveTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Восстановление pending сохранений после перезагрузки и обработка visibilitychange
-  useEffect(() => {
-    // Проверяем наличие pending данных при загрузке
-    if (saveQueue.hasPendingData && isAuthenticated) {
-      const pendingData = saveQueue.getPendingData();
-      if (pendingData && Array.isArray(pendingData)) {
-        logDebug('ProjectContext', 'Восстановление pending сохранений', {
-          count: pendingData.length
-        });
-        // Восстанавливаем pending данные и планируем сохранение
-        pendingSaveRef.current = pendingData as ProjectData[];
-        scheduleSave(pendingSaveRef.current);
-      }
-    }
-
-    // Обработка возвращения на вкладку — проверяем наличие несохранённых данных
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && saveQueue.hasPendingData) {
-        logDebug('ProjectContext', 'Вкладка активна, проверяем pending сохранения');
-        const pendingData = saveQueue.getPendingData();
-        if (pendingData && Array.isArray(pendingData) && !pendingSaveRef.current) {
-          pendingSaveRef.current = pendingData as ProjectData[];
-          scheduleSave(pendingSaveRef.current);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isAuthenticated, scheduleSave]);
-
-  // Периодическая проверка ошибок синхронизации комнат
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const checkRoomSyncErrors = () => {
-      const apiProvider = getApiProvider();
-      const errors = apiProvider.getRoomSyncErrors();
-      
-      if (errors.size > 0) {
-        const errorMessages = Array.from(errors.entries()).map(([key, value]) => {
-          const [_projectId, roomId] = key.split(':');
-          return `Комната ${roomId}: ${value.error.message}`;
-        });
-        setRoomSyncError(`Ошибка синхронизации комнат: ${errorMessages.join('; ')}`);
-      } else {
-        setRoomSyncError(null);
-      }
-    };
-
-    // Проверяем сразу и затем каждые 5 секунд
-    checkRoomSyncErrors();
-    const interval = setInterval(checkRoomSyncErrors, 5000);
-
-    return () => clearInterval(interval);
-  }, [isAuthenticated, getApiProvider]);
-
-  // ============================================================
-  // Методы управления объектами
-  // ============================================================
-
-  // Установка активного объекта
-  const setActiveObjectId = useCallback((id: string | null) => {
-    logUserAction('Переключение активного объекта', { objectId: id });
-    setActiveObjectIdState(id);
-    logStateChange('ProjectContext', 'Активный объект', id);
-  }, []);
-
-  // Создание нового объекта
-  const createObject = useCallback((data: { name: string; city?: string }): string => {
-    if (!activeProject) {
-      logError('ProjectContext', 'Cannot create object: no active project');
-      return '';
-    }
-
-    logUserAction('Создание объекта', { ...data, projectId: activeProject.id });
-    
-    const newObject = createNewObject(activeProject.id, data);
-    const updatedProject = addObjectToProject(activeProject, newObject);
-    
-    updateActiveProject(updatedProject);
-    setActiveObjectIdState(newObject.id);
-    
-    logSuccess('ProjectContext', 'Объект создан', { objectId: newObject.id, name: data.name });
-    
-    return newObject.id;
-  }, [activeProject, updateActiveProject]);
-
-  // Обновление объекта
-  const updateObject = useCallback((objectId: string, data: Partial<ObjectData>) => {
-    if (!activeProject) return;
-
-    logUserAction('Обновление объекта', { objectId, updates: data });
-    
-    const updatedProject = updateObjectInProject(activeProject, objectId, data);
-    updateActiveProject(updatedProject);
-    
-    logSuccess('ProjectContext', 'Объект обновлён', { objectId });
-  }, [activeProject, updateActiveProject]);
-
-  // Удаление объекта
-  const deleteObject = useCallback((objectId: string): boolean => {
-    if (!activeProject) return false;
-
-    logUserAction('Удаление объекта', { objectId, projectId: activeProject.id });
-    
-    const updatedProject = deleteObjectFromProject(activeProject, objectId);
-    
-    if (!updatedProject) {
-      logWarning('ProjectContext', 'Невозможно удалить последний объект', { objectId });
-      return false;
-    }
-    
-    updateActiveProject(updatedProject);
-    
-    // Если удалили активный объект, переключаемся на первый
-    if (activeObjectId === objectId) {
-      const firstObj = getFirstObject(updatedProject);
-      setActiveObjectIdState(firstObj?.id || null);
-      logStateChange('ProjectContext', 'Активный объект (после удаления)', firstObj?.id || null);
-    }
-    
-    logSuccess('ProjectContext', 'Объект удалён', { objectId });
-    return true;
-  }, [activeProject, activeObjectId, updateActiveProject]);
-
-  // Копирование объекта
-  const copyObject = useCallback((objectId: string): string | null => {
-    if (!activeProject) return null;
-
-    logUserAction('Копирование объекта', { objectId, projectId: activeProject.id });
-    
-    const result = copyObjectInProject(activeProject, objectId);
-    
-    if (!result) {
-      logError('ProjectContext', 'Ошибка копирования объекта', { objectId });
-      return null;
-    }
-    
-    updateActiveProject(result.project);
-    
-    logSuccess('ProjectContext', 'Объект скопирован', { 
-      sourceObjectId: objectId, 
-      newObjectId: result.newObjectId 
-    });
-    
-    return result.newObjectId;
-  }, [activeProject, updateActiveProject]);
-
-  const value: ProjectContextValue = {
-    projects,
-    activeProjectId,
-    activeProject,
-    isLoading,
-    error,
-    lastSaved,
-    saveError,
-    lastSavedToServer,
-    lastTotalsSave,
-    totalsSaveError,
-    roomSyncError,
-    // Object state
-    activeObjectId,
-    activeObject,
-    setActiveProjectId,
-    updateProjects,
-    updateActiveProject,
-    updateRoom,
-    updateRoomById,
-    deleteRoom,
-    addRoom,
-    reorderRooms,
-    createProject,
-    deleteProject,
-    isSyncing,
-    // Object management
-    setActiveObjectId,
-    createObject,
-    updateObject,
-    deleteObject,
-    copyObject,
-  };
+  const projectState = useProjectDomain(initialProjects);
+
+  const objectState = useObjectDomain({
+    activeProject: projectState.activeProject,
+    updateActiveProject: projectState.updateActiveProject,
+  });
+
+  const roomState = useRoomDomain({
+    activeProjectId: projectState.activeProjectId,
+    activeProject: projectState.activeProject,
+    setProjects: projectState.setProjects,
+    scheduleSave: projectState.scheduleSave,
+    scheduleTotalsSave: projectState.scheduleTotalsSave,
+    updateActiveProject: projectState.updateActiveProject,
+    isAuthenticated: projectState.isAuthenticated,
+  });
+
+  useSyncDomain({
+    isAuthenticated: projectState.isAuthenticated,
+    scheduleSave: projectState.scheduleSave,
+  });
+
+  const value = useMemo<ProjectContextValue>(() => ({
+    projects: projectState.projects,
+    activeProjectId: projectState.activeProjectId,
+    activeProject: projectState.activeProject,
+    isLoading: projectState.isLoading,
+    error: projectState.error,
+    lastSaved: projectState.lastSaved,
+    saveError: projectState.saveError,
+    lastSavedToServer: projectState.lastSavedToServer,
+    lastTotalsSave: projectState.lastTotalsSave,
+    totalsSaveError: projectState.totalsSaveError,
+    roomSyncError: projectState.roomSyncError,
+    isSyncing: projectState.isSyncing,
+
+    activeObjectId: objectState.activeObjectId,
+    activeObject: objectState.activeObject,
+
+    setActiveProjectId: projectState.setActiveProjectId,
+    updateProjects: projectState.updateProjects,
+    updateActiveProject: projectState.updateActiveProject,
+
+    updateRoom: roomState.updateRoom,
+    updateRoomById: roomState.updateRoomById,
+    deleteRoom: roomState.deleteRoom,
+    addRoom: roomState.addRoom,
+    reorderRooms: roomState.reorderRooms,
+
+    createProject: projectState.createProject,
+    deleteProject: projectState.deleteProject,
+
+    setActiveObjectId: objectState.setActiveObjectId,
+    createObject: objectState.createObject,
+    updateObject: objectState.updateObject,
+    deleteObject: objectState.deleteObject,
+    copyObject: objectState.copyObject,
+  }), [
+    projectState.projects,
+    projectState.activeProjectId,
+    projectState.activeProject,
+    projectState.isLoading,
+    projectState.error,
+    projectState.lastSaved,
+    projectState.saveError,
+    projectState.lastSavedToServer,
+    projectState.lastTotalsSave,
+    projectState.totalsSaveError,
+    projectState.roomSyncError,
+    projectState.isSyncing,
+    projectState.setActiveProjectId,
+    projectState.updateProjects,
+    projectState.updateActiveProject,
+    projectState.createProject,
+    projectState.deleteProject,
+    objectState.activeObjectId,
+    objectState.activeObject,
+    objectState.setActiveObjectId,
+    objectState.createObject,
+    objectState.updateObject,
+    objectState.deleteObject,
+    objectState.copyObject,
+    roomState.updateRoom,
+    roomState.updateRoomById,
+    roomState.deleteRoom,
+    roomState.addRoom,
+    roomState.reorderRooms,
+  ]);
 
   return (
     <ProjectContext.Provider value={value}>
@@ -953,10 +146,6 @@ export function ProjectProvider({ children, initialProjects }: ProjectProviderPr
   );
 }
 
-/**
- * Хук для доступа к контексту проекта.
- * Выбрасывает ошибку, если используется вне ProjectProvider.
- */
 export function useProjectContext(): ProjectContextValue {
   const context = useContext(ProjectContext);
   if (!context) {
@@ -965,10 +154,6 @@ export function useProjectContext(): ProjectContextValue {
   return context;
 }
 
-/**
- * Хук для доступа к конкретной комнате по ID.
- * Возвращает null, если комната не найдена.
- */
 export function useRoom(roomId: string | null): RoomData | null {
   const { activeProject } = useProjectContext();
 
@@ -978,3 +163,4 @@ export function useRoom(roomId: string | null): RoomData | null {
 }
 
 export { ProjectContext };
+export { migrateProject };

@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calculator, Menu, Settings, ChevronRight } from 'lucide-react';
-import { SummaryView } from './components/SummaryView';
-import { RoomEditor } from './components/RoomEditor';
+import React, { useState } from 'react';
+import { Calculator } from 'lucide-react';
 import { ProjectProvider, useProjectContext } from './contexts/ProjectContext';
 import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -9,108 +7,50 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './components/auth';
 import { LeftSidebar } from './components/layout/LeftSidebar';
 import { RightSidebar } from './components/layout/RightSidebar';
-import type { RoomData, ObjectData } from './types';
-import type { WorkTemplate } from './types/workTemplate';
-import { createNewRoom } from './utils/factories';
-import { IdMapper } from './utils/idMapper';
-import { getAllRooms } from './utils/projectObjects';
+import { AppHeader } from './components/layout/AppHeader';
+import { ContentArea } from './components/layout/ContentArea';
 import { CreateObjectModal } from './components/objects/CreateObjectModal';
 import { ProjectsModal } from './components/projects';
 import { DataManagementModal } from './components/projects/DataManagementModal';
+import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';
+import { useModalsState } from './hooks/ui/useModalsState';
+import type { RoomData, ObjectData } from './types';
+import { createNewRoom } from './utils/factories';
+import { IdMapper } from './utils/idMapper';
+import { getAllRooms } from './utils/projectObjects';
 
 import { initialProjects } from './data/initialData';
 
-/**
- * Страницы аутентификации
- */
 function AuthPages() {
   const [isLogin, setIsLogin] = useState(true);
-
-  return isLogin ? (
-    <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
-  ) : (
-    <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />
-  );
+  return isLogin
+    ? <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
+    : <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />;
 }
 
-/**
- * Внутренний компонент приложения, использующий контексты.
- * Разделён для возможности использования хуков внутри провайдеров.
- */
 function AppContent() {
   const {
-    projects,
-    activeProjectId,
-    activeProject,
-    setActiveProjectId,
-    updateProjects,
-    updateActiveProject,
-    updateRoom,
-    updateRoomById,
-    deleteRoom,
-    deleteProject,
-    addRoom,
-    reorderRooms,
-    isLoading,
-    lastSaved,
-    lastSavedToServer,
-    saveError,
-    isSyncing,
-    // New object management
-    activeObjectId,
-    activeObject,
-    setActiveObjectId,
-    updateObject,
-    deleteObject,
+    projects, activeProjectId, activeProject, setActiveProjectId,
+    updateProjects, updateActiveProject, updateRoom, updateRoomById,
+    deleteRoom, deleteProject, addRoom, reorderRooms,
+    isLoading, lastSaved, lastSavedToServer, saveError, isSyncing,
+    activeObjectId, activeObject, setActiveObjectId, updateObject, deleteObject,
   } = useProjectContext();
 
-  const {
-    templates,
-    saveTemplate,
-    loadTemplate,
-    deleteTemplate,
-    importTemplates,
-  } = useWorkTemplateContext();
+  const { templates, saveTemplate, loadTemplate, deleteTemplate, importTemplates } = useWorkTemplateContext();
 
-  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('summary');
   const [isLeftMobileMenuOpen, setIsLeftMobileMenuOpen] = useState(false);
   const [isRightMobileMenuOpen, setIsRightMobileMenuOpen] = useState(false);
-  const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
-  const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null);
-  const [isCreateObjectModalOpen, setIsCreateObjectModalOpen] = useState(false);
-  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
-  const [isDataManagementModalOpen, setIsDataManagementModalOpen] = useState(false);
 
-  // Track room header visibility - must be called before any early returns
-  useEffect(() => {
-    if (activeTab === 'summary' || !activeProject) {
-      setShowRoomNameInHeader(false);
-      return;
-    }
+  const showRoomNameInHeader = useRoomHeaderVisibility(activeTab, activeProject);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowRoomNameInHeader(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        rootMargin: '-100px 0px 0px 0px',
-        threshold: 0,
-      }
-    );
+  const {
+    isTemplatePickerOpen, isCreateObjectModalOpen, isProjectsModalOpen,
+    isDataManagementModalOpen, projectToDeleteId,
+    openModal, closeModal, setProjectToDeleteId,
+  } = useModalsState();
 
-    const roomHeaderElement = document.getElementById('room-header-title');
-    if (roomHeaderElement) {
-      observer.observe(roomHeaderElement);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [activeTab, activeProject]);
-
-  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
@@ -126,10 +66,7 @@ function AppContent() {
     deleteRoom(roomId);
     const allRooms = activeProject ? getAllRooms(activeProject) : [];
     const remainingRooms = allRooms.filter(r => r.id !== roomId);
-    const newActiveTab = remainingRooms.length > 1
-      ? remainingRooms[0]?.id || 'summary'
-      : 'summary';
-    setActiveTab(newActiveTab);
+    setActiveTab(remainingRooms.length > 1 ? remainingRooms[0]?.id || 'summary' : 'summary');
   };
 
   const handleAddRoom = () => {
@@ -139,20 +76,12 @@ function AppContent() {
     setIsLeftMobileMenuOpen(false);
   };
 
-  const openCreateProjectModal = () => {
-    setIsProjectsModalOpen(true);
-    setIsRightMobileMenuOpen(false);
-  };
-
   const handleCopyProject = (id: string) => {
     const sourceProject = projects.find(p => p.id === id);
     if (!sourceProject) return;
-
     const copiedProject = JSON.parse(JSON.stringify(sourceProject));
     copiedProject.id = `local-${Date.now()}`;
     copiedProject.name = `${sourceProject.name} (копия)`;
-
-    // Re-generate IDs for objects and rooms to avoid conflicts
     if (copiedProject.objects) {
       copiedProject.objects = copiedProject.objects.map((obj: ObjectData) => ({
         ...obj,
@@ -165,29 +94,31 @@ function AppContent() {
         })),
       }));
     }
-
-    const updatedProjects = [...projects, copiedProject];
-    updateProjects(updatedProjects);
+    updateProjects([...projects, copiedProject]);
     setActiveProjectId(copiedProject.id);
   };
 
-  const handleImportTemplates = (importedTemplates: WorkTemplate[]) => {
-    importTemplates(importedTemplates);
+  const handleDeleteProjectConfirm = async () => {
+    if (!projectToDeleteId || isSyncing) return;
+    if (IdMapper.isServerId(projectToDeleteId)) await deleteProject(projectToDeleteId);
+    const updatedProjects = projects.filter(p => p.id !== projectToDeleteId);
+    updateProjects(updatedProjects);
+    if (projectToDeleteId === activeProjectId && updatedProjects.length > 0) {
+      setActiveProjectId(updatedProjects[0].id);
+    } else if (updatedProjects.length === 0) {
+      setActiveProjectId('');
+    }
+    setProjectToDeleteId(null);
+    setActiveTab('summary');
   };
 
-  const handleDeleteTemplate = (id: string) => {
-    deleteTemplate(id);
-  };
+  const currentRoom = activeProject ? getAllRooms(activeProject).find(r => r.id === activeTab) : undefined;
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
-      {/* Left Sidebar */}
       <LeftSidebar
         activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setIsLeftMobileMenuOpen(false);
-        }}
+        onTabChange={(tab) => { setActiveTab(tab); setIsLeftMobileMenuOpen(false); }}
         onAddRoom={handleAddRoom}
         isMobileMenuOpen={isLeftMobileMenuOpen}
         onMobileMenuClose={() => setIsLeftMobileMenuOpen(false)}
@@ -196,132 +127,54 @@ function AppContent() {
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
-        onObjectChange={(id) => {
-          setActiveObjectId(id);
-          setActiveTab('summary');
-        }}
-        onAddObject={() => setIsCreateObjectModalOpen(true)}
+        onObjectChange={(id) => { setActiveObjectId(id); setActiveTab('summary'); }}
+        onAddObject={() => openModal('createObject')}
         city={activeObject?.city || activeProject?.city || ''}
         onCityChange={(city) => {
-          if (activeObject) {
-            updateObject(activeObject.id, { city: city || undefined });
-          } else if (activeProject) {
-            updateActiveProject({ ...activeProject, city });
-          }
+          if (activeObject) updateObject(activeObject.id, { city: city || undefined });
+          else if (activeProject) updateActiveProject({ ...activeProject, city });
         }}
         hasProjects={projects.length > 0}
         onDeleteObject={(id) => {
-          if (window.confirm('Удалить объект? Все комнаты в этом объекте будут удалены.')) {
-            deleteObject(id);
-          }
+          if (window.confirm('Удалить объект? Все комнаты в этом объекте будут удалены.')) deleteObject(id);
         }}
       />
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Mobile header */}
-        <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-          <button data-testid="mobile-menu-btn" onClick={() => setIsLeftMobileMenuOpen(true)} className="cursor-pointer">
-            <Menu className="w-6 h-6 text-gray-600" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 text-sm font-medium truncate">
-              <span className="truncate">{activeProject?.name}</span>
-              {activeTab !== 'summary' && activeProject && (
-                <>
-                  <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-gray-500 truncate">
-                    {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          <button
-            data-testid="mobile-settings-btn"
-            onClick={() => setIsRightMobileMenuOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
-            title="Настройки"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </header>
-
-        {/* Desktop header with breadcrumbs */}
-        <header className="hidden md:flex bg-white border-b border-gray-200 px-4 items-center justify-center relative h-[88px]">
-          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 uppercase">
-            {/* Project name */}
-            <span>
-              {activeProject?.name || ''}
-            </span>
-
-            {/* Object breadcrumb (show if multiple objects or not on summary) */}
-            {activeObject && activeProject?.objects && activeProject.objects.length > 1 && (
-              <>
-                <ChevronRight className="w-5 h-5 text-gray-400 font-normal" />
-                <span className="text-gray-600">{activeObject.name}</span>
-              </>
-            )}
-
-            {/* Room breadcrumb */}
-            {activeTab !== 'summary' && showRoomNameInHeader && activeProject && (
-              <>
-                <ChevronRight className="w-5 h-5 text-gray-400 font-normal" />
-                <span className="text-gray-400 font-normal">
-                  {getAllRooms(activeProject).find(r => r.id === activeTab)?.name}
-                </span>
-              </>
-            )}
-          </div>
-        </header>
-
+        <AppHeader
+          activeTab={activeTab}
+          activeProject={activeProject}
+          activeObject={activeObject}
+          showRoomNameInHeader={showRoomNameInHeader}
+          onOpenLeftMobileMenu={() => setIsLeftMobileMenuOpen(true)}
+          onOpenRightMobileMenu={() => setIsRightMobileMenuOpen(true)}
+        />
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
-            {/* Empty state - no projects */}
-            {projects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Calculator className="w-16 h-16 text-indigo-300 mb-6" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Нет проектов</h2>
-                <p className="text-gray-500 mb-6 text-center max-w-md">
-                  Создайте первый проект, чтобы начать расчёт стоимости ремонта
-                </p>
-                <button
-                  onClick={openCreateProjectModal}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer font-medium"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Создать проект
-                </button>
-              </div>
-            ) : activeTab === 'summary' && activeProject ? (
-              <SummaryView
-                project={activeProject}
-                onRoomClick={(roomId) => setActiveTab(roomId)}
-                groupByObject={activeProject.objects && activeProject.objects.length > 1}
-              />
-            ) : activeProject && getAllRooms(activeProject).find(r => r.id === activeTab) ? (
-              <RoomEditor
-                room={getAllRooms(activeProject).find(r => r.id === activeTab)!}
-                city={activeProject.city}
-                updateRoom={updateRoom}
-                updateRoomById={updateRoomById}
-                deleteRoom={() => handleDeleteRoom(activeTab)}
-                templates={templates}
-                onSaveTemplate={saveTemplate}
-                onLoadTemplate={loadTemplate}
-                onDeleteTemplate={handleDeleteTemplate}
-                isTemplatePickerOpen={isTemplatePickerOpen}
-                onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
-                onCloseTemplatePicker={() => setIsTemplatePickerOpen(false)}
-              />
-            ) : null}
+            <ContentArea
+              projects={projects}
+              activeTab={activeTab}
+              activeProject={activeProject}
+              onCreateProject={() => { openModal('projects'); setIsRightMobileMenuOpen(false); }}
+              onTabChange={setActiveTab}
+              roomEditorProps={{
+                city: activeProject?.city,
+                updateRoom,
+                updateRoomById,
+                onDeleteRoom: currentRoom ? () => handleDeleteRoom(activeTab) : () => {},
+                templates,
+                onSaveTemplate: saveTemplate,
+                onLoadTemplate: loadTemplate,
+                onDeleteTemplate: deleteTemplate,
+                isTemplatePickerOpen,
+                onOpenTemplatePicker: () => openModal('templatePicker'),
+                onCloseTemplatePicker: () => closeModal('templatePicker'),
+              }}
+            />
           </div>
         </div>
       </main>
 
-      {/* Right Sidebar */}
       <RightSidebar
         isMobileMenuOpen={isRightMobileMenuOpen}
         onMobileMenuClose={() => setIsRightMobileMenuOpen(false)}
@@ -329,93 +182,38 @@ function AppContent() {
         activeProjectId={activeProjectId}
         activeProject={activeProject}
         isSyncing={isSyncing}
-        onProjectChange={(id) => {
-          setActiveProjectId(id);
-          setActiveTab('summary');
-        }}
-        onRenameProject={(id, name) => {
-          const updatedProjects = projects.map(p =>
-            p.id === id ? { ...p, name } : p
-          );
-          updateProjects(updatedProjects);
-        }}
-        onDeleteProject={(id) => {
-          setProjectToDeleteId(id);
-        }}
+        onProjectChange={(id) => { setActiveProjectId(id); setActiveTab('summary'); }}
+        onRenameProject={(id, name) => updateProjects(projects.map(p => p.id === id ? { ...p, name } : p))}
+        onDeleteProject={(id) => setProjectToDeleteId(id)}
         onCopyProject={handleCopyProject}
-        onNewProject={openCreateProjectModal}
-        onDataManagement={() => setIsDataManagementModalOpen(true)}
+        onNewProject={() => { openModal('projects'); setIsRightMobileMenuOpen(false); }}
+        onDataManagement={() => openModal('dataManagement')}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
-        onObjectChange={(id) => {
-          setActiveObjectId(id);
-          setActiveTab('summary');
-        }}
+        onObjectChange={(id) => { setActiveObjectId(id); setActiveTab('summary'); }}
         showDeleteConfirm={projectToDeleteId !== null}
         projectToDeleteId={projectToDeleteId}
-        onDeleteConfirm={async () => {
-          if (!projectToDeleteId) return;
-          if (isSyncing) return;
-
-          if (IdMapper.isServerId(projectToDeleteId)) {
-            await deleteProject(projectToDeleteId);
-          }
-          const updatedProjects = projects.filter(p => p.id !== projectToDeleteId);
-          updateProjects(updatedProjects);
-
-          // If the active project was deleted, select the first available one
-          if (projectToDeleteId === activeProjectId && updatedProjects.length > 0) {
-            setActiveProjectId(updatedProjects[0].id);
-          } else if (updatedProjects.length === 0) {
-            setActiveProjectId('');
-          }
-
-          setProjectToDeleteId(null);
-          setActiveTab('summary');
-        }}
+        onDeleteConfirm={handleDeleteProjectConfirm}
         onDeleteCancel={() => setProjectToDeleteId(null)}
         lastSaved={lastSaved}
         lastSavedToServer={lastSavedToServer}
         saveError={saveError}
       />
 
-      {/* Create Object Modal */}
-      {isCreateObjectModalOpen && (
-        <CreateObjectModal
-          onClose={() => setIsCreateObjectModalOpen(false)}
-        />
-      )}
-
-      {/* Projects Modal */}
-      <ProjectsModal
-        isOpen={isProjectsModalOpen}
-        onClose={() => setIsProjectsModalOpen(false)}
-        onImportTemplates={handleImportTemplates}
-      />
-
-      {/* Data Management Modal */}
-      <DataManagementModal
-        isOpen={isDataManagementModalOpen}
-        onClose={() => setIsDataManagementModalOpen(false)}
-        onImportTemplates={handleImportTemplates}
-      />
+      {isCreateObjectModalOpen && <CreateObjectModal onClose={() => closeModal('createObject')} />}
+      <ProjectsModal isOpen={isProjectsModalOpen} onClose={() => closeModal('projects')} onImportTemplates={importTemplates} />
+      <DataManagementModal isOpen={isDataManagementModalOpen} onClose={() => closeModal('dataManagement')} onImportTemplates={importTemplates} />
     </div>
   );
 }
 
-/**
- * Корневой компонент приложения с роутингом аутентификации
- */
 function AppWithAuth() {
   const { isAuthenticated, isLoading, user } = useAuth();
-
-  // Skip auth for E2E tests when test mode flag is set
   const isTestMode = typeof window !== 'undefined' && localStorage.getItem('e2e-test-mode') === 'true';
 
-  // Показываем загрузку пока проверяем авторизацию
   if (isLoading && !isTestMode) {
     return (
       <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
@@ -427,13 +225,8 @@ function AppWithAuth() {
     );
   }
 
-  // Если не авторизован И не тестовый режим — показываем страницы аутентификации
-  if (!isAuthenticated && !isTestMode) {
-    return <AuthPages />;
-  }
+  if (!isAuthenticated && !isTestMode) return <AuthPages />;
 
-  // Если авторизован — показываем основное приложение
-  // key={user?.id} обеспечивает пересоздание ProjectProvider при смене пользователя
   return (
     <ProjectProvider key={user?.id} initialProjects={initialProjects}>
       <WorkTemplateProvider>
@@ -443,10 +236,6 @@ function AppWithAuth() {
   );
 }
 
-/**
- * Корневой компонент приложения.
- * Настраивает провайдеры контекстов и Error Boundary.
- */
 export default function App() {
   return (
     <ErrorBoundary>
