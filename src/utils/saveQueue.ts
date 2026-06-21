@@ -2,7 +2,7 @@
  * SaveQueue — очередь сохранений для предотвращения race conditions
  * Гарантирует последовательное выполнение операций сохранения
  * При нескольких быстрых изменениях — сохраняется только последнее состояние
- * 
+ *
  * Поддерживает персистентность в localStorage для восстановления после перезагрузки
  */
 
@@ -23,10 +23,13 @@ const PENDING_SAVE_KEY = 'repair-calc-pending-save';
  */
 function persistPendingSave(data: unknown): void {
   try {
-    localStorage.setItem(PENDING_SAVE_KEY, JSON.stringify({
-      timestamp: Date.now(),
-      data
-    }));
+    localStorage.setItem(
+      PENDING_SAVE_KEY,
+      JSON.stringify({
+        timestamp: Date.now(),
+        data,
+      }),
+    );
   } catch (error) {
     logError('SaveQueue', 'Ошибка сохранения pending данных', error);
   }
@@ -39,9 +42,9 @@ function loadPendingSave(): { timestamp: number; data: unknown } | null {
   try {
     const stored = localStorage.getItem(PENDING_SAVE_KEY);
     if (!stored) return null;
-    
+
     const parsed = JSON.parse(stored) as { timestamp: number; data: unknown };
-    
+
     // Проверяем, не слишком ли старые данные (старше 1 часа)
     const ONE_HOUR = 60 * 60 * 1000;
     if (Date.now() - parsed.timestamp > ONE_HOUR) {
@@ -49,7 +52,7 @@ function loadPendingSave(): { timestamp: number; data: unknown } | null {
       localStorage.removeItem(PENDING_SAVE_KEY);
       return null;
     }
-    
+
     return parsed;
   } catch (error) {
     logError('SaveQueue', 'Ошибка загрузки pending данных', error);
@@ -77,7 +80,7 @@ class SaveQueue {
     pendingTask: null,
     lastError: null,
   };
-  
+
   private pendingData: unknown | null = null;
 
   constructor() {
@@ -97,14 +100,23 @@ class SaveQueue {
   enqueue(task: SaveTask, dataToPersist?: unknown): void {
     this.state.pendingTask = task;
     this.state.lastError = null;
-    
+
     // Сохраняем данные для персистентности
     if (dataToPersist !== undefined) {
       this.pendingData = dataToPersist;
       persistPendingSave(dataToPersist);
     }
-    
+
     this.processNext();
+  }
+
+  /**
+   * Отменить ожидающую задачу и очистить данные (например, при удалении проекта)
+   */
+  cancelPending(): void {
+    this.state.pendingTask = null;
+    this.pendingData = null;
+    clearPendingSave();
   }
 
   /**
@@ -192,7 +204,7 @@ class SaveQueue {
    * Дождаться завершения всех задач
    */
   async drain(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const checkAndResolve = () => {
         if (!this.state.isProcessing && !this.state.pendingTask) {
           resolve();
