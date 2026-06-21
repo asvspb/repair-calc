@@ -1,7 +1,7 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-06-08
-**Версия приложения:** 1.1
+**Последнее обновление:** 2026-06-21
+**Версия приложения:** 2.0
 
 ---
 
@@ -48,9 +48,8 @@ repair-calc/
 │   │   └── SummaryView.tsx
 │   ├── contexts/                     # React Context
 │   │   ├── AuthContext.tsx           # Аутентификация
-│   │   ├── ProjectContext.tsx        # Управление проектами
 │   │   ├── WorkTemplateContext.tsx   # Шаблоны работ
-│   │   └── index.ts
+│   │   └── index.ts                  # ProjectContext удалён → см. store/
 │   ├── data/
 │   │   ├── initialData.ts           # Начальные данные
 │   │   └── workTemplatesCatalog.ts  # Каталог типовых работ
@@ -82,7 +81,14 @@ repair-calc/
 │   │   ├── saveQueue.ts              # Очередь сохранения
 │   │   ├── storage.ts                # StorageManager
 │   │   └── templateStorage.ts        # Хранилище шаблонов
-│   ├── App.tsx                       # Корневой компонент (~470 строк)
+│   ├── store/                        # Zustand-стор (мигрировано из ProjectContext)
+│   │   ├── useProjectStore.ts        # Композиция слайсов
+│   │   ├── createProjectSlice.ts     # Проекты + persistence + sync-поля
+│   │   ├── createObjectSlice.ts      # Объекты
+│   │   ├── createRoomSlice.ts        # Комнаты
+│   │   ├── createSyncSlice.ts        # Слушатели синхронизации
+│   │   └── types.ts                  # StoreState = Project & Room & Object & Sync
+│   ├── App.tsx                       # Корневой компонент (~276 строк)
 │   ├── main.tsx                      # Точка входа
 │   └── index.css                     # Глобальные стили (TailwindCSS)
 │
@@ -181,26 +187,26 @@ repair-calc/
 
 ### Фронтенд
 
-| Файл | Назначение |
-|------|----------|
-| `src/contexts/ProjectContext.tsx` | Управление состоянием проектов (~981 строка) |
-| `src/contexts/AuthContext.tsx` | Аутентификация пользователя |
-| `src/api/httpClient.ts` | HTTP-клиент (interceptors, retry, timeout) |
-| `src/api/storage/apiStorageProvider.ts` | Синхронизация с сервером (~1036 строк) |
-| `src/utils/storage.ts` | StorageManager (localStorage) |
-| `src/utils/idMapper.ts` | Маппинг локальных/серверных ID |
-| `src/utils/projectObjects.ts` | Object-based helpers (pure functions) |
+| Файл                                    | Назначение                                   |
+| --------------------------------------- | -------------------------------------------- |
+| `src/contexts/ProjectContext.tsx`       | Управление состоянием проектов (~981 строка) |
+| `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                  |
+| `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)   |
+| `src/api/storage/apiStorageProvider.ts` | Синхронизация с сервером (~1036 строк)       |
+| `src/utils/storage.ts`                  | StorageManager (localStorage)                |
+| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID               |
+| `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)        |
 
 ### Бэкенд
 
-| Файл | Назначение |
-|------|----------|
-| `server/src/routes/sync.ts` | Sync API (pull/push) |
-| `server/src/routes/projects.ts` | Projects CRUD |
-| `server/src/routes/update.ts` | Сервис обновлений (2184 строки) |
-| `server/src/config/env.ts` | Конфигурация (DB, JWT, logging) |
-| `server/src/middleware/logger.ts` | Winston логирование |
-| `server/src/middleware/auth.ts` | JWT аутентификация |
+| Файл                              | Назначение                      |
+| --------------------------------- | ------------------------------- |
+| `server/src/routes/sync.ts`       | Sync API (pull/push)            |
+| `server/src/routes/projects.ts`   | Projects CRUD                   |
+| `server/src/routes/update.ts`     | Сервис обновлений (2184 строки) |
+| `server/src/config/env.ts`        | Конфигурация (DB, JWT, logging) |
+| `server/src/middleware/logger.ts` | Winston логирование             |
+| `server/src/middleware/auth.ts`   | JWT аутентификация              |
 
 ---
 
@@ -208,19 +214,19 @@ repair-calc/
 
 ### Таблицы
 
-| Таблица | Назначение |
-|---------|----------|
-| `users` | Пользователи |
-| `projects` | Проекты (user_id, name, description) |
-| `objects` | Объекты недвижимости (project_id, name, city, address) |
-| `rooms` | Комнаты (object_id, name, geometry_mode, dimensions) |
-| `works` | Работы (room_id, name, price, materials) |
-| `materials` | Материалы (work_id, name, quantity, price) |
-| `tools` | Инструменты (work_id, name, price, is_rent) |
-| `openings` | Окна/двери (room_id, type, dimensions) |
-| `ai_requests` | История AI запросов |
-| `deleted_entities` | Отслеживание удалений (30 дней) |
-| `audit_log` | Лог аудита |
+| Таблица            | Назначение                                             |
+| ------------------ | ------------------------------------------------------ |
+| `users`            | Пользователи                                           |
+| `projects`         | Проекты (user_id, name, description)                   |
+| `objects`          | Объекты недвижимости (project_id, name, city, address) |
+| `rooms`            | Комнаты (object_id, name, geometry_mode, dimensions)   |
+| `works`            | Работы (room_id, name, price, materials)               |
+| `materials`        | Материалы (work_id, name, quantity, price)             |
+| `tools`            | Инструменты (work_id, name, price, is_rent)            |
+| `openings`         | Окна/двери (room_id, type, dimensions)                 |
+| `ai_requests`      | История AI запросов                                    |
+| `deleted_entities` | Отслеживание удалений (30 дней)                        |
+| `audit_log`        | Лог аудита                                             |
 
 ### Миграции
 
@@ -240,46 +246,47 @@ server/src/db/migrations/
 
 ### Аутентификация
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| POST | `/api/auth/register` | Регистрация |
-| POST | `/api/auth/login` | Вход |
-| POST | `/api/auth/refresh` | Обновление токена |
-| GET | `/api/auth/me` | Текущий пользователь |
-| POST | `/api/auth/logout` | Выход |
+| Метод | Endpoint             | Описание             |
+| ----- | -------------------- | -------------------- |
+| POST  | `/api/auth/register` | Регистрация          |
+| POST  | `/api/auth/login`    | Вход                 |
+| POST  | `/api/auth/refresh`  | Обновление токена    |
+| GET   | `/api/auth/me`       | Текущий пользователь |
+| POST  | `/api/auth/logout`   | Выход                |
 
 ### Проекты
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/projects` | Список проектов |
-| POST | `/api/projects` | Создание |
-| GET | `/api/projects/:id` | Проект с объектами |
-| PUT | `/api/projects/:id` | Обновление |
-| DELETE | `/api/projects/:id` | Удаление |
+| Метод  | Endpoint            | Описание           |
+| ------ | ------------------- | ------------------ |
+| GET    | `/api/projects`     | Список проектов    |
+| POST   | `/api/projects`     | Создание           |
+| GET    | `/api/projects/:id` | Проект с объектами |
+| PUT    | `/api/projects/:id` | Обновление         |
+| DELETE | `/api/projects/:id` | Удаление           |
 
 ### Объекты
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/objects` | Список объектов |
-| POST | `/api/projects/:projectId/objects` | Создание объекта |
-| GET | `/api/objects/:id` | Объект с комнатами |
-| PUT | `/api/objects/:id` | Обновление |
-| DELETE | `/api/objects/:id` | Удаление |
+| Метод  | Endpoint                           | Описание           |
+| ------ | ---------------------------------- | ------------------ |
+| GET    | `/api/objects`                     | Список объектов    |
+| POST   | `/api/projects/:projectId/objects` | Создание объекта   |
+| GET    | `/api/objects/:id`                 | Объект с комнатами |
+| PUT    | `/api/objects/:id`                 | Обновление         |
+| DELETE | `/api/objects/:id`                 | Удаление           |
 
 ### Синхронизация
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/sync/pull` | Получить данные |
-| POST | `/api/sync/push` | Отправить изменения |
+| Метод | Endpoint         | Описание            |
+| ----- | ---------------- | ------------------- |
+| GET   | `/api/sync/pull` | Получить данные     |
+| POST  | `/api/sync/push` | Отправить изменения |
 
 ---
 
 ## Типы данных
 
 ### ProjectData
+
 ```typescript
 type ProjectData = {
   id: string;
@@ -288,7 +295,7 @@ type ProjectData = {
   isPremium?: boolean;
   objects: ObjectData[];
   version?: number;
-  rooms?: RoomData[];    // Deprecated (обратная совместимость)
+  rooms?: RoomData[]; // Deprecated (обратная совместимость)
   city?: string;
   useAiPricing?: boolean;
   lastAiPriceUpdate?: string;
@@ -296,6 +303,7 @@ type ProjectData = {
 ```
 
 ### ObjectData
+
 ```typescript
 type ObjectData = {
   id: string;
@@ -311,6 +319,7 @@ type ObjectData = {
 ```
 
 ### RoomData
+
 ```typescript
 type RoomData = {
   id: string;
@@ -322,9 +331,9 @@ type RoomData = {
   windows: Opening[];
   doors: Opening[];
   works: WorkData[];
-  segments: RoomSegment[];       // Advanced mode
-  obstacles: Obstacle[];         // Advanced mode
-  wallSections: WallSection[];   // Advanced mode
+  segments: RoomSegment[]; // Advanced mode
+  obstacles: Obstacle[]; // Advanced mode
+  wallSections: WallSection[]; // Advanced mode
   subSections: RoomSubSection[]; // Extended mode
 };
 ```
@@ -334,6 +343,7 @@ type RoomData = {
 ## Технологии
 
 ### Фронтенд
+
 - React 19
 - TypeScript 5.8
 - Vite 6
@@ -342,6 +352,7 @@ type RoomData = {
 - @dnd-kit (drag-and-drop)
 
 ### Бэкенд
+
 - Node.js + Express 4
 - TypeScript
 - MySQL 8
@@ -353,6 +364,7 @@ type RoomData = {
 - bcryptjs (password hashing)
 
 ### Инфраструктура
+
 - Docker / Docker Compose
 - Nginx (фронтенд)
 
@@ -403,6 +415,8 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ## Документация
 
 - [README](./README.md) — Главная документация
+- [docs/AUDIT-2026-06-21.md](./docs/AUDIT-2026-06-21.md) — **Свежий архитектурный аудит** (актуальный снимок после миграции на zustand)
+- [docs/IDEAL-ARCHITECTURE.md](./docs/IDEAL-ARCHITECTURE.md) — **Видение идеальной архитектуры** (v2: FSD-3-слоя, npm workspaces, dirty-flag sync, декомпозиция update.ts, error-архитектура)
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Архитектура проекта
 - [docs/CODE_REVIEW.md](./docs/CODE_REVIEW.md) — Результаты ревью кода
 - [docs/LOGGING.md](./docs/LOGGING.md) — Логирование
@@ -414,27 +428,32 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ## Известные проблемы кода (Code Review 2026-04-17)
 
 ### Критические (Security)
+
 - **S1.** ~~API ключи Gemini/Mistral доступны в клиентском бандле~~ — **ИСПРАВЛЕНО**: AI-вызовы перенесены на серверный прокси `/api/ai/search-price`
 - **S2.** 19 admin endpoints без проверки прав в `server/src/routes/update.ts`
 - **S3.** Слабые fallback JWT секреты в `server/src/config/env.ts`
 
 ### Сломанный код
-- **H1.** `objects.ts` и `users.ts` импортируют несуществующий `fetchJson` из `httpClient`
-- **H2.** `useMaterialCalculation.ts` — вызов hook внутри `useMemo` (Rules of Hooks violation)
-- **H3.** `apiStorageProvider.ts` — `require()` в ESM-модуле
+
+- **H1.** ~~`objects.ts` и `users.ts` импортируют несуществующий `fetchJson`~~ — **ИСПРАВЛЕНО**: `fetchJson` реализован в `httpClient.ts`
+- **H2.** ~~`useMaterialCalculation.ts` — вызов hook внутри `useMemo`~~ — **ИСПРАВЛЕНО**: хук вызывается на верхнем уровне, `useMemo` оборачивает только расчёт
+- **H3.** `apiStorageProvider.ts` — `require()` в ESM-модуле (warning, не исправлено)
 
 ### Дублирование
+
 - ~~`geminiPriceSearch.ts` / `mistralPriceSearch.ts`~~ — **УДАЛЕНО**: клиентские AI-модули удалены, поиск идёт через серверный прокси. Дублирование промптов устранено через `priceSearchHelpers.ts`
 - `parseJSON()` в `projects.ts` и `rooms.ts`
 - `STORAGE_KEYS` в `storage.ts` и `apiStorageProvider.ts`
 - `API_BASE` в `httpClient.ts` и `auth.ts`
 
 ### Мёртвый код
+
 - `src/hooks/useProjects.ts` — дублирует ProjectContext
 - `src/utils/debugLogger.ts` — дублирует logger.ts
 - `src/utils/projectContextPatch.ts` — заменён projectObjects.ts
 
 ### Производительность
+
 - `JSON.stringify` для сравнения объектов в ProjectContext
 - Polling sync errors каждые 5 секунд
 - `getAllRooms()` вызывается многократно без кэширования
@@ -448,6 +467,7 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ## История изменений (кодревью)
 
 ### 2026-04-17: P0-SEC Исправление утечки API-ключей
+
 - **Удалено:** `src/api/prices/geminiPriceSearch.ts`, `src/api/prices/mistralPriceSearch.ts`, `tests/api/geminiPriceSearch.test.ts`
 - **Новое:** `server/src/services/ai/priceSearchHelpers.ts` — общий промпт и парсер для поиска цен
 - **Изменено:** `src/api/prices/unifiedSearch.ts` — запросы через серверный прокси `/api/ai/search-price`
