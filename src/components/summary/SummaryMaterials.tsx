@@ -5,7 +5,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
-import type { ProjectData, Material, WorkData } from '../../types';
+import type { ProjectData, Material, WorkData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
@@ -59,13 +59,16 @@ function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
   return Array.from(materialMap.values()).sort((a, b) => b.totalPrice - a.totalPrice);
 }
 
-const SummaryMaterialsInternal: React.FC<Props> = ({ project, groupByObject: _groupByObject = false }) => {
+const SummaryMaterialsInternal: React.FC<Props> = ({
+  project,
+  groupByObject: _groupByObject = false,
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const materials = useMemo(() => aggregateMaterials(project), [project]);
   const grandTotal = useMemo(
     () => materials.reduce((sum, m) => sum + m.totalPrice, 0),
-    [materials]
+    [materials],
   );
 
   if (materials.length === 0) {
@@ -126,10 +129,7 @@ const SummaryMaterialsInternal: React.FC<Props> = ({ project, groupByObject: _gr
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {material.rooms.slice(0, 2).map((room, i) => (
-                          <span
-                            key={i}
-                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded"
-                          >
+                          <span key={i} className="text-xs px-1.5 py-0.5 bg-gray-100 rounded">
                             {room}
                           </span>
                         ))}
@@ -168,11 +168,15 @@ export const SummaryMaterials = memo(SummaryMaterialsInternal, (prev, next) => {
   const nextRooms = getAllRooms(next.project);
   const prevMaterialsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
-    0
+    0,
   );
   const nextMaterialsCount = nextRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
-    0
+    0,
   );
-  return prevMaterialsCount === nextMaterialsCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
+  return (
+    prevMaterialsCount === nextMaterialsCount &&
+    prevRooms === nextRooms &&
+    prev.groupByObject === next.groupByObject
+  );
 });

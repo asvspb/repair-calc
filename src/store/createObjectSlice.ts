@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { ObjectSlice, StoreState } from './types';
-import type { ObjectData } from '../types';
+import type { ObjectData } from '@shared/types';
 import {
   getObjectFromProject,
   createNewObject,
@@ -10,13 +10,7 @@ import {
   deleteObjectFromProject,
   getFirstObject,
 } from '../utils/projectObjects';
-import {
-  logUserAction,
-  logSuccess,
-  logError,
-  logStateChange,
-  logWarning,
-} from '../utils/logger';
+import { logUserAction, logSuccess, logError, logStateChange, logWarning } from '../utils/logger';
 
 export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = (set, get) => ({
   activeObjectId: null,
@@ -26,10 +20,11 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
     logUserAction('Переключение активного объекта', { objectId: id });
     logStateChange('ProjectContext', 'Активный объект', id);
 
-    set((state) => {
-      const activeObject = state.activeProject && id
-        ? getObjectFromProject(state.activeProject, id)
-        : state.activeProject?.objects?.[0] || null;
+    set(state => {
+      const activeObject =
+        state.activeProject && id
+          ? getObjectFromProject(state.activeProject, id)
+          : state.activeProject?.objects?.[0] || null;
       return { activeObjectId: id, activeObject };
     });
   },
@@ -48,7 +43,7 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
 
     get().updateActiveProject(updatedProject);
 
-    set((state) => {
+    set(state => {
       const activeObject = state.activeProject
         ? getObjectFromProject(state.activeProject, newObject.id)
         : null;
@@ -89,10 +84,11 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
 
     if (activeObjectId === objectId) {
       const firstObj = getFirstObject(updatedProject);
-      set((state) => {
-        const activeObject = state.activeProject && firstObj
-          ? getObjectFromProject(state.activeProject, firstObj.id)
-          : null;
+      set(state => {
+        const activeObject =
+          state.activeProject && firstObj
+            ? getObjectFromProject(state.activeProject, firstObj.id)
+            : null;
         return { activeObjectId: firstObj?.id || null, activeObject };
       });
       logStateChange('ProjectContext', 'Активный объект (после удаления)', get().activeObjectId);

@@ -5,8 +5,8 @@
 
 import React, { memo, useMemo } from 'react';
 import { Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
-import type { ProjectData, WorkData, RoomData } from '../../types';
-import { calculateRoomMetrics } from '../../utils/geometry';
+import type { ProjectData, WorkData, RoomData } from '@shared/types';
+import { calculateRoomMetrics } from '../../domain/geometry/geometry';
 import { CALCULATION_TYPE_LABELS } from '../../types/workTemplate';
 import { getAllRooms } from '../../utils/projectObjects';
 
@@ -64,9 +64,8 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
   const workMap = new Map<string, WorkAggregate>();
 
   // Получаем все комнаты из объектов или из старой структуры
-  const allRooms = project.objects && project.objects.length > 0
-    ? getAllRooms(project)
-    : (project.rooms || []);
+  const allRooms =
+    project.objects && project.objects.length > 0 ? getAllRooms(project) : project.rooms || [];
 
   allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
@@ -76,14 +75,13 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
       const existing = workMap.get(key);
       const count = getWorkCount(work, room);
       const workPrice = count * work.workUnitPrice;
-      const materialPrice = work.materials?.reduce(
-        (sum, m) => sum + m.quantity * m.pricePerUnit,
-        0
-      ) || 0;
-      const toolsPrice = work.tools?.reduce(
-        (sum, t) => sum + t.price * t.quantity * (t.isRent ? (t.rentPeriod || 1) : 1),
-        0
-      ) || 0;
+      const materialPrice =
+        work.materials?.reduce((sum, m) => sum + m.quantity * m.pricePerUnit, 0) || 0;
+      const toolsPrice =
+        work.tools?.reduce(
+          (sum, t) => sum + t.price * t.quantity * (t.isRent ? t.rentPeriod || 1 : 1),
+          0,
+        ) || 0;
 
       if (existing) {
         existing.totalWorkPrice += workPrice;
@@ -105,14 +103,16 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
           totalWorkPrice: workPrice,
           totalMaterialPrice: materialPrice,
           totalToolsPrice: toolsPrice,
-          rooms: [{
-            roomId: room.id,
-            roomName: room.name,
-            count,
-            workPrice,
-            materialPrice,
-            toolsPrice,
-          }],
+          rooms: [
+            {
+              roomId: room.id,
+              roomName: room.name,
+              count,
+              workPrice,
+              materialPrice,
+              toolsPrice,
+            },
+          ],
         });
       }
     });
@@ -126,7 +126,11 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
   });
 }
 
-const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByObject: _groupByObject = false }) => {
+const SummaryWorksInternal: React.FC<Props> = ({
+  project,
+  onRoomClick,
+  groupByObject: _groupByObject = false,
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [expandedWorks, setExpandedWorks] = React.useState<Set<string>>(new Set());
 
@@ -134,15 +138,15 @@ const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByOb
 
   const grandTotalWork = useMemo(
     () => works.reduce((sum, w) => sum + w.totalWorkPrice, 0),
-    [works]
+    [works],
   );
   const grandTotalMaterial = useMemo(
     () => works.reduce((sum, w) => sum + w.totalMaterialPrice, 0),
-    [works]
+    [works],
   );
   const grandTotalTools = useMemo(
     () => works.reduce((sum, w) => sum + w.totalToolsPrice, 0),
-    [works]
+    [works],
   );
   const grandTotal = grandTotalWork + grandTotalMaterial + grandTotalTools;
 
@@ -204,25 +208,32 @@ const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByOb
               <tbody className="divide-y divide-gray-50">
                 {works.map((work, index) => {
                   const isWorkExpanded = expandedWorks.has(work.name);
-                  const workTotal = work.totalWorkPrice + work.totalMaterialPrice + work.totalToolsPrice;
-                  
+                  const workTotal =
+                    work.totalWorkPrice + work.totalMaterialPrice + work.totalToolsPrice;
+
                   return (
                     <React.Fragment key={index}>
-                      <tr 
+                      <tr
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                         onClick={() => toggleWorkExpand(work.name)}
                       >
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {work.rooms.length > 1 ? (
-                              <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isWorkExpanded ? 'rotate-90' : ''}`} />
+                              <ChevronRight
+                                className={`w-4 h-4 text-gray-400 transition-transform ${isWorkExpanded ? 'rotate-90' : ''}`}
+                              />
                             ) : (
                               <span className="w-4" />
                             )}
                             <div>
                               <div className="font-medium text-sm">{work.name}</div>
                               <div className="text-xs text-gray-400">
-                                {work.rooms.length} {work.rooms.length === 1 ? 'комната' : 'комнаты'} • по {CALCULATION_TYPE_LABELS[work.calculationType as keyof typeof CALCULATION_TYPE_LABELS] || work.calculationType}
+                                {work.rooms.length}{' '}
+                                {work.rooms.length === 1 ? 'комната' : 'комнаты'} • по{' '}
+                                {CALCULATION_TYPE_LABELS[
+                                  work.calculationType as keyof typeof CALCULATION_TYPE_LABELS
+                                ] || work.calculationType}
                               </div>
                             </div>
                           </div>
@@ -231,28 +242,31 @@ const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByOb
                           {Math.ceil(work.totalWorkPrice).toLocaleString('ru-RU')} ₽
                         </td>
                         <td className="p-3 text-right text-sm text-emerald-600">
-                          {work.totalMaterialPrice > 0 && `${Math.ceil(work.totalMaterialPrice).toLocaleString('ru-RU')} ₽`}
+                          {work.totalMaterialPrice > 0 &&
+                            `${Math.ceil(work.totalMaterialPrice).toLocaleString('ru-RU')} ₽`}
                         </td>
                         <td className="p-3 text-right text-sm text-amber-600">
-                          {work.totalToolsPrice > 0 && `${Math.ceil(work.totalToolsPrice).toLocaleString('ru-RU')} ₽`}
+                          {work.totalToolsPrice > 0 &&
+                            `${Math.ceil(work.totalToolsPrice).toLocaleString('ru-RU')} ₽`}
                         </td>
                         <td className="p-3 text-right font-medium text-sm">
                           {Math.ceil(workTotal).toLocaleString('ru-RU')} ₽
                         </td>
                       </tr>
-                      
+
                       {/* Развёрнутая детализация по комнатам */}
                       {isWorkExpanded && work.rooms.length > 1 && (
                         <tr className="bg-gray-50/50">
                           <td colSpan={5} className="p-0">
                             <div className="px-6 py-2 space-y-1">
                               {work.rooms.map((room, roomIndex) => {
-                                const roomTotal = room.workPrice + room.materialPrice + room.toolsPrice;
+                                const roomTotal =
+                                  room.workPrice + room.materialPrice + room.toolsPrice;
                                 return (
-                                  <div 
+                                  <div
                                     key={roomIndex}
                                     className="flex items-center justify-between text-xs py-1 hover:bg-white rounded px-2 cursor-pointer"
-                                    onClick={(e) => {
+                                    onClick={e => {
                                       e.stopPropagation();
                                       onRoomClick(room.roomId);
                                     }}
@@ -284,10 +298,12 @@ const SummaryWorksInternal: React.FC<Props> = ({ project, onRoomClick, groupByOb
                     {Math.ceil(grandTotalWork).toLocaleString('ru-RU')} ₽
                   </td>
                   <td className="p-3 text-right font-medium text-emerald-600">
-                    {grandTotalMaterial > 0 && `${Math.ceil(grandTotalMaterial).toLocaleString('ru-RU')} ₽`}
+                    {grandTotalMaterial > 0 &&
+                      `${Math.ceil(grandTotalMaterial).toLocaleString('ru-RU')} ₽`}
                   </td>
                   <td className="p-3 text-right font-medium text-amber-600">
-                    {grandTotalTools > 0 && `${Math.ceil(grandTotalTools).toLocaleString('ru-RU')} ₽`}
+                    {grandTotalTools > 0 &&
+                      `${Math.ceil(grandTotalTools).toLocaleString('ru-RU')} ₽`}
                   </td>
                   <td className="p-3 text-right font-bold">
                     {Math.ceil(grandTotal).toLocaleString('ru-RU')} ₽
@@ -314,11 +330,15 @@ export const SummaryWorks = memo(SummaryWorksInternal, (prev, next) => {
   const nextRooms = getAllRooms(next.project);
   const prevWorksCount = prevRooms.reduce(
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
-    0
+    0,
   );
   const nextWorksCount = nextRooms.reduce(
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
-    0
+    0,
   );
-  return prevWorksCount === nextWorksCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
+  return (
+    prevWorksCount === nextWorksCount &&
+    prevRooms === nextRooms &&
+    prev.groupByObject === next.groupByObject
+  );
 });

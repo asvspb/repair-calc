@@ -2,11 +2,14 @@
  * API клиент для работы с комнатами
  */
 
-import type { RoomData } from '../types';
+import type { RoomData } from '@shared/types';
 import { httpClient, ApiError } from './httpClient';
 
 export class RoomsApiError extends Error {
-  constructor(message: string, public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message);
     this.name = 'RoomsApiError';
   }
@@ -93,10 +96,7 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
   };
 }
 
-async function fetchJson<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {
     return await httpClient.request<T>(endpoint, options);
   } catch (error) {
@@ -111,7 +111,10 @@ async function fetchJson<T>(
 /**
  * Создание комнаты на сервере
  */
-export async function createRoom(projectId: string, room: RoomData): Promise<{ status: string; data: ApiRoom }> {
+export async function createRoom(
+  projectId: string,
+  room: RoomData,
+): Promise<{ status: string; data: ApiRoom }> {
   return fetchJson<{ status: string; data: ApiRoom }>(`/api/projects/${projectId}/rooms`, {
     method: 'POST',
     body: JSON.stringify(clientToApiRoom(room)),
@@ -121,7 +124,10 @@ export async function createRoom(projectId: string, room: RoomData): Promise<{ s
 /**
  * Обновление комнаты на сервере
  */
-export async function updateRoom(roomId: string, room: RoomData): Promise<{ status: string; data: ApiRoom }> {
+export async function updateRoom(
+  roomId: string,
+  room: RoomData,
+): Promise<{ status: string; data: ApiRoom }> {
   return fetchJson<{ status: string; data: ApiRoom }>(`/api/rooms/${roomId}`, {
     method: 'PUT',
     body: JSON.stringify(clientToApiRoom(room)),
@@ -147,12 +153,16 @@ export async function getRoom(roomId: string): Promise<{ status: string; data: A
 /**
  * Синхронизация комнаты - создание или обновление
  */
-export async function syncRoom(projectId: string, room: RoomData, existingRoomIds: Set<string>): Promise<RoomData> {
+export async function syncRoom(
+  projectId: string,
+  room: RoomData,
+  existingRoomIds: Set<string>,
+): Promise<RoomData> {
   const isExisting = existingRoomIds.has(room.id);
-  
+
   // Преобразуем ID комнаты если это локальный ID
   const roomToSend = { ...room };
-  
+
   if (isExisting) {
     // Обновляем существующую комнату
     await updateRoom(room.id, roomToSend);

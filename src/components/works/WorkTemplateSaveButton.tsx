@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Check } from 'lucide-react';
-import type { WorkData } from '../../types';
+import type { WorkData } from '@shared/types';
 import type { SaveResult } from '../../hooks/useWorkTemplates';
 
 type Props = {
@@ -15,9 +15,9 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
 
   const handleClick = () => {
     if (showConfirm) return;
-    
+
     const result = onSave(work, false);
-    
+
     if (result.success) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);

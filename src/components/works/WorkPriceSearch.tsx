@@ -25,12 +25,12 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
   disabled = false,
 }) => {
   const [showModal, setShowModal] = useState(false);
-  const { search, isLoading, result, error, reset, isConfigured, provider: _provider } = usePriceSearch();
+  const { search, isLoading, result, error, reset, isConfigured } = usePriceSearch();
 
   // Обработчик поиска
   const handleSearch = useCallback(() => {
     if (!workName.trim()) return;
-    
+
     search({
       productName: `${workName} (${unit})`,
       city,
@@ -68,8 +68,17 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
 
       {/* Модальное окно с результатами */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowModal(false); reset(); }}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => {
+            setShowModal(false);
+            reset();
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in"
+            onClick={e => e.stopPropagation()}
+          >
             {/* Заголовок */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -91,7 +100,9 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-500">Поиск цен на:</div>
               <div className="font-medium">{workName}</div>
-              <div className="text-sm text-gray-500">Единица: {unit} • Город: {city}</div>
+              <div className="text-sm text-gray-500">
+                Единица: {unit} • Город: {city}
+              </div>
             </div>
 
             {/* Загрузка */}
@@ -133,9 +144,7 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
                     <div className="text-2xl font-bold text-indigo-900">
                       {Math.round(result.prices.avg).toLocaleString('ru-RU')} ₽
                     </div>
-                    <div className="text-sm text-indigo-600">
-                      средняя цена за {unit}
-                    </div>
+                    <div className="text-sm text-indigo-600">средняя цена за {unit}</div>
                     <div className="mt-2 flex justify-center gap-4 text-sm">
                       <span className="text-gray-500">
                         от {Math.round(result.prices.min).toLocaleString('ru-RU')} ₽
@@ -153,10 +162,7 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
                     <div className="text-xs text-gray-500 mb-1">Источники:</div>
                     <div className="flex flex-wrap gap-1">
                       {result.sources.map((source, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-2 py-0.5 bg-gray-100 rounded"
-                        >
+                        <span key={i} className="text-xs px-2 py-0.5 bg-gray-100 rounded">
                           {source}
                         </span>
                       ))}
@@ -172,23 +178,21 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
                       result.confidence === 'high'
                         ? 'bg-green-100 text-green-700'
                         : result.confidence === 'medium'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-gray-100 text-gray-600'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {result.confidence === 'high'
                       ? 'Высокая'
                       : result.confidence === 'medium'
-                      ? 'Средняя'
-                      : 'Низкая'}
+                        ? 'Средняя'
+                        : 'Низкая'}
                   </span>
                 </div>
 
                 {/* Предупреждение */}
                 {result.disclaimer && (
-                  <p className="text-xs text-gray-500 italic">
-                    ⚠️ {result.disclaimer}
-                  </p>
+                  <p className="text-xs text-gray-500 italic">⚠️ {result.disclaimer}</p>
                 )}
 
                 {/* Кнопки действий */}

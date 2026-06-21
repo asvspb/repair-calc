@@ -14,18 +14,22 @@ import { ProjectsModal } from './components/projects';
 import { DataManagementModal } from './components/projects/DataManagementModal';
 import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';
 import { useModalsState } from './hooks/ui/useModalsState';
-import type { RoomData, ObjectData } from './types';
-import { createNewRoom } from './utils/factories';
+
+import { createNewRoom } from './domain/factories/projectFactory';
+import { cloneProject } from './domain/factories/projectFactory';
 import { IdMapper } from './utils/idMapper';
 import { getAllRooms } from './utils/projectObjects';
+import { ConfirmDialog } from './components/ui/ConfirmDialog';
 
 import { initialProjects } from './data/initialData';
 
 function AuthPages() {
   const [isLogin, setIsLogin] = useState(true);
-  return isLogin
-    ? <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
-    : <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />;
+  return isLogin ? (
+    <LoginPage onSwitchToRegister={() => setIsLogin(false)} />
+  ) : (
+    <RegisterPage onSwitchToLogin={() => setIsLogin(true)} />
+  );
 }
 
 function useStoreEffects() {
@@ -36,43 +40,50 @@ function useStoreEffects() {
 }
 
 function AppContent() {
-  const projects = useProjectStore((s) => s.projects);
-  const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProject = useProjectStore((s) => s.activeProject);
-  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId);
-  const updateProjects = useProjectStore((s) => s.updateProjects);
-  const updateActiveProject = useProjectStore((s) => s.updateActiveProject);
-  const updateRoom = useProjectStore((s) => s.updateRoom);
-  const updateRoomById = useProjectStore((s) => s.updateRoomById);
-  const deleteRoom = useProjectStore((s) => s.deleteRoom);
-  const deleteProject = useProjectStore((s) => s.deleteProject);
-  const addRoom = useProjectStore((s) => s.addRoom);
-  const reorderRooms = useProjectStore((s) => s.reorderRooms);
-  const isLoading = useProjectStore((s) => s.isLoading);
-  const lastSaved = useProjectStore((s) => s.lastSaved);
-  const lastSavedToServer = useProjectStore((s) => s.lastSavedToServer);
-  const saveError = useProjectStore((s) => s.saveError);
-  const isSyncing = useProjectStore((s) => s.isSyncing);
-  const activeObjectId = useProjectStore((s) => s.activeObjectId);
-  const activeObject = useProjectStore((s) => s.activeObject);
-  const setActiveObjectId = useProjectStore((s) => s.setActiveObjectId);
-  const updateObject = useProjectStore((s) => s.updateObject);
-  const deleteObject = useProjectStore((s) => s.deleteObject);
+  const projects = useProjectStore(s => s.projects);
+  const activeProjectId = useProjectStore(s => s.activeProjectId);
+  const activeProject = useProjectStore(s => s.activeProject);
+  const setActiveProjectId = useProjectStore(s => s.setActiveProjectId);
+  const updateProjects = useProjectStore(s => s.updateProjects);
+  const updateActiveProject = useProjectStore(s => s.updateActiveProject);
+  const updateRoom = useProjectStore(s => s.updateRoom);
+  const updateRoomById = useProjectStore(s => s.updateRoomById);
+  const deleteRoom = useProjectStore(s => s.deleteRoom);
+  const deleteProject = useProjectStore(s => s.deleteProject);
+  const addRoom = useProjectStore(s => s.addRoom);
+  const reorderRooms = useProjectStore(s => s.reorderRooms);
+  const isLoading = useProjectStore(s => s.isLoading);
+  const lastSaved = useProjectStore(s => s.lastSaved);
+  const lastSavedToServer = useProjectStore(s => s.lastSavedToServer);
+  const saveError = useProjectStore(s => s.saveError);
+  const isSyncing = useProjectStore(s => s.isSyncing);
+  const activeObjectId = useProjectStore(s => s.activeObjectId);
+  const activeObject = useProjectStore(s => s.activeObject);
+  const setActiveObjectId = useProjectStore(s => s.setActiveObjectId);
+  const updateObject = useProjectStore(s => s.updateObject);
+  const deleteObject = useProjectStore(s => s.deleteObject);
 
   useStoreEffects();
 
-  const { templates, saveTemplate, loadTemplate, deleteTemplate, importTemplates } = useWorkTemplateContext();
+  const { templates, saveTemplate, loadTemplate, deleteTemplate, importTemplates } =
+    useWorkTemplateContext();
+  const [objectToDeleteId, setObjectToDeleteId] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<string>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'editor' | 'estimate'>('summary');
   const [isLeftMobileMenuOpen, setIsLeftMobileMenuOpen] = useState(false);
   const [isRightMobileMenuOpen, setIsRightMobileMenuOpen] = useState(false);
 
   const showRoomNameInHeader = useRoomHeaderVisibility(activeTab, activeProject);
 
   const {
-    isTemplatePickerOpen, isCreateObjectModalOpen, isProjectsModalOpen,
-    isDataManagementModalOpen, projectToDeleteId,
-    openModal, closeModal, setProjectToDeleteId,
+    isTemplatePickerOpen,
+    isCreateObjectModalOpen,
+    isProjectsModalOpen,
+    isDataManagementModalOpen,
+    projectToDeleteId,
+    openModal,
+    closeModal,
+    setProjectToDeleteId,
   } = useModalsState();
 
   if (isLoading) {
@@ -103,21 +114,7 @@ function AppContent() {
   const handleCopyProject = (id: string) => {
     const sourceProject = projects.find(p => p.id === id);
     if (!sourceProject) return;
-    const copiedProject = JSON.parse(JSON.stringify(sourceProject));
-    copiedProject.id = `local-${Date.now()}`;
-    copiedProject.name = `${sourceProject.name} (копия)`;
-    if (copiedProject.objects) {
-      copiedProject.objects = copiedProject.objects.map((obj: ObjectData) => ({
-        ...obj,
-        id: `obj-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        projectId: copiedProject.id,
-        rooms: obj.rooms?.map((room: RoomData) => ({
-          ...room,
-          id: `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-          objectId: obj.id,
-        })),
-      }));
-    }
+    const copiedProject = cloneProject(sourceProject);
     updateProjects([...projects, copiedProject]);
     setActiveProjectId(copiedProject.id);
   };
@@ -136,13 +133,18 @@ function AppContent() {
     setActiveTab('summary');
   };
 
-  const currentRoom = activeProject ? getAllRooms(activeProject).find(r => r.id === activeTab) : undefined;
+  const currentRoom = activeProject
+    ? getAllRooms(activeProject).find(r => r.id === activeTab)
+    : undefined;
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row font-sans text-gray-900">
       <LeftSidebar
         activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); setIsLeftMobileMenuOpen(false); }}
+        onTabChange={tab => {
+          setActiveTab(tab);
+          setIsLeftMobileMenuOpen(false);
+        }}
         onAddRoom={handleAddRoom}
         isMobileMenuOpen={isLeftMobileMenuOpen}
         onMobileMenuClose={() => setIsLeftMobileMenuOpen(false)}
@@ -151,16 +153,19 @@ function AppContent() {
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
-        onObjectChange={(id) => { setActiveObjectId(id); setActiveTab('summary'); }}
+        onObjectChange={id => {
+          setActiveObjectId(id);
+          setActiveTab('summary');
+        }}
         onAddObject={() => openModal('createObject')}
         city={activeObject?.city || activeProject?.city || ''}
-        onCityChange={(city) => {
+        onCityChange={city => {
           if (activeObject) updateObject(activeObject.id, { city: city || undefined });
           else if (activeProject) updateActiveProject({ ...activeProject, city });
         }}
         hasProjects={projects.length > 0}
-        onDeleteObject={(id) => {
-          if (window.confirm('Удалить объект? Все комнаты в этом объекте будут удалены.')) deleteObject(id);
+        onDeleteObject={id => {
+          setObjectToDeleteId(id);
         }}
       />
 
@@ -179,7 +184,10 @@ function AppContent() {
               projects={projects}
               activeTab={activeTab}
               activeProject={activeProject}
-              onCreateProject={() => { openModal('projects'); setIsRightMobileMenuOpen(false); }}
+              onCreateProject={() => {
+                openModal('projects');
+                setIsRightMobileMenuOpen(false);
+              }}
               onTabChange={setActiveTab}
               roomEditorProps={{
                 city: activeProject?.city,
@@ -206,18 +214,29 @@ function AppContent() {
         activeProjectId={activeProjectId}
         activeProject={activeProject}
         isSyncing={isSyncing}
-        onProjectChange={(id) => { setActiveProjectId(id); setActiveTab('summary'); }}
-        onRenameProject={(id, name) => updateProjects(projects.map(p => p.id === id ? { ...p, name } : p))}
-        onDeleteProject={(id) => setProjectToDeleteId(id)}
+        onProjectChange={id => {
+          setActiveProjectId(id);
+          setActiveTab('summary');
+        }}
+        onRenameProject={(id, name) =>
+          updateProjects(projects.map(p => (p.id === id ? { ...p, name } : p)))
+        }
+        onDeleteProject={id => setProjectToDeleteId(id)}
         onCopyProject={handleCopyProject}
-        onNewProject={() => { openModal('projects'); setIsRightMobileMenuOpen(false); }}
+        onNewProject={() => {
+          openModal('projects');
+          setIsRightMobileMenuOpen(false);
+        }}
         onDataManagement={() => openModal('dataManagement')}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         objects={activeProject?.objects || []}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
-        onObjectChange={(id) => { setActiveObjectId(id); setActiveTab('summary'); }}
+        onObjectChange={id => {
+          setActiveObjectId(id);
+          setActiveTab('summary');
+        }}
         showDeleteConfirm={projectToDeleteId !== null}
         projectToDeleteId={projectToDeleteId}
         onDeleteConfirm={handleDeleteProjectConfirm}
@@ -228,15 +247,41 @@ function AppContent() {
       />
 
       {isCreateObjectModalOpen && <CreateObjectModal onClose={() => closeModal('createObject')} />}
-      <ProjectsModal isOpen={isProjectsModalOpen} onClose={() => closeModal('projects')} onImportTemplates={importTemplates} />
-      <DataManagementModal isOpen={isDataManagementModalOpen} onClose={() => closeModal('dataManagement')} onImportTemplates={importTemplates} />
+      <ProjectsModal
+        isOpen={isProjectsModalOpen}
+        onClose={() => closeModal('projects')}
+        onImportTemplates={importTemplates}
+      />
+      <DataManagementModal
+        isOpen={isDataManagementModalOpen}
+        onClose={() => closeModal('dataManagement')}
+        onImportTemplates={importTemplates}
+      />
+
+      <ConfirmDialog
+        isOpen={!!objectToDeleteId}
+        title="Удалить объект?"
+        message="Все комнаты в этом объекте будут удалены."
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        isDestructive={true}
+        onConfirm={() => {
+          if (objectToDeleteId) {
+            deleteObject(objectToDeleteId);
+            setObjectToDeleteId(null);
+          }
+        }}
+        onCancel={() => setObjectToDeleteId(null)}
+      />
     </div>
   );
 }
 
 function AppWithAuth() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const isTestMode = typeof window !== 'undefined' && localStorage.getItem('e2e-test-mode') === 'true';
+  const isTestMode =
+    import.meta.env.VITE_E2E_TEST_MODE === 'true' ||
+    (import.meta.env.MODE !== 'production' && localStorage.getItem('e2e-test-mode') === 'true');
 
   useEffect(() => {
     if (!isLoading) {

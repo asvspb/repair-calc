@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Cloud, CloudOff, Edit2, Check, X as XIcon, Trash2 } from 'lucide-react';
-import type { ProjectData } from '../../types';
+import type { ProjectData } from '@shared/types';
 import { IdMapper } from '../../utils/idMapper';
 
 type ProjectSettingsProps = {
@@ -57,8 +57,8 @@ export function ProjectSettings({
           <input
             type="text"
             value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setEditedName(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Enter') {
                 saveName();
               } else if (e.key === 'Escape') {
@@ -92,17 +92,22 @@ export function ProjectSettings({
               {IdMapper.isServerId(activeProjectId) ? (
                 <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
               ) : (
-                <CloudOff className="w-4 h-4 text-amber-500" title="Локальный проект (не синхронизирован)" />
+                <CloudOff
+                  className="w-4 h-4 text-amber-500"
+                  title="Локальный проект (не синхронизирован)"
+                />
               )}
             </div>
           )}
           <select
             value={activeProjectId}
-            onChange={(e) => onProjectChange(e.target.value)}
+            onChange={e => onProjectChange(e.target.value)}
             className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
           >
             {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
             ))}
           </select>
         </div>

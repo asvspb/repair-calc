@@ -6,7 +6,8 @@
 import React, { memo, useState, useMemo } from 'react';
 import { Droplet, Layers, Info, RefreshCw } from 'lucide-react';
 import { NumberInput } from '../ui/NumberInput';
-import type { Material, RoomMetrics } from '../../types';
+import type { RoomMetrics } from '../../types';
+import type { Material } from '@shared/types';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 
@@ -34,13 +35,11 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
   onRemove,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedCanSize, setSelectedCanSize] = useState<number>(
-    material.packageSize || 10
-  );
+  const [selectedCanSize, setSelectedCanSize] = useState<number>(material.packageSize || 10);
 
   // Определяем площадь для расчёта
   const area = getAreaForType(calculationType, metrics);
-  
+
   // Параметры краски
   const consumptionRate = material.consumptionRate || 0.006; // л/м² по умолчанию
   const layers = material.layers || 2;
@@ -51,10 +50,10 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
     const rawQty = area * consumptionRate * layers;
     const withWaste = rawQty * (1 + wastePercent / 100);
     const total = Math.ceil(withWaste * 100) / 100;
-    
+
     // Подбираем количество банок
     const cansNeeded = Math.ceil(total / selectedCanSize);
-    
+
     return {
       totalLiters: total,
       cansNeeded,
@@ -87,11 +86,11 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
       <div className="flex-1 min-w-[140px]">
         <input
           value={material.name}
-          onChange={(e) => onChange('name', e.target.value)}
+          onChange={e => onChange('name', e.target.value)}
           placeholder="Название краски"
           className="w-full px-1 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none text-sm"
         />
-        
+
         {/* Параметры слоёв */}
         <div className="mt-1 flex items-center gap-2">
           <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -99,7 +98,7 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
             <span>Слои:</span>
             <select
               value={layers}
-              onChange={(e) => onChange('layers', parseInt(e.target.value))}
+              onChange={e => onChange('layers', parseInt(e.target.value))}
               className="bg-transparent border-b border-gray-200 focus:border-purple-500 outline-none text-xs"
             >
               <option value={1}>1</option>
@@ -108,7 +107,7 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
               <option value={4}>4</option>
             </select>
           </div>
-          
+
           <button
             onClick={() => setShowDetails(!showDetails)}
             className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -145,10 +144,10 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
 
       {/* Варианты упаковки */}
       <div className="w-full ml-5 flex flex-wrap gap-1.5 my-2">
-        {STANDARD_CAN_SIZES.map((size) => {
+        {STANDARD_CAN_SIZES.map(size => {
           const cans = Math.ceil(calculation.totalLiters / size);
           const isSelected = selectedCanSize === size;
-          
+
           return (
             <button
               key={size}
@@ -185,7 +184,7 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
       <div className="flex items-center gap-1">
         <NumberInput
           value={material.quantity}
-          onChange={(v) => onChange('quantity', v)}
+          onChange={v => onChange('quantity', v)}
           className="w-14 text-sm py-1"
           min={1}
         />
@@ -196,7 +195,7 @@ const PaintMaterialCardInternal: React.FC<Props> = ({
         <span className="text-gray-400 text-xs">×</span>
         <NumberInput
           value={material.pricePerUnit}
-          onChange={(v) => onChange('pricePerUnit', v)}
+          onChange={v => onChange('pricePerUnit', v)}
           className="w-20 text-sm py-1"
           step={0.1}
         />

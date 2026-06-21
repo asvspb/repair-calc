@@ -20,7 +20,10 @@ vi.mock('../../src/api/httpClient', () => ({
     request: vi.fn().mockResolvedValue({ data: [] }),
   },
   ApiError: class ApiError extends Error {
-    constructor(public message: string, public statusCode: number) {
+    constructor(
+      public message: string,
+      public statusCode: number,
+    ) {
       super(message);
       this.name = 'ApiError';
     }
@@ -29,8 +32,8 @@ vi.mock('../../src/api/httpClient', () => ({
 
 vi.mock('../../src/utils/storage', () => ({
   StorageManager: {
-    loadProjects: vi.fn().mockReturnValue(null),
-    loadActiveProject: vi.fn().mockReturnValue(null),
+    loadProjectsAsync: vi.fn().mockResolvedValue(null),
+    loadActiveProjectAsync: vi.fn().mockResolvedValue(null),
     saveProjects: vi.fn(),
     saveActiveProject: vi.fn(),
   },
@@ -60,7 +63,8 @@ vi.mock('../../src/utils/logger', () => ({
 
 vi.mock('../../src/utils/saveQueue', () => ({
   saveQueue: {
-    enqueue: vi.fn((fn: () => Promise<void>) => fn()),
+    enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
     hasPendingData: false,
     getPendingData: vi.fn(() => null),
   },
@@ -87,19 +91,22 @@ vi.mock('../../src/utils/projectObjects', () => {
     reorderRoomsInProject: vi.fn(),
   };
 
-  const { updateRoomInProject, addRoomToProject, deleteRoomFromProject, reorderRoomsInProject } = actual;
+  const { updateRoomInProject, addRoomToProject, deleteRoomFromProject, reorderRoomsInProject } =
+    actual;
 
-  updateRoomInProject.mockImplementation((project: ProjectData, roomId: string, updater: (room: RoomData) => RoomData) => {
-    const newObjects = project.objects.map(obj => ({
-      ...obj,
-      rooms: obj.rooms.map((r: RoomData) => r.id === roomId ? updater(r) : r),
-    }));
-    return { ...project, objects: newObjects };
-  });
+  updateRoomInProject.mockImplementation(
+    (project: ProjectData, roomId: string, updater: (room: RoomData) => RoomData) => {
+      const newObjects = project.objects.map(obj => ({
+        ...obj,
+        rooms: obj.rooms.map((r: RoomData) => (r.id === roomId ? updater(r) : r)),
+      }));
+      return { ...project, objects: newObjects };
+    },
+  );
 
   addRoomToProject.mockImplementation((project: ProjectData, room: RoomData) => {
     const newObjects = project.objects.map((obj, i: number) =>
-      i === 0 ? { ...obj, rooms: [...obj.rooms, room] } : obj
+      i === 0 ? { ...obj, rooms: [...obj.rooms, room] } : obj,
     );
     return { ...project, objects: newObjects };
   });
@@ -112,37 +119,55 @@ vi.mock('../../src/utils/projectObjects', () => {
     return { ...project, objects: newObjects };
   });
 
-  reorderRoomsInProject.mockImplementation((project: ProjectData, objectId: string, rooms: RoomData[]) => {
-    const newObjects = project.objects.map(obj =>
-      obj.id === objectId ? { ...obj, rooms } : obj
-    );
-    return { ...project, objects: newObjects };
-  });
+  reorderRoomsInProject.mockImplementation(
+    (project: ProjectData, objectId: string, rooms: RoomData[]) => {
+      const newObjects = project.objects.map(obj =>
+        obj.id === objectId ? { ...obj, rooms } : obj,
+      );
+      return { ...project, objects: newObjects };
+    },
+  );
 
   return actual;
 });
 
-vi.mock('../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
-vi.mock('../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
 import { StorageManager } from '../../src/utils/storage';
 
 const createTestRoom = (id: string, name: string): RoomData => ({
-  id, name, length: 5, width: 4, height: 3,
-  windows: [], doors: [], works: [], segments: [],
-  obstacles: [], wallSections: [], subSections: [],
+  id,
+  name,
+  length: 5,
+  width: 4,
+  height: 3,
+  windows: [],
+  doors: [],
+  works: [],
+  segments: [],
+  obstacles: [],
+  wallSections: [],
+  subSections: [],
   geometryMode: 'simple',
 });
 
 const createTestProject = (id: string, name: string): ProjectData => ({
-  id, name,
-  objects: [{
-    id: 'obj-1',
-    projectId: id,
-    name,
-    rooms: [createTestRoom('room-1', 'Living Room')],
-  }],
+  id,
+  name,
+  objects: [
+    {
+      id: 'obj-1',
+      projectId: id,
+      name,
+      rooms: [createTestRoom('room-1', 'Living Room')],
+    },
+  ],
 });
 
 async function setupStore(isAuthenticated = false) {
@@ -155,8 +180,8 @@ describe('ProjectContext - Auto-save totals (Zustand)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.clearAllTimers();
-    (StorageManager.loadProjects as ReturnType<typeof vi.fn>).mockReturnValue(null);
-    (StorageManager.loadActiveProject as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (StorageManager.loadProjectsAsync as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (StorageManager.loadActiveProjectAsync as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     mockSaveTotals.mockResolvedValue(undefined);
   });
 
@@ -208,8 +233,9 @@ describe('ProjectContext - Auto-save totals (Zustand)', () => {
     it('should update room by ID with updater function', async () => {
       await setupStore(false);
 
-      useProjectStore.getState().updateRoomById('room-1', (prev) => ({
-        ...prev, length: 10,
+      useProjectStore.getState().updateRoomById('room-1', prev => ({
+        ...prev,
+        length: 10,
       }));
 
       const project = useProjectStore.getState().activeProject;
@@ -277,7 +303,9 @@ describe('ProjectContext - Auto-save totals (Zustand)', () => {
   describe('cleanup', () => {
     it('should reset store without errors', () => {
       resetStore();
-      expect(() => { resetStore(); }).not.toThrow();
+      expect(() => {
+        resetStore();
+      }).not.toThrow();
     });
   });
 });

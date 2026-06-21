@@ -6,11 +6,9 @@
 import React, { memo, useState } from 'react';
 import { RefreshCw, Info, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-react';
 import { NumberInput } from '../ui/NumberInput';
-import type { Material, RoomMetrics } from '../../types';
-import {
-  useMaterialCalculation,
-  formatFormula,
-} from '../../hooks/useMaterialCalculation';
+import type { RoomMetrics } from '../../types';
+import type { Material } from '@shared/types';
+import { useMaterialCalculation, formatFormula } from '../../hooks/useMaterialCalculation';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 
@@ -37,7 +35,7 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
   onRemove,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-  
+
   // Вычисляем рекомендованное количество
   const calculation = useMaterialCalculation({
     material,
@@ -50,8 +48,8 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
   const area = getDisplayArea(calculationType, metrics);
 
   // Проверяем, отличается ли текущее количество от рекомендованного
-  const hasDifference = calculation.isCalculated && 
-    Math.abs(material.quantity - calculation.recommendedQty) > 0.01;
+  const hasDifference =
+    calculation.isCalculated && Math.abs(material.quantity - calculation.recommendedQty) > 0.01;
 
   // Обработчик применения рекомендованного количества
   const handleApplyRecommended = () => {
@@ -70,9 +68,7 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
   return (
     <div className="flex flex-wrap items-start gap-2 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
       {/* Номер */}
-      <span className="text-xs text-gray-400 w-5 pt-1.5">
-        {index + 1}.
-      </span>
+      <span className="text-xs text-gray-400 w-5 pt-1.5">{index + 1}.</span>
 
       {/* Название материала */}
       <div className="flex-1 min-w-[140px]">
@@ -80,21 +76,19 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
           <MaterialIcon className="w-4 h-4 text-gray-400" />
           <input
             value={material.name}
-            onChange={(e) => onChange('name', e.target.value)}
+            onChange={e => onChange('name', e.target.value)}
             placeholder="Название материала"
             className="w-full px-1 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none text-sm"
           />
         </div>
-        
+
         {/* Параметры расчёта */}
         {calculation.canAutoCalculate && (
           <div className="mt-1 flex items-center gap-2">
             <button
               onClick={handleToggleAutoCalc}
               className={`flex items-center gap-1 text-xs cursor-pointer transition-colors ${
-                material.autoCalcEnabled 
-                  ? 'text-indigo-600' 
-                  : 'text-gray-400 hover:text-gray-600'
+                material.autoCalcEnabled ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
               }`}
               title={material.autoCalcEnabled ? 'Авто-расчёт включён' : 'Авто-расчёт выключен'}
             >
@@ -105,7 +99,7 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
               )}
               Авто
             </button>
-            
+
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -132,7 +126,9 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
           {material.consumptionRate && (
             <div className="flex justify-between text-gray-600">
               <span>Расход:</span>
-              <span>{material.consumptionRate} {material.unit}/м²</span>
+              <span>
+                {material.consumptionRate} {material.unit}/м²
+              </span>
             </div>
           )}
           {material.layers && material.layers > 1 && (
@@ -149,9 +145,7 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
           )}
           <div className="border-t border-indigo-100 pt-1 mt-1">
             <span className="text-gray-500">Формула: </span>
-            <span className="text-indigo-600 font-mono">
-              {formatFormula(calculation.formula)}
-            </span>
+            <span className="text-indigo-600 font-mono">{formatFormula(calculation.formula)}</span>
           </div>
         </div>
       )}
@@ -161,7 +155,10 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
         <div className="w-full ml-5 flex items-center gap-2 p-2 bg-amber-50 rounded text-xs">
           <Lightbulb className="w-4 h-4 text-amber-500" />
           <span className="text-amber-700">
-            Рекомендуется: <strong>{calculation.recommendedQty} {material.unit}</strong>
+            Рекомендуется:{' '}
+            <strong>
+              {calculation.recommendedQty} {material.unit}
+            </strong>
           </span>
           <button
             onClick={handleApplyRecommended}
@@ -177,13 +174,13 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
       <div className="flex items-center gap-1">
         <NumberInput
           value={material.quantity}
-          onChange={(v) => onChange('quantity', v)}
+          onChange={v => onChange('quantity', v)}
           className="w-16 text-sm py-1"
           step={0.1}
         />
         <input
           value={material.unit}
-          onChange={(e) => onChange('unit', e.target.value)}
+          onChange={e => onChange('unit', e.target.value)}
           className="w-12 px-1 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none text-sm text-center"
           placeholder="ед."
         />
@@ -194,7 +191,7 @@ const MaterialCalculationCardInternal: React.FC<Props> = ({
         <span className="text-gray-400 text-xs">×</span>
         <NumberInput
           value={material.pricePerUnit}
-          onChange={(v) => onChange('pricePerUnit', v)}
+          onChange={v => onChange('pricePerUnit', v)}
           className="w-20 text-sm py-1"
           step={0.1}
         />
@@ -252,32 +249,56 @@ function getMaterialType(material: Material): MaterialType {
 function getMaterialIcon(type: MaterialType): React.FC<{ className?: string }> {
   const icons: Record<MaterialType, React.FC<{ className?: string }>> = {
     coverage: ({ className }) => (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <line x1="3" y1="12" x2="21" y2="12" />
         <line x1="12" y1="3" x2="12" y2="21" />
       </svg>
     ),
     consumption: ({ className }) => (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M12 2v20M2 12h20" />
         <circle cx="12" cy="12" r="4" />
       </svg>
     ),
     perimeter: ({ className }) => (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M3 3h18v18H3z" />
         <path d="M3 9h18M9 3v18" strokeDasharray="4 2" />
       </svg>
     ),
     custom: ({ className }) => (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <path d="M12 8v4l2 2" />
       </svg>
     ),
   };
-  
+
   return icons[type];
 }
 

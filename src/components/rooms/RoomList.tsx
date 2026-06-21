@@ -7,13 +7,9 @@ import {
   useSensors,
   closestCenter,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { RoomListItem } from './RoomListItem';
-import type { RoomData } from '../../types';
+import type { RoomData } from '@shared/types';
 
 type RoomListProps = {
   rooms: RoomData[];
@@ -33,15 +29,15 @@ export const RoomList: React.FC<RoomListProps> = ({
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = rooms.findIndex((r) => r.id === active.id);
-      const newIndex = rooms.findIndex((r) => r.id === over.id);
+      const oldIndex = rooms.findIndex(r => r.id === active.id);
+      const newIndex = rooms.findIndex(r => r.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newRooms = arrayMove(rooms, oldIndex, newIndex);
@@ -51,14 +47,10 @@ export const RoomList: React.FC<RoomListProps> = ({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={rooms.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={rooms.map(r => r.id)} strategy={verticalListSortingStrategy}>
         <div>
-          {rooms.map((room) => (
+          {rooms.map(room => (
             <RoomListItem
               key={room.id}
               room={room}

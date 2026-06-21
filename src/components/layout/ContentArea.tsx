@@ -3,7 +3,7 @@ import { Calculator } from 'lucide-react';
 import { SummaryView } from '../SummaryView';
 import { RoomEditor } from '../RoomEditor';
 import { getAllRooms } from '../../utils/projectObjects';
-import type { ProjectData, RoomData } from '../../types';
+import type { ProjectData, RoomData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
 
 interface ContentAreaProps {

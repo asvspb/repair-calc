@@ -35,21 +35,38 @@ vi.mock('../../src/api/storage', () => ({
 
 vi.mock('../../src/api/totals', () => ({ saveTotals: vi.fn() }));
 vi.mock('../../src/utils/logger', () => ({
-  logUserAction: vi.fn(), logSuccess: vi.fn(), logError: vi.fn(),
-  logStart: vi.fn(() => Date.now()), logEnd: vi.fn(), logStateChange: vi.fn(),
-  logWarning: vi.fn(), logDebug: vi.fn(),
+  logUserAction: vi.fn(),
+  logSuccess: vi.fn(),
+  logError: vi.fn(),
+  logStart: vi.fn(() => Date.now()),
+  logEnd: vi.fn(),
+  logStateChange: vi.fn(),
+  logWarning: vi.fn(),
+  logDebug: vi.fn(),
 }));
-vi.mock('../../src/utils/migration', () => ({ runMigrations: vi.fn(), needsMigration: vi.fn(() => false) }));
+vi.mock('../../src/utils/migration', () => ({
+  runMigrations: vi.fn(),
+  needsMigration: vi.fn(() => false),
+}));
 vi.mock('../../src/utils/idMapper', () => ({
   idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
   IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
   isServerId: vi.fn(),
 }));
 vi.mock('../../src/utils/saveQueue', () => ({
-  saveQueue: { enqueue: vi.fn((task: () => Promise<void>) => task()), hasPendingData: false, getPendingData: vi.fn() },
+  saveQueue: {
+    enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
+    hasPendingData: false,
+    getPendingData: vi.fn(),
+  },
 }));
-vi.mock('../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
-vi.mock('../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 vi.mock('../../src/utils/projectObjects', async () => {
   const actual = await vi.importActual('../../src/utils/projectObjects');
   return {
@@ -62,9 +79,15 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
@@ -88,15 +111,13 @@ const mockAuthValue: AuthContextValue = {
 };
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <AuthContext.Provider value={mockAuthValue}>
-    {children}
-  </AuthContext.Provider>
+  <AuthContext.Provider value={mockAuthValue}>{children}</AuthContext.Provider>
 );
 
 const TestComponent: React.FC = () => {
-  const projects = useProjectStore((s) => s.projects);
-  const activeProject = useProjectStore((s) => s.activeProject);
-  const isLoading = useProjectStore((s) => s.isLoading);
+  const projects = useProjectStore(s => s.projects);
+  const activeProject = useProjectStore(s => s.activeProject);
+  const isLoading = useProjectStore(s => s.isLoading);
 
   const createProject = () => {
     const newProject: ProjectData = {
@@ -115,9 +136,16 @@ const TestComponent: React.FC = () => {
     const newRoom: RoomData = {
       id: crypto.randomUUID(),
       name: 'New Room',
-      length: 5, width: 4, height: 3,
-      segments: [], obstacles: [], wallSections: [], subSections: [],
-      windows: [], doors: [], works: [],
+      length: 5,
+      width: 4,
+      height: 3,
+      segments: [],
+      obstacles: [],
+      wallSections: [],
+      subSections: [],
+      windows: [],
+      doors: [],
+      works: [],
     };
     useProjectStore.getState().addRoom(newRoom);
   };
@@ -153,7 +181,7 @@ describe('Project-Work Integration', () => {
       render(
         <TestWrapper>
           <TestComponent />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -176,7 +204,7 @@ describe('Project-Work Integration', () => {
       render(
         <TestWrapper>
           <TestComponent />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -204,7 +232,7 @@ describe('Project-Work Integration', () => {
       render(
         <TestWrapper>
           <TestComponent />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -240,7 +268,7 @@ describe('Template Integration', () => {
         <WorkTemplateProvider>
           <TestComponent />
         </WorkTemplateProvider>
-      </AuthContext.Provider>
+      </AuthContext.Provider>,
     );
 
     await waitFor(() => {

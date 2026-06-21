@@ -7,13 +7,9 @@ import {
   useSensors,
   closestCenter,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { WorkListItem } from './WorkListItem';
-import type { WorkData } from '../../types';
+import type { WorkData } from '@shared/types';
 
 type WorkListProps = {
   works: WorkData[];
@@ -25,7 +21,10 @@ type WorkListProps = {
   onReorderWorks: (works: WorkData[]) => void;
   onToggleExpand: (id: string) => void;
   renderExpandedContent?: (work: WorkData) => React.ReactNode;
-  onSaveTemplate?: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
+  onSaveTemplate?: (
+    work: WorkData,
+    forceReplace: boolean,
+  ) => { success: boolean; error?: string; needsConfirm?: boolean };
 };
 
 export const WorkList: React.FC<WorkListProps> = ({
@@ -45,15 +44,15 @@ export const WorkList: React.FC<WorkListProps> = ({
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = works.findIndex((w) => w.id === active.id);
-      const newIndex = works.findIndex((w) => w.id === over.id);
+      const oldIndex = works.findIndex(w => w.id === active.id);
+      const newIndex = works.findIndex(w => w.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newWorks = arrayMove(works, oldIndex, newIndex);
@@ -63,14 +62,10 @@ export const WorkList: React.FC<WorkListProps> = ({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={works.map((w) => w.id)} strategy={verticalListSortingStrategy}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={works.map(w => w.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
-          {works.map((work) => (
+          {works.map(work => (
             <div key={work.id}>
               <WorkListItem
                 work={work}
@@ -83,7 +78,10 @@ export const WorkList: React.FC<WorkListProps> = ({
                 onSaveTemplate={onSaveTemplate}
               />
               {renderExpandedContent && expandedWorks.has(work.id) && (
-                <div data-testid={`work-expanded-${work.id}`} className="mt-3 ml-8 pl-4 border-l-2 border-indigo-100">
+                <div
+                  data-testid={`work-expanded-${work.id}`}
+                  className="mt-3 ml-8 pl-4 border-l-2 border-indigo-100"
+                >
                   {renderExpandedContent(work)}
                 </div>
               )}

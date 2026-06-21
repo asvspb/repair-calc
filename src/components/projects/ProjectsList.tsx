@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FolderOpen, Edit2, Check, X as XIcon, Copy, Trash2, Plus } from 'lucide-react';
-import type { ProjectData } from '../../types';
+import type { ProjectData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -82,9 +82,7 @@ export function ProjectsList({
               key={project.id}
               data-testid={`project-item-${project.id}`}
               className={`group px-4 py-2.5 border-t border-gray-100 transition-colors ${
-                isActive
-                  ? 'bg-indigo-50'
-                  : 'hover:bg-gray-50'
+                isActive ? 'bg-indigo-50' : 'hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -94,10 +92,10 @@ export function ProjectsList({
                     <input
                       type="text"
                       value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
+                      onChange={e => setEditingName(e.target.value)}
                       className="flex-1 px-2 py-1 text-sm border border-indigo-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       autoFocus
-                      onKeyDown={(e) => {
+                      onKeyDown={e => {
                         if (e.key === 'Enter') saveName(project.id);
                         if (e.key === 'Escape') cancelEditing();
                       }}
@@ -123,14 +121,20 @@ export function ProjectsList({
                     className="flex-1 text-left min-w-0 cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
-                      <FolderOpen className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
-                      <span className={`text-sm font-medium truncate ${isActive ? 'text-indigo-700' : 'text-gray-700'}`}>
+                      <FolderOpen
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
+                      />
+                      <span
+                        className={`text-sm font-medium truncate ${isActive ? 'text-indigo-700' : 'text-gray-700'}`}
+                      >
                         {project.name}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {stats.objectsCount} {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
-                      {stats.roomsCount > 0 && `, ${stats.roomsCount} ${pluralize(stats.roomsCount, 'комната', 'комнаты', 'комнат')}`}
+                      {stats.objectsCount}{' '}
+                      {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
+                      {stats.roomsCount > 0 &&
+                        `, ${stats.roomsCount} ${pluralize(stats.roomsCount, 'комната', 'комнаты', 'комнат')}`}
                     </div>
                   </button>
                 )}

@@ -1,6 +1,19 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Download, Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, X, Database, Trash2, RefreshCw, Save, FolderOpen } from 'lucide-react';
-import type { ProjectData } from '../types';
+import {
+  Download,
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckCircle,
+  X,
+  Database,
+  Trash2,
+  RefreshCw,
+  Save,
+  FolderOpen,
+} from 'lucide-react';
+import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../types/workTemplate';
 import { StorageManager, countImportedObjects } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,7 +52,13 @@ type ServerProject = {
   updated_at: string;
 };
 
-export function BackupManager({ projects, activeProjectId, onImport, onClearAll, onImportTemplates }: BackupManagerProps) {
+export function BackupManager({
+  projects,
+  activeProjectId,
+  onImport,
+  onClearAll,
+  onImportTemplates,
+}: BackupManagerProps) {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
@@ -76,7 +95,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
   // Save to database
   const handleSaveToDb = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     setIsSavingToDb(true);
     try {
       const apiProvider = ApiStorageProvider.getInstance();
@@ -99,12 +118,12 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
   // Load from database
   const handleLoadFromDb = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     setIsLoadingFromDb(true);
     try {
       const apiProvider = ApiStorageProvider.getInstance();
       const serverProjects = await apiProvider.loadProjectsAsync();
-      
+
       if (serverProjects.length > 0) {
         onImport(serverProjects, serverProjects[0].id);
         setImportStatus({
@@ -163,47 +182,50 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
     return `Импорт от ${day}.${month}.${year}`;
   }, []);
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      const result = StorageManager.importFromJSON(content);
+      const reader = new FileReader();
+      reader.onload = e => {
+        const content = e.target?.result as string;
+        const result = StorageManager.importFromJSON(content);
 
-      if ('error' in result) {
-        setImportStatus({
-          type: 'error',
-          message: result.error,
+        if ('error' in result) {
+          setImportStatus({
+            type: 'error',
+            message: result.error,
+          });
+          return;
+        }
+
+        // TypeScript should now recognize result as the success branch
+        const data = result.data;
+
+        // Подсчитываем общее количество объектов
+        const objectCount = countImportedObjects(data.projects);
+
+        // Сохраняем данные и открываем диалог
+        setPendingImportData({
+          projects: data.projects,
+          activeProjectId: data.activeProjectId,
+          workTemplates: data.workTemplates,
+          objectCount,
         });
-        return;
+        setImportProjectName(getDefaultImportName());
+        setShowImportDialog(true);
+        setIsOpen(false);
+      };
+      reader.readAsText(file);
+
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-
-      // TypeScript should now recognize result as the success branch
-      const data = result.data;
-
-      // Подсчитываем общее количество объектов
-      const objectCount = countImportedObjects(data.projects);
-      
-      // Сохраняем данные и открываем диалог
-      setPendingImportData({
-        projects: data.projects,
-        activeProjectId: data.activeProjectId,
-        workTemplates: data.workTemplates,
-        objectCount,
-      });
-      setImportProjectName(getDefaultImportName());
-      setShowImportDialog(true);
-      setIsOpen(false);
-    };
-    reader.readAsText(file);
-    
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [getDefaultImportName]);
+    },
+    [getDefaultImportName],
+  );
 
   const handleConfirmImport = useCallback(() => {
     if (importStatus?.data) {
@@ -252,7 +274,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
     setIsSavingAs(true);
     try {
       const apiProvider = ApiStorageProvider.getInstance();
-      
+
       // Создаём новый проект на сервере с новым именем
       const newProject = await apiProvider.createProjectAsync({
         name: saveAsName.trim(),
@@ -271,7 +293,10 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       }
 
       // Добавляем новый проект в список локально
-      const updatedProjects = [...projects, { ...activeProject, id: newProject.id, name: saveAsName.trim() }];
+      const updatedProjects = [
+        ...projects,
+        { ...activeProject, id: newProject.id, name: saveAsName.trim() },
+      ];
       onImport(updatedProjects, newProject.id);
 
       setImportStatus({
@@ -299,12 +324,14 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
     try {
       const response = await getProjects();
-      setServerProjects(response.data.map(p => ({
-        id: p.id,
-        name: p.name,
-        city: p.city,
-        updated_at: p.updated_at,
-      })));
+      setServerProjects(
+        response.data.map(p => ({
+          id: p.id,
+          name: p.name,
+          city: p.city,
+          updated_at: p.updated_at,
+        })),
+      );
     } catch (error) {
       logError('BackupManager', 'Error loading projects list', error);
       setImportStatus({
@@ -333,7 +360,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
       if (existingIndex >= 0) {
         // Обновляем существующий проект
-        updatedProjects = projects.map(p => p.id === loadedProject.id ? loadedProject : p);
+        updatedProjects = projects.map(p => (p.id === loadedProject.id ? loadedProject : p));
       } else {
         // Добавляем новый проект
         updatedProjects = [...projects, loadedProject];
@@ -362,11 +389,11 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
     // Генерируем новый ID для проекта
     const newProjectId = `import-${Date.now()}`;
-    
+
     // Создаём новый проект с введённым названием
     // Все объекты из импортированных данных переносим в этот проект
     const allObjects = pendingImportData.projects.flatMap(p => p.objects || []);
-    
+
     const newProject: ProjectData = {
       id: newProjectId,
       name: importProjectName.trim(),
@@ -378,9 +405,9 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
     // Добавляем новый проект к существующим
     const updatedProjects = [...projects, newProject];
-    
+
     onImport(updatedProjects, newProjectId);
-    
+
     if (pendingImportData.workTemplates && onImportTemplates) {
       onImportTemplates(pendingImportData.workTemplates);
     }
@@ -389,7 +416,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       type: 'success',
       message: `Проект "${importProjectName.trim()}" успешно создан с ${allObjects.length} объектами`,
     });
-    
+
     setShowImportDialog(false);
     setPendingImportData(null);
     setImportProjectName('');
@@ -408,13 +435,11 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)}
-          />
-          <div 
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div
             data-testid="export-import-modal"
-            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4">
+            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4"
+          >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Управление данными</h2>
               <button
@@ -439,7 +464,9 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                       <Save className="w-5 h-5" />
                       <div className="text-left">
                         <div className="font-medium">Сохранить как...</div>
-                        <div className="text-xs text-purple-600/70">Сохранить проект с новым именем</div>
+                        <div className="text-xs text-purple-600/70">
+                          Сохранить проект с новым именем
+                        </div>
                       </div>
                     </button>
 
@@ -476,7 +503,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                         <div className="text-xs text-blue-600/70">Синхронизировать все проекты</div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={handleLoadFromDb}
                       disabled={isLoadingFromDb}
@@ -491,7 +518,9 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                         <div className="font-medium">
                           {isLoadingFromDb ? 'Загрузка...' : 'Загрузить все'}
                         </div>
-                        <div className="text-xs text-green-600/70">Загрузить все проекты с сервера</div>
+                        <div className="text-xs text-green-600/70">
+                          Загрузить все проекты с сервера
+                        </div>
                       </div>
                     </button>
                   </div>
@@ -556,15 +585,21 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
 
               {/* Статус импорта */}
               {importStatus && (
-                <div className={`p-4 rounded-xl ${
-                  importStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-                  importStatus.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-                  'bg-yellow-50 text-yellow-800 border border-yellow-200'
-                }`}>
+                <div
+                  className={`p-4 rounded-xl ${
+                    importStatus.type === 'success'
+                      ? 'bg-green-50 text-green-800 border border-green-200'
+                      : importStatus.type === 'error'
+                        ? 'bg-red-50 text-red-800 border border-red-200'
+                        : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                  }`}
+                >
                   <div className="flex items-start gap-3">
                     {importStatus.type === 'success' && <CheckCircle className="w-5 h-5 mt-0.5" />}
                     {importStatus.type === 'error' && <AlertTriangle className="w-5 h-5 mt-0.5" />}
-                    {importStatus.type === 'confirm' && <AlertTriangle className="w-5 h-5 mt-0.5" />}
+                    {importStatus.type === 'confirm' && (
+                      <AlertTriangle className="w-5 h-5 mt-0.5" />
+                    )}
                     <div className="flex-1">
                       <p className="text-sm">{importStatus.message}</p>
                       {importStatus.type === 'confirm' && (
@@ -591,7 +626,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
               {/* Очистка данных */}
               <div className="pt-4 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Опасная зона</h3>
-                
+
                 {!showClearConfirm ? (
                   <button
                     onClick={() => setShowClearConfirm(true)}
@@ -600,13 +635,16 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                     <Trash2 className="w-5 h-5" />
                     <div className="text-left">
                       <div className="font-medium">Очистить все данные</div>
-                      <div className="text-xs text-red-600/70">Удалить все проекты безвозвратно</div>
+                      <div className="text-xs text-red-600/70">
+                        Удалить все проекты безвозвратно
+                      </div>
                     </div>
                   </button>
                 ) : (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
                     <p className="text-sm text-red-800 mb-3">
-                      <strong>Внимание!</strong> Это действие удалит все проекты безвозвратно. Рекомендуется сделать бэкап перед удалением.
+                      <strong>Внимание!</strong> Это действие удалит все проекты безвозвратно.
+                      Рекомендуется сделать бэкап перед удалением.
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -633,7 +671,10 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       {/* Диалог "Сохранить как" */}
       {showSaveAsDialog && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowSaveAsDialog(false)} />
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowSaveAsDialog(false)}
+          />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
               <button
@@ -655,11 +696,11 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 <input
                   type="text"
                   value={saveAsName}
-                  onChange={(e) => setSaveAsName(e.target.value)}
+                  onChange={e => setSaveAsName(e.target.value)}
                   placeholder="Введите название проекта"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   autoFocus
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === 'Enter') handleSaveAs();
                     if (e.key === 'Escape') setShowSaveAsDialog(false);
                   }}
@@ -690,7 +731,10 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       {/* Диалог "Открыть проект" */}
       {showLoadDialog && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowLoadDialog(false)} />
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowLoadDialog(false)}
+          />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative max-h-[80vh] flex flex-col">
               <button
@@ -718,7 +762,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {serverProjects.map((project) => (
+                    {serverProjects.map(project => (
                       <button
                         key={project.id}
                         onClick={() => setSelectedProjectId(project.id)}
@@ -741,7 +785,7 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                               month: 'short',
                               year: 'numeric',
                               hour: '2-digit',
-                              minute: '2-digit'
+                              minute: '2-digit',
                             })}
                           </div>
                         </div>
@@ -775,7 +819,10 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
       {/* Диалог импорта с названием проекта */}
       {showImportDialog && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowImportDialog(false)} />
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowImportDialog(false)}
+          />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
               <button
@@ -800,11 +847,11 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 <input
                   type="text"
                   value={importProjectName}
-                  onChange={(e) => setImportProjectName(e.target.value)}
+                  onChange={e => setImportProjectName(e.target.value)}
                   placeholder="Введите название проекта"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   autoFocus
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === 'Enter') handleConfirmImportWithProject();
                     if (e.key === 'Escape') setShowImportDialog(false);
                   }}
@@ -815,7 +862,10 @@ export function BackupManager({ projects, activeProjectId, onImport, onClearAll,
                 <div className="mb-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4" />
-                    <span>Будет создан проект с <strong>{pendingImportData.objectCount}</strong> объектами</span>
+                    <span>
+                      Будет создан проект с <strong>{pendingImportData.objectCount}</strong>{' '}
+                      объектами
+                    </span>
                   </div>
                 </div>
               )}

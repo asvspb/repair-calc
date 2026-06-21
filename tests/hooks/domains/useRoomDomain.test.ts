@@ -12,8 +12,9 @@ vi.mock('../../../src/utils/projectObjects', () => {
   const actual = {
     getAllRooms: vi.fn(() => []),
     migrateProjectToObjects: vi.fn((p: ProjectData) => ({ ...p, objects: p.objects || [] })),
-    getObjectFromProject: vi.fn((project: ProjectData, id: string) =>
-      project.objects?.find((o: { id: string }) => o.id === id) || null
+    getObjectFromProject: vi.fn(
+      (project: ProjectData, id: string) =>
+        project.objects?.find((o: { id: string }) => o.id === id) || null,
     ),
     updateRoomInProject: vi.fn(),
     addRoomToProject: vi.fn(),
@@ -27,19 +28,22 @@ vi.mock('../../../src/utils/projectObjects', () => {
     getFirstObject: vi.fn(),
   };
 
-  const { updateRoomInProject, addRoomToProject, deleteRoomFromProject, reorderRoomsInProject } = actual;
+  const { updateRoomInProject, addRoomToProject, deleteRoomFromProject, reorderRoomsInProject } =
+    actual;
 
-  updateRoomInProject.mockImplementation((project: ProjectData, roomId: string, updater: (room: RoomData) => RoomData) => {
-    const newObjects = project.objects.map(obj => ({
-      ...obj,
-      rooms: obj.rooms.map((r: RoomData) => r.id === roomId ? updater(r) : r),
-    }));
-    return { ...project, objects: newObjects };
-  });
+  updateRoomInProject.mockImplementation(
+    (project: ProjectData, roomId: string, updater: (room: RoomData) => RoomData) => {
+      const newObjects = project.objects.map(obj => ({
+        ...obj,
+        rooms: obj.rooms.map((r: RoomData) => (r.id === roomId ? updater(r) : r)),
+      }));
+      return { ...project, objects: newObjects };
+    },
+  );
 
   addRoomToProject.mockImplementation((project: ProjectData, room: RoomData) => {
     const newObjects = project.objects.map((obj, i: number) =>
-      i === 0 ? { ...obj, rooms: [...obj.rooms, room] } : obj
+      i === 0 ? { ...obj, rooms: [...obj.rooms, room] } : obj,
     );
     return { ...project, objects: newObjects };
   });
@@ -52,12 +56,14 @@ vi.mock('../../../src/utils/projectObjects', () => {
     return { ...project, objects: newObjects };
   });
 
-  reorderRoomsInProject.mockImplementation((project: ProjectData, objectId: string, rooms: RoomData[]) => {
-    const newObjects = project.objects.map(obj =>
-      obj.id === objectId ? { ...obj, rooms } : obj
-    );
-    return { ...project, objects: newObjects };
-  });
+  reorderRoomsInProject.mockImplementation(
+    (project: ProjectData, objectId: string, rooms: RoomData[]) => {
+      const newObjects = project.objects.map(obj =>
+        obj.id === objectId ? { ...obj, rooms } : obj,
+      );
+      return { ...project, objects: newObjects };
+    },
+  );
 
   return actual;
 });
@@ -77,39 +83,69 @@ vi.mock('../../../src/api/storage', () => ({
 }));
 
 vi.mock('../../../src/api/totals', () => ({ saveTotals: vi.fn() }));
-vi.mock('../../../src/utils/migration', () => ({ runMigrations: vi.fn(), needsMigration: vi.fn(() => false) }));
+vi.mock('../../../src/utils/migration', () => ({
+  runMigrations: vi.fn(),
+  needsMigration: vi.fn(() => false),
+}));
 vi.mock('../../../src/utils/idMapper', () => ({
   idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
   IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
   isServerId: vi.fn(),
 }));
 vi.mock('../../../src/utils/saveQueue', () => ({
-  saveQueue: { enqueue: vi.fn((task: () => Promise<void>) => task()), hasPendingData: false, getPendingData: vi.fn() },
+  saveQueue: {
+    enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
+    hasPendingData: false,
+    getPendingData: vi.fn(),
+  },
 }));
-vi.mock('../../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
-vi.mock('../../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 vi.mock('../../../src/contexts/AuthContext', () => ({ useAuth: vi.fn() }));
 
 function createTestRoom(id: string, name: string): RoomData {
   return {
-    id, name, length: 5, width: 4, height: 3,
-    windows: [], doors: [], works: [], segments: [],
-    obstacles: [], wallSections: [], subSections: [],
+    id,
+    name,
+    length: 5,
+    width: 4,
+    height: 3,
+    windows: [],
+    doors: [],
+    works: [],
+    segments: [],
+    obstacles: [],
+    wallSections: [],
+    subSections: [],
     geometryMode: 'simple',
   };
 }
 
 function createTestProject(id: string, name: string, rooms: RoomData[] = []): ProjectData {
   return {
-    id, name,
-    objects: [{
-      id: `obj-${id}`, projectId: id, name, rooms, sortOrder: 0,
-    }],
+    id,
+    name,
+    objects: [
+      {
+        id: `obj-${id}`,
+        projectId: id,
+        name,
+        rooms,
+        sortOrder: 0,
+      },
+    ],
   };
 }
 
 function setupStore(overrides: { project?: ProjectData; isAuthenticated?: boolean } = {}) {
-  const project = overrides.project ?? createTestProject('p1', 'Test Project', [createTestRoom('room-1', 'Room 1')]);
+  const project =
+    overrides.project ??
+    createTestProject('p1', 'Test Project', [createTestRoom('room-1', 'Room 1')]);
   const isAuthenticated = overrides.isAuthenticated ?? false;
   useProjectStore.setState({
     projects: [project],
@@ -181,13 +217,17 @@ describe('useRoomDomain (Zustand)', () => {
       useProjectStore.getState().updateRoom(updatedRoom);
 
       const state = useProjectStore.getState();
-      const room = state.activeProject?.objects?.[0]?.rooms.find((r: RoomData) => r.id === 'room-1');
+      const room = state.activeProject?.objects?.[0]?.rooms.find(
+        (r: RoomData) => r.id === 'room-1',
+      );
       expect(room?.name).toBe('Updated Room');
       expect(room?.length).toBe(10);
     });
 
     it('should not update when active project not found', () => {
-      setupStore({ project: createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')]) });
+      setupStore({
+        project: createTestProject('p1', 'Test', [createTestRoom('room-1', 'Room 1')]),
+      });
       useProjectStore.setState({ activeProjectId: 'nonexistent' });
 
       const updatedRoom = createTestRoom('room-1', 'Updated');
@@ -203,12 +243,16 @@ describe('useRoomDomain (Zustand)', () => {
     it('should update room by id using updater function', () => {
       setupStore();
 
-      useProjectStore.getState().updateRoomById('room-1', (prev) => ({
-        ...prev, name: 'Renamed Room', length: 99,
+      useProjectStore.getState().updateRoomById('room-1', prev => ({
+        ...prev,
+        name: 'Renamed Room',
+        length: 99,
       }));
 
       const state = useProjectStore.getState();
-      const room = state.activeProject?.objects?.[0]?.rooms.find((r: RoomData) => r.id === 'room-1');
+      const room = state.activeProject?.objects?.[0]?.rooms.find(
+        (r: RoomData) => r.id === 'room-1',
+      );
       expect(room?.name).toBe('Renamed Room');
       expect(room?.length).toBe(99);
     });
@@ -217,8 +261,9 @@ describe('useRoomDomain (Zustand)', () => {
       setupStore();
       useProjectStore.setState({ activeProjectId: 'nonexistent' });
 
-      useProjectStore.getState().updateRoomById('room-1', (prev) => ({
-        ...prev, name: 'Renamed',
+      useProjectStore.getState().updateRoomById('room-1', prev => ({
+        ...prev,
+        name: 'Renamed',
       }));
 
       const state = useProjectStore.getState();

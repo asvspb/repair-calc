@@ -9,7 +9,9 @@ vi.mock('../../../src/contexts/AuthContext', () => ({
 vi.mock('../../../src/utils/storage', () => ({
   StorageManager: {
     loadProjects: vi.fn(),
+    loadProjectsAsync: vi.fn(),
     loadActiveProject: vi.fn(),
+    loadActiveProjectAsync: vi.fn(),
     saveProjects: vi.fn(),
     saveActiveProject: vi.fn(),
     saveProject: vi.fn(),
@@ -65,6 +67,7 @@ vi.mock('../../../src/utils/idMapper', () => ({
 vi.mock('../../../src/utils/saveQueue', () => ({
   saveQueue: {
     enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
     hasPendingData: false,
     getPendingData: vi.fn(() => null),
   },
@@ -76,8 +79,9 @@ vi.mock('../../../src/utils/projectObjects', () => ({
     ...p,
     objects: p.objects || [],
   })),
-  getObjectFromProject: vi.fn((project: ProjectData, id: string) =>
-    project.objects?.find((o: { id: string }) => o.id === id) || null
+  getObjectFromProject: vi.fn(
+    (project: ProjectData, id: string) =>
+      project.objects?.find((o: { id: string }) => o.id === id) || null,
   ),
   updateRoomInProject: vi.fn(),
   addRoomToProject: vi.fn(),
@@ -126,15 +130,16 @@ describe('useProjectDomain (Zustand)', () => {
 
     (ApiStorageProvider.getInstance as ReturnType<typeof vi.fn>).mockReturnValue(mockApiProvider);
 
-    mockStorageManager.loadProjects.mockReturnValue(null);
-    mockStorageManager.loadActiveProject.mockReturnValue(null);
+    mockStorageManager.loadProjectsAsync.mockResolvedValue(null);
+    mockStorageManager.loadActiveProjectAsync.mockResolvedValue(null);
     mockStorageManager.saveProjects.mockImplementation(() => {});
     mockStorageManager.saveActiveProject.mockImplementation(() => {});
     mockStorageManager.saveProject.mockImplementation(() => {});
 
-    (migrateProjectToObjects as ReturnType<typeof vi.fn>).mockImplementation(
-      (p: ProjectData) => ({ ...p, objects: p.objects || [] })
-    );
+    (migrateProjectToObjects as ReturnType<typeof vi.fn>).mockImplementation((p: ProjectData) => ({
+      ...p,
+      objects: p.objects || [],
+    }));
 
     mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
     mockApiProvider.saveProjectsAsync.mockResolvedValue([]);
@@ -145,7 +150,7 @@ describe('useProjectDomain (Zustand)', () => {
 
     (saveTotals as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (saveQueue.enqueue as ReturnType<typeof vi.fn>).mockImplementation(
-      (task: () => Promise<void>) => task()
+      (task: () => Promise<void>) => task(),
     );
     (needsMigration as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (runMigrations as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -178,10 +183,7 @@ describe('useProjectDomain (Zustand)', () => {
     });
 
     it('should compute activeProject based on activeProjectId', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       const state = useProjectStore.getState();
@@ -196,19 +198,19 @@ describe('useProjectDomain (Zustand)', () => {
 
     it('should load projects from localStorage when not authenticated', async () => {
       const savedProjects = [createTestProject('saved-1', 'Saved Project')];
-      mockStorageManager.loadProjects.mockReturnValue(savedProjects);
-      mockStorageManager.loadActiveProject.mockReturnValue('saved-1');
+      mockStorageManager.loadProjectsAsync.mockResolvedValue(savedProjects);
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('saved-1');
 
       await useProjectStore.getState().initialize([], false);
 
-      expect(mockStorageManager.loadProjects).toHaveBeenCalled();
+      expect(mockStorageManager.loadProjectsAsync).toHaveBeenCalled();
       expect(useProjectStore.getState().projects[0].name).toBe('Saved Project');
     });
 
     it('should load projects from server when authenticated', async () => {
       const serverProjects = [createTestProject('server-1', 'Server Project')];
       mockApiProvider.loadProjectsAsync.mockResolvedValue(serverProjects);
-      mockStorageManager.loadActiveProject.mockReturnValue('server-1');
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('server-1');
 
       await useProjectStore.getState().initialize([], true);
 
@@ -217,9 +219,7 @@ describe('useProjectDomain (Zustand)', () => {
     });
 
     it('should handle error during load', async () => {
-      mockStorageManager.loadProjects.mockImplementation(() => {
-        throw new Error('Load error');
-      });
+      mockStorageManager.loadProjectsAsync.mockRejectedValue(new Error('Load error'));
 
       await useProjectStore.getState().initialize([], false);
 
@@ -233,8 +233,8 @@ describe('useProjectDomain (Zustand)', () => {
 
     it('should use first project as active when saved active not found', async () => {
       const savedProjects = [createTestProject('saved-1', 'Saved Project')];
-      mockStorageManager.loadProjects.mockReturnValue(savedProjects);
-      mockStorageManager.loadActiveProject.mockReturnValue('non-existent');
+      mockStorageManager.loadProjectsAsync.mockResolvedValue(savedProjects);
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('non-existent');
 
       await useProjectStore.getState().initialize([], false);
 
@@ -243,8 +243,8 @@ describe('useProjectDomain (Zustand)', () => {
 
     it('should save initial projects to localStorage on first run', async () => {
       const initialProjects = [createTestProject('p1', 'First Project')];
-      mockStorageManager.loadProjects.mockReturnValue(null);
-      mockStorageManager.loadActiveProject.mockReturnValue(null);
+      mockStorageManager.loadProjectsAsync.mockResolvedValue(null);
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue(null);
 
       await useProjectStore.getState().initialize(initialProjects, false);
 
@@ -278,7 +278,7 @@ describe('useProjectDomain (Zustand)', () => {
     it('should fallback to localStorage when server has no projects', async () => {
       mockApiProvider.loadProjectsAsync.mockResolvedValue([]);
       const localProjects = [createTestProject('local-1', 'Local Project')];
-      mockStorageManager.loadProjects.mockReturnValue(localProjects);
+      mockStorageManager.loadProjectsAsync.mockResolvedValue(localProjects);
 
       await useProjectStore.getState().initialize([], true);
 
@@ -288,10 +288,7 @@ describe('useProjectDomain (Zustand)', () => {
 
   describe('setActiveProjectId', () => {
     it('should update active project id and save', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       useProjectStore.getState().setActiveProjectId('p2');
@@ -302,10 +299,7 @@ describe('useProjectDomain (Zustand)', () => {
     });
 
     it('should update activeProject when id changes', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       useProjectStore.getState().setActiveProjectId('p2');
@@ -358,7 +352,7 @@ describe('useProjectDomain (Zustand)', () => {
       const serverProject = createTestProject('uuid-aaaa-bbbb-cccc', 'Server Project');
       mockApiProvider.createProjectAsync.mockResolvedValue(serverProject);
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
-      mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('uuid-aaaa-bbbb-cccc');
 
       await useProjectStore.getState().initialize([], true);
 
@@ -379,7 +373,7 @@ describe('useProjectDomain (Zustand)', () => {
       mockApiProvider.createProjectAsync.mockResolvedValue(serverProject);
       mockApiProvider.saveProjectsAsync.mockResolvedValue([serverProject]);
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
-      mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa');
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('uuid-aaaa');
 
       await useProjectStore.getState().initialize([], true);
 
@@ -407,9 +401,9 @@ describe('useProjectDomain (Zustand)', () => {
 
       await useProjectStore.getState().initialize([], true);
 
-      await expect(
-        useProjectStore.getState().createProject({ name: 'Fail' })
-      ).rejects.toThrow('Server error');
+      await expect(useProjectStore.getState().createProject({ name: 'Fail' })).rejects.toThrow(
+        'Server error',
+      );
 
       expect(useProjectStore.getState().isSyncing).toBe(false);
     });
@@ -417,10 +411,7 @@ describe('useProjectDomain (Zustand)', () => {
 
   describe('deleteProject', () => {
     it('should remove project from list', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       await useProjectStore.getState().deleteProject('p2');
@@ -431,10 +422,7 @@ describe('useProjectDomain (Zustand)', () => {
     });
 
     it('should switch active project when deleting active one', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       expect(useProjectStore.getState().activeProjectId).toBe('p1');
@@ -458,7 +446,7 @@ describe('useProjectDomain (Zustand)', () => {
     it('should delete project on server when authenticated', async () => {
       const serverProject = createTestProject('uuid-aaaa-bbbb-cccc', 'Server');
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
-      mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('uuid-aaaa-bbbb-cccc');
 
       await useProjectStore.getState().initialize([serverProject], true);
 
@@ -472,22 +460,19 @@ describe('useProjectDomain (Zustand)', () => {
       const proj2 = createTestProject('uuid-dddd-eeee-ffff', 'Other');
       mockApiProvider.loadProjectsAsync.mockResolvedValue([proj1, proj2]);
       mockApiProvider.deleteProjectAsync.mockRejectedValue(new Error('Server delete error'));
-      mockStorageManager.loadActiveProject.mockReturnValue('uuid-aaaa-bbbb-cccc');
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue('uuid-aaaa-bbbb-cccc');
 
       await useProjectStore.getState().initialize([proj1, proj2], true);
 
       await useProjectStore.getState().deleteProject('uuid-aaaa-bbbb-cccc');
 
       expect(useProjectStore.getState().saveError).toBe(
-        'Не удалось удалить проект на сервере. Проект удалён локально.'
+        'Не удалось удалить проект на сервере. Проект удалён локально.',
       );
     });
 
     it('should set isSyncing during deletion', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       expect(useProjectStore.getState().isSyncing).toBe(false);
@@ -515,10 +500,7 @@ describe('useProjectDomain (Zustand)', () => {
 
   describe('updateActiveProject', () => {
     it('should update only the active project in projects list', async () => {
-      const projects = [
-        createTestProject('p1', 'Project 1'),
-        createTestProject('p2', 'Project 2'),
-      ];
+      const projects = [createTestProject('p1', 'Project 1'), createTestProject('p2', 'Project 2')];
       await useProjectStore.getState().initialize(projects, false);
 
       const updatedProject = { ...projects[0], name: 'Updated Project 1' };
@@ -575,7 +557,7 @@ describe('useProjectDomain (Zustand)', () => {
       const serverProject = createTestProject('p1', 'Server');
       serverProject.id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
-      mockStorageManager.loadActiveProject.mockReturnValue(serverProject.id);
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue(serverProject.id);
 
       await useProjectStore.getState().initialize([serverProject], true);
 
@@ -594,7 +576,7 @@ describe('useProjectDomain (Zustand)', () => {
       const serverProject = createTestProject('p1', 'Server');
       serverProject.id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
       mockApiProvider.loadProjectsAsync.mockResolvedValue([serverProject]);
-      mockStorageManager.loadActiveProject.mockReturnValue(serverProject.id);
+      mockStorageManager.loadActiveProjectAsync.mockResolvedValue(serverProject.id);
 
       await useProjectStore.getState().initialize([serverProject], true);
 

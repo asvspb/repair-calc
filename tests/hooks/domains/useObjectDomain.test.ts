@@ -14,8 +14,9 @@ vi.mock('../../../src/utils/projectObjects', () => {
   const actual = {
     getAllRooms: vi.fn(() => []),
     migrateProjectToObjects: vi.fn((p: ProjectData) => ({ ...p, objects: p.objects || [] })),
-    getObjectFromProject: vi.fn((project: ProjectData, id: string) =>
-      project.objects?.find((o: { id: string }) => o.id === id) || null
+    getObjectFromProject: vi.fn(
+      (project: ProjectData, id: string) =>
+        project.objects?.find((o: { id: string }) => o.id === id) || null,
     ),
     updateRoomInProject: vi.fn(),
     addRoomToProject: vi.fn(),
@@ -29,26 +30,37 @@ vi.mock('../../../src/utils/projectObjects', () => {
     getFirstObject: vi.fn(),
   };
 
-  const { createNewObject, addObjectToProject, copyObjectInProject, updateObjectInProject, deleteObjectFromProject, getFirstObject } = actual;
+  const {
+    createNewObject,
+    addObjectToProject,
+    copyObjectInProject,
+    updateObjectInProject,
+    deleteObjectFromProject,
+    getFirstObject,
+  } = actual;
 
-  createNewObject.mockImplementation((projectId: string, data: { name: string; city?: string }) => ({
-    id: `obj-${Date.now()}`,
-    projectId,
-    name: data.name,
-    city: data.city,
-    rooms: [],
-    sortOrder: 0,
-  }));
+  createNewObject.mockImplementation(
+    (projectId: string, data: { name: string; city?: string }) => ({
+      id: `obj-${Date.now()}`,
+      projectId,
+      name: data.name,
+      city: data.city,
+      rooms: [],
+      sortOrder: 0,
+    }),
+  );
 
   addObjectToProject.mockImplementation((project: ProjectData, newObject: ObjectData) => ({
     ...project,
     objects: [...project.objects, newObject],
   }));
 
-  updateObjectInProject.mockImplementation((project: ProjectData, objectId: string, data: Partial<ObjectData>) => ({
-    ...project,
-    objects: project.objects.map((o: ObjectData) => o.id === objectId ? { ...o, ...data } : o),
-  }));
+  updateObjectInProject.mockImplementation(
+    (project: ProjectData, objectId: string, data: Partial<ObjectData>) => ({
+      ...project,
+      objects: project.objects.map((o: ObjectData) => (o.id === objectId ? { ...o, ...data } : o)),
+    }),
+  );
 
   deleteObjectFromProject.mockImplementation((project: ProjectData, objectId: string) => {
     if (project.objects.length <= 1) return null;
@@ -85,17 +97,29 @@ vi.mock('../../../src/api/storage', () => ({
   ApiStorageProvider: { getInstance: vi.fn(), resetInstance: vi.fn() },
 }));
 vi.mock('../../../src/api/totals', () => ({ saveTotals: vi.fn() }));
-vi.mock('../../../src/utils/migration', () => ({ runMigrations: vi.fn(), needsMigration: vi.fn(() => false) }));
+vi.mock('../../../src/utils/migration', () => ({
+  runMigrations: vi.fn(),
+  needsMigration: vi.fn(() => false),
+}));
 vi.mock('../../../src/utils/idMapper', () => ({
   idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
   IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
   isServerId: vi.fn(),
 }));
 vi.mock('../../../src/utils/saveQueue', () => ({
-  saveQueue: { enqueue: vi.fn((task: () => Promise<void>) => task()), hasPendingData: false, getPendingData: vi.fn() },
+  saveQueue: {
+    enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
+    hasPendingData: false,
+    getPendingData: vi.fn(),
+  },
 }));
-vi.mock('../../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
-vi.mock('../../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 vi.mock('../../../src/contexts/AuthContext', () => ({ useAuth: vi.fn() }));
 
 function createTestObject(id: string, name: string, rooms: unknown[] = []): ObjectData {

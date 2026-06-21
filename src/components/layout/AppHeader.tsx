@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Settings, ChevronRight } from 'lucide-react';
 import { getAllRooms } from '../../utils/projectObjects';
-import type { ObjectData, ProjectData } from '../../types';
+import type { ObjectData, ProjectData } from '@shared/types';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -23,7 +23,11 @@ export function AppHeader({
   return (
     <>
       <header className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center gap-3">
-        <button data-testid="mobile-menu-btn" onClick={onOpenLeftMobileMenu} className="cursor-pointer">
+        <button
+          data-testid="mobile-menu-btn"
+          onClick={onOpenLeftMobileMenu}
+          className="cursor-pointer"
+        >
           <Menu className="w-6 h-6 text-gray-600" />
         </button>
         <div className="flex-1 min-w-0">

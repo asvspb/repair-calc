@@ -5,7 +5,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { Wrench, ChevronDown, ChevronUp } from 'lucide-react';
-import type { ProjectData, Tool, WorkData } from '../../types';
+import type { ProjectData, Tool, WorkData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
@@ -29,9 +29,8 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
   const toolMap = new Map<string, ToolAggregate>();
 
   // Получаем все комнаты из объектов или из старой структуры
-  const allRooms = project.objects && project.objects.length > 0
-    ? getAllRooms(project)
-    : (project.rooms || []);
+  const allRooms =
+    project.objects && project.objects.length > 0 ? getAllRooms(project) : project.rooms || [];
 
   allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
@@ -43,7 +42,8 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
 
         if (existing) {
           existing.totalQuantity += tool.quantity;
-          existing.totalPrice += tool.price * tool.quantity * (tool.isRent ? (tool.rentPeriod || 1) : 1);
+          existing.totalPrice +=
+            tool.price * tool.quantity * (tool.isRent ? tool.rentPeriod || 1 : 1);
           existing.totalRentPeriod += tool.rentPeriod || 0;
           if (!existing.rooms.includes(room.name)) {
             existing.rooms.push(room.name);
@@ -52,7 +52,7 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
           toolMap.set(key, {
             name: tool.name,
             totalQuantity: tool.quantity,
-            totalPrice: tool.price * tool.quantity * (tool.isRent ? (tool.rentPeriod || 1) : 1),
+            totalPrice: tool.price * tool.quantity * (tool.isRent ? tool.rentPeriod || 1 : 1),
             isRent: tool.isRent,
             totalRentPeriod: tool.rentPeriod || 0,
             rooms: [room.name],
@@ -69,14 +69,14 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
   });
 }
 
-const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject: _groupByObject = false }) => {
+const SummaryToolsInternal: React.FC<Props> = ({
+  project,
+  groupByObject: _groupByObject = false,
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const tools = useMemo(() => aggregateTools(project), [project]);
-  const grandTotal = useMemo(
-    () => tools.reduce((sum, t) => sum + t.totalPrice, 0),
-    [tools]
-  );
+  const grandTotal = useMemo(() => tools.reduce((sum, t) => sum + t.totalPrice, 0), [tools]);
 
   // Разделяем на аренду и покупку
   const rentTools = tools.filter(t => t.isRent);
@@ -159,17 +159,12 @@ const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject: _groupB
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {tool.rooms.slice(0, 2).map((room, i) => (
-                          <span
-                            key={i}
-                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded"
-                          >
+                          <span key={i} className="text-xs px-1.5 py-0.5 bg-gray-100 rounded">
                             {room}
                           </span>
                         ))}
                         {tool.rooms.length > 2 && (
-                          <span className="text-xs text-gray-400">
-                            +{tool.rooms.length - 2}
-                          </span>
+                          <span className="text-xs text-gray-400">+{tool.rooms.length - 2}</span>
                         )}
                       </div>
                     </td>
@@ -187,26 +182,19 @@ const SummaryToolsInternal: React.FC<Props> = ({ project, groupByObject: _groupB
                         Покупка
                       </span>
                     </td>
-                    <td className="p-3 text-right text-sm">
-                      {tool.totalQuantity} шт
-                    </td>
+                    <td className="p-3 text-right text-sm">{tool.totalQuantity} шт</td>
                     <td className="p-3 text-right font-medium text-sm">
                       {Math.ceil(tool.totalPrice).toLocaleString('ru-RU')} ₽
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {tool.rooms.slice(0, 2).map((room, i) => (
-                          <span
-                            key={i}
-                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded"
-                          >
+                          <span key={i} className="text-xs px-1.5 py-0.5 bg-gray-100 rounded">
                             {room}
                           </span>
                         ))}
                         {tool.rooms.length > 2 && (
-                          <span className="text-xs text-gray-400">
-                            +{tool.rooms.length - 2}
-                          </span>
+                          <span className="text-xs text-gray-400">+{tool.rooms.length - 2}</span>
                         )}
                       </div>
                     </td>
@@ -259,11 +247,15 @@ export const SummaryTools = memo(SummaryToolsInternal, (prev, next) => {
   const nextRooms = getAllRooms(next.project);
   const prevToolsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
-    0
+    0,
   );
   const nextToolsCount = nextRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
-    0
+    0,
   );
-  return prevToolsCount === nextToolsCount && prevRooms === nextRooms && prev.groupByObject === next.groupByObject;
+  return (
+    prevToolsCount === nextToolsCount &&
+    prevRooms === nextRooms &&
+    prev.groupByObject === next.groupByObject
+  );
 });

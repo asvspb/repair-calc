@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
-import type { WorkData } from '../../types';
+import type { WorkData } from '@shared/types';
 import { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 
 type WorkListItemProps = {
@@ -13,7 +13,10 @@ type WorkListItemProps = {
   onNameChange: (id: string, name: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: (id: string) => void;
-  onSaveTemplate?: (work: WorkData, forceReplace: boolean) => { success: boolean; error?: string; needsConfirm?: boolean };
+  onSaveTemplate?: (
+    work: WorkData,
+    forceReplace: boolean,
+  ) => { success: boolean; error?: string; needsConfirm?: boolean };
 };
 
 /**
@@ -30,13 +33,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
   onToggleExpand,
   onSaveTemplate,
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: work.id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: work.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -54,9 +51,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
       style={style}
       data-testid={`work-item-${work.id}`}
       className={`group rounded-xl border transition-colors duration-200 ${
-        work.enabled
-          ? 'border-indigo-100 bg-indigo-50/30'
-          : 'border-gray-100 bg-gray-50 opacity-60'
+        work.enabled ? 'border-indigo-100 bg-indigo-50/30' : 'border-gray-100 bg-gray-50 opacity-60'
       }`}
     >
       <div className="p-4">
@@ -74,7 +69,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
 
           {/* Checkbox */}
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onToggle(work.id);
             }}
@@ -87,7 +82,13 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
             title={work.enabled ? 'Отключить' : 'Включить'}
           >
             {work.enabled ? (
-              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+              <svg
+                className="w-3.5 h-3.5 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             ) : null}
@@ -102,8 +103,8 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
               <input
                 data-testid="work-name-input"
                 value={work.name}
-                onChange={(e) => onNameChange(work.id, e.target.value)}
-                onClick={(e) => e.stopPropagation()}
+                onChange={e => onNameChange(work.id, e.target.value)}
+                onClick={e => e.stopPropagation()}
                 className="font-medium bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none w-full"
                 placeholder="Название работы"
               />
@@ -134,25 +135,15 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
             </div>
             {(costs.work > 0 || costs.material > 0 || costs.tools > 0) && (
               <div className="text-xs text-gray-500 mt-0.5">
-                {costs.work > 0 && (
-                  <span>
-                    Р: {Math.ceil(costs.work).toLocaleString('ru-RU')}
-                  </span>
-                )}
-                {costs.work > 0 && costs.material > 0 && (
-                  <span className="mx-1">•</span>
-                )}
+                {costs.work > 0 && <span>Р: {Math.ceil(costs.work).toLocaleString('ru-RU')}</span>}
+                {costs.work > 0 && costs.material > 0 && <span className="mx-1">•</span>}
                 {costs.material > 0 && (
-                  <span>
-                    М: {Math.ceil(costs.material).toLocaleString('ru-RU')}
-                  </span>
+                  <span>М: {Math.ceil(costs.material).toLocaleString('ru-RU')}</span>
                 )}
                 {costs.tools > 0 && (
                   <>
                     <span className="mx-1">•</span>
-                    <span>
-                      И: {Math.ceil(costs.tools).toLocaleString('ru-RU')}
-                    </span>
+                    <span>И: {Math.ceil(costs.tools).toLocaleString('ru-RU')}</span>
                   </>
                 )}
               </div>
@@ -161,7 +152,7 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
 
           {/* Delete Button */}
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onDelete(work.id);
             }}
@@ -176,25 +167,18 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
         {onToggleExpand && (
           <div className="mt-2 ml-14 flex items-center justify-between">
             <button
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onToggleExpand(work.id);
               }}
               className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer"
             >
               <ChevronUp
-                className={`w-3 h-3 transition-transform ${
-                  isExpanded ? 'rotate-0' : 'rotate-180'
-                }`}
+                className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-0' : 'rotate-180'}`}
               />
               {isExpanded ? 'свернуть' : 'Развернуть'}
             </button>
-            {onSaveTemplate && (
-              <WorkTemplateSaveButton
-                work={work}
-                onSave={onSaveTemplate}
-              />
-            )}
+            {onSaveTemplate && <WorkTemplateSaveButton work={work} onSave={onSaveTemplate} />}
           </div>
         )}
       </div>

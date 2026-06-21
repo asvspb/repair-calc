@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GeometryMode } from '../../types';
+import type { GeometryMode } from '@shared/types';
 
 interface ModeSelectorProps {
   currentMode: GeometryMode;

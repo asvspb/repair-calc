@@ -7,8 +7,13 @@ import React, { useState, useMemo } from 'react';
 import { X, Search, Package, Wrench, Clock, Star, Info } from 'lucide-react';
 import type { WorkTemplateCatalog, WorkCategory, Difficulty } from '../../types/workTemplate';
 import { WORK_CATEGORY_LABELS, DIFFICULTY_LABELS } from '../../types/workTemplate';
-import type { WorkData, Material, Tool, RoomMetrics } from '../../types';
-import { WORK_TEMPLATES_CATALOG, getWorksByCategory, getPopularWorks } from '../../data/workTemplatesCatalog';
+import type { RoomMetrics } from '../../types';
+import type { WorkData, Material, Tool } from '@shared/types';
+import {
+  WORK_TEMPLATES_CATALOG,
+  getWorksByCategory,
+  getPopularWorks,
+} from '../../data/workTemplatesCatalog';
 
 type Props = {
   isOpen: boolean;
@@ -18,7 +23,15 @@ type Props = {
 };
 
 // Категории для фильтрации
-const CATEGORIES: (WorkCategory | 'all' | 'popular')[] = ['popular', 'all', 'floor', 'walls', 'ceiling', 'openings', 'other'];
+const CATEGORIES: (WorkCategory | 'all' | 'popular')[] = [
+  'popular',
+  'all',
+  'floor',
+  'walls',
+  'ceiling',
+  'openings',
+  'other',
+];
 
 const CATEGORY_ICONS: Record<WorkCategory | 'all' | 'popular', string> = {
   popular: '⭐',
@@ -40,40 +53,26 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
 /**
  * Конвертирует WorkTemplateCatalog в WorkData с расчётом материалов по метрикам помещения
  */
-  export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMetrics): WorkData {
-  let _workVolume = 0;
+export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMetrics): WorkData {
   let perimeter = 0;
-  
-  switch (template.calculationType) {
-    case 'floorArea':
-      _workVolume = metrics.floorArea;
-      break;
-    case 'netWallArea':
-      _workVolume = metrics.netWallArea;
-      break;
-    case 'skirtingLength':
-      _workVolume = metrics.skirtingLength;
-      break;
-    case 'customCount':
-      _workVolume = 1;
-      break;
-  }
-  
+
   perimeter = metrics.perimeter || metrics.skirtingLength || 0;
 
   // Конвертируем материалы
-  const materials: Material[] = template.materials.map((mat) => {
-    let quantity = 0;
+  const materials: Material[] = template.materials.map(mat => {
+    let quantity: number;
 
     if (mat.coveragePerUnit) {
       // Расчёт по площади покрытия (обои, ламинат, плитка)
-      const area = template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
+      const area =
+        template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
       const rawQty = area / mat.coveragePerUnit;
       // Округляем до целого числа в сторону увеличения
       quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100));
     } else if (mat.consumptionRate) {
       // Расчёт по расходу на м² (краска, клей, затирка)
-      const area = template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
+      const area =
+        template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
       const layers = mat.layers || 1;
       const rawQty = area * mat.consumptionRate * layers;
       // Округляем до целого числа в сторону увеличения
@@ -83,14 +82,15 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
       const rawQty = perimeter * mat.multiplier;
       if (mat.packageSize) {
         // Если указана длина одной штуки
-        quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100) / mat.packageSize);
+        quantity = Math.ceil((rawQty * (1 + (mat.wastePercent || 0) / 100)) / mat.packageSize);
       } else {
         // Округляем до целого числа в сторону увеличения
         quantity = Math.ceil(rawQty * (1 + (mat.wastePercent || 0) / 100));
       }
-    } else if (mat.piecesPerUnit && mat.consumptionRate) {
+    } else if (mat.piecesPerUnit) {
       // Крепёж и т.п.
-      const area = template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
+      const area =
+        template.calculationType === 'floorArea' ? metrics.floorArea : metrics.netWallArea;
       const rawQty = area * mat.consumptionRate;
       quantity = Math.ceil(rawQty / mat.piecesPerUnit);
     } else {
@@ -108,7 +108,7 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
   });
 
   // Конвертируем инструменты
-  const tools: Tool[] = (template.tools || []).filter(Boolean).map((tool) => ({
+  const tools: Tool[] = (template.tools || []).filter(Boolean).map(tool => ({
     id: `tool-${Math.random().toString(36).substring(2, 9)}`,
     name: tool.name,
     quantity: 1,
@@ -136,7 +136,9 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
 
 export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<WorkCategory | 'all' | 'popular'>('popular');
+  const [selectedCategory, setSelectedCategory] = useState<WorkCategory | 'all' | 'popular'>(
+    'popular',
+  );
   const [selectedWork, setSelectedWork] = useState<WorkTemplateCatalog | null>(null);
 
   // Фильтрация работ
@@ -155,9 +157,9 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        (work) =>
+        work =>
           work.name.toLowerCase().includes(query) ||
-          work.description?.toLowerCase().includes(query)
+          work.description?.toLowerCase().includes(query),
       );
     }
 
@@ -212,8 +214,14 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={handleClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-xl">
           <div>
@@ -237,14 +245,14 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
               type="text"
               placeholder="Поиск работы..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             />
           </div>
 
           {/* Category filters */}
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {CATEGORIES.map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -255,7 +263,11 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                 }`}
               >
                 <span>{CATEGORY_ICONS[cat]}</span>
-                {cat === 'popular' ? 'Популярные' : cat === 'all' ? 'Все' : WORK_CATEGORY_LABELS[cat]}
+                {cat === 'popular'
+                  ? 'Популярные'
+                  : cat === 'all'
+                    ? 'Все'
+                    : WORK_CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>
@@ -272,7 +284,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredWorks.map((work) => (
+                {filteredWorks.map(work => (
                   <div
                     key={work.id}
                     onClick={() => handleSelect(work)}
@@ -290,7 +302,9 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                             {WORK_CATEGORY_LABELS[work.category]}
                           </span>
                           {work.difficulty && (
-                            <span className={`text-xs px-2 py-0.5 rounded ${DIFFICULTY_COLORS[work.difficulty]}`}>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded ${DIFFICULTY_COLORS[work.difficulty]}`}
+                            >
                               {DIFFICULTY_LABELS[work.difficulty]}
                             </span>
                           )}
@@ -309,8 +323,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                           </span>
                           {work.estimatedTimePerUnit && (
                             <span className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
-                              ~{work.estimatedTimePerUnit} ч/м²
+                              <Clock className="w-3.5 h-3.5" />~{work.estimatedTimePerUnit} ч/м²
                             </span>
                           )}
                           <span className="flex items-center gap-1">
@@ -332,7 +345,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
           {selectedWork && (
             <div className="w-80 border-l bg-gray-50 p-4 overflow-y-auto">
               <h3 className="font-semibold text-gray-800 mb-3">{selectedWork.name}</h3>
-              
+
               {selectedWork.description && (
                 <p className="text-sm text-gray-600 mb-4">{selectedWork.description}</p>
               )}
@@ -354,7 +367,11 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                 <div className="border-t pt-2 flex justify-between text-sm font-semibold">
                   <span>Итого:</span>
                   <span className="text-gray-800">
-                    ~{Math.ceil(estimateWorkCost(selectedWork) + estimateMaterialsCost(selectedWork)).toLocaleString('ru-RU')} ₽
+                    ~
+                    {Math.ceil(
+                      estimateWorkCost(selectedWork) + estimateMaterialsCost(selectedWork),
+                    ).toLocaleString('ru-RU')}{' '}
+                    ₽
                   </span>
                 </div>
               </div>
@@ -367,7 +384,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                     Материалы
                   </h4>
                   <div className="space-y-1.5">
-                    {selectedWork.materials.slice(0, 5).map((mat) => (
+                    {selectedWork.materials.slice(0, 5).map(mat => (
                       <div key={mat.id} className="text-sm text-gray-600 flex justify-between">
                         <span className="truncate">{mat.name}</span>
                         {mat.defaultPrice && (
@@ -394,7 +411,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                     Инструменты
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {selectedWork.tools.filter(Boolean).map((tool) => (
+                    {selectedWork.tools.filter(Boolean).map(tool => (
                       <span
                         key={tool.id}
                         className="text-xs px-2 py-0.5 bg-white rounded text-gray-600"
@@ -408,7 +425,7 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
               )}
 
               {/* Tips */}
-              {selectedWork.materials.some((m) => m.tips) && (
+              {selectedWork.materials.some(m => m.tips) && (
                 <div className="bg-blue-50 rounded-lg p-3 mb-4">
                   <h4 className="text-sm font-medium text-blue-700 mb-1 flex items-center gap-1">
                     <Info className="w-4 h-4" />
@@ -416,8 +433,8 @@ export function WorkCatalogPicker({ isOpen, onClose, onSelect, roomMetrics }: Pr
                   </h4>
                   <ul className="text-xs text-blue-600 space-y-1">
                     {selectedWork.materials
-                      .filter((m) => m.tips)
-                      .map((m) => (
+                      .filter(m => m.tips)
+                      .map(m => (
                         <li key={m.id}>• {m.tips}</li>
                       ))}
                   </ul>

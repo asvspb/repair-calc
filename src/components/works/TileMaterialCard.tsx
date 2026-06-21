@@ -6,7 +6,8 @@
 import React, { memo, useState, useMemo } from 'react';
 import { Grid3X3, Info, RefreshCw } from 'lucide-react';
 import { NumberInput } from '../ui/NumberInput';
-import type { Material, RoomMetrics } from '../../types';
+import type { RoomMetrics } from '../../types';
+import type { Material } from '@shared/types';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 
@@ -47,7 +48,7 @@ const TileMaterialCardInternal: React.FC<Props> = ({
 
   // Определяем площадь для расчёта
   const area = getAreaForType(calculationType, metrics);
-  
+
   // Параметры
   const wastePercent = material.wastePercent || 10;
 
@@ -55,19 +56,19 @@ const TileMaterialCardInternal: React.FC<Props> = ({
   const calculation = useMemo(() => {
     // Площадь одной плитки в м²
     const tileAreaM2 = (tileWidth / 100) * (tileHeight / 100);
-    
+
     // Количество плиток на площадь
     const tilesNeeded = Math.ceil((area / tileAreaM2) * (1 + wastePercent / 100));
-    
+
     // Количество коробок
     const boxesNeeded = Math.ceil(tilesNeeded / tilesPerBox);
-    
+
     // Площадь в коробке
     const boxArea = tilesPerBox * tileAreaM2;
-    
+
     // Итоговая площадь с запасом
     const totalArea = boxesNeeded * boxArea;
-    
+
     return {
       tileAreaM2,
       tilesNeeded,
@@ -80,7 +81,11 @@ const TileMaterialCardInternal: React.FC<Props> = ({
   }, [area, tileWidth, tileHeight, tilesPerBox, wastePercent]);
 
   // Обработчик изменения размера плитки
-  const handleTileSizeChange = (preset: typeof STANDARD_TILE_SIZES[0] | null, w?: number, h?: number) => {
+  const handleTileSizeChange = (
+    preset: (typeof STANDARD_TILE_SIZES)[0] | null,
+    w?: number,
+    h?: number,
+  ) => {
     if (preset) {
       setTileWidth(preset.width);
       setTileHeight(preset.height);
@@ -108,11 +113,11 @@ const TileMaterialCardInternal: React.FC<Props> = ({
       <div className="flex-1 min-w-[140px]">
         <input
           value={material.name}
-          onChange={(e) => onChange('name', e.target.value)}
+          onChange={e => onChange('name', e.target.value)}
           placeholder="Название плитки"
           className="w-full px-1 py-1 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-amber-500 focus:outline-none text-sm"
         />
-        
+
         {/* Параметры размера */}
         <div className="mt-1 flex items-center gap-2">
           <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -120,19 +125,19 @@ const TileMaterialCardInternal: React.FC<Props> = ({
             <input
               type="number"
               value={tileWidth}
-              onChange={(e) => handleTileSizeChange(null, parseInt(e.target.value) || 30, tileHeight)}
+              onChange={e => handleTileSizeChange(null, parseInt(e.target.value) || 30, tileHeight)}
               className="w-10 bg-transparent border-b border-gray-200 focus:border-amber-500 outline-none text-center"
             />
             ×
             <input
               type="number"
               value={tileHeight}
-              onChange={(e) => handleTileSizeChange(null, tileWidth, parseInt(e.target.value) || 30)}
+              onChange={e => handleTileSizeChange(null, tileWidth, parseInt(e.target.value) || 30)}
               className="w-10 bg-transparent border-b border-gray-200 focus:border-amber-500 outline-none text-center"
             />
             <span>см</span>
           </div>
-          
+
           <button
             onClick={() => setShowDetails(!showDetails)}
             className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -151,7 +156,9 @@ const TileMaterialCardInternal: React.FC<Props> = ({
           </div>
           <div className="flex justify-between text-gray-600">
             <span>Размер плитки:</span>
-            <span>{tileWidth}×{tileHeight} см = {calculation.tileAreaM2.toFixed(3)} м²</span>
+            <span>
+              {tileWidth}×{tileHeight} см = {calculation.tileAreaM2.toFixed(3)} м²
+            </span>
           </div>
           <div className="flex justify-between text-gray-600">
             <span>Плиток в м²:</span>
@@ -169,9 +176,9 @@ const TileMaterialCardInternal: React.FC<Props> = ({
 
       {/* Пресеты размеров */}
       <div className="w-full ml-5 flex flex-wrap gap-1.5 my-2">
-        {STANDARD_TILE_SIZES.map((preset) => {
+        {STANDARD_TILE_SIZES.map(preset => {
           const isSelected = tileWidth === preset.width && tileHeight === preset.height;
-          
+
           return (
             <button
               key={preset.name}
@@ -194,7 +201,7 @@ const TileMaterialCardInternal: React.FC<Props> = ({
         <input
           type="number"
           value={tilesPerBox}
-          onChange={(e) => setTilesPerBox(parseInt(e.target.value) || 1)}
+          onChange={e => setTilesPerBox(parseInt(e.target.value) || 1)}
           className="w-12 px-1 py-0.5 bg-white border border-gray-200 rounded text-center focus:border-amber-500 outline-none"
         />
         <span className="text-gray-400">= {calculation.boxArea.toFixed(2)} м²</span>
@@ -220,7 +227,7 @@ const TileMaterialCardInternal: React.FC<Props> = ({
       <div className="flex items-center gap-1">
         <NumberInput
           value={material.quantity}
-          onChange={(v) => onChange('quantity', v)}
+          onChange={v => onChange('quantity', v)}
           className="w-14 text-sm py-1"
           min={1}
         />
@@ -231,7 +238,7 @@ const TileMaterialCardInternal: React.FC<Props> = ({
         <span className="text-gray-400 text-xs">×</span>
         <NumberInput
           value={material.pricePerUnit}
-          onChange={(v) => onChange('pricePerUnit', v)}
+          onChange={v => onChange('pricePerUnit', v)}
           className="w-20 text-sm py-1"
           step={0.1}
         />

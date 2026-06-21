@@ -8,6 +8,22 @@ import React from 'react';
 import { LeftSidebar } from '../../../src/components/layout/LeftSidebar';
 import type { RoomData, ObjectData } from '../../../src/types';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'sidebar.myRepair': 'Мой ремонт',
+        'sidebar.rooms': 'Комнаты',
+        'sidebar.addRoom': 'Добавить комнату',
+        'sidebar.addObject': 'Добавить объект ремонта',
+        'sidebar.createProjectFirst': 'Сначала создайте проект',
+      };
+      return translations[key] || key;
+    },
+    i18n: { language: 'ru', changeLanguage: () => {} },
+  }),
+}));
+
 // Mock RoomList component
 vi.mock('../../../src/components/rooms/RoomList', () => ({
   RoomList: ({ rooms, activeTab, onRoomClick, onReorderRooms }: any) => (
@@ -52,15 +68,9 @@ const createMockObject = (id: string, name: string): ObjectData => ({
 });
 
 describe('LeftSidebar', () => {
-  const mockRooms = [
-    createMockRoom('room-1', 'Кухня'),
-    createMockRoom('room-2', 'Спальня'),
-  ];
+  const mockRooms = [createMockRoom('room-1', 'Кухня'), createMockRoom('room-2', 'Спальня')];
 
-  const mockObjects = [
-    createMockObject('obj-1', 'Квартира'),
-    createMockObject('obj-2', 'Гараж'),
-  ];
+  const mockObjects = [createMockObject('obj-1', 'Квартира'), createMockObject('obj-2', 'Гараж')];
 
   const mockProps = {
     activeTab: 'summary',

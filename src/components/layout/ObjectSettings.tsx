@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Briefcase } from 'lucide-react';
-import type { ObjectData } from '../../types';
+import type { ObjectData } from '@shared/types';
 import { pluralize } from '../../utils/format';
 
 type ObjectSettingsProps = {
@@ -52,7 +52,12 @@ export function ObjectSettings({
                 title="Удалить объект"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </button>
             </div>
@@ -68,10 +73,10 @@ export function ObjectSettings({
           <select
             data-testid="object-selector"
             value={activeObjectId || objects[0]?.id || ''}
-            onChange={(e) => onObjectChange(e.target.value)}
+            onChange={e => onObjectChange(e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 truncate cursor-pointer"
           >
-            {objects.map((obj) => (
+            {objects.map(obj => (
               <option key={obj.id} value={obj.id}>
                 {obj.name}
               </option>
@@ -94,7 +99,7 @@ export function ObjectSettings({
           data-testid="city-select"
           type="text"
           value={city}
-          onChange={(e) => onCityChange(e.target.value)}
+          onChange={e => onCityChange(e.target.value)}
           placeholder="Для поиска цен"
           disabled={!hasProjects}
           title={!hasProjects ? 'Сначала создайте проект' : ''}
@@ -118,14 +123,10 @@ type OtherObjectsProps = {
   onObjectClick: (objectId: string) => void;
 };
 
-export function OtherObjectsSection({
-  objects,
-  activeObjectId,
-  onObjectClick,
-}: OtherObjectsProps) {
+export function OtherObjectsSection({ objects, activeObjectId, onObjectClick }: OtherObjectsProps) {
   // Получаем ID активного объекта с fallback на первый объект
   const activeId = activeObjectId || objects[0]?.id;
-  
+
   // Фильтруем - показываем только другие объекты (не активный)
   const otherObjects = objects.filter(obj => obj.id !== activeId);
 
@@ -139,7 +140,7 @@ export function OtherObjectsSection({
         Другие объекты
       </div>
       <div className="space-y-1">
-        {otherObjects.map((obj) => (
+        {otherObjects.map(obj => (
           <button
             key={obj.id}
             onClick={() => onObjectClick(obj.id)}
@@ -149,7 +150,8 @@ export function OtherObjectsSection({
             <div className="flex-1 min-w-0">
               <div className="truncate">{obj.name}</div>
               <div className="text-xs text-gray-400">
-                {obj.rooms?.length || 0} {pluralize(obj.rooms?.length || 0, 'комната', 'комнаты', 'комнат')}
+                {obj.rooms?.length || 0}{' '}
+                {pluralize(obj.rooms?.length || 0, 'комната', 'комнаты', 'комнат')}
               </div>
             </div>
           </button>

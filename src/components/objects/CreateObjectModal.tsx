@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
-import type { ObjectData } from '../../types';
+import type { ObjectData } from '@shared/types';
 
 interface CreateObjectModalProps {
   object?: ObjectData; // Если передан - режим редактирования
@@ -9,11 +9,11 @@ interface CreateObjectModalProps {
 }
 
 export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
-  const createObject = useProjectStore((s) => s.createObject);
-  const updateObject = useProjectStore((s) => s.updateObject);
-  
+  const createObject = useProjectStore(s => s.createObject);
+  const updateObject = useProjectStore(s => s.updateObject);
+
   const isEditMode = !!object;
-  
+
   const [name, setName] = useState(object?.name || '');
   const [city, setCity] = useState(object?.city || '');
   const [error, setError] = useState('');
@@ -36,7 +36,7 @@ export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       setError('Введите название объекта');
       return;
@@ -47,19 +47,19 @@ export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
     } else {
       createObject({ name: name.trim(), city: city.trim() || undefined });
     }
-    
+
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div 
-          className="fixed inset-0 bg-black/50 transition-opacity"
-          onClick={onClose}
-        />
-        
-        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in" data-testid="create-object-modal">
+        <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
+
+        <div
+          className="relative bg-white rounded-xl shadow-xl max-w-lg w-full animate-scale-in"
+          data-testid="create-object-modal"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-xl font-semibold text-gray-900">
@@ -85,7 +85,7 @@ export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
                     type="text"
                     id="name"
                     value={name}
-                    onChange={(e) => {
+                    onChange={e => {
                       setName(e.target.value);
                       setError('');
                     }}
@@ -103,15 +103,13 @@ export function CreateObjectModal({ object, onClose }: CreateObjectModalProps) {
                     type="text"
                     id="city"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={e => setCity(e.target.value)}
                     placeholder="Например: Москва"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
 
-                {error && (
-                  <p className="text-sm text-red-600">{error}</p>
-                )}
+                {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
 
               {/* Actions */}

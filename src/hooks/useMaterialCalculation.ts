@@ -3,14 +3,15 @@
  */
 
 import { useMemo } from 'react';
-import type { Material, RoomMetrics } from '../types';
+import type { RoomMetrics } from '../types';
+import type { Material } from '@shared/types';
 import {
   calculateByCoverage,
   calculateByConsumption,
   calculateByPerimeter,
   calculateByCount,
   type CalculationResult,
-} from '../utils/materialCalculations';
+} from '../domain/pricing/materialCalculations';
 
 export interface MaterialCalculationOptions {
   material: Material;
@@ -30,7 +31,7 @@ export interface MaterialCalculationResult extends CalculationResult {
  * Хук для расчёта количества материала
  */
 export function useMaterialCalculation(
-  options: MaterialCalculationOptions
+  options: MaterialCalculationOptions,
 ): MaterialCalculationResult {
   const { material, metrics, calculationType, customCount, thickness } = options;
 
@@ -65,10 +66,7 @@ export function useMaterialCalculation(
 /**
  * Проверяет, можно ли рассчитать материал автоматически
  */
-export function canCalculateMaterial(
-  material: Material,
-  calculationType?: string
-): boolean {
+export function canCalculateMaterial(material: Material, calculationType?: string): boolean {
   // По площади покрытия
   if (material.coveragePerUnit && material.coveragePerUnit > 0) {
     return true;
@@ -100,18 +98,14 @@ function calculateMaterial(
   metrics: RoomMetrics,
   calculationType?: string,
   customCount?: number,
-  _thickness?: number
+  _thickness?: number,
 ): CalculationResult {
   // Определяем площадь для расчёта
   const area = getAreaForType(calculationType, metrics);
 
   // 1. По площади покрытия
   if (material.coveragePerUnit && material.coveragePerUnit > 0) {
-    return calculateByCoverage(
-      area,
-      material.coveragePerUnit,
-      material.wastePercent ?? 10
-    );
+    return calculateByCoverage(area, material.coveragePerUnit, material.wastePercent ?? 10);
   }
 
   // 2. По расходу на м²
@@ -121,7 +115,7 @@ function calculateMaterial(
       material.consumptionRate,
       material.layers ?? 1,
       material.wastePercent ?? 5,
-      material.packageSize
+      material.packageSize,
     );
   }
 
@@ -131,17 +125,13 @@ function calculateMaterial(
       metrics.perimeter,
       material.multiplier ?? 1.0,
       material.packageSize,
-      material.wastePercent ?? 5
+      material.wastePercent ?? 5,
     );
   }
 
   // 4. Поштучно
   if (customCount !== undefined) {
-    return calculateByCount(
-      customCount,
-      material.multiplier ?? 1.0,
-      material.wastePercent ?? 0
-    );
+    return calculateByCount(customCount, material.multiplier ?? 1.0, material.wastePercent ?? 0);
   }
 
   // По умолчанию
@@ -156,10 +146,7 @@ function calculateMaterial(
 /**
  * Определяет площадь по типу расчёта
  */
-function getAreaForType(
-  calculationType?: string,
-  metrics?: RoomMetrics
-): number {
+function getAreaForType(calculationType?: string, metrics?: RoomMetrics): number {
   if (!metrics) return 0;
 
   switch (calculationType) {
@@ -181,12 +168,12 @@ export function useWorkMaterialsCalculation(
   materials: Material[],
   metrics: RoomMetrics,
   calculationType?: 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount',
-  customCount?: number
+  customCount?: number,
 ) {
   return useMemo(() => {
-    return materials.map((material) => {
+    return materials.map(material => {
       const canAuto = canCalculateMaterial(material, calculationType);
-      
+
       if (!canAuto || !material.autoCalcEnabled) {
         return {
           material,
@@ -202,8 +189,8 @@ export function useWorkMaterialsCalculation(
         customCount,
       });
 
-      const shouldUpdate = result.isCalculated && 
-        Math.abs(result.recommendedQty - material.quantity) > 0.01;
+      const shouldUpdate =
+        result.isCalculated && Math.abs(result.recommendedQty - material.quantity) > 0.01;
 
       return {
         material,

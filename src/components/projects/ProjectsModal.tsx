@@ -1,16 +1,29 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  X, FolderOpen, Plus, Edit2, Copy, Trash2,
-  Download, Upload, FileJson, FileSpreadsheet,
-  Server, RefreshCw, Save, AlertTriangle, CheckCircle
+  X,
+  FolderOpen,
+  Plus,
+  Edit2,
+  Copy,
+  Trash2,
+  Download,
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  Server,
+  RefreshCw,
+  Save,
+  AlertTriangle,
+  CheckCircle,
 } from 'lucide-react';
-import type { ProjectData, ObjectData, RoomData } from '../../types';
+import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
 import { useProjectStore } from '../../store/useProjectStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorageManager } from '../../utils/storage';
 import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
 import { getAllRooms, migrateProjectToObjects } from '../../utils/projectObjects';
+import { cloneProject } from '../../domain/factories/projectFactory';
 import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
@@ -32,12 +45,12 @@ type ImportStatus = {
 };
 
 export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsModalProps) {
-  const projects = useProjectStore((s) => s.projects);
-  const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId);
-  const updateProjects = useProjectStore((s) => s.updateProjects);
-  const createProject = useProjectStore((s) => s.createProject);
-  const deleteProject = useProjectStore((s) => s.deleteProject);
+  const projects = useProjectStore(s => s.projects);
+  const activeProjectId = useProjectStore(s => s.activeProjectId);
+  const setActiveProjectId = useProjectStore(s => s.setActiveProjectId);
+  const updateProjects = useProjectStore(s => s.updateProjects);
+  const createProject = useProjectStore(s => s.createProject);
+  const deleteProject = useProjectStore(s => s.deleteProject);
 
   const { isAuthenticated } = useAuth();
 
@@ -91,145 +104,156 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
   }, []);
 
   // Create new project via modal
-  const handleCreateProject = useCallback(async (data: { name: string; city?: string; objects: string[] }) => {
-    dlog(LOG_PREFIX, '[Create] Received create request:', data);
-    setIsCreating(true);
-    try {
-      dlog(LOG_PREFIX, '[Create] Calling context.createProject...');
-      const newProject = await createProject({
-        name: data.name,
-        city: data.city,
-        objects: data.objects,
-      });
+  const handleCreateProject = useCallback(
+    async (data: { name: string; city?: string; objects: string[] }) => {
+      dlog(LOG_PREFIX, '[Create] Received create request:', data);
+      setIsCreating(true);
+      try {
+        dlog(LOG_PREFIX, '[Create] Calling context.createProject...');
+        const newProject = await createProject({
+          name: data.name,
+          city: data.city,
+          objects: data.objects,
+        });
 
-      dlog(LOG_PREFIX, '[Create] Project created OK:', newProject.id, newProject.name, '- objects:', newProject.objects?.length || 0);
-      setShowCreateModal(false);
-      setImportStatus({
-        type: 'success',
-        message: `Проект "${newProject.name}" успешно создан`,
-      });
-    } catch (error) {
-      derror(LOG_PREFIX, '[Create] Error creating project:', error);
-      setImportStatus({
-        type: 'error',
-        message: 'Ошибка создания проекта',
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  }, [createProject]);
+        dlog(
+          LOG_PREFIX,
+          '[Create] Project created OK:',
+          newProject.id,
+          newProject.name,
+          '- objects:',
+          newProject.objects?.length || 0,
+        );
+        setShowCreateModal(false);
+        setImportStatus({
+          type: 'success',
+          message: `Проект "${newProject.name}" успешно создан`,
+        });
+      } catch (error) {
+        derror(LOG_PREFIX, '[Create] Error creating project:', error);
+        setImportStatus({
+          type: 'error',
+          message: 'Ошибка создания проекта',
+        });
+      } finally {
+        setIsCreating(false);
+      }
+    },
+    [createProject],
+  );
 
   // Import projects from backup
-  const handleImportFromBackup = useCallback((importedProjects: ProjectData[]) => {
-    dlog(LOG_PREFIX, '[Import] Received', importedProjects.length, 'project(s):', importedProjects.map(p => p.name));
-    if (importedProjects.length === 0) return;
+  const handleImportFromBackup = useCallback(
+    (importedProjects: ProjectData[]) => {
+      dlog(
+        LOG_PREFIX,
+        '[Import] Received',
+        importedProjects.length,
+        'project(s):',
+        importedProjects.map(p => p.name),
+      );
+      if (importedProjects.length === 0) return;
 
-    // updateProjects expects an array, not a function
-    const updated = [...projects, ...importedProjects];
-    dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
-    updateProjects(updated);
+      // updateProjects expects an array, not a function
+      const updated = [...projects, ...importedProjects];
+      dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
+      updateProjects(updated);
 
-    if (importedProjects[0]) {
-      dlog(LOG_PREFIX, '[Import] Setting active to:', importedProjects[0].name);
-      setActiveProjectId(importedProjects[0].id);
-    }
-
-    setImportStatus({
-      type: 'success',
-      message: `Импортировано проектов: ${importedProjects.length}`,
-    });
-  }, [projects, updateProjects, setActiveProjectId]);
-
-  // Rename project
-  const handleRenameProject = useCallback((projectId: string) => {
-    if (!editingName.trim()) {
-      setEditingProjectId(null);
-      return;
-    }
-
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-
-    const updatedProjects = projects.map(p =>
-      p.id === projectId ? { ...p, name: editingName.trim() } : p
-    );
-    updateProjects(updatedProjects);
-    setEditingProjectId(null);
-  }, [projects, editingName, updateProjects]);
-
-  // Copy project
-  const handleCopyProject = useCallback((projectId: string) => {
-    const sourceProject = projects.find(p => p.id === projectId);
-    if (!sourceProject) return;
-
-    const copiedProject: ProjectData = {
-      ...JSON.parse(JSON.stringify(sourceProject)),
-      id: `local-${Date.now()}`,
-      name: `${sourceProject.name} (копия)`,
-    };
-
-    // Re-generate IDs for objects and rooms to avoid conflicts
-    if (copiedProject.objects) {
-      copiedProject.objects = copiedProject.objects.map((obj: ObjectData) => ({
-        ...obj,
-        id: `obj-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        projectId: copiedProject.id,
-        rooms: obj.rooms?.map((room: RoomData) => ({
-          ...room,
-          id: `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-          objectId: obj.id,
-        })),
-      }));
-    }
-
-    const updatedProjects = [...projects, copiedProject];
-    updateProjects(updatedProjects);
-    setActiveProjectId(copiedProject.id);
-
-    setCopyConfirmId(null);
-    setImportStatus({
-      type: 'success',
-      message: `Проект "${sourceProject.name}" успешно скопирован`,
-    });
-  }, [projects, updateProjects, setActiveProjectId]);
-
-  // Delete project
-  const handleDeleteProject = useCallback(async (projectId: string) => {
-    try {
-      // Use context's deleteProject if authenticated (handles server deletion)
-      if (isAuthenticated) {
-        await deleteProject(projectId);
-      } else {
-        // Local deletion
-        const updatedProjects = projects.filter(p => p.id !== projectId);
-        updateProjects(updatedProjects);
-        if (updatedProjects.length > 0 && activeProjectId === projectId) {
-          setActiveProjectId(updatedProjects[0].id);
-        } else if (updatedProjects.length === 0) {
-          setActiveProjectId('');
-        }
+      if (importedProjects[0]) {
+        dlog(LOG_PREFIX, '[Import] Setting active to:', importedProjects[0].name);
+        setActiveProjectId(importedProjects[0].id);
       }
 
-      setDeleteConfirmId(null);
       setImportStatus({
         type: 'success',
-        message: 'Проект успешно удалён',
+        message: `Импортировано проектов: ${importedProjects.length}`,
       });
-    } catch (error) {
-      logError('ProjectsModal', 'Error deleting project', error);
+    },
+    [projects, updateProjects, setActiveProjectId],
+  );
+
+  // Rename project
+  const handleRenameProject = useCallback(
+    (projectId: string) => {
+      if (!editingName.trim()) {
+        setEditingProjectId(null);
+        return;
+      }
+
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return;
+
+      const updatedProjects = projects.map(p =>
+        p.id === projectId ? { ...p, name: editingName.trim() } : p,
+      );
+      updateProjects(updatedProjects);
+      setEditingProjectId(null);
+    },
+    [projects, editingName, updateProjects],
+  );
+
+  // Copy project
+  const handleCopyProject = useCallback(
+    (projectId: string) => {
+      const sourceProject = projects.find(p => p.id === projectId);
+      if (!sourceProject) return;
+
+      const copiedProject = cloneProject(sourceProject);
+      copiedProject.name = `${sourceProject.name} (копия)`;
+
+      const updatedProjects = [...projects, copiedProject];
+      updateProjects(updatedProjects);
+      setActiveProjectId(copiedProject.id);
+
+      setCopyConfirmId(null);
       setImportStatus({
-        type: 'error',
-        message: 'Ошибка удаления проекта',
+        type: 'success',
+        message: `Проект "${sourceProject.name}" успешно скопирован`,
       });
-    }
-  }, [projects, activeProjectId, isAuthenticated, deleteProject, updateProjects, setActiveProjectId]);
+    },
+    [projects, updateProjects, setActiveProjectId],
+  );
+
+  // Delete project
+  const handleDeleteProject = useCallback(
+    async (projectId: string) => {
+      try {
+        // Use context's deleteProject if authenticated (handles server deletion)
+        if (isAuthenticated) {
+          await deleteProject(projectId);
+        } else {
+          // Local deletion
+          const updatedProjects = projects.filter(p => p.id !== projectId);
+          updateProjects(updatedProjects);
+          if (updatedProjects.length > 0 && activeProjectId === projectId) {
+            setActiveProjectId(updatedProjects[0].id);
+          } else if (updatedProjects.length === 0) {
+            setActiveProjectId('');
+          }
+        }
+
+        setDeleteConfirmId(null);
+        setImportStatus({
+          type: 'success',
+          message: 'Проект успешно удалён',
+        });
+      } catch (error) {
+        logError('ProjectsModal', 'Error deleting project', error);
+        setImportStatus({
+          type: 'error',
+          message: 'Ошибка удаления проекта',
+        });
+      }
+    },
+    [projects, activeProjectId, isAuthenticated, deleteProject, updateProjects, setActiveProjectId],
+  );
 
   // Export JSON
   const handleExportJSON = useCallback(() => {
     const json = StorageManager.exportToJSON(projects, activeProjectId);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     try {
       const link = document.createElement('a');
       link.href = url;
@@ -253,7 +277,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     const csv = StorageManager.exportToCSV(projects);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
+
     try {
       const link = document.createElement('a');
       link.href = url;
@@ -278,7 +302,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const content = e.target?.result as string;
       const result = StorageManager.importFromJSON(content);
 
@@ -382,8 +406,14 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -483,18 +513,20 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
                         <input
                           type="text"
                           value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
+                          onChange={e => setEditingName(e.target.value)}
                           className="w-full px-3 py-1.5 text-lg font-medium border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-2"
                           autoFocus
                           onBlur={() => handleRenameProject(project.id)}
-                          onKeyDown={(e) => {
+                          onKeyDown={e => {
                             if (e.key === 'Enter') handleRenameProject(project.id);
                             if (e.key === 'Escape') setEditingProjectId(null);
                           }}
                         />
                       ) : (
                         <div className="flex items-center gap-2 mb-1">
-                          <FolderOpen className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                          <FolderOpen
+                            className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
+                          />
                           <h3 className="text-lg font-medium text-gray-900 truncate">
                             {project.name}
                           </h3>
@@ -507,14 +539,14 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
                       )}
 
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                        {project.city && (
-                          <span>{project.city}</span>
-                        )}
+                        {project.city && <span>{project.city}</span>}
                         <span>
-                          {stats.objectsCount} {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
+                          {stats.objectsCount}{' '}
+                          {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
                         </span>
                         <span>
-                          {stats.roomsCount} {pluralize(stats.roomsCount, 'комната', 'комнаты', 'комнат')}
+                          {stats.roomsCount}{' '}
+                          {pluralize(stats.roomsCount, 'комната', 'комнаты', 'комнат')}
                         </span>
                         {stats.totalCost > 0 && (
                           <span className="font-medium text-gray-700">
@@ -617,13 +649,15 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
 
           {/* Import status */}
           {importStatus && (
-            <div className={`mt-4 p-4 rounded-lg ${
-              importStatus.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : importStatus.type === 'error'
-                ? 'bg-red-50 text-red-800 border border-red-200'
-                : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-            }`}>
+            <div
+              className={`mt-4 p-4 rounded-lg ${
+                importStatus.type === 'success'
+                  ? 'bg-green-50 text-green-800 border border-green-200'
+                  : importStatus.type === 'error'
+                    ? 'bg-red-50 text-red-800 border border-red-200'
+                    : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+              }`}
+            >
               <div className="flex items-start gap-3">
                 {importStatus.type === 'success' && <CheckCircle className="w-5 h-5 mt-0.5" />}
                 {importStatus.type === 'error' && <AlertTriangle className="w-5 h-5 mt-0.5" />}

@@ -18,6 +18,7 @@ vi.mock('../../../src/utils/saveQueue', () => ({
     hasPendingData: false,
     getPendingData: vi.fn(() => null),
     enqueue: vi.fn(),
+    cancelPending: vi.fn(),
   },
 }));
 
@@ -63,14 +64,21 @@ vi.mock('../../../src/api/storage', () => ({
 }));
 
 vi.mock('../../../src/api/totals', () => ({ saveTotals: vi.fn() }));
-vi.mock('../../../src/utils/migration', () => ({ runMigrations: vi.fn(), needsMigration: vi.fn(() => false) }));
+vi.mock('../../../src/utils/migration', () => ({
+  runMigrations: vi.fn(),
+  needsMigration: vi.fn(() => false),
+}));
 vi.mock('../../../src/utils/idMapper', () => ({
   idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
   IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
   isServerId: vi.fn(),
 }));
-vi.mock('../../../src/utils/geometry', () => ({ calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })) }));
-vi.mock('../../../src/utils/costs', () => ({ calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })) }));
+vi.mock('../../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 vi.mock('../../../src/contexts/AuthContext', () => ({ useAuth: vi.fn() }));
 
 import { saveQueue } from '../../../src/utils/saveQueue';
@@ -118,9 +126,7 @@ describe('useSyncDomain (Zustand)', () => {
 
   it('should call scheduleSave when visibility changes and has pending data', () => {
     const scheduleSave = vi.fn();
-    const pendingProjects: ProjectData[] = [
-      { id: 'p1', name: 'Test', objects: [] },
-    ];
+    const pendingProjects: ProjectData[] = [{ id: 'p1', name: 'Test', objects: [] }];
 
     (saveQueue.hasPendingData as boolean) = false;
 

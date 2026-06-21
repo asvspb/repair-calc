@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { ProjectData } from '../../types';
+import type { ProjectData } from '@shared/types';
 
 export function useRoomHeaderVisibility(
   activeTab: string,
-  activeProject: ProjectData | undefined
+  activeProject: ProjectData | undefined,
 ): boolean {
   const [showRoomNameInHeader, setShowRoomNameInHeader] = useState(false);
 
@@ -21,7 +21,7 @@ export function useRoomHeaderVisibility(
         root: null,
         rootMargin: '-100px 0px 0px 0px',
         threshold: 0,
-      }
+      },
     );
 
     const roomHeaderElement = document.getElementById('room-header-title');

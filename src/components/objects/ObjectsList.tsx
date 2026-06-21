@@ -1,28 +1,35 @@
 import React, { useState } from 'react';
 import { useProjectStore } from '../../store/useProjectStore';
-import type { ObjectData } from '../../types';
+import type { ObjectData } from '@shared/types';
 import { ObjectCard } from './ObjectCard';
 import { CreateObjectModal } from './CreateObjectModal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 interface ObjectsListProps {
   className?: string;
 }
 
 export function ObjectsList({ className = '' }: ObjectsListProps) {
-  const activeProject = useProjectStore((s) => s.activeProject);
-  const activeObjectId = useProjectStore((s) => s.activeObjectId);
-  const setActiveObjectId = useProjectStore((s) => s.setActiveObjectId);
-  const deleteObject = useProjectStore((s) => s.deleteObject);
-  const copyObject = useProjectStore((s) => s.copyObject);
+  const activeProject = useProjectStore(s => s.activeProject);
+  const activeObjectId = useProjectStore(s => s.activeObjectId);
+  const setActiveObjectId = useProjectStore(s => s.setActiveObjectId);
+  const deleteObject = useProjectStore(s => s.deleteObject);
+  const copyObject = useProjectStore(s => s.copyObject);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingObject, setEditingObject] = useState<ObjectData | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const objects = activeProject?.objects || [];
 
   const handleDelete = (objectId: string) => {
-    if (window.confirm('Удалить объект? Все комнаты в этом объекте будут удалены.')) {
-      deleteObject(objectId);
+    setDeleteConfirmId(objectId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteObject(deleteConfirmId);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -69,18 +76,22 @@ export function ObjectsList({ className = '' }: ObjectsListProps) {
         </p>
       )}
 
-      {showCreateModal && (
-        <CreateObjectModal
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
+      {showCreateModal && <CreateObjectModal onClose={() => setShowCreateModal(false)} />}
 
       {editingObject && (
-        <CreateObjectModal
-          object={editingObject}
-          onClose={() => setEditingObject(null)}
-        />
+        <CreateObjectModal object={editingObject} onClose={() => setEditingObject(null)} />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirmId}
+        title="Удалить объект?"
+        message="Все комнаты в этом объекте будут удалены."
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        isDestructive={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </div>
   );
 }

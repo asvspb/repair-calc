@@ -1,29 +1,31 @@
 import type { StateCreator } from 'zustand';
 import type { RoomSlice, StoreState } from './types';
-import type { RoomData } from '../types';
+import type { RoomData } from '@shared/types';
 import {
   updateRoomInProject,
   addRoomToProject,
   deleteRoomFromProject,
   reorderRoomsInProject,
 } from '../utils/projectObjects';
-import {
-  logUserAction,
-  logSuccess,
-  logWarning,
-} from '../utils/logger';
+import { logUserAction, logSuccess, logWarning } from '../utils/logger';
 
 export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set, get) => ({
   updateRoom: (updatedRoom: RoomData) => {
     const { activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave } = get();
-    set((state) => {
+    set(state => {
       const prevActiveProject = state.projects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) {
         return state;
       }
 
-      const updatedProject = updateRoomInProject(prevActiveProject, updatedRoom.id, () => updatedRoom);
-      const newProjects = state.projects.map(p => p.id === updatedProject.id ? updatedProject : p);
+      const updatedProject = updateRoomInProject(
+        prevActiveProject,
+        updatedRoom.id,
+        () => updatedRoom,
+      );
+      const newProjects = state.projects.map(p =>
+        p.id === updatedProject.id ? updatedProject : p,
+      );
       const activeProject = newProjects.find(p => p.id === state.activeProjectId) || null;
 
       scheduleSave(newProjects);
@@ -37,12 +39,14 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
 
   updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => {
     const { activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave } = get();
-    set((state) => {
+    set(state => {
       const prevActiveProject = state.projects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) return state;
 
       const updatedProject = updateRoomInProject(prevActiveProject, roomId, updater);
-      const newProjects = state.projects.map(p => p.id === updatedProject.id ? updatedProject : p);
+      const newProjects = state.projects.map(p =>
+        p.id === updatedProject.id ? updatedProject : p,
+      );
       const activeProject = newProjects.find(p => p.id === state.activeProjectId) || null;
 
       scheduleSave(newProjects);
@@ -68,7 +72,11 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
     const { activeProject } = get();
     if (!activeProject) return;
 
-    logUserAction('Добавление комнаты', { roomId: newRoom.id, name: newRoom.name, projectId: activeProject.id });
+    logUserAction('Добавление комнаты', {
+      roomId: newRoom.id,
+      name: newRoom.name,
+      projectId: activeProject.id,
+    });
     const updatedProject = addRoomToProject(activeProject, newRoom);
     get().updateActiveProject(updatedProject);
     logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id });

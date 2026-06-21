@@ -1,25 +1,49 @@
 import React from 'react';
 import { Trash2, HelpCircle, Square } from 'lucide-react';
-import type { RoomSubSection, Opening, WallSection } from '../../types';
+import type { RoomSubSection, Opening, WallSection } from '@shared/types';
 import { NumberInput } from '../ui/NumberInput';
 import { OpeningList } from './OpeningList';
-import { calculateSectionMetrics } from '../../utils/geometry';
+import { calculateSectionMetrics } from '../../domain/geometry/geometry';
 
 // Custom SVG icons for shapes
 const Trapezoid = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M4 19 L7 5 L17 5 L20 19 Z" />
   </svg>
 );
 
 const Triangle = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M12 3 L22 19 L2 19 Z" />
   </svg>
 );
 
 const Parallelogram = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M8 19 L12 5 L22 5 L18 19 Z" />
   </svg>
 );
@@ -28,12 +52,26 @@ interface SubSectionItemProps {
   index: number;
   subSection: RoomSubSection;
   roomHeight: number;
-  onUpdate: (id: string, field: keyof RoomSubSection, val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[]) => void;
+  onUpdate: (
+    id: string,
+    field: keyof RoomSubSection,
+    val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[],
+  ) => void;
   onRemove: (id: string) => void;
-  onUpdateWindow: (subSectionId: string, windowId: string, field: keyof Opening, val: number | string) => void;
+  onUpdateWindow: (
+    subSectionId: string,
+    windowId: string,
+    field: keyof Opening,
+    val: number | string,
+  ) => void;
   onAddWindow: (subSectionId: string) => void;
   onRemoveWindow: (subSectionId: string, windowId: string) => void;
-  onUpdateDoor: (subSectionId: string, doorId: string, field: keyof Opening, val: number | string) => void;
+  onUpdateDoor: (
+    subSectionId: string,
+    doorId: string,
+    field: keyof Opening,
+    val: number | string,
+  ) => void;
   onAddDoor: (subSectionId: string) => void;
   onRemoveDoor: (subSectionId: string, doorId: string) => void;
 }
@@ -54,22 +92,33 @@ export const SubSectionItem = React.memo(function SubSectionItem({
   // Calculate metrics using the utility function
   const subMetrics = calculateSectionMetrics(subSection);
   const safeRoomHeight = roomHeight ?? 0;
-  const openingsArea = (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0) +
-                      (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
+  const openingsArea =
+    (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0) +
+    (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
   const wallArea = subMetrics.perimeter * safeRoomHeight - openingsArea;
   const volume = subMetrics.area * safeRoomHeight;
   const doorsWidth = (subSection.doors || []).reduce((sum, d) => sum + d.width, 0);
   const skirtingLength = Math.max(0, subMetrics.perimeter - doorsWidth);
 
   // Shape icon
-  const ShapeIcon = subSection.shape === 'trapezoid' ? Trapezoid :
-                    subSection.shape === 'triangle' ? Triangle :
-                    subSection.shape === 'parallelogram' ? Parallelogram : Square;
+  const ShapeIcon =
+    subSection.shape === 'trapezoid'
+      ? Trapezoid
+      : subSection.shape === 'triangle'
+        ? Triangle
+        : subSection.shape === 'parallelogram'
+          ? Parallelogram
+          : Square;
 
   return (
-    <div data-testid={`subsection-item-${subSection.id}`} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+    <div
+      data-testid={`subsection-item-${subSection.id}`}
+      className="p-4 bg-gray-50 rounded-xl border border-gray-200"
+    >
       <div className="flex items-center gap-3 mb-4">
-        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">{index + 1}</span>
+        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
+          {index + 1}
+        </span>
         <ShapeIcon className="w-4 h-4 text-indigo-500" />
         <input
           value={subSection.name}
@@ -90,12 +139,22 @@ export const SubSectionItem = React.memo(function SubSectionItem({
         <label className="block text-xs text-gray-500 mb-2">Форма секции</label>
         <div className="flex flex-wrap gap-2">
           {(['rectangle', 'trapezoid', 'triangle', 'parallelogram'] as const).map(shape => {
-            const Icon = shape === 'trapezoid' ? Trapezoid :
-                        shape === 'triangle' ? Triangle :
-                        shape === 'parallelogram' ? Parallelogram : Square;
-            const label = shape === 'rectangle' ? 'Прямоугольник' :
-                          shape === 'trapezoid' ? 'Трапеция' :
-                          shape === 'triangle' ? 'Треугольник' : 'Параллелограмм';
+            const Icon =
+              shape === 'trapezoid'
+                ? Trapezoid
+                : shape === 'triangle'
+                  ? Triangle
+                  : shape === 'parallelogram'
+                    ? Parallelogram
+                    : Square;
+            const label =
+              shape === 'rectangle'
+                ? 'Прямоугольник'
+                : shape === 'trapezoid'
+                  ? 'Трапеция'
+                  : shape === 'triangle'
+                    ? 'Треугольник'
+                    : 'Параллелограмм';
             return (
               <button
                 key={shape}
@@ -272,7 +331,7 @@ export const SubSectionItem = React.memo(function SubSectionItem({
           commentPlaceholder="Комментарий"
           openings={subSection.windows || []}
           onAdd={() => onAddWindow(subSection.id)}
-          onRemove={(id) => onRemoveWindow(subSection.id, id)}
+          onRemove={id => onRemoveWindow(subSection.id, id)}
           onUpdate={(id, field, val) => onUpdateWindow(subSection.id, id, field, val)}
         />
         <OpeningList
@@ -281,7 +340,7 @@ export const SubSectionItem = React.memo(function SubSectionItem({
           commentPlaceholder="Комментарий"
           openings={subSection.doors || []}
           onAdd={() => onAddDoor(subSection.id)}
-          onRemove={(id) => onRemoveDoor(subSection.id, id)}
+          onRemove={id => onRemoveDoor(subSection.id, id)}
           onUpdate={(id, field, val) => onUpdateDoor(subSection.id, id, field, val)}
         />
       </div>
@@ -291,7 +350,9 @@ export const SubSectionItem = React.memo(function SubSectionItem({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
           <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
             <div className="text-xs text-gray-500 mb-1">Пол/Потолок</div>
-            <div className="text-sm font-semibold text-gray-900">{subMetrics.area.toFixed(2)} м²</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {subMetrics.area.toFixed(2)} м²
+            </div>
           </div>
           <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-col justify-center items-center text-center">
             <div className="text-xs text-gray-500 mb-1">Стены</div>

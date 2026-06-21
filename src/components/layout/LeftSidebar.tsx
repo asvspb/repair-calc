@@ -1,8 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, X } from 'lucide-react';
 import { RoomList } from '../rooms/RoomList';
 import { ObjectSettings } from './ObjectSettings';
-import type { RoomData, ObjectData } from '../../types';
+import type { RoomData, ObjectData } from '@shared/types';
 
 type LeftSidebarProps = {
   activeTab: string;
@@ -41,6 +42,7 @@ export function LeftSidebar({
   hasProjects,
   onDeleteObject,
 }: LeftSidebarProps) {
+  const { t } = useTranslation();
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${
@@ -48,9 +50,12 @@ export function LeftSidebar({
       }`}
     >
       {/* Logo with mobile close button */}
-      <div className="flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0" style={{ height: 'calc(1rem + 56px + 1rem)' }}>
+      <div
+        className="flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0"
+        style={{ height: 'calc(1rem + 56px + 1rem)' }}
+      >
         <div className="w-6 md:hidden" /> {/* Spacer for balance */}
-        <img src="/logo.svg" alt="Мой ремонт" className="h-17 w-auto" />
+        <img src="/logo.svg" alt={t('sidebar.myRepair')} className="h-17 w-auto" />
         <button className="cursor-pointer md:hidden" onClick={onMobileMenuClose}>
           <X className="w-5 h-5 text-gray-500" />
         </button>
@@ -72,12 +77,14 @@ export function LeftSidebar({
         />
 
         {/* Rooms section */}
-        <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Комнаты</div>
+        <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          {t('sidebar.rooms')}
+        </div>
         {rooms.length > 0 && (
           <RoomList
             rooms={rooms}
             activeTab={activeTab}
-            onRoomClick={(roomId) => onTabChange(roomId)}
+            onRoomClick={roomId => onTabChange(roomId)}
             onReorderRooms={onReorderRooms}
           />
         )}
@@ -89,7 +96,7 @@ export function LeftSidebar({
           onClick={onAddRoom}
           disabled={!hasProjects}
           data-testid="add-room-btn"
-          title={!hasProjects ? 'Сначала создайте проект' : ''}
+          title={!hasProjects ? t('sidebar.createProjectFirst') : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all shadow-sm ${
             hasProjects
               ? 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 cursor-pointer'
@@ -97,13 +104,13 @@ export function LeftSidebar({
           }`}
         >
           <Plus className="w-4 h-4" />
-          Добавить комнату
+          {t('sidebar.addRoom')}
         </button>
         <button
           onClick={onAddObject}
           disabled={!hasProjects}
           data-testid="add-object-btn"
-          title={!hasProjects ? 'Сначала создайте проект' : ''}
+          title={!hasProjects ? t('sidebar.createProjectFirst') : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all ${
             hasProjects
               ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 cursor-pointer'
@@ -111,7 +118,7 @@ export function LeftSidebar({
           }`}
         >
           <Plus className="w-4 h-4" />
-          Добавить объект ремонта
+          {t('sidebar.addObject')}
         </button>
       </div>
     </aside>

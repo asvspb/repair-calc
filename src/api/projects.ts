@@ -2,11 +2,14 @@
  * API клиент для работы с проектами
  */
 
-import type { ProjectData, RoomData } from '../types';
+import type { ProjectData, RoomData } from '@shared/types';
 import { httpClient, ApiError } from './httpClient';
 
 export class ProjectsApiError extends Error {
-  constructor(message: string, public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message);
     this.name = 'ProjectsApiError';
   }
@@ -84,7 +87,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
       useAiPricing: apiProject.use_ai_pricing,
       lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
       version: apiProject.version,
-      objects: (apiProject.objects || []).map((obj) => ({
+      objects: (apiProject.objects || []).map(obj => ({
         id: obj.id,
         projectId: obj.project_id,
         name: obj.name,
@@ -137,7 +140,7 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
 /**
  * Безопасный парсинг JSON
  */
-function parseJSON<T>(value: string | any | null | undefined, defaultValue: T): T {
+function parseJSON<T>(value: string | unknown | null | undefined, defaultValue: T): T {
   if (value === null || value === undefined) return defaultValue;
   if (typeof value === 'string') {
     try {
@@ -165,10 +168,7 @@ function clientToApiProject(project: ProjectData, _userId: string): Partial<ApiP
  * Выполнение HTTP запроса с использованием единого клиента
  * Обеспечивает согласованную обработку ошибок, таймауты и авторизацию
  */
-async function fetchJson<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {
     return await httpClient.request<T>(endpoint, options);
   } catch (error) {
@@ -190,14 +190,22 @@ export async function getProjects(): Promise<{ status: string; data: ApiProject[
 /**
  * Получение проекта по ID с комнатами
  */
-export async function getProject(id: string): Promise<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }> {
-  return fetchJson<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }>(`/api/projects/${id}`);
+export async function getProject(
+  id: string,
+): Promise<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }> {
+  return fetchJson<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }>(
+    `/api/projects/${id}`,
+  );
 }
 
 /**
  * Создание нового проекта
  */
-export async function createProject(data: { name: string; city?: string; use_ai_pricing?: boolean }): Promise<{ status: string; data: ApiProject }> {
+export async function createProject(data: {
+  name: string;
+  city?: string;
+  use_ai_pricing?: boolean;
+}): Promise<{ status: string; data: ApiProject }> {
   return fetchJson<{ status: string; data: ApiProject }>('/api/projects', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -209,7 +217,12 @@ export async function createProject(data: { name: string; city?: string; use_ai_
  */
 export async function updateProject(
   id: string,
-  data: { name?: string; city?: string | null; use_ai_pricing?: boolean; last_ai_price_update?: string | null }
+  data: {
+    name?: string;
+    city?: string | null;
+    use_ai_pricing?: boolean;
+    last_ai_price_update?: string | null;
+  },
 ): Promise<{ status: string; data: ApiProject }> {
   return fetchJson<{ status: string; data: ApiProject }>(`/api/projects/${id}`, {
     method: 'PUT',
@@ -231,7 +244,7 @@ export async function deleteProject(id: string): Promise<{ status: string; messa
  */
 export async function updateAiSettings(
   id: string,
-  data: { use_ai_pricing: boolean; city?: string }
+  data: { use_ai_pricing: boolean; city?: string },
 ): Promise<{ status: string; data: ApiProject }> {
   return fetchJson<{ status: string; data: ApiProject }>(`/api/projects/${id}/ai-settings`, {
     method: 'PUT',
@@ -246,15 +259,15 @@ export async function syncPull(): Promise<{
   status: string;
   data: {
     projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
-    timestamp: number
-  }
+    timestamp: number;
+  };
 }> {
   return fetchJson<{
     status: string;
     data: {
       projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
-      timestamp: number
-    }
+      timestamp: number;
+    };
   }>('/api/sync/pull');
 }
 
@@ -268,15 +281,15 @@ export async function updateProjectWithRooms(
     city?: string | null;
     use_ai_pricing?: boolean;
     last_ai_price_update?: string | null;
-    rooms: RoomData[]
-  }
+    rooms: RoomData[];
+  },
 ): Promise<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }> {
   return fetchJson<{ status: string; data: ApiProject & { rooms: ApiRoom[] } }>(
     `/api/projects/${id}/with-rooms`,
     {
       method: 'PUT',
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
@@ -297,14 +310,14 @@ export async function updateProjectWithObjects(
       sort_order?: number;
       rooms?: RoomData[];
     }>;
-  }
+  },
 ): Promise<{ status: string; data: ApiProject & { objects: ApiObjectWithRooms[] } }> {
   return fetchJson<{ status: string; data: ApiProject & { objects: ApiObjectWithRooms[] } }>(
     `/api/projects/${id}/with-objects`,
     {
       method: 'PUT',
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
