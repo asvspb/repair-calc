@@ -1,17 +1,17 @@
 /**
  * Web Scraper Aggregator
- * 
+ *
  * Агрегирует результаты из нескольких веб-скраперов:
  * - Lemana PRO (lemanapro.ru)
  * - Bazavit (bazavit.ru)
  * - Future: Ozon, YandexMarket, Petrovich
- * 
+ *
  * Особенности:
  * - Параллельные запросы к источникам
  * - Circuit Breaker для каждого источника
  * - Агрегация и усреднение цен
  * - Приоритизация источников
- * 
+ *
  * @package server/src/services/update/parsers
  */
 
@@ -20,6 +20,7 @@ import { ParserError, CircuitBreakerOpenError } from './types.js';
 import { LemanaParser } from './lemanaParser.js';
 import { BazavitParser } from './bazavitParser.js';
 import { CircuitBreaker } from './circuitBreaker.js';
+import { winstonLogger } from '../../../middleware/logger.js';
 
 /**
  * Конфигурация источника скрапера
@@ -27,7 +28,7 @@ import { CircuitBreaker } from './circuitBreaker.js';
 export interface ScraperSource {
   name: string;
   parser: PriceParser;
-  priority: number;           // Чем меньше, тем выше приоритет
+  priority: number; // Чем меньше, тем выше приоритет
   enabled: boolean;
   circuitBreaker: CircuitBreaker;
 }
@@ -65,10 +66,10 @@ export interface WebScraperConfig {
 
 const DEFAULT_CONFIG: WebScraperConfig = {
   concurrentRequests: true,
-  sourceTimeoutMs: 30000,      // 30 секунд
+  sourceTimeoutMs: 30000, // 30 секунд
   minSuccessfulSources: 1,
   cacheEnabled: true,
-  cacheTtlMs: 3600000,         // 1 час
+  cacheTtlMs: 3600000, // 1 час
   circuitBreakerThreshold: 5,
   circuitBreakerResetMs: 600000, // 10 минут
 };
@@ -106,7 +107,7 @@ class ScraperCache {
 
 /**
  * Web Scraper Aggregator
- * 
+ *
  * Объединяет несколько веб-скраперов и агрегирует их результаты.
  */
 export class WebScraperParser implements PriceParser {
@@ -203,10 +204,15 @@ export class WebScraperParser implements PriceParser {
   getRateLimit(): RateLimit {
     // Суммируем лимиты всех активных источников
     const activeSources = this.sources.filter(s => s.enabled);
-    
+
     return {
-      requestsPerMinute: Math.min(...activeSources.map(s => s.parser.getRateLimit().requestsPerMinute)),
-      requestsPerDay: activeSources.reduce((sum, s) => sum + s.parser.getRateLimit().requestsPerDay, 0),
+      requestsPerMinute: Math.min(
+        ...activeSources.map(s => s.parser.getRateLimit().requestsPerMinute),
+      ),
+      requestsPerDay: activeSources.reduce(
+        (sum, s) => sum + s.parser.getRateLimit().requestsPerDay,
+        0,
+      ),
       concurrentRequests: activeSources.length,
     };
   }
@@ -234,7 +240,7 @@ export class WebScraperParser implements PriceParser {
       const errors = results.filter(r => r.error).map(r => `${r.source}: ${r.error?.message}`);
       throw new ParserError(
         `Not enough successful sources (${successful.length}/${this.config.minSuccessfulSources}). Errors: ${errors.join('; ')}`,
-        true
+        true,
       );
     }
 
@@ -254,7 +260,7 @@ export class WebScraperParser implements PriceParser {
    */
   private async fetchFromSources(request: PriceRequest): Promise<ScraperResult[]> {
     const availableSources = this.sources.filter(
-      s => s.enabled && s.circuitBreaker.getState().state !== 'open'
+      s => s.enabled && s.circuitBreaker.getState().state !== 'open',
     );
 
     if (availableSources.length === 0) {
@@ -263,16 +269,14 @@ export class WebScraperParser implements PriceParser {
 
     if (this.config.concurrentRequests) {
       // Параллельные запросы
-      return Promise.all(
-        availableSources.map(source => this.fetchFromSource(source, request))
-      );
+      return Promise.all(availableSources.map(source => this.fetchFromSource(source, request)));
     } else {
       // Последовательные запросы (по приоритету)
       const results: ScraperResult[] = [];
       for (const source of availableSources) {
         const result = await this.fetchFromSource(source, request);
         results.push(result);
-        
+
         // Если получили хороший результат от высокоприоритетного источника, можно остановиться
         if (result.result && result.result.confidenceScore >= 0.8) {
           break;
@@ -285,7 +289,10 @@ export class WebScraperParser implements PriceParser {
   /**
    * Запрос к одному источнику с Circuit Breaker
    */
-  private async fetchFromSource(source: ScraperSource, request: PriceRequest): Promise<ScraperResult> {
+  private async fetchFromSource(
+    source: ScraperSource,
+    request: PriceRequest,
+  ): Promise<ScraperResult> {
     const startTime = Date.now();
 
     try {
@@ -298,7 +305,7 @@ export class WebScraperParser implements PriceParser {
       // Выполнение запроса с таймаутом
       const result = await this.withTimeout(
         source.parser.fetch(request),
-        this.config.sourceTimeoutMs
+        this.config.sourceTimeoutMs,
       );
 
       // Успех - сброс Circuit Breaker
@@ -348,7 +355,7 @@ export class WebScraperParser implements PriceParser {
     const minPrice = Math.min(...results.map(r => r.result!.prices.min));
     const maxPrice = Math.max(...results.map(r => r.result!.prices.max));
     const avgPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
-    
+
     // Средняя уверенность с бонусом за количество источников
     const avgConfidence = totalConfidence / results.length;
     const sourceBonus = Math.min(0.1, results.length * 0.03);
@@ -393,7 +400,7 @@ export class WebScraperParser implements PriceParser {
     return Promise.race([
       promise,
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new ParserError('Request timeout', true)), timeoutMs)
+        setTimeout(() => reject(new ParserError('Request timeout', true)), timeoutMs),
       ),
     ]);
   }
@@ -453,7 +460,9 @@ export function getWebScraper(config?: Partial<WebScraperConfig>): WebScraperPar
  */
 export function resetWebScraper(): void {
   if (webScraperInstance) {
-    webScraperInstance.close().catch(() => {});
+    webScraperInstance
+      .close()
+      .catch(err => winstonLogger.error('webScraperInstance close error', err));
     webScraperInstance = null;
   }
 }

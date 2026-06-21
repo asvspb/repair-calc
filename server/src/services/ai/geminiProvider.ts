@@ -13,13 +13,20 @@ import type {
   RecommendedWork,
   RecommendedMaterial,
   RecommendedTool,
+  AIProviderStats,
+  AIProviderConfig,
+  AIProvider,
+  EstimateRequest,
+  EstimateResult,
+  SuggestMaterialsRequest,
 } from './types.js';
 import { buildPriceSearchPrompt, buildPriceSearchResult } from './priceSearchHelpers.js';
 import { AIProviderError } from './types.js';
 import { CircuitBreaker } from '../update/parsers/circuitBreaker.js';
 import { RateLimiter } from '../update/parsers/rateLimiter.js';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 /**
  * Получает API ключ из переменных окружения
@@ -59,7 +66,8 @@ abstract class BaseAIProvider {
       this.stats.failedRequests++;
     }
     this.stats.averageLatencyMs =
-      (this.stats.averageLatencyMs * (this.stats.totalRequests - 1) + latencyMs) / this.stats.totalRequests;
+      (this.stats.averageLatencyMs * (this.stats.totalRequests - 1) + latencyMs) /
+      this.stats.totalRequests;
     this.stats.lastRequestAt = new Date().toISOString();
   }
 
@@ -132,7 +140,11 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
     const response = await this.makeRequest(prompt);
     const text = this.extractText(response);
     const parsed = this.parseJsonFromText(text);
-    return buildPriceSearchResult(parsed as Parameters<typeof buildPriceSearchResult>[0], request, (c) => this.validateConfidence(c));
+    return buildPriceSearchResult(
+      parsed as Parameters<typeof buildPriceSearchResult>[0],
+      request,
+      c => this.validateConfidence(c),
+    );
   }
 
   /**
@@ -144,7 +156,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
         'API ключ Gemini не настроен. Добавьте GEMINI_API_KEY в .env',
         this.name,
         false,
-        'NO_API_KEY'
+        'NO_API_KEY',
       );
     }
 
@@ -153,7 +165,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
         'Circuit breaker is open for Gemini',
         this.name,
         false,
-        'CIRCUIT_BREAKER_OPEN'
+        'CIRCUIT_BREAKER_OPEN',
       );
     }
 
@@ -191,7 +203,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
             `Gemini API auth error: ${response.status}`,
             this.name,
             false,
-            'AUTH_ERROR'
+            'AUTH_ERROR',
           );
         }
 
@@ -201,7 +213,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
             'Gemini API rate limit exceeded',
             this.name,
             true,
-            'RATE_LIMIT'
+            'RATE_LIMIT',
           );
         }
 
@@ -209,7 +221,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
           `Gemini API error: ${response.status} - ${errorText}`,
           this.name,
           true,
-          'API_ERROR'
+          'API_ERROR',
         );
       }
 
@@ -230,7 +242,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
         error instanceof Error ? error.message : 'Unknown error',
         this.name,
         true,
-        'REQUEST_ERROR'
+        'REQUEST_ERROR',
       );
     }
   }
@@ -277,7 +289,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
         'Не удалось распарсить JSON из ответа',
         this.name,
         false,
-        'PARSE_ERROR'
+        'PARSE_ERROR',
       );
     }
   }
@@ -462,7 +474,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
    */
   private parseSuggestMaterialsResponse(
     data: unknown,
-    request: SuggestMaterialsRequest
+    request: SuggestMaterialsRequest,
   ): SuggestMaterialsResult {
     const text = this.extractText(data);
     const parsed = this.parseJsonFromText(text) as {
@@ -489,7 +501,7 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
    */
   private parseGenerateTemplateResponse(
     data: unknown,
-    request: GenerateTemplateRequest
+    request: GenerateTemplateRequest,
   ): GenerateTemplateResult {
     const text = this.extractText(data);
     const parsed = this.parseJsonFromText(text) as {

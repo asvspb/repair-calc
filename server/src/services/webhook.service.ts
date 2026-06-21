@@ -3,7 +3,12 @@
  */
 
 import crypto from 'crypto';
-import { WebhookRepository, type UpdateWebhook, type WebhookEvent } from '../db/repositories/webhook.repo.js';
+import {
+  WebhookRepository,
+  type UpdateWebhook,
+  type WebhookEvent,
+} from '../db/repositories/webhook.repo.js';
+import { winstonLogger } from '../middleware/logger.js';
 
 // ═══════════════════════════════════════════════════════
 // ТИПЫ
@@ -33,16 +38,16 @@ class WebhookService {
    */
   async trigger(
     event: WebhookEvent,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Promise<{ sent: number; failed: number }> {
     const webhooks = await WebhookRepository.findByEvent(event);
-    
+
     if (webhooks.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
     const results = await Promise.allSettled(
-      webhooks.map(webhook => this.sendWebhook(webhook, event, data))
+      webhooks.map(webhook => this.sendWebhook(webhook, event, data)),
     );
 
     let sent = 0;
@@ -51,16 +56,21 @@ class WebhookService {
     results.forEach((result, index) => {
       const webhook = webhooks[index];
       if (!webhook) return;
-      
+
       if (result.status === 'fulfilled' && result.value.success) {
         sent++;
-        WebhookRepository.recordSuccess(webhook.id).catch(() => {});
+        WebhookRepository.recordSuccess(webhook.id).catch(err =>
+          winstonLogger.error('recordSuccess error', err),
+        );
       } else {
         failed++;
-        const error = result.status === 'rejected'
-          ? result.reason?.message || 'Unknown error'
-          : result.value.error || 'Request failed';
-        WebhookRepository.recordFailure(webhook.id, error).catch(() => {});
+        const error =
+          result.status === 'rejected'
+            ? result.reason?.message || 'Unknown error'
+            : result.value.error || 'Request failed';
+        WebhookRepository.recordFailure(webhook.id, error).catch(err =>
+          winstonLogger.error('recordFailure error', err),
+        );
       }
     });
 
@@ -73,7 +83,7 @@ class WebhookService {
   private async sendWebhook(
     webhook: UpdateWebhook,
     event: WebhookEvent,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Promise<WebhookSendResult> {
     const timestamp = new Date().toISOString();
     const payload: Omit<WebhookPayload, 'signature'> = {
@@ -151,10 +161,7 @@ class WebhookService {
   /**
    * Генерация HMAC-SHA256 подписи
    */
-  private generateSignature(
-    payload: Omit<WebhookPayload, 'signature'>,
-    secret: string
-  ): string {
+  private generateSignature(payload: Omit<WebhookPayload, 'signature'>, secret: string): string {
     const message = `${payload.event}:${payload.timestamp}:${JSON.stringify(payload.data)}`;
     return crypto.createHmac('sha256', secret).update(message).digest('hex');
   }
@@ -165,12 +172,12 @@ class WebhookService {
   verifySignature(
     payload: Omit<WebhookPayload, 'signature'>,
     signature: string,
-    secret: string
+    secret: string,
   ): boolean {
     const expectedSignature = this.generateSignature(payload, secret);
     return crypto.timingSafeEqual(
       Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
+      Buffer.from(expectedSignature, 'hex'),
     );
   }
 
