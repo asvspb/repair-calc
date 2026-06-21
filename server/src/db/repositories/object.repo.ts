@@ -1,16 +1,8 @@
-import { query, execute } from '../pool.js';
-import type { Object, ObjectWithRooms } from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
+import db from '../db.js';
+import type { DbObject, ObjectWithRooms } from '../../types/index.js';
 
-/**
- * Репозиторий для работы с объектами недвижимости
- * Объект — единица недвижимости в составе проекта (квартира, дом, офис)
- */
 export class ObjectRepository {
-  /**
-   * Создание нового объекта
-   */
   static async create(
     projectId: string,
     userId: string,
@@ -19,215 +11,148 @@ export class ObjectRepository {
       city?: string | null;
       address?: string | null;
       use_ai_pricing?: boolean;
-    }
-  ): Promise<Object> {
+    },
+  ): Promise<DbObject> {
     const id = uuidv4();
 
-    await execute(
-      `INSERT INTO objects (
-        id, project_id, user_id, name, city, address, 
-        use_ai_pricing, version, sort_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)`,
-      [
-        id,
-        projectId,
-        userId,
-        data.name,
-        data.city || null,
-        data.address || null,
-        data.use_ai_pricing || false,
-      ]
-    );
+    await db('objects').insert({
+      id,
+      project_id: projectId,
+      user_id: userId,
+      name: data.name,
+      city: data.city || null,
+      address: data.address || null,
+      use_ai_pricing: data.use_ai_pricing || false,
+      version: 1,
+      sort_order: 0,
+    });
 
-    const rows = await query<(Object & RowDataPacket)[]>(
-      'SELECT * FROM objects WHERE id = ? AND deleted_at IS NULL',
-      [id]
-    );
-
-    return rows[0]!;
+    return (await this.findById(id))!;
   }
 
-  /**
-   * Поиск объекта по ID
-   */
-  static async findById(id: string): Promise<Object | null> {
-    const rows = await query<(Object & RowDataPacket)[]>(
-      'SELECT * FROM objects WHERE id = ? AND deleted_at IS NULL',
-      [id]
-    );
+  static async findById(id: string): Promise<DbObject | null> {
+    const row = await db('objects').where({ id }).whereNull('deleted_at').first();
 
-    return rows[0] || null;
+    return (row as DbObject) || null;
   }
 
-  /**
-   * Поиск объекта с комнатами по ID
-   */
   static async findByIdWithRooms(id: string): Promise<ObjectWithRooms | null> {
     const object = await this.findById(id);
     if (!object) return null;
 
-    const rooms = await query<(any & RowDataPacket)[]>(
-      `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-      [object.id]
-    );
+    const rooms = await db('rooms')
+      .where({ object_id: id })
+      .whereNull('deleted_at')
+      .orderBy('sort_order');
 
     return { ...object, rooms };
   }
 
-  /**
-   * Поиск всех объектов проекта
-   */
-  static async findByProjectId(projectId: string): Promise<Object[]> {
-    const rows = await query<(Object & RowDataPacket)[]>(
-      `SELECT * FROM objects 
-       WHERE project_id = ? AND deleted_at IS NULL 
-       ORDER BY sort_order`,
-      [projectId]
-    );
+  static async findByProjectId(projectId: string): Promise<DbObject[]> {
+    const rows = await db('objects')
+      .where({ project_id: projectId })
+      .whereNull('deleted_at')
+      .orderBy('sort_order');
 
-    return rows;
+    return rows as DbObject[];
   }
 
-  /**
-   * Поиск всех объектов проекта с комнатами
-   */
   static async findProjectWithObjects(projectId: string): Promise<ObjectWithRooms[]> {
     const objects = await this.findByProjectId(projectId);
 
     const result = await Promise.all(
-      objects.map(async (object) => {
-        const rooms = await query<(any & RowDataPacket)[]>(
-          `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-          [object.id]
-        );
+      objects.map(async object => {
+        const rooms = await db('rooms')
+          .where({ object_id: object.id })
+          .whereNull('deleted_at')
+          .orderBy('sort_order');
+
         return { ...object, rooms };
-      })
+      }),
     );
 
     return result;
   }
 
-  /**
-   * Поиск всех объектов пользователя
-   */
-  static async findByUserId(userId: string): Promise<Object[]> {
-    const rows = await query<(Object & RowDataPacket)[]>(
-      `SELECT o.* FROM objects o
-       JOIN projects p ON o.project_id = p.id
-       WHERE o.user_id = ? AND o.deleted_at IS NULL AND p.deleted_at IS NULL
-       ORDER BY p.name, o.sort_order`,
-      [userId]
-    );
+  static async findByUserId(userId: string): Promise<DbObject[]> {
+    const rows = await db('objects as o')
+      .join('projects as p', 'o.project_id', 'p.id')
+      .where('o.user_id', userId)
+      .whereNull('o.deleted_at')
+      .whereNull('p.deleted_at')
+      .select('o.*')
+      .orderBy(['p.name', 'o.sort_order']);
 
-    return rows;
+    return rows as DbObject[];
   }
 
-  /**
-   * Поиск объекта по ID и пользователю (проверка прав доступа)
-   */
-  static async findByIdAndUserId(id: string, userId: string): Promise<Object | null> {
-    const rows = await query<(Object & RowDataPacket)[]>(
-      `SELECT o.* FROM objects o
-       JOIN projects p ON o.project_id = p.id
-       WHERE o.id = ? AND o.user_id = ? AND o.deleted_at IS NULL AND p.deleted_at IS NULL`,
-      [id, userId]
-    );
+  static async findByIdAndUserId(id: string, userId: string): Promise<DbObject | null> {
+    const row = await db('objects as o')
+      .join('projects as p', 'o.project_id', 'p.id')
+      .where('o.id', id)
+      .where('o.user_id', userId)
+      .whereNull('o.deleted_at')
+      .whereNull('p.deleted_at')
+      .select('o.*')
+      .first();
 
-    return rows[0] || null;
+    return (row as DbObject) || null;
   }
 
-  /**
-   * Обновление объекта
-   */
-  static async update(id: string, data: Partial<Object>): Promise<Object | null> {
-    const fields: string[] = [];
-    const values: (string | number | boolean | Date | null)[] = [];
+  static async update(id: string, data: Partial<DbObject>): Promise<DbObject | null> {
+    const fields = [
+      'name',
+      'city',
+      'address',
+      'use_ai_pricing',
+      'last_ai_price_update',
+      'sort_order',
+    ] as const;
 
-    if (data.name !== undefined) {
-      fields.push('name = ?');
-      values.push(data.name);
-    }
-    if (data.city !== undefined) {
-      fields.push('city = ?');
-      values.push(data.city);
-    }
-    if (data.address !== undefined) {
-      fields.push('address = ?');
-      values.push(data.address);
-    }
-    if (data.use_ai_pricing !== undefined) {
-      fields.push('use_ai_pricing = ?');
-      values.push(data.use_ai_pricing);
-    }
-    if (data.last_ai_price_update !== undefined) {
-      fields.push('last_ai_price_update = ?');
-      values.push(data.last_ai_price_update);
-    }
-    if (data.sort_order !== undefined) {
-      fields.push('sort_order = ?');
-      values.push(data.sort_order);
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    for (const field of fields) {
+      if (data[field] !== undefined) {
+        updateData[field] = data[field];
+      }
     }
 
-    if (fields.length === 0) {
+    if (Object.keys(updateData).length === 1) {
       return this.findById(id);
     }
 
-    values.push(id);
-
-    await execute(
-      `UPDATE objects SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      values
-    );
-
+    const updated = await db('objects').where({ id }).update(updateData);
+    if (!updated) return null;
     return this.findById(id);
   }
 
-  /**
-   * Мягкое удаление объекта
-   */
   static async delete(id: string): Promise<boolean> {
-    const result = await execute(
-      'UPDATE objects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL',
-      [id]
-    );
+    const updated = await db('objects')
+      .where({ id })
+      .whereNull('deleted_at')
+      .update({ deleted_at: new Date() });
 
-    return result.affectedRows > 0;
+    return updated > 0;
   }
 
-  /**
-   * Подсчёт количества объектов в проекте (для проверки лимита)
-   */
   static async countByProjectId(projectId: string): Promise<number> {
-    const rows = await query<any[]>(
-      `SELECT COUNT(*) as count FROM objects 
-       WHERE project_id = ? AND deleted_at IS NULL`,
-      [projectId]
-    );
+    const row = await db('objects')
+      .where({ project_id: projectId })
+      .whereNull('deleted_at')
+      .count('id as count')
+      .first();
 
-    return rows[0]?.count || 0;
+    return Number(row?.count ?? 0);
   }
 
-  /**
-   * Проверка лимита объектов для бесплатных пользователей
-   * @returns true если лимит превышен
-   */
   static async isLimitReached(projectId: string, userId: string): Promise<boolean> {
     const MAX_OBJECTS_FREE = 10;
 
-    // Получаем статус премиума пользователя
-    const userRows = await query<any[]>(
-      'SELECT is_premium FROM users WHERE id = ?',
-      [userId]
-    );
+    const userRow = await db('users').select('is_premium').where({ id: userId }).first();
 
-    const isPremium = userRows[0]?.is_premium || false;
+    const isPremium = (userRow as any)?.is_premium || false;
 
-    // Для премиум лимита нет
-    if (isPremium) {
-      return false;
-    }
+    if (isPremium) return false;
 
-    // Проверяем количество объектов
     const count = await this.countByProjectId(projectId);
     return count >= MAX_OBJECTS_FREE;
   }

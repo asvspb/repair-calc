@@ -1,11 +1,20 @@
 import { query, execute, transaction } from '../pool.js';
-import type { Project, Room, ProjectWithRooms, Object, ProjectWithObjects } from '../../types/index.js';
+import type {
+  Project,
+  Room,
+  ProjectWithRooms,
+  DbObject as Object,
+  ProjectWithObjects,
+} from '../../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
+import type { RowDataPacket } from '../pool.js';
 import { winstonLogger } from '../../middleware/logger.js';
 
 export class ProjectRepository {
-  static async create(userId: string, data: { name: string; city?: string; use_ai_pricing?: boolean }): Promise<ProjectWithObjects> {
+  static async create(
+    userId: string,
+    data: { name: string; city?: string; use_ai_pricing?: boolean },
+  ): Promise<ProjectWithObjects> {
     const id = uuidv4();
     const objectId = uuidv4();
 
@@ -13,13 +22,13 @@ export class ProjectRepository {
       // Создаём проект
       await execute(
         `INSERT INTO projects (id, user_id, name, city, use_ai_pricing) VALUES (?, ?, ?, ?, ?)`,
-        [id, userId, data.name, data.city || null, data.use_ai_pricing || false]
+        [id, userId, data.name, data.city || null, data.use_ai_pricing || false],
       );
 
       // Создаём первый объект для проекта
       await execute(
         `INSERT INTO objects (id, project_id, user_id, name, city, sort_order) VALUES (?, ?, ?, ?, ?, ?)`,
-        [objectId, id, userId, data.name, data.city || null, 0]
+        [objectId, id, userId, data.name, data.city || null, 0],
       );
     });
 
@@ -30,7 +39,7 @@ export class ProjectRepository {
   static async findById(id: string): Promise<Project | null> {
     const rows = await query<(Project & RowDataPacket)[]>(
       `SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL`,
-      [id]
+      [id],
     );
 
     return rows[0] || null;
@@ -42,17 +51,17 @@ export class ProjectRepository {
 
     const objects = await query<(Object & RowDataPacket)[]>(
       `SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-      [id]
+      [id],
     );
 
     const objectsWithRooms = await Promise.all(
-      objects.map(async (obj) => {
+      objects.map(async obj => {
         const rooms = await query<(Room & RowDataPacket)[]>(
           `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-          [obj.id]
+          [obj.id],
         );
         return { ...obj, rooms };
-      })
+      }),
     );
 
     return { ...project, objects: objectsWithRooms };
@@ -61,18 +70,18 @@ export class ProjectRepository {
   static async findByUserId(userId: string): Promise<Project[]> {
     const rows = await query<(Project & RowDataPacket)[]>(
       `SELECT * FROM projects WHERE user_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC`,
-      [userId]
+      [userId],
     );
-    
+
     return rows;
   }
 
   static async findByIdAndUserId(id: string, userId: string): Promise<Project | null> {
     const rows = await query<(Project & RowDataPacket)[]>(
       `SELECT * FROM projects WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
-      [id, userId]
+      [id, userId],
     );
-    
+
     return rows[0] || null;
   }
 
@@ -106,12 +115,12 @@ export class ProjectRepository {
     }
 
     values.push(id);
-    
+
     await execute(
       `UPDATE projects SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      values
+      values,
     );
-    
+
     return this.findById(id);
   }
 
@@ -119,32 +128,35 @@ export class ProjectRepository {
     // Сначала мягкое удаление всех объектов проекта
     await execute(
       'UPDATE objects SET deleted_at = CURRENT_TIMESTAMP WHERE project_id = ? AND deleted_at IS NULL',
-      [id]
+      [id],
     );
 
     // Затем мягкое удаление всех комнат проекта (на случай если объекты уже удалены)
     await execute(
       'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE project_id = ? AND deleted_at IS NULL',
-      [id]
+      [id],
     );
 
     // И наконец удаление самого проекта
     const result = await execute(
       'UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL',
-      [id]
+      [id],
     );
 
     return result.affectedRows > 0;
   }
 
   // Full project with rooms (for sync)
-  static async findFullProject(id: string, userId: string): Promise<(Project & { rooms: Room[] }) | null> {
+  static async findFullProject(
+    id: string,
+    userId: string,
+  ): Promise<(Project & { rooms: Room[] }) | null> {
     const project = await this.findByIdAndUserId(id, userId);
     if (!project) return null;
 
     const rooms = await query<(Room & RowDataPacket)[]>(
       `SELECT * FROM rooms WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-      [id]
+      [id],
     );
 
     return { ...project, rooms };
@@ -156,27 +168,27 @@ export class ProjectRepository {
     const projects = await this.findByUserId(userId);
 
     const result = await Promise.all(
-      projects.map(async (project) => {
+      projects.map(async project => {
         // Для обратной совместимости загружаем комнаты из первого объекта
         const objects = await query<(any & RowDataPacket)[]>(
           `SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-          [project.id]
+          [project.id],
         );
-        
+
         let rooms: Room[] = [];
         if (objects.length > 0) {
           // Загружаем комнаты из всех объектов
           for (const obj of objects) {
             const objRooms = await query<(Room & RowDataPacket)[]>(
               `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-              [obj.id]
+              [obj.id],
             );
             rooms = rooms.concat(objRooms);
           }
         }
-        
+
         return { ...project, rooms };
-      })
+      }),
     );
 
     return result;
@@ -187,24 +199,24 @@ export class ProjectRepository {
     const projects = await this.findByUserId(userId);
 
     const result = await Promise.all(
-      projects.map(async (project) => {
+      projects.map(async project => {
         const objects = await query<(Object & RowDataPacket)[]>(
           `SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-          [project.id]
+          [project.id],
         );
-        
+
         const objectsWithRooms = await Promise.all(
-          objects.map(async (obj) => {
+          objects.map(async obj => {
             const rooms = await query<(Room & RowDataPacket)[]>(
               `SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-              [obj.id]
+              [obj.id],
             );
             return { ...obj, rooms };
-          })
+          }),
         );
-        
+
         return { ...project, objects: objectsWithRooms };
-      })
+      }),
     );
 
     return result;
@@ -218,13 +230,13 @@ export class ProjectRepository {
     projectId: string,
     userId: string,
     projectData: Partial<Project>,
-    roomsData: Room[]
+    roomsData: Room[],
   ): Promise<ProjectWithRooms> {
-    return transaction(async (conn) => {
+    return transaction(async conn => {
       // Verify ownership
       const existingRows = await conn.query<(Project & RowDataPacket)[]>(
         'SELECT * FROM projects WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
-        [projectId, userId]
+        [projectId, userId],
       );
 
       if (!existingRows[0]) {
@@ -256,26 +268,26 @@ export class ProjectRepository {
         values.push(projectId);
         await conn.execute(
           `UPDATE projects SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          values
+          values,
         );
       }
 
       // Update rooms - mark all existing rooms for potential deletion
       const roomIds = roomsData.map(r => r.id);
-      
+
       if (roomIds.length > 0) {
         // Soft delete rooms that are not in the new list
         const placeholders = roomIds.map(() => '?').join(',');
         await conn.execute(
           `UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP 
            WHERE project_id = ? AND id NOT IN (${placeholders}) AND deleted_at IS NULL`,
-          [projectId, ...roomIds]
+          [projectId, ...roomIds],
         );
       } else {
         // No rooms - delete all
         await conn.execute(
           'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE project_id = ? AND deleted_at IS NULL',
-          [projectId]
+          [projectId],
         );
       }
 
@@ -284,7 +296,7 @@ export class ProjectRepository {
         // Check if room exists
         const existingRoomRows = await conn.query<(Room & RowDataPacket)[]>(
           'SELECT * FROM rooms WHERE id = ? AND project_id = ? AND deleted_at IS NULL',
-          [room.id, projectId]
+          [room.id, projectId],
         );
 
         if (existingRoomRows[0]) {
@@ -346,14 +358,14 @@ export class ProjectRepository {
             roomValues.push(room.id);
             await conn.execute(
               `UPDATE rooms SET ${roomFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-              roomValues
+              roomValues,
             );
           }
         } else {
           // Create new room
           const maxOrderResult = await conn.query<(RowDataPacket & { max_order: number | null })[]>(
             'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM rooms WHERE project_id = ?',
-            [projectId]
+            [projectId],
           );
           const sortOrder = (maxOrderResult[0][0]?.max_order ?? -1) + 1;
 
@@ -376,8 +388,8 @@ export class ProjectRepository {
               room.sub_sections || null,
               room.windows || null,
               room.doors || null,
-              room.works || null
-            ]
+              room.works || null,
+            ],
           );
         }
       }
@@ -388,7 +400,7 @@ export class ProjectRepository {
 
       const roomsResult = await conn.query<(Room & RowDataPacket)[]>(
         `SELECT * FROM rooms WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
-        [projectId]
+        [projectId],
       );
 
       return { ...updated, rooms: roomsResult[0] };
@@ -410,13 +422,13 @@ export class ProjectRepository {
     projectId: string,
     userId: string,
     projectData: Partial<Project>,
-    objectsData: any[]
+    objectsData: any[],
   ): Promise<ProjectWithObjects> {
-    return transaction(async (conn) => {
+    return transaction(async conn => {
       // Verify ownership
       const existingRows = await conn.query<(Project & RowDataPacket)[]>(
         'SELECT * FROM projects WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
-        [projectId, userId]
+        [projectId, userId],
       );
 
       if (!existingRows[0]) {
@@ -448,14 +460,14 @@ export class ProjectRepository {
         values.push(projectId);
         await conn.execute(
           `UPDATE projects SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          values
+          values,
         );
       }
 
       // Get existing objects
       const existingObjectsResult = await conn.query<(any & RowDataPacket)[]>(
         'SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL',
-        [projectId]
+        [projectId],
       );
       const existingObjects = existingObjectsResult[0] || [];
 
@@ -481,7 +493,7 @@ export class ProjectRepository {
           // Update existing object
           objectId = inputId;
           usedServerObjectIds.add(objectId);
-          
+
           const objFields: string[] = [];
           const objValues: (string | number | null)[] = [];
 
@@ -498,24 +510,35 @@ export class ProjectRepository {
             objValues.push(objectId, projectId);
             await conn.execute(
               `UPDATE objects SET ${objFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND project_id = ?`,
-              objValues
+              objValues,
             );
           }
         } else {
           // Create new object with a new server UUID
           // This handles both: no ID provided, or local ID (like "local-obj-...")
           objectId = uuidv4();
-          winstonLogger.info('Создание нового объекта', { name: objData.name || '', localId: inputId || null, serverId: objectId });
+          winstonLogger.info('Создание нового объекта', {
+            name: objData.name || '',
+            localId: inputId || null,
+            serverId: objectId,
+          });
           await conn.execute(
             `INSERT INTO objects (id, project_id, user_id, name, city, sort_order) VALUES (?, ?, ?, ?, ?, ?)`,
-            [objectId, projectId, userId, objData.name || '', objData.city || null, objData.sort_order || 0]
+            [
+              objectId,
+              projectId,
+              userId,
+              objData.name || '',
+              objData.city || null,
+              objData.sort_order || 0,
+            ],
           );
         }
 
         // Get existing rooms for this object
         const existingRoomsResult = await conn.query<(Room & RowDataPacket)[]>(
           'SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL',
-          [objectId]
+          [objectId],
         );
         const existingRooms = existingRoomsResult[0] || [];
         const existingRoomsMap = new Map<string, Room>();
@@ -600,20 +623,30 @@ export class ProjectRepository {
                 roomValues.push(roomId, objectId);
                 await conn.execute(
                   `UPDATE rooms SET ${roomFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND object_id = ?`,
-                  roomValues
+                  roomValues,
                 );
               }
             } else {
               // Create new room with a new server UUID
               // This handles both: no ID provided, or local ID (like "local-room-...")
               roomId = uuidv4();
-              winstonLogger.info('Создание новой комнаты', { name: room.name || 'Комната', localId: inputRoomId || null, serverId: roomId });
+              winstonLogger.info('Создание новой комнаты', {
+                name: room.name || 'Комната',
+                localId: inputRoomId || null,
+                serverId: roomId,
+              });
               await conn.execute(
                 `INSERT INTO rooms (id, object_id, project_id, name, geometry_mode, length, width, height, segments, obstacles, wall_sections, sub_sections, windows, doors, works, sort_order)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                  roomId, objectId, projectId, room.name || 'Комната', room.geometry_mode || 'simple',
-                  room.length ?? 0, room.width ?? 0, room.height ?? 0,
+                  roomId,
+                  objectId,
+                  projectId,
+                  room.name || 'Комната',
+                  room.geometry_mode || 'simple',
+                  room.length ?? 0,
+                  room.width ?? 0,
+                  room.height ?? 0,
                   JSON.stringify(room.segments ?? []),
                   JSON.stringify(room.obstacles ?? []),
                   JSON.stringify(room.wall_sections ?? []),
@@ -621,8 +654,8 @@ export class ProjectRepository {
                   JSON.stringify(room.windows ?? []),
                   JSON.stringify(room.doors ?? []),
                   JSON.stringify(room.works ?? []),
-                  room.sort_order ?? 0
-                ]
+                  room.sort_order ?? 0,
+                ],
               );
             }
           }
@@ -631,12 +664,12 @@ export class ProjectRepository {
         // Soft delete rooms that are no longer in the request (only for server UUIDs that exist)
         const existingRoomIds = Array.from(existingRoomsMap.keys());
         const roomIdsToDelete = existingRoomIds.filter(id => !usedServerRoomIds.has(id));
-        
+
         if (roomIdsToDelete.length > 0) {
           const placeholders = roomIdsToDelete.map(() => '?').join(',');
           await conn.execute(
             `UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE object_id = ? AND id IN (${placeholders}) AND deleted_at IS NULL`,
-            [objectId, ...roomIdsToDelete]
+            [objectId, ...roomIdsToDelete],
           );
           winstonLogger.info('Удалено комнат', { count: roomIdsToDelete.length });
         }
@@ -648,7 +681,7 @@ export class ProjectRepository {
 
       const objectsResult = await conn.query<(any & RowDataPacket)[]>(
         'SELECT * FROM objects WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-        [projectId]
+        [projectId],
       );
 
       const objects = objectsResult[0] || [];
@@ -656,10 +689,10 @@ export class ProjectRepository {
         objects.map(async (obj: any) => {
           const roomsResult = await conn.query<(Room & RowDataPacket)[]>(
             'SELECT * FROM rooms WHERE object_id = ? AND deleted_at IS NULL ORDER BY sort_order',
-            [obj.id]
+            [obj.id],
           );
           return { ...obj, rooms: roomsResult[0] || [] };
-        })
+        }),
       );
 
       return { ...updated, objects: objectsWithRooms };

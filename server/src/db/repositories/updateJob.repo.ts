@@ -1,6 +1,6 @@
 import { query, execute } from '../pool.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
+import type { RowDataPacket } from '../pool.js';
 import { PriceCategory, SourceType } from './priceCatalog.repo.js';
 
 // ═══════════════════════════════════════════════════════
@@ -104,7 +104,7 @@ export class UpdateJobRepository {
 
   static async create(input: CreateJobInput): Promise<UpdateJob> {
     const id = uuidv4();
-    
+
     await execute(
       `INSERT INTO update_jobs (
         id, type, city, categories, sources, triggered_by
@@ -116,14 +116,14 @@ export class UpdateJobRepository {
         input.categories ? JSON.stringify(input.categories) : null,
         input.sources ? JSON.stringify(input.sources) : null,
         input.triggered_by || null,
-      ]
+      ],
     );
-    
+
     const rows = await query<(UpdateJob & RowDataPacket)[]>(
       'SELECT * FROM update_jobs WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     return this.parseRow(rows[0]!);
   }
 
@@ -132,9 +132,9 @@ export class UpdateJobRepository {
   static async findById(id: string): Promise<UpdateJob | null> {
     const rows = await query<(UpdateJob & RowDataPacket)[]>(
       'SELECT * FROM update_jobs WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     return rows[0] ? this.parseRow(rows[0]) : null;
   }
 
@@ -156,7 +156,7 @@ export class UpdateJobRepository {
     // Count total
     const countRows = await query<(RowDataPacket & { total: number })[]>(
       `SELECT COUNT(*) as total FROM update_jobs ${whereClause}`,
-      params
+      params,
     );
     const total = countRows[0]?.total || 0;
 
@@ -166,7 +166,7 @@ export class UpdateJobRepository {
 
     const rows = await query<(UpdateJob & RowDataPacket)[]>(
       `SELECT * FROM update_jobs ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset],
     );
 
     return {
@@ -177,18 +177,18 @@ export class UpdateJobRepository {
 
   static async findRunning(): Promise<UpdateJob[]> {
     const rows = await query<(UpdateJob & RowDataPacket)[]>(
-      "SELECT * FROM update_jobs WHERE status = 'running' ORDER BY created_at DESC"
+      "SELECT * FROM update_jobs WHERE status = 'running' ORDER BY created_at DESC",
     );
-    
+
     return rows.map(row => this.parseRow(row));
   }
 
   static async findRecent(limit: number = 10): Promise<UpdateJob[]> {
     const rows = await query<(UpdateJob & RowDataPacket)[]>(
       'SELECT * FROM update_jobs ORDER BY created_at DESC LIMIT ?',
-      [limit]
+      [limit],
     );
-    
+
     return rows.map(row => this.parseRow(row));
   }
 
@@ -200,7 +200,7 @@ export class UpdateJobRepository {
        SET status = 'running', 
            started_at = CURRENT_TIMESTAMP 
        WHERE id = ? AND status = 'pending'`,
-      [id]
+      [id],
     );
   }
 
@@ -211,7 +211,7 @@ export class UpdateJobRepository {
            completed_at = CURRENT_TIMESTAMP,
            duration_ms = TIMESTAMPDIFF(MICROSECOND, started_at, CURRENT_TIMESTAMP) DIV 1000
        WHERE id = ? AND status = 'running'`,
-      [id]
+      [id],
     );
   }
 
@@ -224,7 +224,7 @@ export class UpdateJobRepository {
            error_details = ?,
            duration_ms = TIMESTAMPDIFF(MICROSECOND, started_at, CURRENT_TIMESTAMP) DIV 1000
        WHERE id = ?`,
-      [error, details ? JSON.stringify(details) : null, id]
+      [error, details ? JSON.stringify(details) : null, id],
     );
   }
 
@@ -234,9 +234,9 @@ export class UpdateJobRepository {
        SET status = 'cancelled', 
            completed_at = CURRENT_TIMESTAMP 
        WHERE id = ? AND status IN ('pending', 'running')`,
-      [id]
+      [id],
     );
-    
+
     return result.affectedRows > 0;
   }
 
@@ -249,7 +249,7 @@ export class UpdateJobRepository {
       items_created?: number;
       items_updated?: number;
       items_skipped?: number;
-    }
+    },
   ): Promise<void> {
     const fields: string[] = [];
     const values: (string | number)[] = [];
@@ -282,26 +282,25 @@ export class UpdateJobRepository {
     if (fields.length === 0) return;
 
     values.push(id);
-    
-    await execute(
-      `UPDATE update_jobs SET ${fields.join(', ')} WHERE id = ?`,
-      values
-    );
+
+    await execute(`UPDATE update_jobs SET ${fields.join(', ')} WHERE id = ?`, values);
   }
 
   // ─── PROGRESS ──────────────────────────────────────────────
 
   static async getProgress(id: string): Promise<JobProgress | null> {
-    const rows = await query<(RowDataPacket & { total: number; processed: number; failed: number })[]>(
+    const rows = await query<
+      (RowDataPacket & { total: number; processed: number; failed: number })[]
+    >(
       'SELECT total_items as total, processed_items as processed, failed_items as failed FROM update_jobs WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     if (!rows[0]) return null;
-    
+
     const { total, processed, failed } = rows[0];
     const percent = total > 0 ? Math.round((processed / total) * 100) : 0;
-    
+
     return { total, processed, failed, percent };
   }
 
@@ -315,23 +314,23 @@ export class UpdateJobRepository {
     lastRunAt: Date | null;
   }> {
     const [totalRow] = await query<(RowDataPacket & { total: number })[]>(
-      'SELECT COUNT(*) as total FROM update_jobs'
+      'SELECT COUNT(*) as total FROM update_jobs',
     );
 
     const statusRows = await query<(RowDataPacket & { status: JobStatus; count: number })[]>(
-      'SELECT status, COUNT(*) as count FROM update_jobs GROUP BY status'
+      'SELECT status, COUNT(*) as count FROM update_jobs GROUP BY status',
     );
 
     const typeRows = await query<(RowDataPacket & { type: JobType; count: number })[]>(
-      'SELECT type, COUNT(*) as count FROM update_jobs GROUP BY type'
+      'SELECT type, COUNT(*) as count FROM update_jobs GROUP BY type',
     );
 
     const [avgRow] = await query<(RowDataPacket & { avg: number | null })[]>(
-      'SELECT AVG(duration_ms) as avg FROM update_jobs WHERE duration_ms IS NOT NULL'
+      'SELECT AVG(duration_ms) as avg FROM update_jobs WHERE duration_ms IS NOT NULL',
     );
 
     const [lastRow] = await query<(RowDataPacket & { created_at: Date | null })[]>(
-      "SELECT created_at FROM update_jobs WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 1"
+      "SELECT created_at FROM update_jobs WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 1",
     );
 
     const byStatus: Record<JobStatus, number> = {
@@ -341,7 +340,7 @@ export class UpdateJobRepository {
       failed: 0,
       cancelled: 0,
     };
-    
+
     for (const row of statusRows) {
       byStatus[row.status] = row.count;
     }
@@ -351,7 +350,7 @@ export class UpdateJobRepository {
       manual: 0,
       incremental: 0,
     };
-    
+
     for (const row of typeRows) {
       byType[row.type] = row.count;
     }
@@ -370,9 +369,21 @@ export class UpdateJobRepository {
   private static parseRow(row: UpdateJob): UpdateJob {
     return {
       ...row,
-      categories: row.categories ? (typeof row.categories === 'string' ? JSON.parse(row.categories) : row.categories) : null,
-      sources: row.sources ? (typeof row.sources === 'string' ? JSON.parse(row.sources) : row.sources) : null,
-      error_details: row.error_details ? (typeof row.error_details === 'string' ? JSON.parse(row.error_details) : row.error_details) : null,
+      categories: row.categories
+        ? typeof row.categories === 'string'
+          ? JSON.parse(row.categories)
+          : row.categories
+        : null,
+      sources: row.sources
+        ? typeof row.sources === 'string'
+          ? JSON.parse(row.sources)
+          : row.sources
+        : null,
+      error_details: row.error_details
+        ? typeof row.error_details === 'string'
+          ? JSON.parse(row.error_details)
+          : row.error_details
+        : null,
     };
   }
 }
@@ -386,24 +397,24 @@ export class UpdateJobItemRepository {
 
   static async create(input: CreateJobItemInput): Promise<UpdateJobItem> {
     const id = uuidv4();
-    
+
     await execute(
       `INSERT INTO update_job_items (id, job_id, item_name, item_category, city)
        VALUES (?, ?, ?, ?, ?)`,
-      [id, input.job_id, input.item_name, input.item_category, input.city]
+      [id, input.job_id, input.item_name, input.item_category, input.city],
     );
-    
+
     const rows = await query<(UpdateJobItem & RowDataPacket)[]>(
       'SELECT * FROM update_job_items WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     return rows[0]!;
   }
 
   static async createMany(items: CreateJobItemInput[]): Promise<void> {
     if (items.length === 0) return;
-    
+
     const values = items.map(item => [
       uuidv4(),
       item.job_id,
@@ -414,7 +425,7 @@ export class UpdateJobItemRepository {
 
     await execute(
       `INSERT INTO update_job_items (id, job_id, item_name, item_category, city) VALUES ?`,
-      [values] as any
+      [values] as any,
     );
   }
 
@@ -423,27 +434,27 @@ export class UpdateJobItemRepository {
   static async findByJobId(jobId: string): Promise<UpdateJobItem[]> {
     const rows = await query<(UpdateJobItem & RowDataPacket)[]>(
       'SELECT * FROM update_job_items WHERE job_id = ? ORDER BY created_at ASC',
-      [jobId]
+      [jobId],
     );
-    
+
     return rows;
   }
 
   static async findPending(jobId: string): Promise<UpdateJobItem[]> {
     const rows = await query<(UpdateJobItem & RowDataPacket)[]>(
       "SELECT * FROM update_job_items WHERE job_id = ? AND status = 'pending' ORDER BY created_at ASC",
-      [jobId]
+      [jobId],
     );
-    
+
     return rows;
   }
 
   static async findFailed(jobId: string): Promise<UpdateJobItem[]> {
     const rows = await query<(UpdateJobItem & RowDataPacket)[]>(
       "SELECT * FROM update_job_items WHERE job_id = ? AND status = 'failed' ORDER BY created_at ASC",
-      [jobId]
+      [jobId],
     );
-    
+
     return rows;
   }
 
@@ -454,7 +465,7 @@ export class UpdateJobItemRepository {
       `UPDATE update_job_items 
        SET status = 'pending', started_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [id]
+      [id],
     );
   }
 
@@ -464,7 +475,7 @@ export class UpdateJobItemRepository {
       source: SourceType;
       price_catalog_id: string;
       price_change?: number;
-    }
+    },
   ): Promise<void> {
     await execute(
       `UPDATE update_job_items 
@@ -475,7 +486,7 @@ export class UpdateJobItemRepository {
            completed_at = CURRENT_TIMESTAMP,
            duration_ms = TIMESTAMPDIFF(MICROSECOND, started_at, CURRENT_TIMESTAMP) DIV 1000
        WHERE id = ?`,
-      [data.source, data.price_catalog_id, data.price_change || null, id]
+      [data.source, data.price_catalog_id, data.price_change || null, id],
     );
   }
 
@@ -487,7 +498,7 @@ export class UpdateJobItemRepository {
            completed_at = CURRENT_TIMESTAMP,
            duration_ms = TIMESTAMPDIFF(MICROSECOND, started_at, CURRENT_TIMESTAMP) DIV 1000
        WHERE id = ?`,
-      [errorMessage, id]
+      [errorMessage, id],
     );
   }
 
@@ -498,7 +509,7 @@ export class UpdateJobItemRepository {
            error_message = ?,
            completed_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [reason, id]
+      [reason, id],
     );
   }
 
@@ -510,12 +521,12 @@ export class UpdateJobItemRepository {
   }> {
     const [totalRow] = await query<(RowDataPacket & { total: number })[]>(
       'SELECT COUNT(*) as total FROM update_job_items WHERE job_id = ?',
-      [jobId]
+      [jobId],
     );
 
     const statusRows = await query<(RowDataPacket & { status: ItemStatus; count: number })[]>(
       'SELECT status, COUNT(*) as count FROM update_job_items WHERE job_id = ? GROUP BY status',
-      [jobId]
+      [jobId],
     );
 
     const byStatus: Record<ItemStatus, number> = {
@@ -524,7 +535,7 @@ export class UpdateJobItemRepository {
       failed: 0,
       skipped: 0,
     };
-    
+
     for (const row of statusRows) {
       byStatus[row.status] = row.count;
     }
@@ -543,23 +554,23 @@ export class UpdateJobItemRepository {
 export class UpdateJobParamRepository {
   static async set(jobId: string, name: string, value: unknown): Promise<void> {
     const id = uuidv4();
-    
+
     await execute(
       `INSERT INTO update_job_params (id, job_id, param_name, param_value)
        VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE param_value = VALUES(param_value)`,
-      [id, jobId, name, JSON.stringify(value)]
+      [id, jobId, name, JSON.stringify(value)],
     );
   }
 
   static async get(jobId: string, name: string): Promise<unknown | null> {
     const rows = await query<(RowDataPacket & { param_value: string })[]>(
       'SELECT param_value FROM update_job_params WHERE job_id = ? AND param_name = ?',
-      [jobId, name]
+      [jobId, name],
     );
-    
+
     if (!rows[0]) return null;
-    
+
     try {
       return JSON.parse(rows[0].param_value);
     } catch {
@@ -570,11 +581,11 @@ export class UpdateJobParamRepository {
   static async getAll(jobId: string): Promise<Record<string, unknown>> {
     const rows = await query<(RowDataPacket & { param_name: string; param_value: string })[]>(
       'SELECT param_name, param_value FROM update_job_params WHERE job_id = ?',
-      [jobId]
+      [jobId],
     );
-    
+
     const result: Record<string, unknown> = {};
-    
+
     for (const row of rows) {
       try {
         result[row.param_name] = JSON.parse(row.param_value);
@@ -582,7 +593,7 @@ export class UpdateJobParamRepository {
         result[row.param_name] = row.param_value;
       }
     }
-    
+
     return result;
   }
 }
@@ -597,18 +608,18 @@ export class UpdateJobLockRepository {
   static async acquire(
     jobId: string,
     itemKey: string,
-    ttlMs: number = 300000 // 5 минут по умолчанию
+    ttlMs: number = 300000, // 5 минут по умолчанию
   ): Promise<boolean> {
     try {
       const id = uuidv4();
       const expiresAt = new Date(Date.now() + ttlMs);
-      
+
       await execute(
         `INSERT INTO update_job_locks (id, job_id, item_key, expires_at)
          VALUES (?, ?, ?, ?)`,
-        [id, jobId, itemKey, expiresAt]
+        [id, jobId, itemKey, expiresAt],
       );
-      
+
       return true;
     } catch (error: unknown) {
       // Duplicate entry - already locked
@@ -632,9 +643,9 @@ export class UpdateJobLockRepository {
     const rows = await query<(RowDataPacket & { total: number })[]>(
       `SELECT COUNT(*) as total FROM update_job_locks 
        WHERE item_key = ? AND (expires_at IS NULL OR expires_at > NOW())`,
-      [itemKey]
+      [itemKey],
     );
-    
+
     return (rows[0]?.total || 0) > 0;
   }
 
@@ -642,45 +653,42 @@ export class UpdateJobLockRepository {
     const rows = await query<(UpdateJobLock & RowDataPacket)[]>(
       `SELECT * FROM update_job_locks 
        WHERE item_key = ? AND (expires_at IS NULL OR expires_at > NOW())`,
-      [itemKey]
+      [itemKey],
     );
-    
+
     return rows[0] || null;
   }
 
   // ─── DELETE ────────────────────────────────────────────────
 
   static async release(jobId: string, itemKey: string): Promise<boolean> {
-    const result = await execute(
-      'DELETE FROM update_job_locks WHERE job_id = ? AND item_key = ?',
-      [jobId, itemKey]
-    );
-    
+    const result = await execute('DELETE FROM update_job_locks WHERE job_id = ? AND item_key = ?', [
+      jobId,
+      itemKey,
+    ]);
+
     return result.affectedRows > 0;
   }
 
   static async releaseAll(jobId: string): Promise<number> {
-    const result = await execute(
-      'DELETE FROM update_job_locks WHERE job_id = ?',
-      [jobId]
-    );
-    
+    const result = await execute('DELETE FROM update_job_locks WHERE job_id = ?', [jobId]);
+
     return result.affectedRows;
   }
 
   static async clearExpired(itemKey: string): Promise<boolean> {
     const result = await execute(
       'DELETE FROM update_job_locks WHERE item_key = ? AND expires_at IS NOT NULL AND expires_at <= NOW()',
-      [itemKey]
+      [itemKey],
     );
-    
+
     return result.affectedRows > 0;
   }
 
   static async clearAllExpired(): Promise<number> {
     const result = await execute(
       'DELETE FROM update_job_locks WHERE expires_at IS NOT NULL AND expires_at <= NOW()',
-      []
+      [],
     );
 
     return result.affectedRows;
@@ -705,69 +713,99 @@ export class UpdateLogRepository {
     level: 'info' | 'debug' | 'warn' | 'error',
     message: string,
     jobId?: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): Promise<void> {
     const id = uuidv4();
-    
+
     await execute(
       `INSERT INTO update_logs (id, job_id, level, message, context)
        VALUES (?, ?, ?, ?, ?)`,
-      [id, jobId || null, level, message, context ? JSON.stringify(context) : null]
+      [id, jobId || null, level, message, context ? JSON.stringify(context) : null],
     );
   }
 
-  static async info(message: string, jobId?: string, context?: Record<string, unknown>): Promise<void> {
+  static async info(
+    message: string,
+    jobId?: string,
+    context?: Record<string, unknown>,
+  ): Promise<void> {
     return this.log('info', message, jobId, context);
   }
 
-  static async debug(message: string, jobId?: string, context?: Record<string, unknown>): Promise<void> {
+  static async debug(
+    message: string,
+    jobId?: string,
+    context?: Record<string, unknown>,
+  ): Promise<void> {
     return this.log('debug', message, jobId, context);
   }
 
-  static async warn(message: string, jobId?: string, context?: Record<string, unknown>): Promise<void> {
+  static async warn(
+    message: string,
+    jobId?: string,
+    context?: Record<string, unknown>,
+  ): Promise<void> {
     return this.log('warn', message, jobId, context);
   }
 
-  static async error(message: string, jobId?: string, context?: Record<string, unknown>): Promise<void> {
+  static async error(
+    message: string,
+    jobId?: string,
+    context?: Record<string, unknown>,
+  ): Promise<void> {
     return this.log('error', message, jobId, context);
   }
 
-  static async findByJobId(jobId: string, level?: 'info' | 'debug' | 'warn' | 'error'): Promise<UpdateLog[]> {
+  static async findByJobId(
+    jobId: string,
+    level?: 'info' | 'debug' | 'warn' | 'error',
+  ): Promise<UpdateLog[]> {
     let sql = 'SELECT * FROM update_logs WHERE job_id = ?';
     const params: string[] = [jobId];
-    
+
     if (level) {
       sql += ' AND level = ?';
       params.push(level);
     }
-    
+
     sql += ' ORDER BY created_at ASC';
-    
+
     const rows = await query<(UpdateLog & RowDataPacket)[]>(sql, params);
-    
+
     return rows.map(row => ({
       ...row,
-      context: row.context ? (typeof row.context === 'string' ? JSON.parse(row.context) : row.context) : null,
+      context: row.context
+        ? typeof row.context === 'string'
+          ? JSON.parse(row.context)
+          : row.context
+        : null,
     }));
   }
 
-  static async getRecent(level?: 'info' | 'debug' | 'warn' | 'error', limit: number = 100): Promise<UpdateLog[]> {
+  static async getRecent(
+    level?: 'info' | 'debug' | 'warn' | 'error',
+    limit: number = 100,
+  ): Promise<UpdateLog[]> {
     let sql = 'SELECT * FROM update_logs';
     const params: (string | number)[] = [];
-    
+
     if (level) {
       sql += ' WHERE level = ?';
       params.push(level);
     }
-    
+
     sql += ' ORDER BY created_at DESC LIMIT ?';
     params.push(limit);
-    
+
     const rows = await query<(UpdateLog & RowDataPacket)[]>(sql, params);
-    
+
     return rows.map(row => ({
       ...row,
-      context: row.context ? (typeof row.context === 'string' ? JSON.parse(row.context) : row.context) : null,
+      context: row.context
+        ? typeof row.context === 'string'
+          ? JSON.parse(row.context)
+          : row.context
+        : null,
     }));
   }
 }

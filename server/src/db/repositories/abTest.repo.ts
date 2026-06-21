@@ -2,8 +2,8 @@
  * Repository для A/B тестирования парсеров
  */
 
-import { pool } from '../pool.js';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { execute, query } from '../pool.js';
+import type { RowDataPacket } from '../pool.js';
 import { randomUUID } from 'crypto';
 
 // ═══════════════════════════════════════════════════════
@@ -135,7 +135,7 @@ export const ABTestRepository = {
     const id = randomUUID();
     const now = new Date();
 
-    await pool.execute<ResultSetHeader>(
+    await execute(
       `INSERT INTO ab_tests (
         id, name, description, parser_a, parser_b, traffic_split,
         status, created_by, created_at, updated_at
@@ -150,18 +150,15 @@ export const ABTestRepository = {
         input.created_by || null,
         now,
         now,
-      ]
+      ],
     );
 
     return this.findById(id) as Promise<ABTest>;
   },
 
   async findById(id: string): Promise<ABTest | null> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM ab_tests WHERE id = ?',
-      [id]
-    );
-    return rows.length > 0 ? (rows[0] as ABTest) : null;
+    const rows = await query<RowDataPacket[]>('SELECT * FROM ab_tests WHERE id = ?', [id]);
+    return rows.length > 0 ? (rows[0] as unknown as ABTest) : null;
   },
 
   async findMany(options?: {
@@ -186,53 +183,55 @@ export const ABTestRepository = {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Count
-    const [countRows] = await pool.execute<RowDataPacket[]>(
+    const countRows = await query<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM ab_tests ${whereClause}`,
-      params as any
+      params as any,
     );
-    const total = countRows[0]?.total ?? 0;
+    const total = Number(countRows[0]?.total ?? 0);
 
     // Items
     const limit = options?.limit || 20;
     const offset = options?.offset || 0;
 
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const rows = await query<RowDataPacket[]>(
       `SELECT * FROM ab_tests ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset] as any
+      [...params, limit, offset] as any,
     );
 
-    return { items: rows as ABTest[], total };
+    return { items: rows as unknown as ABTest[], total };
   },
 
   async findRunning(): Promise<ABTest[]> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM ab_tests WHERE status = ?',
-      ['running']
-    );
-    return rows as ABTest[];
+    const rows = await query<RowDataPacket[]>('SELECT * FROM ab_tests WHERE status = ?', [
+      'running',
+    ]);
+    return rows as unknown as ABTest[];
   },
 
   async findActiveForParser(parserType: ParserType): Promise<ABTest[]> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const rows = await query<RowDataPacket[]>(
       `SELECT * FROM ab_tests 
        WHERE status = 'running' 
        AND (parser_a = ? OR parser_b = ?)`,
-      [parserType, parserType]
+      [parserType, parserType],
     );
-    return rows as ABTest[];
+    return rows as unknown as ABTest[];
   },
 
-  async update(id: string, data: Partial<{
-    name: string;
-    description: string;
-    traffic_split: number;
-    status: TestStatus;
-    started_at: Date | null;
-    ended_at: Date | null;
-    winner: Winner | null;
-    confidence_level: number | null;
-    completed_by: string | null;
-  }>): Promise<ABTest | null> {
+  async update(
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      traffic_split: number;
+      status: TestStatus;
+      started_at: Date | null;
+      ended_at: Date | null;
+      winner: Winner | null;
+      confidence_level: number | null;
+      completed_by: string | null;
+    }>,
+  ): Promise<ABTest | null> {
     const fields: string[] = [];
     const params: unknown[] = [];
 
@@ -280,19 +279,13 @@ export const ABTestRepository = {
     fields.push('updated_at = ?');
     params.push(new Date());
 
-    await pool.execute<ResultSetHeader>(
-      `UPDATE ab_tests SET ${fields.join(', ')} WHERE id = ?`,
-      [...params, id] as any
-    );
+    await execute(`UPDATE ab_tests SET ${fields.join(', ')} WHERE id = ?`, [...params, id] as any);
 
     return this.findById(id);
   },
 
   async delete(id: string): Promise<boolean> {
-    const [result] = await pool.execute<ResultSetHeader>(
-      'DELETE FROM ab_tests WHERE id = ?',
-      [id]
-    );
+    const result = await execute('DELETE FROM ab_tests WHERE id = ?', [id]);
     return result.affectedRows > 0;
   },
 
@@ -328,7 +321,12 @@ export const ABTestRepository = {
     return this.update(id, { status: 'running' });
   },
 
-  async complete(id: string, winner: Winner, confidenceLevel: number, userId?: string): Promise<ABTest | null> {
+  async complete(
+    id: string,
+    winner: Winner,
+    confidenceLevel: number,
+    userId?: string,
+  ): Promise<ABTest | null> {
     const test = await this.findById(id);
     if (!test || !['running', 'paused'].includes(test.status)) {
       return null;
@@ -361,7 +359,7 @@ export const ABTestRepository = {
   async addResult(input: ABTestResultInput): Promise<ABTestResult> {
     const id = randomUUID();
 
-    await pool.execute<ResultSetHeader>(
+    await execute(
       `INSERT INTO ab_test_results (
         id, test_id, item_name, city, category, parser_group, parser_type,
         success, price_min, price_avg, price_max, currency, confidence_score,
@@ -385,7 +383,7 @@ export const ABTestRepository = {
         input.error_message || null,
         JSON.stringify(input.metadata || {}),
         new Date(),
-      ]
+      ],
     );
 
     // Обновляем агрегированные счётчики в тесте
@@ -402,19 +400,19 @@ export const ABTestRepository = {
       price: input.price_avg,
     });
 
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM ab_test_results WHERE id = ?',
-      [id]
-    );
-    return rows[0] as ABTestResult;
+    const rows = await query<RowDataPacket[]>('SELECT * FROM ab_test_results WHERE id = ?', [id]);
+    return rows[0] as unknown as ABTestResult;
   },
 
-  async getResults(testId: string, options?: {
-    parser_group?: ParserGroup;
-    success?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<{ items: ABTestResult[]; total: number }> {
+  async getResults(
+    testId: string,
+    options?: {
+      parser_group?: ParserGroup;
+      success?: boolean;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<{ items: ABTestResult[]; total: number }> {
     const conditions: string[] = ['test_id = ?'];
     const params: unknown[] = [testId];
 
@@ -431,19 +429,19 @@ export const ABTestRepository = {
     const limit = options?.limit || 100;
     const offset = options?.offset || 0;
 
-    const [countRows] = await pool.execute<RowDataPacket[]>(
+    const countRows = await query<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM ab_test_results WHERE ${conditions.join(' AND ')}`,
-      params as any
+      params as any,
     );
-    const total = countRows[0]?.total ?? 0;
+    const total = Number(countRows[0]?.total ?? 0);
 
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const rows = await query<RowDataPacket[]>(
       `SELECT * FROM ab_test_results WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset] as any
+      [...params, limit, offset] as any,
     );
 
-    return { items: rows as ABTestResult[], total };
+    return { items: rows as unknown as ABTestResult[], total };
   },
 
   // ─── СТАТИСТИКА ────────────────────────────────────────────
@@ -452,7 +450,7 @@ export const ABTestRepository = {
     const test = await this.findById(testId);
     if (!test) return null;
 
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const rows = await query<RowDataPacket[]>(
       `SELECT 
         parser_group,
         COUNT(*) as requests,
@@ -462,24 +460,28 @@ export const ABTestRepository = {
        FROM ab_test_results 
        WHERE test_id = ?
        GROUP BY parser_group`,
-      [testId]
+      [testId],
     );
 
-    const statsA = rows.find((r) => r.parser_group === 'a');
-    const statsB = rows.find((r) => r.parser_group === 'b');
+    const statsA = rows.find(r => r.parser_group === 'a');
+    const statsB = rows.find(r => r.parser_group === 'b');
 
+    const reqA = Number(statsA?.requests || 0);
+    const succA = Number(statsA?.success_count || 0);
     const groupA = {
-      requests: statsA?.requests || 0,
-      successRate: statsA ? (statsA.success_count / statsA.requests) * 100 : 0,
-      avgResponseTime: statsA?.avg_response_time || 0,
-      avgPrice: statsA?.avg_price || null,
+      requests: reqA,
+      successRate: reqA > 0 ? (succA / reqA) * 100 : 0,
+      avgResponseTime: Number(statsA?.avg_response_time || 0),
+      avgPrice: statsA?.avg_price ? Number(statsA.avg_price) : null,
     };
 
+    const reqB = Number(statsB?.requests || 0);
+    const succB = Number(statsB?.success_count || 0);
     const groupB = {
-      requests: statsB?.requests || 0,
-      successRate: statsB ? (statsB.success_count / statsB.requests) * 100 : 0,
-      avgResponseTime: statsB?.avg_response_time || 0,
-      avgPrice: statsB?.avg_price || null,
+      requests: reqB,
+      successRate: reqB > 0 ? (succB / reqB) * 100 : 0,
+      avgResponseTime: Number(statsB?.avg_response_time || 0),
+      avgPrice: statsB?.avg_price ? Number(statsB.avg_price) : null,
     };
 
     // Определяем победителя на основе статистики
@@ -496,17 +498,17 @@ export const ABTestRepository = {
 
   calculateWinner(
     groupA: { successRate: number; avgResponseTime: number; avgPrice: number | null },
-    groupB: { successRate: number; avgResponseTime: number; avgPrice: number | null }
+    groupB: { successRate: number; avgResponseTime: number; avgPrice: number | null },
   ): { winner: Winner; confidenceLevel: number } {
     // Оценка на основе success rate и времени ответа
     // Формула: score = successRate * 0.6 - avgResponseTime * 0.001 * 0.4
-    
+
     const scoreA = groupA.successRate * 0.6 - groupA.avgResponseTime * 0.0004;
     const scoreB = groupB.successRate * 0.6 - groupB.avgResponseTime * 0.0004;
 
     const diff = Math.abs(scoreA - scoreB);
     const maxScore = Math.max(scoreA, scoreB);
-    
+
     // Confidence level на основе разницы
     const confidenceLevel = Math.min(diff / maxScore, 1);
 
@@ -515,7 +517,7 @@ export const ABTestRepository = {
     } else if (scoreB > scoreA) {
       return { winner: 'parser_b', confidenceLevel };
     }
-    
+
     return { winner: 'tie', confidenceLevel: 0 };
   },
 
@@ -524,30 +526,33 @@ export const ABTestRepository = {
   async updateTestCounters(
     testId: string,
     group: ParserGroup,
-    data: { success: boolean; responseTime?: number; price?: number }
+    data: { success: boolean; responseTime?: number; price?: number },
   ): Promise<void> {
     const fieldPrefix = group === 'a' ? 'a' : 'b';
-    
+
     // Получаем текущие значения
     const test = await this.findById(testId);
     if (!test) return;
 
     const totalRequests = (group === 'a' ? test.total_requests_a : test.total_requests_b) + 1;
-    const successCount = (group === 'a' ? test.success_count_a : test.success_count_b) + (data.success ? 1 : 0);
+    const successCount =
+      (group === 'a' ? test.success_count_a : test.success_count_b) + (data.success ? 1 : 0);
 
     // Скользящее среднее для времени ответа
     const oldAvgTime = group === 'a' ? test.avg_response_time_a : test.avg_response_time_b;
-    const newAvgTime = data.responseTime 
+    const newAvgTime = data.responseTime
       ? Math.round((oldAvgTime * (totalRequests - 1) + data.responseTime) / totalRequests)
       : oldAvgTime;
 
     // Скользящее среднее для цены
-    const oldAvgPrice = parseFloat(group === 'a' ? (test.avg_price_a || '0') : (test.avg_price_b || '0'));
-    const newAvgPrice = data.price 
+    const oldAvgPrice = parseFloat(
+      group === 'a' ? test.avg_price_a || '0' : test.avg_price_b || '0',
+    );
+    const newAvgPrice = data.price
       ? (oldAvgPrice * (totalRequests - 1) + data.price) / totalRequests
       : oldAvgPrice;
 
-    await pool.execute<ResultSetHeader>(
+    await execute(
       `UPDATE ab_tests SET 
         total_requests_${fieldPrefix} = ?,
         success_count_${fieldPrefix} = ?,
@@ -555,35 +560,28 @@ export const ABTestRepository = {
         avg_price_${fieldPrefix} = ?,
         updated_at = ?
        WHERE id = ?`,
-      [
-        totalRequests,
-        successCount,
-        newAvgTime,
-        newAvgPrice || null,
-        new Date(),
-        testId,
-      ]
+      [totalRequests, successCount, newAvgTime, newAvgPrice || null, new Date(), testId],
     );
   },
 
   async updateDailyStats(
     testId: string,
     group: ParserGroup,
-    data: { success: boolean; responseTime?: number; price?: number }
+    data: { success: boolean; responseTime?: number; price?: number },
   ): Promise<void> {
     const today = new Date().toISOString().slice(0, 10);
     const id = `${testId}-${today}`;
     const fieldPrefix = group === 'a' ? 'a' : 'b';
 
     // Проверяем, есть ли запись за сегодня
-    const [existing] = await pool.execute<RowDataPacket[]>(
+    const existing = await query<RowDataPacket[]>(
       'SELECT id FROM ab_test_daily_stats WHERE test_id = ? AND date = ?',
-      [testId, today]
+      [testId, today],
     );
 
     if (existing.length === 0) {
       // Создаём новую запись
-      await pool.execute<ResultSetHeader>(
+      await execute(
         `INSERT INTO ab_test_daily_stats (
           id, test_id, date, 
           requests_${fieldPrefix}, success_${fieldPrefix}, failures_${fieldPrefix},
@@ -600,11 +598,11 @@ export const ABTestRepository = {
           data.price || 0,
           new Date(),
           new Date(),
-        ]
+        ],
       );
     } else {
       // Обновляем существующую
-      await pool.execute<ResultSetHeader>(
+      await execute(
         `UPDATE ab_test_daily_stats SET 
           requests_${fieldPrefix} = requests_${fieldPrefix} + 1,
           success_${fieldPrefix} = success_${fieldPrefix} + ?,
@@ -621,22 +619,22 @@ export const ABTestRepository = {
           new Date(),
           testId,
           today,
-        ]
+        ],
       );
     }
   },
 
   async getDailyStats(testId: string, days?: number): Promise<ABTestDailyStats[]> {
     const limit = days || 30;
-    
-    const [rows] = await pool.execute<RowDataPacket[]>(
+
+    const rows = await query<RowDataPacket[]>(
       `SELECT * FROM ab_test_daily_stats 
        WHERE test_id = ? 
        ORDER BY date DESC 
        LIMIT ?`,
-      [testId, limit]
+      [testId, limit],
     );
 
-    return rows as ABTestDailyStats[];
+    return rows as unknown as ABTestDailyStats[];
   },
 };

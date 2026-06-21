@@ -1,5 +1,5 @@
 import { query, execute } from '../pool.js';
-import type { RowDataPacket } from 'mysql2/promise';
+import type { RowDataPacket } from '../pool.js';
 
 export interface CalculatedTotals {
   project_id: string;
@@ -23,7 +23,7 @@ export class CalculatedTotalsRepository {
       total_materials: number;
       total_tools: number;
       grand_total: number;
-    }
+    },
   ): Promise<CalculatedTotals> {
     await execute(
       `INSERT INTO calculated_totals 
@@ -43,7 +43,7 @@ export class CalculatedTotalsRepository {
         data.total_materials,
         data.total_tools,
         data.grand_total,
-      ]
+      ],
     );
 
     const result = await this.findByProjectId(projectId);
@@ -59,7 +59,7 @@ export class CalculatedTotalsRepository {
   static async findByProjectId(projectId: string): Promise<CalculatedTotals | null> {
     const rows = await query<(CalculatedTotals & RowDataPacket)[]>(
       `SELECT * FROM calculated_totals WHERE project_id = ?`,
-      [projectId]
+      [projectId],
     );
 
     return rows[0] || null;
@@ -69,10 +69,7 @@ export class CalculatedTotalsRepository {
    * Удалить рассчитанные итоги проекта
    */
   static async deleteByProjectId(projectId: string): Promise<boolean> {
-    const result = await execute(
-      `DELETE FROM calculated_totals WHERE project_id = ?`,
-      [projectId]
-    );
+    const result = await execute(`DELETE FROM calculated_totals WHERE project_id = ?`, [projectId]);
 
     return result.affectedRows > 0;
   }

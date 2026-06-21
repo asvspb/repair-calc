@@ -1,56 +1,31 @@
-import mysql, { type RowDataPacket, type ResultSetHeader, type PoolConnection } from 'mysql2/promise';
-import { config } from '../config/env.js';
+import type { Knex } from 'knex';
+import db from './db.js';
 import { winstonLogger } from '../middleware/logger.js';
 
-// Create pool with proper typing and UTF-8 support
-export const pool = mysql.createPool({
-  host: config.database.host,
-  port: config.database.port,
-  user: config.database.user,
-  password: config.database.password,
-  database: config.database.database,
-  
-  // UTF-8 support for Cyrillic characters
-  charset: config.database.charset,
-  timezone: config.database.timezone,
-  
-  // Existing settings
-  waitForConnections: true,
-  connectionLimit: config.database.poolLimit,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 30000,
-});
+// NOTE: `any` index signature matches mysql2 RowDataPacket interface.
+// Required to avoid cascading type errors in legacy repo code.
+export interface RowDataPacket {
+  [column: string]: any;
+}
+export type ResultSetHeader = { affectedRows: number };
 
-// Type for query values
+export { db as pool };
+
 type QueryValue = string | number | boolean | Date | null;
 
-// Typed execute wrappers
-export async function query<T extends RowDataPacket[]>(
-  sql: string, 
-  values?: QueryValue[]
-): Promise<T> {
-  const [rows] = await pool.execute<T>(sql, values);
-  return rows;
+export async function query<T = unknown[]>(sql: string, values?: QueryValue[]): Promise<T> {
+  const result = await db.raw(sql, values as unknown as (string | number | boolean | null)[]);
+  return (result.rows ?? result) as T;
 }
 
-export async function execute(
-  sql: string, 
-  values: QueryValue[]
-): Promise<ResultSetHeader> {
-  const [result] = await pool.execute<ResultSetHeader>(sql, values);
-  return result;
-}
-
-export async function getConnection(): Promise<PoolConnection> {
-  return pool.getConnection();
+export async function execute(sql: string, values: QueryValue[]): Promise<ResultSetHeader> {
+  const result = await db.raw(sql, values as unknown as (string | number | boolean | null)[]);
+  return { affectedRows: result.rowCount ?? 0 };
 }
 
 export async function testConnection(): Promise<boolean> {
   try {
-    const connection = await pool.getConnection();
-    await connection.ping();
-    connection.release();
+    await db.raw('SELECT 1');
     return true;
   } catch (error) {
     winstonLogger.error('Database connection failed', { error });
@@ -59,23 +34,60 @@ export async function testConnection(): Promise<boolean> {
 }
 
 export async function closePool(): Promise<void> {
-  await pool.end();
+  await db.destroy();
 }
 
-// Transaction helpers
-export async function transaction<T>(
-  callback: (conn: PoolConnection) => Promise<T>
-): Promise<T> {
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-    const result = await callback(conn);
-    await conn.commit();
-    return result;
-  } catch (error) {
-    await conn.rollback();
-    throw error;
-  } finally {
-    conn.release();
+// Backward-compatible transaction helpers (mimic mysql2 PoolConnection API)
+
+class TransactionConnection {
+  trx: Knex.Transaction | null = null;
+
+  async beginTransaction(): Promise<void> {
+    this.trx = await db.transaction();
   }
+
+  async execute(sql: string, values: QueryValue[]): Promise<[ResultSetHeader]> {
+    const result = await (this.trx ?? db).raw(
+      sql,
+      values as unknown as (string | number | boolean | null)[],
+    );
+    return [{ affectedRows: result.rowCount ?? 0 }];
+  }
+
+  query<T = unknown[]>(sql: string, values?: QueryValue[]): Promise<[T]> {
+    const conn = this.trx ?? db;
+    return conn
+      .raw(sql, values as unknown as (string | number | boolean | null)[])
+      .then(result => [result.rows ?? []] as unknown as [T]);
+  }
+
+  async commit(): Promise<void> {
+    if (this.trx && !this.trx.isCompleted()) {
+      await this.trx.commit();
+    }
+  }
+
+  async rollback(): Promise<void> {
+    if (this.trx && !this.trx.isCompleted()) {
+      await this.trx.rollback();
+    }
+  }
+
+  async release(): Promise<void> {
+    this.trx = null;
+  }
+}
+
+export async function getConnection(): Promise<TransactionConnection> {
+  return new TransactionConnection();
+}
+
+export async function transaction<T>(
+  callback: (conn: TransactionConnection) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async trx => {
+    const conn = new TransactionConnection();
+    conn.trx = trx;
+    return callback(conn);
+  });
 }

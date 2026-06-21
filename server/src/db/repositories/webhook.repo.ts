@@ -4,13 +4,13 @@
 
 import { query, execute } from '../pool.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { RowDataPacket } from 'mysql2/promise';
+import type { RowDataPacket } from '../pool.js';
 
 // ═══════════════════════════════════════════════════════
 // ТИПЫ
 // ═══════════════════════════════════════════════════════
 
-export type WebhookEvent = 
+export type WebhookEvent =
   | 'job.started'
   | 'job.completed'
   | 'job.failed'
@@ -65,7 +65,7 @@ export interface UpdateWebhookInput {
 export class WebhookRepository {
   static async create(input: CreateWebhookInput): Promise<UpdateWebhook> {
     const id = uuidv4();
-    
+
     await execute(
       `INSERT INTO update_webhooks (
         id, url, events, secret, active,
@@ -80,39 +80,39 @@ export class WebhookRepository {
         input.retry_count ?? 3,
         input.retry_delay_ms ?? 5000,
         input.timeout_ms ?? 5000,
-      ]
+      ],
     );
-    
+
     const rows = await query<(UpdateWebhook & RowDataPacket)[]>(
       'SELECT * FROM update_webhooks WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     return this.parseRow(rows[0]!);
   }
 
   static async findById(id: string): Promise<UpdateWebhook | null> {
     const rows = await query<(UpdateWebhook & RowDataPacket)[]>(
       'SELECT * FROM update_webhooks WHERE id = ?',
-      [id]
+      [id],
     );
-    
+
     return rows[0] ? this.parseRow(rows[0]) : null;
   }
 
   static async findAll(): Promise<UpdateWebhook[]> {
     const rows = await query<(UpdateWebhook & RowDataPacket)[]>(
-      'SELECT * FROM update_webhooks ORDER BY created_at DESC'
+      'SELECT * FROM update_webhooks ORDER BY created_at DESC',
     );
-    
+
     return rows.map(row => this.parseRow(row));
   }
 
   static async findActive(): Promise<UpdateWebhook[]> {
     const rows = await query<(UpdateWebhook & RowDataPacket)[]>(
-      'SELECT * FROM update_webhooks WHERE active = TRUE ORDER BY created_at DESC'
+      'SELECT * FROM update_webhooks WHERE active = TRUE ORDER BY created_at DESC',
     );
-    
+
     return rows.map(row => this.parseRow(row));
   }
 
@@ -120,9 +120,9 @@ export class WebhookRepository {
     const rows = await query<(UpdateWebhook & RowDataPacket)[]>(
       `SELECT * FROM update_webhooks 
        WHERE active = TRUE AND JSON_CONTAINS(events, ?)`,
-      [JSON.stringify(event)]
+      [JSON.stringify(event)],
     );
-    
+
     return rows.map(row => this.parseRow(row));
   }
 
@@ -165,21 +165,15 @@ export class WebhookRepository {
 
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
-    
-    await execute(
-      `UPDATE update_webhooks SET ${fields.join(', ')} WHERE id = ?`,
-      values
-    );
-    
+
+    await execute(`UPDATE update_webhooks SET ${fields.join(', ')} WHERE id = ?`, values);
+
     return this.findById(id);
   }
 
   static async delete(id: string): Promise<boolean> {
-    const result = await execute(
-      'DELETE FROM update_webhooks WHERE id = ?',
-      [id]
-    );
-    
+    const result = await execute('DELETE FROM update_webhooks WHERE id = ?', [id]);
+
     return result.affectedRows > 0;
   }
 
@@ -192,7 +186,7 @@ export class WebhookRepository {
            last_error = NULL,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [id]
+      [id],
     );
   }
 
@@ -206,7 +200,7 @@ export class WebhookRepository {
            last_error = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [error, id]
+      [error, id],
     );
   }
 
