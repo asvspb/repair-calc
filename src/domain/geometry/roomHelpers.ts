@@ -12,7 +12,7 @@ import type {
   Obstacle,
   WallSection,
   GeometryMode,
-} from '../types';
+} from '@shared/types';
 
 /**
  * Generic function to update a room field with mode-specific data synchronization.
@@ -20,7 +20,7 @@ import type {
 export function updateRoomField<K extends keyof RoomData>(
   room: RoomData,
   field: K,
-  value: RoomData[K]
+  value: RoomData[K],
 ): RoomData {
   const updatedRoom = { ...room, [field]: value };
   return syncModeData(updatedRoom, room.geometryMode, field);
@@ -29,11 +29,7 @@ export function updateRoomField<K extends keyof RoomData>(
 /**
  * Sync mode-specific data when updating room fields.
  */
-function syncModeData(
-  room: RoomData,
-  _mode: GeometryMode,
-  _field: keyof RoomData
-): RoomData {
+function syncModeData(room: RoomData, _mode: GeometryMode, _field: keyof RoomData): RoomData {
   // Note: This is called after field update, mode-specific sync is handled
   // by the specific update functions below for complex nested updates
   return room;
@@ -45,10 +41,10 @@ function syncModeData(
 export function updateSimpleField(
   room: RoomData,
   field: 'length' | 'width',
-  value: number
+  value: number,
 ): RoomData {
   const updatedRoom = { ...room, [field]: value };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -60,7 +56,7 @@ export function updateSimpleField(
       [field]: value,
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -71,7 +67,7 @@ export function updateArrayItem<T extends { id: string }>(
   array: T[],
   id: string,
   field: keyof T,
-  value: T[keyof T]
+  value: T[keyof T],
 ): T[] {
   return array.map(item => (item.id === id ? { ...item, [field]: value } : item));
 }
@@ -79,20 +75,14 @@ export function updateArrayItem<T extends { id: string }>(
 /**
  * Generic helper to add an item to an array field.
  */
-export function addArrayItem<T extends { id: string }>(
-  array: T[],
-  item: T
-): T[] {
+export function addArrayItem<T extends { id: string }>(array: T[], item: T): T[] {
   return [...array, item];
 }
 
 /**
  * Generic helper to remove an item from an array field.
  */
-export function removeArrayItem<T extends { id: string }>(
-  array: T[],
-  id: string
-): T[] {
+export function removeArrayItem<T extends { id: string }>(array: T[], id: string): T[] {
   return array.filter(item => item.id !== id);
 }
 
@@ -108,7 +98,7 @@ export function addWindow(room: RoomData): RoomData {
     comment: '',
   };
   const updatedRoom = { ...room, windows: addArrayItem(room.windows, newWindow) };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -120,13 +110,13 @@ export function addWindow(room: RoomData): RoomData {
       windows: addArrayItem(room.simpleModeData?.windows || room.windows, newWindow),
     };
   }
-  
+
   return updatedRoom;
 }
 
 export function removeWindow(room: RoomData, id: string): RoomData {
   const updatedRoom = { ...room, windows: removeArrayItem(room.windows, id) };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -138,7 +128,7 @@ export function removeWindow(room: RoomData, id: string): RoomData {
       windows: removeArrayItem(room.simpleModeData?.windows || room.windows, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -146,13 +136,13 @@ export function updateWindow(
   room: RoomData,
   id: string,
   field: keyof Opening,
-  value: number | string
+  value: number | string,
 ): RoomData {
   const updatedRoom = {
     ...room,
     windows: updateArrayItem(room.windows, id, field, value),
   };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -161,15 +151,10 @@ export function updateWindow(
         windows: [...room.windows],
         doors: [...room.doors],
       }),
-      windows: updateArrayItem(
-        room.simpleModeData?.windows || room.windows,
-        id,
-        field,
-        value
-      ),
+      windows: updateArrayItem(room.simpleModeData?.windows || room.windows, id, field, value),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -185,7 +170,7 @@ export function addDoor(room: RoomData): RoomData {
     comment: '',
   };
   const updatedRoom = { ...room, doors: addArrayItem(room.doors, newDoor) };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -197,13 +182,13 @@ export function addDoor(room: RoomData): RoomData {
       doors: addArrayItem(room.simpleModeData?.doors || room.doors, newDoor),
     };
   }
-  
+
   return updatedRoom;
 }
 
 export function removeDoor(room: RoomData, id: string): RoomData {
   const updatedRoom = { ...room, doors: removeArrayItem(room.doors, id) };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -215,7 +200,7 @@ export function removeDoor(room: RoomData, id: string): RoomData {
       doors: removeArrayItem(room.simpleModeData?.doors || room.doors, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -223,13 +208,13 @@ export function updateDoor(
   room: RoomData,
   id: string,
   field: keyof Opening,
-  value: number | string
+  value: number | string,
 ): RoomData {
   const updatedRoom = {
     ...room,
     doors: updateArrayItem(room.doors, id, field, value),
   };
-  
+
   if (room.geometryMode === 'simple') {
     updatedRoom.simpleModeData = {
       ...(room.simpleModeData || {
@@ -238,15 +223,10 @@ export function updateDoor(
         windows: [...room.windows],
         doors: [...room.doors],
       }),
-      doors: updateArrayItem(
-        room.simpleModeData?.doors || room.doors,
-        id,
-        field,
-        value
-      ),
+      doors: updateArrayItem(room.simpleModeData?.doors || room.doors, id, field, value),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -272,17 +252,17 @@ export function addSubSection(room: RoomData): RoomData {
     ...room,
     subSections: addArrayItem(room.subSections, newSubSection),
   };
-  
+
   if (room.geometryMode === 'extended') {
     updatedRoom.extendedModeData = {
       ...(room.extendedModeData || { subSections: [...room.subSections] }),
       subSections: addArrayItem(
         room.extendedModeData?.subSections || room.subSections,
-        newSubSection
+        newSubSection,
       ),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -291,17 +271,14 @@ export function removeSubSection(room: RoomData, id: string): RoomData {
     ...room,
     subSections: removeArrayItem(room.subSections, id),
   };
-  
+
   if (room.geometryMode === 'extended') {
     updatedRoom.extendedModeData = {
       ...(room.extendedModeData || { subSections: [...room.subSections] }),
-      subSections: removeArrayItem(
-        room.extendedModeData?.subSections || room.subSections,
-        id
-      ),
+      subSections: removeArrayItem(room.extendedModeData?.subSections || room.subSections, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -309,13 +286,13 @@ export function updateSubSection(
   room: RoomData,
   id: string,
   field: keyof RoomSubSection,
-  value: string | number | RoomSubSection['shape'] | Opening[] | WallSection[]
+  value: string | number | RoomSubSection['shape'] | Opening[] | WallSection[],
 ): RoomData {
   const updatedRoom = {
     ...room,
     subSections: updateArrayItem(room.subSections, id, field, value),
   };
-  
+
   if (room.geometryMode === 'extended') {
     updatedRoom.extendedModeData = {
       ...(room.extendedModeData || { subSections: [...room.subSections] }),
@@ -323,11 +300,11 @@ export function updateSubSection(
         room.extendedModeData?.subSections || room.subSections,
         id,
         field,
-        value
+        value,
       ),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -339,7 +316,7 @@ function updateSubSectionArray<K extends 'windows' | 'doors'>(
   room: RoomData,
   subSectionId: string,
   arrayKey: K,
-  updater: (array: Opening[]) => Opening[]
+  updater: (array: Opening[]) => Opening[],
 ): RoomData {
   const updatedRoom = {
     ...room,
@@ -348,7 +325,7 @@ function updateSubSectionArray<K extends 'windows' | 'doors'>(
       return { ...s, [arrayKey]: updater(s[arrayKey] || []) };
     }),
   };
-  
+
   if (room.geometryMode === 'extended') {
     updatedRoom.extendedModeData = {
       ...(room.extendedModeData || { subSections: [...room.subSections] }),
@@ -358,7 +335,7 @@ function updateSubSectionArray<K extends 'windows' | 'doors'>(
       }),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -375,10 +352,10 @@ export function addSubSectionWindow(room: RoomData, subSectionId: string): RoomD
 export function removeSubSectionWindow(
   room: RoomData,
   subSectionId: string,
-  windowId: string
+  windowId: string,
 ): RoomData {
   return updateSubSectionArray(room, subSectionId, 'windows', arr =>
-    removeArrayItem(arr, windowId)
+    removeArrayItem(arr, windowId),
   );
 }
 
@@ -387,10 +364,10 @@ export function updateSubSectionWindow(
   subSectionId: string,
   windowId: string,
   field: keyof Opening,
-  value: number | string
+  value: number | string,
 ): RoomData {
   return updateSubSectionArray(room, subSectionId, 'windows', arr =>
-    updateArrayItem(arr, windowId, field, value)
+    updateArrayItem(arr, windowId, field, value),
   );
 }
 
@@ -407,11 +384,9 @@ export function addSubSectionDoor(room: RoomData, subSectionId: string): RoomDat
 export function removeSubSectionDoor(
   room: RoomData,
   subSectionId: string,
-  doorId: string
+  doorId: string,
 ): RoomData {
-  return updateSubSectionArray(room, subSectionId, 'doors', arr =>
-    removeArrayItem(arr, doorId)
-  );
+  return updateSubSectionArray(room, subSectionId, 'doors', arr => removeArrayItem(arr, doorId));
 }
 
 export function updateSubSectionDoor(
@@ -419,10 +394,10 @@ export function updateSubSectionDoor(
   subSectionId: string,
   doorId: string,
   field: keyof Opening,
-  value: number | string
+  value: number | string,
 ): RoomData {
   return updateSubSectionArray(room, subSectionId, 'doors', arr =>
-    updateArrayItem(arr, doorId, field, value)
+    updateArrayItem(arr, doorId, field, value),
   );
 }
 
@@ -446,7 +421,7 @@ export function addSegment(room: RoomData): RoomData {
     ...room,
     segments: addArrayItem(room.segments, newSegment),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -454,13 +429,10 @@ export function addSegment(room: RoomData): RoomData {
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      segments: addArrayItem(
-        room.advancedModeData?.segments || room.segments,
-        newSegment
-      ),
+      segments: addArrayItem(room.advancedModeData?.segments || room.segments, newSegment),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -469,7 +441,7 @@ export function removeSegment(room: RoomData, id: string): RoomData {
     ...room,
     segments: removeArrayItem(room.segments, id),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -477,13 +449,10 @@ export function removeSegment(room: RoomData, id: string): RoomData {
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      segments: removeArrayItem(
-        room.advancedModeData?.segments || room.segments,
-        id
-      ),
+      segments: removeArrayItem(room.advancedModeData?.segments || room.segments, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -491,13 +460,13 @@ export function updateSegment(
   room: RoomData,
   id: string,
   field: keyof RoomSegment,
-  value: string | number
+  value: string | number,
 ): RoomData {
   const updatedRoom = {
     ...room,
     segments: updateArrayItem(room.segments, id, field, value),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -505,15 +474,10 @@ export function updateSegment(
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      segments: updateArrayItem(
-        room.advancedModeData?.segments || room.segments,
-        id,
-        field,
-        value
-      ),
+      segments: updateArrayItem(room.advancedModeData?.segments || room.segments, id, field, value),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -538,7 +502,7 @@ export function addObstacle(room: RoomData): RoomData {
     ...room,
     obstacles: addArrayItem(room.obstacles, newObstacle),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -546,13 +510,10 @@ export function addObstacle(room: RoomData): RoomData {
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      obstacles: addArrayItem(
-        room.advancedModeData?.obstacles || room.obstacles,
-        newObstacle
-      ),
+      obstacles: addArrayItem(room.advancedModeData?.obstacles || room.obstacles, newObstacle),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -561,7 +522,7 @@ export function removeObstacle(room: RoomData, id: string): RoomData {
     ...room,
     obstacles: removeArrayItem(room.obstacles, id),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -569,13 +530,10 @@ export function removeObstacle(room: RoomData, id: string): RoomData {
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      obstacles: removeArrayItem(
-        room.advancedModeData?.obstacles || room.obstacles,
-        id
-      ),
+      obstacles: removeArrayItem(room.advancedModeData?.obstacles || room.obstacles, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -583,13 +541,13 @@ export function updateObstacle(
   room: RoomData,
   id: string,
   field: keyof Obstacle,
-  value: string | number
+  value: string | number,
 ): RoomData {
   const updatedRoom = {
     ...room,
     obstacles: updateArrayItem(room.obstacles, id, field, value),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -601,11 +559,11 @@ export function updateObstacle(
         room.advancedModeData?.obstacles || room.obstacles,
         id,
         field,
-        value
+        value,
       ),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -628,7 +586,7 @@ export function addWallSection(room: RoomData): RoomData {
     ...room,
     wallSections: addArrayItem(room.wallSections, newSection),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -638,11 +596,11 @@ export function addWallSection(room: RoomData): RoomData {
       }),
       wallSections: addArrayItem(
         room.advancedModeData?.wallSections || room.wallSections,
-        newSection
+        newSection,
       ),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -651,7 +609,7 @@ export function removeWallSection(room: RoomData, id: string): RoomData {
     ...room,
     wallSections: removeArrayItem(room.wallSections, id),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -659,13 +617,10 @@ export function removeWallSection(room: RoomData, id: string): RoomData {
         obstacles: [...room.obstacles],
         wallSections: [...room.wallSections],
       }),
-      wallSections: removeArrayItem(
-        room.advancedModeData?.wallSections || room.wallSections,
-        id
-      ),
+      wallSections: removeArrayItem(room.advancedModeData?.wallSections || room.wallSections, id),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -673,13 +628,13 @@ export function updateWallSection(
   room: RoomData,
   id: string,
   field: keyof WallSection,
-  value: string | number
+  value: string | number,
 ): RoomData {
   const updatedRoom = {
     ...room,
     wallSections: updateArrayItem(room.wallSections, id, field, value),
   };
-  
+
   if (room.geometryMode === 'advanced') {
     updatedRoom.advancedModeData = {
       ...(room.advancedModeData || {
@@ -691,11 +646,11 @@ export function updateWallSection(
         room.advancedModeData?.wallSections || room.wallSections,
         id,
         field,
-        value
+        value,
       ),
     };
   }
-  
+
   return updatedRoom;
 }
 
@@ -706,10 +661,7 @@ export function updateWallSection(
 /**
  * Switch geometry mode and preserve mode-specific data.
  */
-export function switchGeometryMode(
-  room: RoomData,
-  newMode: GeometryMode
-): RoomData {
+export function switchGeometryMode(room: RoomData, newMode: GeometryMode): RoomData {
   if (room.geometryMode === newMode) return room;
 
   let updatedRoom: RoomData = {

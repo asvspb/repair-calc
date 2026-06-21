@@ -3,7 +3,7 @@
  * Provides migration and utility functions for new data model
  */
 
-import type { ProjectData, ObjectData, RoomData } from '../types';
+import type { ProjectData, ObjectData, RoomData } from '@shared/types';
 
 /**
  * Миграция проекта со старой структурой (rooms напрямую в проекте)
@@ -50,12 +50,12 @@ export function migrateProjectToObjects(project: ProjectData): ProjectData {
  */
 export function getRoomFromProject(project: ProjectData, roomId: string): RoomData | null {
   if (!project.objects) return null;
-  
+
   for (const object of project.objects) {
     const room = object.rooms.find(r => r.id === roomId);
     if (room) return room;
   }
-  
+
   return null;
 }
 
@@ -65,24 +65,24 @@ export function getRoomFromProject(project: ProjectData, roomId: string): RoomDa
 export function updateRoomInProject(
   project: ProjectData,
   roomId: string,
-  updater: (room: RoomData) => RoomData
+  updater: (room: RoomData) => RoomData,
 ): ProjectData {
   if (!project.objects) return project;
-  
+
   const newObjects = project.objects.map(object => {
     const roomIndex = object.rooms.findIndex(r => r.id === roomId);
     if (roomIndex === -1) return object;
-    
+
     const updatedRoom = updater(object.rooms[roomIndex]);
     const newRooms = [...object.rooms];
     newRooms[roomIndex] = updatedRoom;
-    
+
     return {
       ...object,
       rooms: newRooms,
     };
   });
-  
+
   return {
     ...project,
     objects: newObjects,
@@ -91,11 +91,11 @@ export function updateRoomInProject(
 
 /**
  * Добавление комнаты в первый объект проекта
- * 
+ *
  * IMPORTANT: This function should only be called when objects already exist.
  * For server projects, the server creates the first object on project creation.
  * For local projects, ensure objects array is initialized via migrateProjectToObjects().
- * 
+ *
  * If objects array is empty, creates a new object with a LOCAL ID format.
  * This ID will be replaced with a server-generated ID when the project is synced.
  */
@@ -137,12 +137,12 @@ export function addRoomToProject(project: ProjectData, room: RoomData): ProjectD
  */
 export function deleteRoomFromProject(project: ProjectData, roomId: string): ProjectData {
   if (!project.objects) return project;
-  
+
   const newObjects = project.objects.map(object => ({
     ...object,
     rooms: object.rooms.filter(r => r.id !== roomId),
   }));
-  
+
   return {
     ...project,
     objects: newObjects,
@@ -154,10 +154,10 @@ export function deleteRoomFromProject(project: ProjectData, roomId: string): Pro
  */
 export function calculateTotalArea(project: ProjectData): number {
   if (!project.objects) return 0;
-  
+
   return project.objects.reduce((total, object) => {
     const objectArea = object.rooms.reduce((sum, room) => {
-      return sum + (room.length * room.width);
+      return sum + room.length * room.width;
     }, 0);
     return total + objectArea;
   }, 0);
@@ -180,17 +180,13 @@ export function getAllRooms(project: ProjectData): RoomData[] {
 export function reorderRoomsInProject(
   project: ProjectData,
   objectId: string,
-  newRooms: RoomData[]
+  newRooms: RoomData[],
 ): ProjectData {
   if (!project.objects) return project;
 
   return {
     ...project,
-    objects: project.objects.map(obj =>
-      obj.id === objectId
-        ? { ...obj, rooms: newRooms }
-        : obj
-    ),
+    objects: project.objects.map(obj => (obj.id === objectId ? { ...obj, rooms: newRooms } : obj)),
   };
 }
 
@@ -212,7 +208,7 @@ export function getObjectFromProject(project: ProjectData, objectId: string): Ob
  */
 export function createNewObject(
   projectId: string,
-  data: { name: string; city?: string }
+  data: { name: string; city?: string },
 ): ObjectData {
   return {
     id: `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -227,13 +223,10 @@ export function createNewObject(
 /**
  * Добавление объекта в проект
  */
-export function addObjectToProject(
-  project: ProjectData,
-  newObject: ObjectData
-): ProjectData {
+export function addObjectToProject(project: ProjectData, newObject: ObjectData): ProjectData {
   // Ensure objects array exists
   const existingObjects = project.objects || [];
-  
+
   // Set sort order to be last
   const objectWithOrder = {
     ...newObject,
@@ -251,7 +244,7 @@ export function addObjectToProject(
  */
 export function copyObjectInProject(
   project: ProjectData,
-  sourceObjectId: string
+  sourceObjectId: string,
 ): { project: ProjectData; newObjectId: string } | null {
   const sourceObject = getObjectFromProject(project, sourceObjectId);
   if (!sourceObject) {
@@ -261,7 +254,7 @@ export function copyObjectInProject(
   // Создаём копию с новыми ID
   const newObjectId = `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const timestamp = Date.now();
-  
+
   const newRooms = sourceObject.rooms.map((room, index) => ({
     ...room,
     id: `local-room-${timestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
@@ -272,7 +265,7 @@ export function copyObjectInProject(
     id: newObjectId,
     name: `${sourceObject.name} (копия)`,
     rooms: newRooms,
-    sortOrder: (project.objects?.length || 0),
+    sortOrder: project.objects?.length || 0,
   };
 
   return {
@@ -290,15 +283,13 @@ export function copyObjectInProject(
 export function updateObjectInProject(
   project: ProjectData,
   objectId: string,
-  updates: Partial<ObjectData>
+  updates: Partial<ObjectData>,
 ): ProjectData {
   if (!project.objects) return project;
 
   return {
     ...project,
-    objects: project.objects.map(obj =>
-      obj.id === objectId ? { ...obj, ...updates } : obj
-    ),
+    objects: project.objects.map(obj => (obj.id === objectId ? { ...obj, ...updates } : obj)),
   };
 }
 
@@ -308,7 +299,7 @@ export function updateObjectInProject(
  */
 export function deleteObjectFromProject(
   project: ProjectData,
-  objectId: string
+  objectId: string,
 ): ProjectData | null {
   if (!project.objects) return null;
 
@@ -328,7 +319,7 @@ export function deleteObjectFromProject(
  */
 export function reorderObjectsInProject(
   project: ProjectData,
-  newOrder: string[] // массив ID объектов в новом порядке
+  newOrder: string[], // массив ID объектов в новом порядке
 ): ProjectData {
   if (!project.objects) return project;
 
@@ -369,12 +360,12 @@ export function getRoomCount(project: ProjectData, objectId: string): number {
  */
 export function getObjectIdByRoomId(project: ProjectData, roomId: string): string | null {
   if (!project.objects) return null;
-  
+
   for (const obj of project.objects) {
     if (obj.rooms.some(r => r.id === roomId)) {
       return obj.id;
     }
   }
-  
+
   return null;
 }

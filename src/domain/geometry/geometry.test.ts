@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSectionMetrics, calculateRoomMetrics } from '../utils/geometry';
-import type { RoomSubSection, RoomData } from '../types';
+import { calculateSectionMetrics, calculateRoomMetrics } from './geometry';
+import type { RoomSubSection, RoomData } from '@shared/types';
 
 describe('calculateSectionMetrics', () => {
   describe('Rectangle', () => {
@@ -158,7 +158,7 @@ describe('calculateSectionMetrics', () => {
       const section = {
         id: '1',
         name: 'Test',
-        shape: 'unknown' as any,
+        shape: 'unknown' as unknown as RoomSubSection['shape'],
         length: 0,
         width: 0,
         windows: [],
@@ -180,9 +180,9 @@ describe('calculateRoomMetrics', () => {
         id: '1',
         name: 'Test Room',
         geometryMode: 'simple',
-        length: undefined as any,
-        width: undefined as any,
-        height: undefined as any,
+        length: undefined as unknown as number,
+        width: undefined as unknown as number,
+        height: undefined as unknown as number,
         segments: [],
         obstacles: [],
         wallSections: [],

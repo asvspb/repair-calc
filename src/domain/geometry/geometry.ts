@@ -1,9 +1,13 @@
-import type { RoomData, RoomSubSection, RoomMetrics } from '../types';
+import type { RoomMetrics } from '../../types';
+import type { RoomData, RoomSubSection } from '@shared/types';
 
 /**
  * Calculate metrics for a room subsection based on its shape
  */
-export function calculateSectionMetrics(section: RoomSubSection): { area: number; perimeter: number } {
+export function calculateSectionMetrics(section: RoomSubSection): {
+  area: number;
+  perimeter: number;
+} {
   const shape = section.shape || 'rectangle'; // Default to rectangle for backward compatibility
 
   switch (shape) {
@@ -23,7 +27,7 @@ export function calculateSectionMetrics(section: RoomSubSection): { area: number
       const depth = section.depth || 0;
       const side1 = section.side1 || 0;
       const side2 = section.side2 || 0;
-      const area = (base1 + base2) * depth / 2;
+      const area = ((base1 + base2) * depth) / 2;
       const perimeter = base1 + base2 + side1 + side2;
       return { area, perimeter };
     }
@@ -47,7 +51,7 @@ export function calculateSectionMetrics(section: RoomSubSection): { area: number
       // Fallback: base × height / 2 (если есть base и height)
       const base = section.length || 0;
       const height = section.width || 0;
-      const area = base * height / 2;
+      const area = (base * height) / 2;
       // Для прямоугольного треугольника: perimeter = base + height + sqrt(base² + height²)
       const perimeter = base + height + Math.sqrt(base * base + height * height);
       return { area, perimeter };
@@ -114,7 +118,10 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
     let totalDoorsWidth = 0;
 
     subSections.forEach(subSection => {
-      totalWindowsArea += (subSection.windows || []).reduce((sum, w) => sum + w.width * w.height, 0);
+      totalWindowsArea += (subSection.windows || []).reduce(
+        (sum, w) => sum + w.width * w.height,
+        0,
+      );
       totalDoorsArea += (subSection.doors || []).reduce((sum, d) => sum + d.width * d.height, 0);
       totalDoorsWidth += (subSection.doors || []).reduce((sum, d) => sum + d.width, 0);
     });
@@ -138,7 +145,7 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
       doorsArea: totalDoorsArea,
       netWallArea,
       skirtingLength,
-      volume
+      volume,
     };
   }
 
@@ -205,6 +212,6 @@ export function calculateRoomMetrics(room: RoomData): RoomMetrics {
     doorsArea,
     netWallArea,
     skirtingLength,
-    volume
+    volume,
   };
 }

@@ -15,7 +15,7 @@ import {
   formatQuantity,
   calculateMaterialTotal,
   roundToReasonable,
-} from '../../src/utils/materialCalculations';
+} from '../../../src/domain/pricing/materialCalculations';
 import type { MaterialTemplate } from '../../src/types/workTemplate';
 import type { RoomMetrics } from '../../src/types/index';
 
@@ -179,8 +179,11 @@ describe('calculateVolumetric', () => {
 describe('calculateMaterialQuantity', () => {
   it('should calculate coverage-based material', () => {
     const material: MaterialTemplate = {
-      id: 'test', name: 'Обои', unit: 'рулон',
-      coveragePerUnit: 5.3, wastePercent: 10,
+      id: 'test',
+      name: 'Обои',
+      unit: 'рулон',
+      coveragePerUnit: 5.3,
+      wastePercent: 10,
     };
     const result = calculateMaterialQuantity(material, mockMetrics);
     expect(result.total).toBeGreaterThan(0);
@@ -188,8 +191,13 @@ describe('calculateMaterialQuantity', () => {
 
   it('should calculate consumption-based material', () => {
     const material: MaterialTemplate = {
-      id: 'test', name: 'Краска', unit: 'л',
-      consumptionRate: 0.006, layers: 2, wastePercent: 5, packageSize: 10,
+      id: 'test',
+      name: 'Краска',
+      unit: 'л',
+      consumptionRate: 0.006,
+      layers: 2,
+      wastePercent: 5,
+      packageSize: 10,
     };
     const result = calculateMaterialQuantity(material, mockMetrics);
     expect(result.packages).toBeDefined();
@@ -197,8 +205,13 @@ describe('calculateMaterialQuantity', () => {
 
   it('should calculate perimeter-based material', () => {
     const material: MaterialTemplate = {
-      id: 'test', name: 'Плинтус', unit: 'шт',
-      isPerimeter: true, multiplier: 1.0, packageSize: 2.5, wastePercent: 5,
+      id: 'test',
+      name: 'Плинтус',
+      unit: 'шт',
+      isPerimeter: true,
+      multiplier: 1.0,
+      packageSize: 2.5,
+      wastePercent: 5,
     };
     const result = calculateMaterialQuantity(material, mockMetrics);
     expect(result.displayUnit).toBe('шт');
@@ -206,7 +219,10 @@ describe('calculateMaterialQuantity', () => {
 
   it('should calculate count-based material with customCount', () => {
     const material: MaterialTemplate = {
-      id: 'test', name: 'Розетки', unit: 'шт', multiplier: 1.0,
+      id: 'test',
+      name: 'Розетки',
+      unit: 'шт',
+      multiplier: 1.0,
     };
     const result = calculateMaterialQuantity(material, mockMetrics, 5);
     expect(result.total).toBe(5);
@@ -236,8 +252,12 @@ describe('getAreaForCalculationType', () => {
 describe('createMaterialFromTemplate', () => {
   it('should create Material from template', () => {
     const template: MaterialTemplate = {
-      id: 'wallpaper', name: 'Обои', unit: 'рулон',
-      coveragePerUnit: 5.3, wastePercent: 10, defaultPrice: 1500,
+      id: 'wallpaper',
+      name: 'Обои',
+      unit: 'рулон',
+      coveragePerUnit: 5.3,
+      wastePercent: 10,
+      defaultPrice: 1500,
     };
     const material = createMaterialFromTemplate(template, mockMetrics);
     expect(material.id).toBe('wallpaper');
@@ -275,13 +295,22 @@ describe('roundToReasonable', () => {
 describe('Integration scenarios', () => {
   it('Scenario 1: Wallpaper for room 3x4m', () => {
     const roomMetrics: RoomMetrics = {
-      floorArea: 12, perimeter: 14, grossWallArea: 37.8,
-      windowsArea: 2.25, doorsArea: 1.8, netWallArea: 33.75,
-      skirtingLength: 14, volume: 32.4,
+      floorArea: 12,
+      perimeter: 14,
+      grossWallArea: 37.8,
+      windowsArea: 2.25,
+      doorsArea: 1.8,
+      netWallArea: 33.75,
+      skirtingLength: 14,
+      volume: 32.4,
     };
     const template: MaterialTemplate = {
-      id: 'wp', name: 'Обои', unit: 'рулон',
-      coveragePerUnit: 5.3, wastePercent: 10, defaultPrice: 1800,
+      id: 'wp',
+      name: 'Обои',
+      unit: 'рулон',
+      coveragePerUnit: 5.3,
+      wastePercent: 10,
+      defaultPrice: 1800,
     };
     // Обои рассчитываются по площади стен (netWallArea)
     // 33.75 / 5.3 * 1.10 = 7.01 → 8 рулонов
@@ -291,8 +320,13 @@ describe('Integration scenarios', () => {
 
   it('Scenario 2: Paint 50m² 2 layers', () => {
     const template: MaterialTemplate = {
-      id: 'paint', name: 'Краска', unit: 'л',
-      consumptionRate: 0.006, layers: 2, wastePercent: 5, packageSize: 10,
+      id: 'paint',
+      name: 'Краска',
+      unit: 'л',
+      consumptionRate: 0.006,
+      layers: 2,
+      wastePercent: 5,
+      packageSize: 10,
     };
     const result = calculateMaterialQuantity(template, { ...mockMetrics, floorArea: 50 });
     expect(result.packages).toBe(1);
@@ -300,8 +334,12 @@ describe('Integration scenarios', () => {
 
   it('Scenario 3: Tile 20m²', () => {
     const template: MaterialTemplate = {
-      id: 'tile', name: 'Плитка', unit: 'м²',
-      coveragePerUnit: 1.0, wastePercent: 10, defaultPrice: 1200,
+      id: 'tile',
+      name: 'Плитка',
+      unit: 'м²',
+      coveragePerUnit: 1.0,
+      wastePercent: 10,
+      defaultPrice: 1200,
     };
     const result = calculateMaterialQuantity(template, { ...mockMetrics, floorArea: 20 });
     expect(result.displayQty).toBe(22);
@@ -309,8 +347,13 @@ describe('Integration scenarios', () => {
 
   it('Scenario 4: Skirting for perimeter 18m', () => {
     const template: MaterialTemplate = {
-      id: 'skirt', name: 'Плинтус', unit: 'шт',
-      isPerimeter: true, multiplier: 1.0, packageSize: 2.5, wastePercent: 5,
+      id: 'skirt',
+      name: 'Плинтус',
+      unit: 'шт',
+      isPerimeter: true,
+      multiplier: 1.0,
+      packageSize: 2.5,
+      wastePercent: 5,
     };
     const result = calculateMaterialQuantity(template, mockMetrics);
     expect(result.displayQty).toBe(8);

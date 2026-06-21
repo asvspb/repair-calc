@@ -1,5 +1,6 @@
-import type { WorkData, Material, Tool, RoomData, RoomMetrics, WorkCosts, RoomCosts } from '../types';
-import { calculateRoomMetrics } from './geometry';
+import type { RoomMetrics, WorkCosts, RoomCosts } from '../../types';
+import type { WorkData, Material, Tool, RoomData } from '@shared/types';
+import { calculateRoomMetrics } from '../geometry/geometry';
 
 /**
  * Helper function to round cost up to nearest integer
@@ -26,13 +27,15 @@ export function migrateWorkData(work: WorkData): WorkData {
 
   // Если есть legacy materialPrice и нет материалов - создаём один материал
   if (migrated.materialPrice && migrated.materialPrice > 0 && migrated.materials.length === 0) {
-    migrated.materials = [{
-      id: Math.random().toString(36).substring(2, 11),
-      name: 'Материалы',
-      quantity: 1,
-      unit: migrated.unit || 'м²',
-      pricePerUnit: migrated.materialPrice
-    }];
+    migrated.materials = [
+      {
+        id: Math.random().toString(36).substring(2, 11),
+        name: 'Материалы',
+        quantity: 1,
+        unit: migrated.unit || 'м²',
+        pricePerUnit: migrated.materialPrice,
+      },
+    ];
   }
 
   return migrated;
@@ -66,10 +69,14 @@ export function calculateWorkQuantity(work: WorkData, metrics: RoomMetrics): num
 function calculateMaterialCost(work: WorkData, qty: number): number {
   if (work.materials && work.materials.length > 0) {
     // Новый способ: сумма стоимости всех материалов
-    return roundCostUp(work.materials.reduce((sum: number, m: Material) => sum + m.quantity * m.pricePerUnit, 0));
+    return roundCostUp(
+      work.materials.reduce((sum: number, m: Material) => sum + m.quantity * m.pricePerUnit, 0),
+    );
   } else if (work.materialPrice) {
     // Legacy: старый способ расчёта
-    return roundCostUp(work.materialPriceType === 'per_unit' ? qty * work.materialPrice : work.materialPrice);
+    return roundCostUp(
+      work.materialPriceType === 'per_unit' ? qty * work.materialPrice : work.materialPrice,
+    );
   }
   return 0;
 }
@@ -78,12 +85,14 @@ function calculateMaterialCost(work: WorkData, qty: number): number {
  * Calculate tools cost for a work
  */
 function calculateToolsCost(tools: Tool[] | undefined): number {
-  return roundCostUp((tools || []).reduce((sum: number, t: Tool) => {
-    if (t.isRent && t.rentPeriod) {
-      return sum + t.price * t.quantity * t.rentPeriod;
-    }
-    return sum + t.price * t.quantity;
-  }, 0));
+  return roundCostUp(
+    (tools || []).reduce((sum: number, t: Tool) => {
+      if (t.isRent && t.rentPeriod) {
+        return sum + t.price * t.quantity * t.rentPeriod;
+      }
+      return sum + t.price * t.quantity;
+    }, 0),
+  );
 }
 
 /**
@@ -111,7 +120,7 @@ export function calculateWorkCosts(work: WorkData, metrics: RoomMetrics): WorkCo
     work: workCost,
     material: materialCost,
     tools: toolsCost,
-    total: workCost + materialCost + toolsCost
+    total: workCost + materialCost + toolsCost,
   };
 }
 
@@ -140,6 +149,6 @@ export function calculateRoomCosts(room: RoomData): RoomCosts {
     totalWork,
     totalMaterial,
     totalTools,
-    total: totalWork + totalMaterial + totalTools
+    total: totalWork + totalMaterial + totalTools,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * Формулы расчёта материалов
- * 
+ *
  * Пять основных формул:
  * 1. calculateByCoverage — по площади покрытия (обои, ламинат, плитка)
  * 2. calculateByConsumption — по расходу на м² (краска, клей, затирка)
@@ -9,19 +9,19 @@
  * 5. calculateVolumetric — объёмные материалы (стяжка, штукатурка)
  */
 
-import type { MaterialTemplate, Material } from '../types/workTemplate';
-import type { RoomMetrics } from '../types/index';
+import type { MaterialTemplate, Material } from '../../types/workTemplate';
+import type { RoomMetrics } from '../../types/index';
 
 // ============================================
 // ТИПЫ РЕЗУЛЬТАТОВ РАСЧЁТА
 // ============================================
 
 export interface CalculationResult {
-  total: number;           // Общее количество
-  packages?: number;       // Количество упаковок
-  displayQty: number;      // Количество для отображения
-  displayUnit: string;     // Единица измерения для отображения
-  formula: string;         // Формула расчёта для UI
+  total: number; // Общее количество
+  packages?: number; // Количество упаковок
+  displayQty: number; // Количество для отображения
+  displayUnit: string; // Единица измерения для отображения
+  formula: string; // Формула расчёта для UI
 }
 
 // ============================================
@@ -31,9 +31,9 @@ export interface CalculationResult {
 /**
  * Расчёт количества по площади покрытия
  * Применение: обои, ламинат, плитка, линолеум
- * 
+ *
  * Формула: qty = площадь / coveragePerUnit × (1 + wastePercent/100)
- * 
+ *
  * @param area - площадь помещения (м²)
  * @param coveragePerUnit - м² в упаковке
  * @param wastePercent - % запаса
@@ -43,7 +43,7 @@ export function calculateByCoverage(
   area: number,
   coveragePerUnit: number,
   wastePercent: number = 10,
-  _roundUp: boolean = true
+  _roundUp: boolean = true,
 ): CalculationResult {
   if (coveragePerUnit <= 0) {
     throw new Error('coveragePerUnit must be greater than 0');
@@ -51,7 +51,7 @@ export function calculateByCoverage(
 
   const rawQty = area / coveragePerUnit;
   const withWaste = rawQty * (1 + wastePercent / 100);
-  
+
   // Округляем до целого числа в сторону увеличения
   const total = Math.ceil(withWaste);
 
@@ -70,9 +70,9 @@ export function calculateByCoverage(
 /**
  * Расчёт количества по расходу на м²
  * Применение: краска, клей, затирка, штукатурка, грунтовка
- * 
+ *
  * Формула: qty = площадь × consumptionRate × layers × (1 + wastePercent/100)
- * 
+ *
  * @param area - площадь помещения (м²)
  * @param consumptionRate - расход на м² (л/м², кг/м², шт/м²)
  * @param layers - количество слоёв (по умолчанию 1)
@@ -84,7 +84,7 @@ export function calculateByConsumption(
   consumptionRate: number,
   layers: number = 1,
   wastePercent: number = 5,
-  packageSize?: number
+  packageSize?: number,
 ): CalculationResult {
   if (consumptionRate <= 0) {
     throw new Error('consumptionRate must be greater than 0');
@@ -94,10 +94,8 @@ export function calculateByConsumption(
   const withWaste = rawQty * (1 + wastePercent / 100);
   // Округляем до целого числа в сторону увеличения
   const total = Math.ceil(withWaste);
-  
-  const packages = packageSize 
-    ? Math.ceil(total / packageSize)
-    : undefined;
+
+  const packages = packageSize ? Math.ceil(total / packageSize) : undefined;
 
   const layersText = layers > 1 ? ` × ${layers} слоёв` : '';
   const formula = `${area} м² × ${consumptionRate}${layersText} × ${(1 + wastePercent / 100).toFixed(2)} = ${total}`;
@@ -118,9 +116,9 @@ export function calculateByConsumption(
 /**
  * Расчёт количества по периметру
  * Применение: плинтус, обрешётка, профили
- * 
+ *
  * Формула: qty = периметр × multiplier × (1 + wastePercent/100)
- * 
+ *
  * @param perimeter - периметр помещения (пог. м)
  * @param multiplier - коэффициент (1.0 = 1:1)
  * @param pieceLength - длина 1 шт (для плинтуса)
@@ -130,16 +128,14 @@ export function calculateByPerimeter(
   perimeter: number,
   multiplier: number = 1.0,
   pieceLength?: number,
-  wastePercent: number = 5
+  wastePercent: number = 5,
 ): CalculationResult {
   const rawQty = perimeter * multiplier;
   const withWaste = rawQty * (1 + wastePercent / 100);
-  
+
   // Округляем до целого числа в сторону увеличения
   // Если указана длина штуки — считаем количество штук
-  const total = pieceLength 
-    ? Math.ceil(withWaste / pieceLength)
-    : Math.ceil(withWaste);
+  const total = pieceLength ? Math.ceil(withWaste / pieceLength) : Math.ceil(withWaste);
 
   const formula = pieceLength
     ? `${perimeter} пог.м × ${multiplier} × ${(1 + wastePercent / 100).toFixed(2)} ÷ ${pieceLength} м = ${total} шт`
@@ -160,9 +156,9 @@ export function calculateByPerimeter(
 /**
  * Расчёт количества поштучно
  * Применение: уголки, заглушки, крепёж, точки электрики/сантехники
- * 
+ *
  * Формула: qty = count × multiplier × (1 + wastePercent/100)
- * 
+ *
  * @param count - количество
  * @param multiplier - коэффициент
  * @param wastePercent - % запаса
@@ -170,7 +166,7 @@ export function calculateByPerimeter(
 export function calculateByCount(
   count: number,
   multiplier: number = 1.0,
-  wastePercent: number = 0
+  wastePercent: number = 0,
 ): CalculationResult {
   const rawQty = count * multiplier;
   const withWaste = rawQty * (1 + wastePercent / 100);
@@ -193,11 +189,11 @@ export function calculateByCount(
 /**
  * Расчёт объёмных материалов (с учётом толщины)
  * Применение: стяжка, штукатурка
- * 
- * Формула: 
+ *
+ * Формула:
  *   totalKg = площадь × толщина × расход_на_1см × (1 + wastePercent/100)
  *   packages = totalKg / packageSize
- * 
+ *
  * @param area - площадь (м²)
  * @param thickness - толщина слоя (см)
  * @param consumptionPerCm - кг/м² на 1 см толщины
@@ -209,7 +205,7 @@ export function calculateVolumetric(
   thickness: number,
   consumptionPerCm: number,
   wastePercent: number = 5,
-  packageSize: number = 25
+  packageSize: number = 25,
 ): CalculationResult & { totalKg: number } {
   const rawKg = area * thickness * consumptionPerCm;
   const withWaste = rawKg * (1 + wastePercent / 100);
@@ -243,16 +239,12 @@ export function calculateMaterialQuantity(
   material: MaterialTemplate,
   metrics: RoomMetrics,
   customCount?: number,
-  calculationType?: string
+  calculationType?: string,
 ): CalculationResult {
   // 1. По площади покрытия (обои, ламинат, плитка)
   if (material.coveragePerUnit) {
     const area = getAreaForMaterial(material, metrics, calculationType);
-    return calculateByCoverage(
-      area,
-      material.coveragePerUnit,
-      material.wastePercent || 10
-    );
+    return calculateByCoverage(area, material.coveragePerUnit, material.wastePercent || 10);
   }
 
   // 2. По расходу на м² (краска, клей, затирка)
@@ -263,7 +255,7 @@ export function calculateMaterialQuantity(
       material.consumptionRate,
       material.layers || 1,
       material.wastePercent || 5,
-      material.packageSize
+      material.packageSize,
     );
   }
 
@@ -273,17 +265,13 @@ export function calculateMaterialQuantity(
       metrics.perimeter,
       material.multiplier || 1.0,
       material.packageSize, // используем как длину штуки
-      material.wastePercent || 5
+      material.wastePercent || 5,
     );
   }
 
   // 4. Поштучно (точки, крепёж)
   if (customCount !== undefined) {
-    return calculateByCount(
-      customCount,
-      material.multiplier || 1.0,
-      material.wastePercent || 0
-    );
+    return calculateByCount(customCount, material.multiplier || 1.0, material.wastePercent || 0);
   }
 
   // По умолчанию — не можем рассчитать
@@ -296,13 +284,13 @@ export function calculateMaterialQuantity(
 function getAreaForMaterial(
   material: MaterialTemplate,
   metrics: RoomMetrics,
-  calculationType?: string
+  calculationType?: string,
 ): number {
   // Если материал для периметра — используем периметр
   if (material.isPerimeter) {
     return metrics.perimeter;
   }
-  
+
   // Если указан тип расчёта — используем соответствующую площадь
   if (calculationType) {
     switch (calculationType) {
@@ -316,7 +304,7 @@ function getAreaForMaterial(
         return metrics.floorArea;
     }
   }
-  
+
   // По умолчанию — площадь пола
   return metrics.floorArea;
 }
@@ -327,7 +315,7 @@ function getAreaForMaterial(
 export function getAreaForCalculationType(
   calculationType: string,
   metrics: RoomMetrics,
-  customCount?: number
+  customCount?: number,
 ): number {
   switch (calculationType) {
     case 'floorArea':
@@ -353,17 +341,17 @@ export function getAreaForCalculationType(
 export function createMaterialFromTemplate(
   template: MaterialTemplate,
   metrics: RoomMetrics,
-  customCount?: number
+  customCount?: number,
 ): Material {
   const calculation = calculateMaterialQuantity(template, metrics, customCount);
-  
+
   return {
     id: template.id,
     name: template.name,
     unit: template.unit,
     quantity: calculation.displayQty,
     pricePerUnit: template.defaultPrice || 0,
-    
+
     // Параметры расчёта
     coveragePerUnit: template.coveragePerUnit,
     consumptionRate: template.consumptionRate,
@@ -371,7 +359,7 @@ export function createMaterialFromTemplate(
     piecesPerUnit: template.piecesPerUnit,
     wastePercent: template.wastePercent,
     packageSize: template.packageSize,
-    
+
     // Вычисляемое
     calculatedQty: calculation.displayQty,
     autoCalcEnabled: true,

@@ -5,7 +5,7 @@ import {
   calculateWorkQuantity,
   calculateWorkCosts,
   calculateRoomCosts,
-} from '../../src/utils/costs';
+} from '../../../src/domain/pricing/costs';
 import type { WorkData, RoomData, RoomMetrics } from '../../src/types';
 
 describe('roundCostUp', () => {
@@ -75,7 +75,9 @@ describe('migrateWorkData', () => {
   it('should not create material if materials already exist', () => {
     const work = createBaseWork({
       materialPrice: 300,
-      materials: [{ id: 'm1', name: 'Existing Material', quantity: 2, unit: 'кг', pricePerUnit: 100 }],
+      materials: [
+        { id: 'm1', name: 'Existing Material', quantity: 2, unit: 'кг', pricePerUnit: 100 },
+      ],
     });
 
     const migrated = migrateWorkData(work);
@@ -257,9 +259,7 @@ describe('calculateWorkCosts', () => {
 
   it('should calculate tools cost (purchase)', () => {
     const work = createBaseWork({
-      tools: [
-        { id: 't1', name: 'Brush', quantity: 5, price: 100, isRent: false },
-      ],
+      tools: [{ id: 't1', name: 'Brush', quantity: 5, price: 100, isRent: false }],
     });
     const metrics = createBaseMetrics();
 
@@ -271,9 +271,7 @@ describe('calculateWorkCosts', () => {
 
   it('should calculate tools cost (rent)', () => {
     const work = createBaseWork({
-      tools: [
-        { id: 't1', name: 'Drill', quantity: 1, price: 200, isRent: true, rentPeriod: 3 },
-      ],
+      tools: [{ id: 't1', name: 'Drill', quantity: 1, price: 200, isRent: true, rentPeriod: 3 }],
     });
     const metrics = createBaseMetrics();
 
@@ -287,12 +285,8 @@ describe('calculateWorkCosts', () => {
     const work = createBaseWork({
       workUnitPrice: 500,
       calculationType: 'floorArea',
-      materials: [
-        { id: 'm1', name: 'Material', quantity: 1, unit: 'шт', pricePerUnit: 2000 },
-      ],
-      tools: [
-        { id: 't1', name: 'Tool', quantity: 1, price: 500, isRent: false },
-      ],
+      materials: [{ id: 'm1', name: 'Material', quantity: 1, unit: 'шт', pricePerUnit: 2000 }],
+      tools: [{ id: 't1', name: 'Tool', quantity: 1, price: 500, isRent: false }],
     });
     const metrics = createBaseMetrics({ floorArea: 20 });
 
@@ -369,9 +363,7 @@ describe('calculateRoomCosts', () => {
           enabled: true,
           workUnitPrice: 300,
           calculationType: 'netWallArea',
-          materials: [
-            { id: 'm1', name: 'Paint', quantity: 10, unit: 'л', pricePerUnit: 200 },
-          ],
+          materials: [{ id: 'm1', name: 'Paint', quantity: 10, unit: 'л', pricePerUnit: 200 }],
           tools: [],
         },
       ],
@@ -484,9 +476,7 @@ describe('calculateRoomCosts', () => {
   it('should handle advanced geometry mode with segments', () => {
     const room = createBaseRoom({
       geometryMode: 'advanced',
-      segments: [
-        { id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' },
-      ],
+      segments: [{ id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' }],
       works: [
         {
           id: 'work-1',

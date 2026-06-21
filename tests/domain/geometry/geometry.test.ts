@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateRoomMetrics } from '../../src/utils/geometry';
+import { calculateRoomMetrics } from '../../../src/domain/geometry/geometry';
 import type { RoomData, RoomSubSection } from '../../src/types';
 
 describe('calculateRoomMetrics', () => {
@@ -64,9 +64,7 @@ describe('calculateRoomMetrics', () => {
 
     it('should calculate doors area', () => {
       const room = createBaseRoom({
-        doors: [
-          { id: 'd1', width: 0.9, height: 2.1, comment: '' },
-        ],
+        doors: [{ id: 'd1', width: 0.9, height: 2.1, comment: '' }],
       });
       const metrics = calculateRoomMetrics(room);
 
@@ -136,8 +134,24 @@ describe('calculateRoomMetrics', () => {
         length: 0, // Игнорируется в extended mode
         width: 0,
         subSections: [
-          { id: 's1', name: 'Main', shape: 'rectangle', length: 5, width: 4, windows: [], doors: [] },
-          { id: 's2', name: 'Extension', shape: 'rectangle', length: 3, width: 2, windows: [], doors: [] },
+          {
+            id: 's1',
+            name: 'Main',
+            shape: 'rectangle',
+            length: 5,
+            width: 4,
+            windows: [],
+            doors: [],
+          },
+          {
+            id: 's2',
+            name: 'Extension',
+            shape: 'rectangle',
+            length: 3,
+            width: 2,
+            windows: [],
+            doors: [],
+          },
         ],
       });
       const metrics = calculateRoomMetrics(room);
@@ -259,9 +273,7 @@ describe('calculateRoomMetrics', () => {
     it('should add segment area when operation is "add"', () => {
       const room = createBaseRoom({
         geometryMode: 'advanced',
-        segments: [
-          { id: 'seg1', name: 'Bay window', length: 2, width: 1, operation: 'add' },
-        ],
+        segments: [{ id: 'seg1', name: 'Bay window', length: 2, width: 1, operation: 'add' }],
       });
       const metrics = calculateRoomMetrics(room);
 
@@ -286,11 +298,16 @@ describe('calculateRoomMetrics', () => {
     it('should handle obstacles (columns, ducts)', () => {
       const room = createBaseRoom({
         geometryMode: 'advanced',
-        segments: [
-          { id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' },
-        ],
+        segments: [{ id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' }],
         obstacles: [
-          { id: 'obs1', name: 'Column', type: 'column', area: 0.5, perimeter: 2.5, operation: 'subtract' },
+          {
+            id: 'obs1',
+            name: 'Column',
+            type: 'column',
+            area: 0.5,
+            perimeter: 2.5,
+            operation: 'subtract',
+          },
         ],
       });
       const metrics = calculateRoomMetrics(room);
@@ -303,12 +320,8 @@ describe('calculateRoomMetrics', () => {
       const room = createBaseRoom({
         geometryMode: 'advanced',
         height: 3,
-        segments: [
-          { id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' },
-        ],
-        wallSections: [
-          { id: 'ws1', name: 'Gable', length: 4, height: 4 },
-        ],
+        segments: [{ id: 'seg1', name: 'Main', length: 5, width: 4, operation: 'add' }],
+        wallSections: [{ id: 'ws1', name: 'Gable', length: 4, height: 4 }],
       });
       const metrics = calculateRoomMetrics(room);
 
@@ -320,9 +333,7 @@ describe('calculateRoomMetrics', () => {
     it('should not return negative values', () => {
       const room = createBaseRoom({
         geometryMode: 'advanced',
-        segments: [
-          { id: 'seg1', name: 'Small', length: 1, width: 1, operation: 'subtract' },
-        ],
+        segments: [{ id: 'seg1', name: 'Small', length: 1, width: 1, operation: 'subtract' }],
       });
       const metrics = calculateRoomMetrics(room);
 
@@ -452,7 +463,7 @@ describe('calculateRoomMetrics', () => {
       // Update base1 from 6 to 8
       section.base1 = 8;
       metrics = calculateRoomMetrics({ ...room, subSections: [section] });
-      
+
       // New area: (8+4)*5/2 = 30
       expect(metrics.floorArea).toBe(30);
       // Other fields should be preserved
@@ -560,12 +571,8 @@ describe('calculateRoomMetrics', () => {
             shape: 'rectangle',
             length: 5,
             width: 4,
-            windows: [
-              { id: 'w1', width: 1.5, height: 1.5, comment: '' },
-            ],
-            doors: [
-              { id: 'd1', width: 0.9, height: 2.1, comment: '' },
-            ],
+            windows: [{ id: 'w1', width: 1.5, height: 1.5, comment: '' }],
+            doors: [{ id: 'd1', width: 0.9, height: 2.1, comment: '' }],
           },
         ],
       });
@@ -701,7 +708,7 @@ describe('calculateRoomMetrics', () => {
       // Update section 1 dimensions
       sections[0].length = 6;
       metrics = calculateRoomMetrics({ ...room, subSections: sections });
-      
+
       // Section 1: 6*4 = 24, Section 2: 3*3 = 9, Total: 33
       expect(metrics.floorArea).toBe(33);
       // Section 2 should be unchanged
@@ -749,7 +756,7 @@ describe('calculateRoomMetrics', () => {
       // Update only section 1's base1
       sections[0].base1 = 7;
       metrics = calculateRoomMetrics({ ...room, subSections: sections });
-      
+
       // S1: (7+4)*3/2 = 16.5, S2: 22 (unchanged), Total: 38.5
       expect(metrics.floorArea).toBe(38.5);
       // Section 2 should be unchanged
@@ -790,7 +797,7 @@ describe('calculateRoomMetrics', () => {
       // Add window to section 1 only
       sections[0].windows.push({ id: 'w1', width: 1.5, height: 1.5, comment: '' });
       metrics = calculateRoomMetrics({ ...room, subSections: sections });
-      
+
       // Only section 1 has window: 1.5 * 1.5 = 2.25
       expect(metrics.windowsArea).toBe(2.25);
       // Section 2 should have no windows
