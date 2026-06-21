@@ -5,6 +5,7 @@ export interface User {
   id: string;
   email: string;
   name: string | null;
+  role?: 'admin' | 'user';
   created_at: Date;
   updated_at: Date;
 }
@@ -30,8 +31,8 @@ export interface ProjectWithRooms extends Project {
   rooms: Room[];
 }
 
-// Object types (new - недвижимость в составе проекта)
-export interface Object {
+// DbObject — represents a real-estate property within a project
+export interface DbObject {
   id: string;
   project_id: string;
   user_id: string;
@@ -47,7 +48,7 @@ export interface Object {
   deleted_at: Date | null;
 }
 
-export interface ObjectWithRooms extends Object {
+export interface ObjectWithRooms extends DbObject {
   rooms: Room[];
 }
 
@@ -58,7 +59,7 @@ export interface ProjectWithObjects extends Project {
 // Room types
 export interface Room {
   id: string;
-  object_id: string;  // Изменено с project_id на object_id
+  object_id: string;
   name: string;
   geometry_mode: 'simple' | 'extended' | 'advanced';
   length: number;
@@ -68,7 +69,6 @@ export interface Room {
   sort_order: number;
   created_at: Date;
   updated_at: Date;
-  // JSON fields for full room data storage
   segments?: string | null;
   obstacles?: string | null;
   wall_sections?: string | null;
@@ -144,6 +144,63 @@ export interface Tool {
   sort_order: number;
 }
 
+export type PriceCategory = 'work' | 'material' | 'tool';
+
+// Price catalog types
+export interface PriceCatalog {
+  id: string;
+  name: string;
+  category: PriceCategory;
+  unit: string;
+  city: string;
+  price_min: number;
+  price_avg: number;
+  price_max: number;
+  currency: string;
+  source_id: string | null;
+  source_type: string | null;
+  confidence_score: number;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  valid_from: Date;
+  valid_until: Date | null;
+  version: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PriceSource {
+  id: string;
+  name: string;
+  type: string;
+  api_endpoint: string | null;
+  is_active: boolean;
+  priority: number;
+  rate_limit_per_minute: number;
+  circuit_breaker_failures: number;
+  circuit_breaker_state: 'closed' | 'open' | 'half-open';
+  circuit_breaker_last_failure_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PriceHistory {
+  id: string;
+  price_catalog_id: string;
+  job_id: string | null;
+  old_price_min: number | null;
+  old_price_avg: number | null;
+  old_price_max: number | null;
+  new_price_min: number | null;
+  new_price_avg: number | null;
+  new_price_max: number | null;
+  price_change_percent: number | null;
+  source_id: string | null;
+  confidence_score: number | null;
+  requires_review: boolean;
+  created_at: Date;
+}
+
 // Extended mode geometry types
 export interface RoomSubSection {
   id: string;
@@ -202,7 +259,7 @@ export interface WallSection {
 
 // Auth request extension
 export interface AuthRequest extends Request {
-  user?: User | { id: string; email: string };
+  user?: User | { id: string; email: string; role?: 'admin' | 'user' };
 }
 
 // API Response types
@@ -217,6 +274,7 @@ export interface ApiResponse<T> {
 export interface TokenPayload {
   userId: string;
   email: string;
+  role?: 'admin' | 'user';
 }
 
 export interface AuthTokens {
@@ -229,7 +287,17 @@ export interface ChangeLogEntry {
   id: string;
   timestamp: number;
   operation: 'create' | 'update' | 'delete';
-  entity: 'project' | 'room' | 'work' | 'material' | 'tool' | 'opening' | 'subsection' | 'segment' | 'obstacle' | 'wall_section';
+  entity:
+    | 'project'
+    | 'room'
+    | 'work'
+    | 'material'
+    | 'tool'
+    | 'opening'
+    | 'subsection'
+    | 'segment'
+    | 'obstacle'
+    | 'wall_section';
   entityId: string;
   data: unknown;
 }

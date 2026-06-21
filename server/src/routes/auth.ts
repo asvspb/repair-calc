@@ -12,16 +12,16 @@ const router = Router();
 router.post('/register', authRateLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
-    
+
     // Check if user exists
     const existing = await UserRepository.findByEmail(data.email);
     if (existing) {
       throw badRequest('Email already registered');
     }
-    
+
     const user = await UserRepository.create(data.email, data.password, data.name);
-    const tokens = generateTokens(user.id, user.email);
-    
+    const tokens = generateTokens(user.id, user.email, user.role);
+
     res.status(201).json({
       status: 'success',
       data: {
@@ -42,19 +42,19 @@ router.post('/register', authRateLimiter, async (req, res, next) => {
 router.post('/login', authRateLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
-    
+
     const user = await UserRepository.findByEmail(data.email);
     if (!user) {
       throw unauthorized('Invalid email or password');
     }
-    
+
     const isValid = await UserRepository.verifyPassword(user, data.password);
     if (!isValid) {
       throw unauthorized('Invalid email or password');
     }
-    
-    const tokens = generateTokens(user.id, user.email);
-    
+
+    const tokens = generateTokens(user.id, user.email, user.role);
+
     res.json({
       status: 'success',
       data: {
@@ -75,19 +75,19 @@ router.post('/login', authRateLimiter, async (req, res, next) => {
 router.post('/refresh', async (req, res, next) => {
   try {
     const data = refreshSchema.parse(req.body);
-    
+
     const payload = verifyRefreshToken(data.refreshToken);
     if (!payload) {
       throw unauthorized('Invalid refresh token');
     }
-    
+
     const user = await UserRepository.findById(payload.userId);
     if (!user) {
       throw unauthorized('User not found');
     }
-    
-    const tokens = generateTokens(user.id, user.email);
-    
+
+    const tokens = generateTokens(user.id, user.email, user.role);
+
     res.json({
       status: 'success',
       data: tokens,

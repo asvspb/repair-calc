@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
 import type { AuthRequest, TokenPayload } from '../types/index.js';
 import { unauthorized } from './errorHandler.js';
+import { UserRepository } from '../db/repositories/user.repo.js';
 
 /** Minimal user shape available after authentication (no DB lookup) */
 interface AuthenticatedUser {
@@ -10,11 +11,11 @@ interface AuthenticatedUser {
   email: string;
 }
 
-export function authenticate(
+export async function authenticate(
   req: AuthRequest,
   _res: Response,
-  next: NextFunction
-): void {
+  next: NextFunction,
+): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -27,10 +28,13 @@ export function authenticate(
   try {
     const payload = jwt.verify(token, config.jwt.secret) as TokenPayload;
 
-    // Attach only what's in the token — no fake data
+    // Attach only what's in the token + role from db if available
+    const user = await UserRepository.findByEmail(payload.email);
+
     req.user = {
       id: payload.userId,
       email: payload.email,
+      role: user?.role || payload.role,
     } as AuthenticatedUser;
 
     next();
@@ -39,18 +43,16 @@ export function authenticate(
   }
 }
 
-export function generateTokens(userId: string, email: string): { token: string; refreshToken: string } {
-  const token = jwt.sign(
-    { userId, email },
-    config.jwt.secret,
-    { expiresIn: '15m' }
-  );
+export function generateTokens(
+  userId: string,
+  email: string,
+  role?: 'admin' | 'user',
+): { token: string; refreshToken: string } {
+  const token = jwt.sign({ userId, email, role }, config.jwt.secret, { expiresIn: '15m' });
 
-  const refreshToken = jwt.sign(
-    { userId, email },
-    config.jwt.refreshSecret,
-    { expiresIn: '7d' }
-  );
+  const refreshToken = jwt.sign({ userId, email, role }, config.jwt.refreshSecret, {
+    expiresIn: '7d',
+  });
 
   return { token, refreshToken };
 }
