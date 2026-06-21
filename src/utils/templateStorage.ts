@@ -1,15 +1,15 @@
 import type { WorkTemplate } from '../types/workTemplate';
 import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
-import { LocalStorageProvider } from './localStorageProvider';
-import { STORAGE_KEYS } from './storage';
+import { IndexedDbProvider } from '../api/storage/indexedDbProvider';
+import { STORAGE_KEYS } from './storageConstants';
 import { logError } from './logger';
 
 /**
  * Storage utilities for work templates with pluggable storage provider
  */
 export class TemplateStorage {
-  private static provider: IStorageProvider = LocalStorageProvider.getInstance();
+  private static provider: IStorageProvider = IndexedDbProvider.getInstance();
 
   /**
    * Set a custom storage provider (useful for testing or different storage backends)
@@ -31,15 +31,15 @@ export class TemplateStorage {
   static loadTemplates(): WorkTemplate[] {
     try {
       const templates = TemplateStorage.provider.get<WorkTemplate[]>(STORAGE_KEYS.WORK_TEMPLATES);
-      
+
       if (!templates) return [];
-      
+
       // Validate structure
       if (!Array.isArray(templates)) {
         logError('TemplateStorage', 'Invalid templates data structure');
         return [];
       }
-      
+
       return templates;
     } catch (error) {
       logError('TemplateStorage', 'Error loading templates', error);
@@ -77,7 +77,7 @@ export class TemplateStorage {
   static updateTemplate(updatedTemplate: WorkTemplate): WorkTemplate[] {
     const templates = this.loadTemplates();
     const index = templates.findIndex(t => t.id === updatedTemplate.id);
-    
+
     if (index !== -1) {
       templates[index] = {
         ...updatedTemplate,
@@ -85,7 +85,7 @@ export class TemplateStorage {
       };
       this.saveTemplates(templates);
     }
-    
+
     return templates;
   }
 
@@ -95,9 +95,9 @@ export class TemplateStorage {
   static upsertByName(template: WorkTemplate): WorkTemplate[] {
     const templates = this.loadTemplates();
     const existingIndex = templates.findIndex(
-      t => t.name.toLowerCase() === template.name.toLowerCase()
+      t => t.name.toLowerCase() === template.name.toLowerCase(),
     );
-    
+
     if (existingIndex !== -1) {
       // Update existing
       templates[existingIndex] = {
@@ -110,7 +110,7 @@ export class TemplateStorage {
       // Add new
       templates.push(template);
     }
-    
+
     this.saveTemplates(templates);
     return templates;
   }
@@ -146,11 +146,9 @@ export class TemplateStorage {
   static searchByName(query: string): WorkTemplate[] {
     const templates = this.loadTemplates();
     if (!query.trim()) return templates;
-    
+
     const lowerQuery = query.toLowerCase();
-    return templates.filter(t => 
-      t.name.toLowerCase().includes(lowerQuery)
-    );
+    return templates.filter(t => t.name.toLowerCase().includes(lowerQuery));
   }
 
   /**
@@ -159,7 +157,7 @@ export class TemplateStorage {
   static filterByCategory(category: WorkTemplate['category'] | 'all'): WorkTemplate[] {
     const templates = this.loadTemplates();
     if (category === 'all') return templates;
-    
+
     return templates.filter(t => t.category === category);
   }
 
@@ -168,23 +166,21 @@ export class TemplateStorage {
    */
   static searchAndFilter(
     query: string,
-    category: WorkTemplate['category'] | 'all'
+    category: WorkTemplate['category'] | 'all',
   ): WorkTemplate[] {
     let templates = this.loadTemplates();
-    
+
     // Filter by category first
     if (category !== 'all') {
       templates = templates.filter(t => t.category === category);
     }
-    
+
     // Then search by name
     if (query.trim()) {
       const lowerQuery = query.toLowerCase();
-      templates = templates.filter(t => 
-        t.name.toLowerCase().includes(lowerQuery)
-      );
+      templates = templates.filter(t => t.name.toLowerCase().includes(lowerQuery));
     }
-    
+
     return templates;
   }
 

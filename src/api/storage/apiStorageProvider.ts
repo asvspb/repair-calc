@@ -5,25 +5,15 @@
 
 import type { IStorageProvider } from '../../types/storage';
 import { StorageProviderError } from '../../types/storage';
-import type { ProjectData, RoomData } from '../../types';
+import type { ProjectData, RoomData } from '@shared/types';
 import * as projectsApi from '../projects';
 import * as roomsApi from '../rooms';
 import { getAllRooms } from '../../utils/projectObjects';
+import { IndexedDbProvider } from './indexedDbProvider';
 import { isServerId as isServerIdUtil } from '../../utils/idMapper';
-import {
-  logStart,
-  logSuccess,
-  logError,
-  logDebug,
-  logWarning,
-} from '../../utils/logger';
+import { STORAGE_KEYS } from '../../utils/storageConstants';
+import { logStart, logSuccess, logError, logDebug, logWarning } from '../../utils/logger';
 import { idMapper } from '../../utils/idMapper';
-
-const STORAGE_KEYS = {
-  PROJECTS: 'repair-calc-projects',
-  ACTIVE_PROJECT: 'repair-calc-active-project',
-  VERSION: 'repair-calc-version',
-} as const;
 
 /**
  * Очередь запросов с rate limiting для предотвращения 429 ошибок
@@ -45,7 +35,7 @@ export class ApiStorageProvider implements IStorageProvider {
   private projectsCache: Map<string, ProjectData> = new Map();
   private cacheExpiry: number = 0;
   private readonly CACHE_TTL = 30000; // 30 секунд
-  
+
   // Rate limiting and queue
   private requestQueue: QueuedRequest[] = [];
   private isProcessingQueue = false;
@@ -60,10 +50,7 @@ export class ApiStorageProvider implements IStorageProvider {
   /**
    * Добавление запроса в очередь с rate limiting
    */
-  private async enqueueRequest<T>(
-    execute: () => Promise<T>,
-    projectId?: string
-  ): Promise<T> {
+  private async enqueueRequest<T>(execute: () => Promise<T>, projectId?: string): Promise<T> {
     let resolvePromise: (value: T) => void;
     let rejectPromise: (error: Error) => void;
 
@@ -111,7 +98,9 @@ export class ApiStorageProvider implements IStorageProvider {
 
         // Проверяем, не удален ли проект
         if (request.projectId && this.deletedProjects.has(request.projectId)) {
-          logDebug('ApiStorage', 'Пропуск запроса для удаленного проекта', { projectId: request.projectId });
+          logDebug('ApiStorage', 'Пропуск запроса для удаленного проекта', {
+            projectId: request.projectId,
+          });
           this.requestQueue.shift();
           continue;
         }
@@ -121,7 +110,7 @@ export class ApiStorageProvider implements IStorageProvider {
         const timeSinceLastRequest = now - this.lastRequestTime;
         if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
           await new Promise(resolve =>
-            setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+            setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest),
           );
         }
 
@@ -134,7 +123,10 @@ export class ApiStorageProvider implements IStorageProvider {
           if (this.isRateLimitError(error) && request.retryCount < this.MAX_RETRIES) {
             request.retryCount++;
             const backoffDelay = Math.min(1000 * Math.pow(2, request.retryCount), 10000);
-            logWarning('ApiStorage', `Rate limit, повторная попытка ${request.retryCount}/${this.MAX_RETRIES} через ${backoffDelay}ms`);
+            logWarning(
+              'ApiStorage',
+              `Rate limit, повторная попытка ${request.retryCount}/${this.MAX_RETRIES} через ${backoffDelay}ms`,
+            );
 
             // Не сдвигаем запрос, ждем и пробуем снова
             await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -143,7 +135,9 @@ export class ApiStorageProvider implements IStorageProvider {
             // Максимум попыток исчерпан или другая ошибка
             this.requestQueue.shift();
             // Reject уже был вызван внутри execute(), но логируем ошибку
-            logError('ApiStorage', 'Ошибка запроса после всех попыток', error, { projectId: request.projectId });
+            logError('ApiStorage', 'Ошибка запроса после всех попыток', error, {
+              projectId: request.projectId,
+            });
           }
         }
       }
@@ -342,7 +336,7 @@ export class ApiStorageProvider implements IStorageProvider {
 
       // Синхронизируем каждый проект через очередь
       const syncPromises: Promise<void>[] = [];
-      
+
       for (const project of projects) {
         const isServerProject = isServerIdUtil(project.id);
         const existsOnServer = existingProjectIds.has(project.id);
@@ -354,7 +348,7 @@ export class ApiStorageProvider implements IStorageProvider {
           // Уже есть маппинг и проект существует на сервере — обновляем по серверному ID
           logDebug('ApiStorage', 'Обновление мигрированного проекта', {
             localId: project.id,
-            serverId: mappedServerId
+            serverId: mappedServerId,
           });
           const syncPromise = this.enqueueRequest(async () => {
             try {
@@ -364,7 +358,7 @@ export class ApiStorageProvider implements IStorageProvider {
             } catch (error) {
               logError('ApiStorage', 'Ошибка обновления мигрированного проекта', error, {
                 localId: project.id,
-                serverId: mappedServerId
+                serverId: mappedServerId,
               });
             }
           }, project.id);
@@ -377,7 +371,9 @@ export class ApiStorageProvider implements IStorageProvider {
               // updateProjectAsync теперь использует транзакционный endpoint и включает комнаты
               await this.updateProjectAsync(project);
             } catch (error) {
-              logError('ApiStorage', 'Ошибка синхронизации проекта', error, { projectId: project.id });
+              logError('ApiStorage', 'Ошибка синхронизации проекта', error, {
+                projectId: project.id,
+              });
             }
           }, project.id);
           syncPromises.push(syncPromise);
@@ -385,7 +381,7 @@ export class ApiStorageProvider implements IStorageProvider {
           // Локальный проект без маппинга — мигрируем на сервер
           logDebug('ApiStorage', 'Миграция локального проекта на сервер', {
             projectId: project.id,
-            name: project.name
+            name: project.name,
           });
           const syncPromise = this.enqueueRequest(async () => {
             try {
@@ -401,34 +397,36 @@ export class ApiStorageProvider implements IStorageProvider {
 
               logSuccess('ApiStorage', 'Проект мигрирован', {
                 localId: project.id,
-                serverId: newProject.id
+                serverId: newProject.id,
               });
 
               // Атомарно сохраняем все комнаты через updateProjectWithObjects
               const allRooms = getAllRooms(project);
               if (allRooms.length > 0 && newProject.objects?.[0]) {
-                const objectsData = [{
-                  id: newProject.objects[0].id,
-                  name: project.name,
-                  city: project.city || null,
-                  rooms: allRooms.map(room => ({
-                    id: room.id,
-                    name: room.name,
-                    geometry_mode: room.geometryMode,
-                    // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
-                    length: Number(room.length) || 0,
-                    width: Number(room.width) || 0,
-                    height: Number(room.height) || 0,
-                    segments: room.segments,
-                    obstacles: room.obstacles,
-                    wall_sections: room.wallSections,
-                    sub_sections: room.subSections,
-                    windows: room.windows,
-                    doors: room.doors,
-                    works: room.works,
-                    sort_order: 0,
-                  })),
-                }];
+                const objectsData = [
+                  {
+                    id: newProject.objects[0].id,
+                    name: project.name,
+                    city: project.city || null,
+                    rooms: allRooms.map(room => ({
+                      id: room.id,
+                      name: room.name,
+                      geometry_mode: room.geometryMode,
+                      // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
+                      length: Number(room.length) || 0,
+                      width: Number(room.width) || 0,
+                      height: Number(room.height) || 0,
+                      segments: room.segments,
+                      obstacles: room.obstacles,
+                      wall_sections: room.wallSections,
+                      sub_sections: room.subSections,
+                      windows: room.windows,
+                      doors: room.doors,
+                      works: room.works,
+                      sort_order: 0,
+                    })),
+                  },
+                ];
 
                 await projectsApi.updateProjectWithObjects(newProject.id, {
                   name: project.name,
@@ -437,7 +435,7 @@ export class ApiStorageProvider implements IStorageProvider {
                 });
                 logDebug('ApiStorage', 'Комнаты мигрированы через updateProjectWithObjects', {
                   roomId: newProject.id,
-                  roomCount: allRooms.length
+                  roomCount: allRooms.length,
                 });
               }
             } catch (error) {
@@ -453,7 +451,9 @@ export class ApiStorageProvider implements IStorageProvider {
                     errorMessage: apiError['message'],
                   });
                 } else {
-                  logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
+                  logError('ApiStorage', 'Ошибка миграции проекта', error, {
+                    projectId: project.id,
+                  });
                 }
               } else {
                 logError('ApiStorage', 'Ошибка миграции проекта', error, { projectId: project.id });
@@ -466,7 +466,7 @@ export class ApiStorageProvider implements IStorageProvider {
           // Это может произойти при импорте JSON с другого устройства/аккаунта
           logDebug('ApiStorage', 'Создание проекта с серверным ID', {
             projectId: project.id,
-            name: project.name
+            name: project.name,
           });
           const syncPromise = this.enqueueRequest(async () => {
             try {
@@ -482,34 +482,36 @@ export class ApiStorageProvider implements IStorageProvider {
 
               logSuccess('ApiStorage', 'Проект создан (импортирован)', {
                 oldId: project.id,
-                newId: newProject.id
+                newId: newProject.id,
               });
 
               // Атомарно сохраняем все комнаты через updateProjectWithObjects
               const allRooms = getAllRooms(project);
               if (allRooms.length > 0 && newProject.objects?.[0]) {
-                const objectsData = [{
-                  id: newProject.objects[0].id,
-                  name: project.name,
-                  city: project.city || null,
-                  rooms: allRooms.map(room => ({
-                    id: room.id,
-                    name: room.name,
-                    geometry_mode: room.geometryMode,
-                    // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
-                    length: Number(room.length) || 0,
-                    width: Number(room.width) || 0,
-                    height: Number(room.height) || 0,
-                    segments: room.segments,
-                    obstacles: room.obstacles,
-                    wall_sections: room.wallSections,
-                    sub_sections: room.subSections,
-                    windows: room.windows,
-                    doors: room.doors,
-                    works: room.works,
-                    sort_order: 0,
-                  })),
-                }];
+                const objectsData = [
+                  {
+                    id: newProject.objects[0].id,
+                    name: project.name,
+                    city: project.city || null,
+                    rooms: allRooms.map(room => ({
+                      id: room.id,
+                      name: room.name,
+                      geometry_mode: room.geometryMode,
+                      // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
+                      length: Number(room.length) || 0,
+                      width: Number(room.width) || 0,
+                      height: Number(room.height) || 0,
+                      segments: room.segments,
+                      obstacles: room.obstacles,
+                      wall_sections: room.wallSections,
+                      sub_sections: room.subSections,
+                      windows: room.windows,
+                      doors: room.doors,
+                      works: room.works,
+                      sort_order: 0,
+                    })),
+                  },
+                ];
 
                 await projectsApi.updateProjectWithObjects(newProject.id, {
                   name: project.name,
@@ -518,11 +520,13 @@ export class ApiStorageProvider implements IStorageProvider {
                 });
                 logDebug('ApiStorage', 'Комнаты импортированы через updateProjectWithObjects', {
                   roomId: newProject.id,
-                  roomCount: allRooms.length
+                  roomCount: allRooms.length,
                 });
               }
             } catch (error) {
-              logError('ApiStorage', 'Ошибка создания проекта при импорте', error, { projectId: project.id });
+              logError('ApiStorage', 'Ошибка создания проекта при импорте', error, {
+                projectId: project.id,
+              });
             }
           }, project.id);
           syncPromises.push(syncPromise);
@@ -534,14 +538,18 @@ export class ApiStorageProvider implements IStorageProvider {
 
       // Если были миграции — обновляем кэш с серверными ID
       if (migratedProjects.length > 0) {
-        logDebug('ApiStorage', 'Обновление кэша после миграции', { count: migratedProjects.length });
+        logDebug('ApiStorage', 'Обновление кэша после миграции', {
+          count: migratedProjects.length,
+        });
 
         // Загружаем актуальный список с сервера
         const updatedProjects = await this.enqueueRequest(() => this.loadProjectsAsync());
 
         // Удаляем локальные дубликаты из localStorage
         const localIdsToRemove = new Set(migratedProjects.map(m => m.localId));
-        const cleanedProjects = updatedProjects.filter(p => !localIdsToRemove.has(p.id) || isServerIdUtil(p.id));
+        const cleanedProjects = updatedProjects.filter(
+          p => !localIdsToRemove.has(p.id) || isServerIdUtil(p.id),
+        );
 
         // Обновляем localStorage только серверными версиями
         localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(cleanedProjects));
@@ -552,12 +560,17 @@ export class ApiStorageProvider implements IStorageProvider {
         this.cacheExpiry = Date.now() + this.CACHE_TTL;
 
         logSuccess('ApiStorage', 'Миграция завершена, дубликаты удалены', {
-          migratedCount: migratedProjects.length
+          migratedCount: migratedProjects.length,
         });
       }
 
-      logSuccess('ApiStorage', 'Проекты успешно синхронизированы', { count: projects.length }, startTime);
-      
+      logSuccess(
+        'ApiStorage',
+        'Проекты успешно синхронизированы',
+        { count: projects.length },
+        startTime,
+      );
+
       // Возвращаем обновлённый список проектов
       return Array.from(this.projectsCache.values());
     } catch (error) {
@@ -573,7 +586,7 @@ export class ApiStorageProvider implements IStorageProvider {
   async saveProjectAsync(project: ProjectData): Promise<ProjectData> {
     const startTime = logStart('ApiStorage', 'Инкрементальное сохранение проекта', {
       projectId: project.id,
-      name: project.name
+      name: project.name,
     });
 
     try {
@@ -599,21 +612,35 @@ export class ApiStorageProvider implements IStorageProvider {
       if (mappedServerId) {
         // Update existing migrated project
         const projectWithServerId = { ...project, id: mappedServerId };
-        resultProject = await this.enqueueRequest(() => this.updateProjectAsync(projectWithServerId));
-        logSuccess('ApiStorage', 'Мигрированный проект обновлен', {
-          localId: project.id,
-          serverId: mappedServerId
-        }, startTime);
+        resultProject = await this.enqueueRequest(() =>
+          this.updateProjectAsync(projectWithServerId),
+        );
+        logSuccess(
+          'ApiStorage',
+          'Мигрированный проект обновлен',
+          {
+            localId: project.id,
+            serverId: mappedServerId,
+          },
+          startTime,
+        );
       } else if (isServerProject) {
         // Update server project directly
         resultProject = await this.enqueueRequest(() => this.updateProjectAsync(project));
-        logSuccess('ApiStorage', 'Проект обновлен на сервере', { projectId: project.id }, startTime);
+        logSuccess(
+          'ApiStorage',
+          'Проект обновлен на сервере',
+          { projectId: project.id },
+          startTime,
+        );
       } else {
         // Create new project on server
-        const newProject = await this.enqueueRequest(() => this.createProjectAsync({
-          name: project.name,
-          city: project.city,
-        }));
+        const newProject = await this.enqueueRequest(() =>
+          this.createProjectAsync({
+            name: project.name,
+            city: project.city,
+          }),
+        );
 
         // Save mapping
         idMapper.addMapping(project.id, newProject.id);
@@ -643,22 +670,31 @@ export class ApiStorageProvider implements IStorageProvider {
                 doors: room.doors ?? [],
                 works: room.works ?? [],
                 sort_order: room.sortOrder ?? 0,
-              }))
-            }))
+              })),
+            })),
           };
-          await this.enqueueRequest(() => projectsApi.updateProjectWithObjects(newProject.id, objectsData));
+          await this.enqueueRequest(() =>
+            projectsApi.updateProjectWithObjects(newProject.id, objectsData),
+          );
         }
 
         resultProject = newProject;
-        logSuccess('ApiStorage', 'Новый проект создан на сервере', {
-          localId: project.id,
-          serverId: newProject.id
-        }, startTime);
+        logSuccess(
+          'ApiStorage',
+          'Новый проект создан на сервере',
+          {
+            localId: project.id,
+            serverId: newProject.id,
+          },
+          startTime,
+        );
       }
 
       return resultProject;
     } catch (error) {
-      logError('ApiStorage', 'Ошибка инкрементального сохранения', error, { projectId: project.id });
+      logError('ApiStorage', 'Ошибка инкрементального сохранения', error, {
+        projectId: project.id,
+      });
       throw StorageProviderError.fromError(error);
     }
   }
@@ -701,7 +737,7 @@ export class ApiStorageProvider implements IStorageProvider {
           // Сохраняем ошибку для последующего уведомления
           this.roomSyncErrors.set(`${project.id}:${room.id}`, {
             error,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
           errors.push(error);
         }
@@ -749,7 +785,7 @@ export class ApiStorageProvider implements IStorageProvider {
       // Используем sync/pull для получения проектов с комнатами
       const response = await projectsApi.syncPull();
       const projects = response.data.projects.map(projectsApi.apiToClientProject);
-      
+
       // Обновляем кэш
       this.projectsCache.clear();
       projects.forEach(p => this.projectsCache.set(p.id, p));
@@ -760,7 +796,6 @@ export class ApiStorageProvider implements IStorageProvider {
 
       return projects;
     } catch (error) {
-      
       // При ошибке пробуем загрузить из localStorage
       logDebug('ApiStorage', 'Попытка загрузки из localStorage при ошибке');
       const cached = this.loadFromLocalStorage<ProjectData[]>(STORAGE_KEYS.PROJECTS);
@@ -783,10 +818,10 @@ export class ApiStorageProvider implements IStorageProvider {
     try {
       const response = await projectsApi.createProject(data);
       const project = projectsApi.apiToClientProject(response.data);
-      
+
       // Добавляем в кэш
       this.projectsCache.set(project.id, project);
-      
+
       return project;
     } catch (error) {
       throw StorageProviderError.fromError(error);
@@ -932,10 +967,10 @@ export class ApiStorageProvider implements IStorageProvider {
     try {
       const response = await projectsApi.getProject(projectId);
       const project = projectsApi.apiToClientProject(response.data);
-      
+
       // Обновляем в кэше
       this.projectsCache.set(project.id, project);
-      
+
       return project;
     } catch (error) {
       if (error instanceof projectsApi.ProjectsApiError && error.statusCode === 404) {
@@ -1001,7 +1036,7 @@ export class ApiStorageProvider implements IStorageProvider {
     return {
       used: used * 2, // UTF-16 encoding
       total,
-      percentage: (used * 2 / total) * 100,
+      percentage: ((used * 2) / total) * 100,
     };
   }
 
@@ -1021,14 +1056,12 @@ export class ApiStorageProvider implements IStorageProvider {
 
 /**
  * Функция для определения, какой провайдер использовать
- * Возвращает ApiStorageProvider если пользователь авторизован, иначе LocalStorageProvider
+ * Возвращает ApiStorageProvider если пользователь авторизован, иначе IndexedDbProvider
  */
 export function getStorageProvider(): IStorageProvider {
   const token = localStorage.getItem('token');
   if (token) {
     return ApiStorageProvider.getInstance();
   }
-  // Импортируем динамически чтобы избежать циклической зависимости
-  const { LocalStorageProvider } = require('../../utils/localStorageProvider');
-  return LocalStorageProvider.getInstance();
+  return IndexedDbProvider.getInstance();
 }

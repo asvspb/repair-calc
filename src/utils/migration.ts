@@ -3,18 +3,14 @@
  * Обнаруживает и устраняет дубликаты проектов
  */
 
-import type { ProjectData } from '../types';
+import type { ProjectData } from '@shared/types';
 import { idMapper, IdMapper } from './idMapper';
+import { STORAGE_KEYS } from './storageConstants';
 import { logStart, logSuccess, logWarning, logDebug, logError } from './logger';
 import { getAllRooms } from './projectObjects';
 
 const MIGRATION_VERSION_KEY = 'repair-calc-migration-version';
 const CURRENT_MIGRATION_VERSION = 1;
-
-const STORAGE_KEYS = {
-  PROJECTS: 'repair-calc-projects',
-  ACTIVE_PROJECT: 'repair-calc-active-project',
-} as const;
 
 /**
  * Проверить, нужна ли миграция
@@ -36,18 +32,18 @@ export function getMigrationVersion(): number {
  */
 export async function runMigrations(
   serverProjects: ProjectData[],
-  onProgress?: (message: string) => void
+  onProgress?: (message: string) => void,
 ): Promise<{ migrated: number; duplicatesRemoved: number }> {
   const currentVersion = getMigrationVersion();
-  
+
   if (currentVersion >= CURRENT_MIGRATION_VERSION) {
     logDebug('Migration', 'Миграция не требуется');
     return { migrated: 0, duplicatesRemoved: 0 };
   }
 
-  const startTime = logStart('Migration', 'Запуск миграций', { 
-    from: currentVersion, 
-    to: CURRENT_MIGRATION_VERSION 
+  const startTime = logStart('Migration', 'Запуск миграций', {
+    from: currentVersion,
+    to: CURRENT_MIGRATION_VERSION,
   });
 
   let result = { migrated: 0, duplicatesRemoved: 0 };
@@ -61,7 +57,7 @@ export async function runMigrations(
 
     // Обновляем маркер версии
     localStorage.setItem(MIGRATION_VERSION_KEY, String(CURRENT_MIGRATION_VERSION));
-    
+
     logSuccess('Migration', 'Миграция завершена', result, startTime);
   } catch (error) {
     logError('Migration', 'Ошибка миграции', error);
@@ -74,7 +70,9 @@ export async function runMigrations(
 /**
  * Миграция v0 → v1: Обнаружение дубликатов
  */
-async function migrateV0ToV1(serverProjects: ProjectData[]): Promise<{ migrated: number; duplicatesRemoved: number }> {
+async function migrateV0ToV1(
+  serverProjects: ProjectData[],
+): Promise<{ migrated: number; duplicatesRemoved: number }> {
   logDebug('Migration', 'Миграция v0 → v1: Обнаружение дубликатов');
 
   // Загружаем локальные проекты
@@ -126,7 +124,7 @@ async function migrateV0ToV1(serverProjects: ProjectData[]): Promise<{ migrated:
   // Удаляем локальные дубликаты из localStorage
   const duplicateLocalIds = new Set(duplicates.map(d => d.local.id));
   const cleanedProjects = localProjects.filter(p => !duplicateLocalIds.has(p.id));
-  
+
   localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(cleanedProjects));
 
   // Обновляем активный проект если он был дубликатом

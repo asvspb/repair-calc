@@ -1,23 +1,18 @@
-import type { ProjectData } from '../types';
+import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../types/workTemplate';
 import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
-import { LocalStorageProvider } from './localStorageProvider';
+import { IndexedDbProvider } from '../api/storage/indexedDbProvider';
 import { TemplateStorage } from './templateStorage';
+import { STORAGE_KEYS, CURRENT_VERSION } from './storageConstants';
 import { logError } from './logger';
-import { calculateRoomMetrics } from './geometry';
-import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
+import { calculateRoomMetrics } from '../domain/geometry/geometry';
+import {
+  calculateWorkQuantity,
+  calculateWorkCosts,
+  migrateWorkData,
+} from '../domain/pricing/costs';
 import { getAllRooms } from './projectObjects';
-
-const STORAGE_KEYS = {
-  PROJECTS: 'repair-calc-projects',
-  ACTIVE_PROJECT: 'repair-calc-active-project',
-  VERSION: 'repair-calc-version',
-  LAST_BACKUP: 'repair-calc-last-backup',
-  WORK_TEMPLATES: 'repair-calc-work-templates',
-} as const;
-
-const CURRENT_VERSION = '1.0.0';
 
 export interface BackupData {
   version: string;
@@ -43,7 +38,7 @@ export function countImportedObjects(projects: ProjectData[]): number {
  * Storage manager with pluggable storage provider
  */
 export class StorageManager {
-  private static provider: IStorageProvider = LocalStorageProvider.getInstance();
+  private static provider: IStorageProvider = IndexedDbProvider.getInstance();
 
   /**
    * Set a custom storage provider (useful for testing or different storage backends)
@@ -68,7 +63,7 @@ export class StorageManager {
       if (error instanceof StorageProviderError) {
         throw {
           type: error.type,
-          message: error.message
+          message: error.message,
         } as StorageError;
       }
       throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
@@ -98,7 +93,7 @@ export class StorageManager {
       if (error instanceof StorageProviderError) {
         throw {
           type: error.type,
-          message: error.message
+          message: error.message,
         } as StorageError;
       }
       throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
@@ -113,7 +108,7 @@ export class StorageManager {
       if (error instanceof StorageProviderError) {
         throw {
           type: error.type,
-          message: error.message
+          message: error.message,
         } as StorageError;
       }
       throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
@@ -173,6 +168,15 @@ export class StorageManager {
     }
   }
 
+  static async loadActiveProjectAsync(): Promise<string | null> {
+    try {
+      return await StorageManager.provider.getAsync<string>(STORAGE_KEYS.ACTIVE_PROJECT);
+    } catch (error) {
+      logError('Storage', 'Error loading active project async', error);
+      return null;
+    }
+  }
+
   static exportToJSON(projects: ProjectData[], activeProjectId: string): string {
     const workTemplates = TemplateStorage.loadTemplates();
     const backupData: BackupData = {
@@ -180,12 +184,14 @@ export class StorageManager {
       exportedAt: new Date().toISOString(),
       projects,
       activeProjectId,
-      workTemplates
+      workTemplates,
     };
     return JSON.stringify(backupData, null, 2);
   }
 
-  static importFromJSON(jsonString: string): { success: true; data: BackupData } | { success: false; error: string } {
+  static importFromJSON(
+    jsonString: string,
+  ): { success: true; data: BackupData } | { success: false; error: string } {
     try {
       const data = JSON.parse(jsonString) as BackupData;
 
@@ -201,13 +207,19 @@ export class StorageManager {
       // Проверка каждого проекта
       for (const project of data.projects) {
         if (!project.id || !project.name) {
-          return { success: false, error: `Неверная структура проекта: ${project.name || 'без названия'}` };
+          return {
+            success: false,
+            error: `Неверная структура проекта: ${project.name || 'без названия'}`,
+          };
         }
         // Проверяем наличие rooms или objects
         const hasRooms = Array.isArray(project.rooms);
         const hasObjects = Array.isArray(project.objects);
         if (!hasRooms && !hasObjects) {
-          return { success: false, error: `Неверная структура проекта: ${project.name || 'без названия'} (нет rooms или objects)` };
+          return {
+            success: false,
+            error: `Неверная структура проекта: ${project.name || 'без названия'} (нет rooms или objects)`,
+          };
         }
       }
 
@@ -219,7 +231,10 @@ export class StorageManager {
         // Проверяем структуру каждого шаблона
         for (const template of data.workTemplates) {
           if (!template.id || !template.name || !template.category) {
-            return { success: false, error: `Неверная структура шаблона: ${template.name || 'без названия'}` };
+            return {
+              success: false,
+              error: `Неверная структура шаблона: ${template.name || 'без названия'}`,
+            };
           }
         }
       }
@@ -234,7 +249,19 @@ export class StorageManager {
     const rows: string[] = [];
 
     // Заголовки — добавлена колонка для инструментов
-    rows.push(['Объект', 'Комната', 'Работа', 'Единица', 'Объем', 'Цена работы', 'Цена материалов', 'Цена инструментов', 'Итого'].join(';'));
+    rows.push(
+      [
+        'Объект',
+        'Комната',
+        'Работа',
+        'Единица',
+        'Объем',
+        'Цена работы',
+        'Цена материалов',
+        'Цена инструментов',
+        'Итого',
+      ].join(';'),
+    );
 
     for (const project of projects) {
       const allRooms = getAllRooms(project);
@@ -252,17 +279,19 @@ export class StorageManager {
           const qty = calculateWorkQuantity(migratedWork, metrics);
           const costs = calculateWorkCosts(migratedWork, metrics);
 
-          rows.push([
-            project.name,
-            room.name,
-            work.name,
-            work.unit,
-            qty.toFixed(2),
-            costs.work.toFixed(2),
-            costs.material.toFixed(2),
-            costs.tools.toFixed(2),
-            costs.total.toFixed(2)
-          ].join(';'));
+          rows.push(
+            [
+              project.name,
+              room.name,
+              work.name,
+              work.unit,
+              qty.toFixed(2),
+              costs.work.toFixed(2),
+              costs.material.toFixed(2),
+              costs.tools.toFixed(2),
+              costs.total.toFixed(2),
+            ].join(';'),
+          );
         }
       }
     }
@@ -286,5 +315,3 @@ export class StorageManager {
     return StorageManager.provider.getStorageInfo();
   }
 }
-
-export { STORAGE_KEYS, CURRENT_VERSION };

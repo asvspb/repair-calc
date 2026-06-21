@@ -128,21 +128,21 @@ export class LocalStorageProvider implements IStorageProvider {
    */
   getStorageInfo(): { used: number; total: number; percentage: number } {
     let used = 0;
-    
+
     try {
       for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
           used += localStorage[key].length * 2; // UTF-16 = 2 bytes per char
         }
       }
     } catch (error) {
       logError('LocalStorage', 'Error calculating storage usage', error);
     }
-    
+
     // Approximate localStorage limit (5-10 MB)
     const total = 5 * 1024 * 1024; // 5 MB
     const percentage = Math.min((used / total) * 100, 100);
-    
+
     return { used, total, percentage };
   }
 }
