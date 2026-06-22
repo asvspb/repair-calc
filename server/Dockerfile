@@ -8,6 +8,9 @@ WORKDIR /app
 # Копируем package файлы
 COPY package*.json ./
 
+# Устанавливаем build dependencies для native modules (например, better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Устанавливаем ВСЕ зависимости (включая devDependencies для сборки)
 RUN npm ci
 
@@ -25,8 +28,11 @@ WORKDIR /app
 # Копируем package файлы
 COPY package*.json ./
 
-# Устанавливаем зависимости включая tsx для миграций
-RUN npm ci --only=production && npm install tsx
+# Устанавливаем зависимости включая tsx для миграций, и необходимые инструменты для сборки
+RUN apk add --no-cache python3 make g++ \
+    && npm ci --omit=dev \
+    && npm install tsx \
+    && apk del python3 make g++
 
 # Копируем собранный код из builder stage
 COPY --from=builder /app/dist ./dist
