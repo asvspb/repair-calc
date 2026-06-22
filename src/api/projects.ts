@@ -33,6 +33,9 @@ interface ApiProject {
     name: string;
     city: string | null;
     sort_order: number;
+    use_ai_pricing: boolean;
+    last_ai_price_update: string | null;
+    version: number;
     created_at: string;
     updated_at: string;
     rooms?: ApiRoom[];
@@ -110,6 +113,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
     lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
     version: apiProject.version,
     rooms: (apiProject.rooms || []).map(apiToClientRoom),
+    objects: [],
   };
 }
 

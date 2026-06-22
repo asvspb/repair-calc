@@ -16,12 +16,13 @@ import type { RoomMetrics } from '../types';
 import type { RoomData, WorkData } from '@shared/types';
 import type { WorkTemplate } from '../types/workTemplate';
 import type { SaveResult } from '../hooks/useWorkTemplates';
+import { useProjectStore } from '../store/useProjectStore';
 
 interface RoomEditorProps {
   room: RoomData;
   city?: string;
   updateRoom: (r: RoomData) => void;
-  updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
+
   deleteRoom: () => void;
   templates: WorkTemplate[];
   onSaveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
@@ -36,7 +37,6 @@ export function RoomEditor({
   room,
   city,
   updateRoom,
-  updateRoomById,
   deleteRoom,
   templates,
   onSaveTemplate,
@@ -46,6 +46,9 @@ export function RoomEditor({
   onOpenTemplatePicker,
   onCloseTemplatePicker,
 }: RoomEditorProps) {
+  const updateRoomById = useProjectStore(s => s.updateRoomById);
+
+  // Добавляем флаг монтирования для предотвращения hydration ошибок
   const normalizedRoom = useMemo(
     () => ({
       ...room,
@@ -216,7 +219,6 @@ export function RoomEditor({
                   city={city}
                   handlers={handlers}
                   metrics={metrics}
-                  updateRoomById={updateRoomById}
                 />
               )}
             />

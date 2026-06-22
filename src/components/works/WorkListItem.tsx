@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
 import type { WorkData } from '@shared/types';
+import type { SaveResult } from '../../hooks/useWorkTemplates';
 import { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 
 type WorkListItemProps = {
@@ -13,10 +14,7 @@ type WorkListItemProps = {
   onNameChange: (id: string, name: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: (id: string) => void;
-  onSaveTemplate?: (
-    work: WorkData,
-    forceReplace: boolean,
-  ) => { success: boolean; error?: string; needsConfirm?: boolean };
+  onSaveTemplate?: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
 };
 
 /**
@@ -178,7 +176,12 @@ const WorkListItemInternal: React.FC<WorkListItemProps> = ({
               />
               {isExpanded ? 'свернуть' : 'Развернуть'}
             </button>
-            {onSaveTemplate && <WorkTemplateSaveButton work={work} onSave={onSaveTemplate} />}
+            {onSaveTemplate && (
+              <WorkTemplateSaveButton
+                work={work}
+                onSave={(w, forceReplace) => onSaveTemplate(w, forceReplace, work.sourceVolume)}
+              />
+            )}
           </div>
         )}
       </div>

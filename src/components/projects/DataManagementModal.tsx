@@ -1,7 +1,17 @@
+import type { ProjectData } from '@shared/types';
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  X, Download, Upload, FileJson, FileSpreadsheet,
-  Server, RefreshCw, Save, User, LogOut, Database
+  X,
+  Download,
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  Server,
+  RefreshCw,
+  Save,
+  User,
+  LogOut,
+  Database,
 } from 'lucide-react';
 import type { WorkTemplate } from '../../types/workTemplate';
 import { useProjectStore } from '../../store/useProjectStore';
@@ -77,9 +87,7 @@ function UserTabContent({ onClose }: { onClose: () => void }) {
           <div className="text-lg font-semibold text-gray-900 truncate">
             {user.name || 'Пользователь'}
           </div>
-          <div className="text-sm text-gray-500 truncate">
-            {user.email}
-          </div>
+          <div className="text-sm text-gray-500 truncate">{user.email}</div>
         </div>
       </div>
 
@@ -99,10 +107,10 @@ function UserTabContent({ onClose }: { onClose: () => void }) {
  * Data management tab content component
  */
 function DataTabContent() {
-  const projects = useProjectStore((s) => s.projects);
-  const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId);
-  const updateProjects = useProjectStore((s) => s.updateProjects);
+  const projects = useProjectStore(s => s.projects);
+  const activeProjectId = useProjectStore(s => s.activeProjectId);
+  const setActiveProjectId = useProjectStore(s => s.setActiveProjectId);
+  const updateProjects = useProjectStore(s => s.updateProjects);
 
   const { isAuthenticated } = useAuth();
 
@@ -142,7 +150,7 @@ function DataTabContent() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const content = e.target?.result as string;
       const result = StorageManager.importFromJSON(content);
 
@@ -169,7 +177,7 @@ function DataTabContent() {
   // Confirm import
   const handleConfirmImport = useCallback(() => {
     if (importStatus?.data) {
-      const migratedProjects = importStatus.data.projects.map((p) => migrateProjectToObjects(p));
+      const migratedProjects = importStatus.data.projects.map(p => migrateProjectToObjects(p));
       updateProjects(migratedProjects);
       setActiveProjectId(importStatus.data.activeProjectId);
 
@@ -214,7 +222,7 @@ function DataTabContent() {
       const serverProjects = await apiProvider.loadProjectsAsync();
 
       if (serverProjects.length > 0) {
-        const migratedProjects = serverProjects.map((p) => migrateProjectToObjects(p));
+        const migratedProjects = serverProjects.map(p => migrateProjectToObjects(p));
         updateProjects(migratedProjects);
 
         setImportStatus({
@@ -336,13 +344,15 @@ function DataTabContent() {
 
       {/* Status messages */}
       {importStatus && (
-        <div className={`mt-4 p-4 rounded-lg ${
-          importStatus.type === 'success'
-            ? 'bg-green-50 text-green-800'
-            : importStatus.type === 'error'
-            ? 'bg-red-50 text-red-800'
-            : 'bg-blue-50 text-blue-800'
-        }`}>
+        <div
+          className={`mt-4 p-4 rounded-lg ${
+            importStatus.type === 'success'
+              ? 'bg-green-50 text-green-800'
+              : importStatus.type === 'error'
+                ? 'bg-red-50 text-red-800'
+                : 'bg-blue-50 text-blue-800'
+          }`}
+        >
           <p className="text-sm">{importStatus.message}</p>
           {importStatus.type === 'confirm' && (
             <div className="mt-3 flex gap-2">
@@ -383,8 +393,14 @@ export function DataManagementModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col h-[750px] animate-scale-in" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col h-[750px] animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -427,11 +443,7 @@ export function DataManagementModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'data' ? (
-            <DataTabContent />
-          ) : (
-            <UserTabContent onClose={onClose} />
-          )}
+          {activeTab === 'data' ? <DataTabContent /> : <UserTabContent onClose={onClose} />}
         </div>
       </div>
     </div>

@@ -36,7 +36,7 @@ export class TemplateStorage {
 
       // Validate structure
       if (!Array.isArray(templates)) {
-        logError('TemplateStorage', 'Invalid templates data structure');
+        logError('TemplateStorage', 'Invalid templates data structure', new Error('Invalid data'));
         return [];
       }
 

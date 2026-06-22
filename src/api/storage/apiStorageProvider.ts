@@ -408,23 +408,7 @@ export class ApiStorageProvider implements IStorageProvider {
                     id: newProject.objects[0].id,
                     name: project.name,
                     city: project.city || null,
-                    rooms: allRooms.map(room => ({
-                      id: room.id,
-                      name: room.name,
-                      geometry_mode: room.geometryMode,
-                      // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
-                      length: Number(room.length) || 0,
-                      width: Number(room.width) || 0,
-                      height: Number(room.height) || 0,
-                      segments: room.segments,
-                      obstacles: room.obstacles,
-                      wall_sections: room.wallSections,
-                      sub_sections: room.subSections,
-                      windows: room.windows,
-                      doors: room.doors,
-                      works: room.works,
-                      sort_order: 0,
-                    })),
+                    rooms: allRooms,
                   },
                 ];
 
@@ -441,7 +425,7 @@ export class ApiStorageProvider implements IStorageProvider {
             } catch (error) {
               // Детальное логирование ошибки 400
               if (error instanceof Error) {
-                const apiError = error as Record<string, unknown>;
+                const apiError = error as unknown as Record<string, unknown>;
                 if (apiError['statusCode'] === 400 || apiError['data']) {
                   logError('ApiStorage', 'Ошибка 400 при миграции проекта', error, {
                     projectId: project.id,
@@ -493,23 +477,7 @@ export class ApiStorageProvider implements IStorageProvider {
                     id: newProject.objects[0].id,
                     name: project.name,
                     city: project.city || null,
-                    rooms: allRooms.map(room => ({
-                      id: room.id,
-                      name: room.name,
-                      geometry_mode: room.geometryMode,
-                      // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
-                      length: Number(room.length) || 0,
-                      width: Number(room.width) || 0,
-                      height: Number(room.height) || 0,
-                      segments: room.segments,
-                      obstacles: room.obstacles,
-                      wall_sections: room.wallSections,
-                      sub_sections: room.subSections,
-                      windows: room.windows,
-                      doors: room.doors,
-                      works: room.works,
-                      sort_order: 0,
-                    })),
+                    rooms: allRooms,
                   },
                 ];
 
@@ -655,22 +623,7 @@ export class ApiStorageProvider implements IStorageProvider {
               name: obj.name,
               city: obj.city ?? null,
               sort_order: obj.sortOrder ?? 0,
-              rooms: (obj.rooms || []).map(room => ({
-                id: room.id,
-                name: room.name,
-                geometry_mode: room.geometryMode,
-                length: Number(room.length) || 0,
-                width: Number(room.width) || 0,
-                height: Number(room.height) || 0,
-                segments: room.segments ?? [],
-                obstacles: room.obstacles ?? [],
-                wall_sections: room.wallSections ?? [],
-                sub_sections: room.subSections ?? [],
-                windows: room.windows ?? [],
-                doors: room.doors ?? [],
-                works: room.works ?? [],
-                sort_order: room.sortOrder ?? 0,
-              })),
+              rooms: obj.rooms || [],
             })),
           };
           await this.enqueueRequest(() =>
@@ -845,22 +798,7 @@ export class ApiStorageProvider implements IStorageProvider {
         name: string;
         city?: string | null;
         sort_order?: number;
-        rooms: Array<{
-          id: string;
-          name: string;
-          geometry_mode: string;
-          length: number;
-          width: number;
-          height: number;
-          segments: unknown;
-          obstacles: unknown;
-          wall_sections: unknown;
-          sub_sections: unknown;
-          windows: unknown;
-          doors: unknown;
-          works: unknown;
-          sort_order?: number;
-        }>;
+        rooms?: RoomData[];
       }>;
     } = {
       name: project.name,
@@ -889,23 +827,7 @@ export class ApiStorageProvider implements IStorageProvider {
         name: obj.name,
         city: obj.city ?? null,
         sort_order: obj.sortOrder ?? 0,
-        rooms: (obj.rooms || []).map(room => ({
-          id: room.id,
-          name: room.name,
-          geometry_mode: room.geometryMode,
-          // Преобразуем в числа, т.к. при загрузке из localStorage они могут быть строками
-          length: Number(room.length) || 0,
-          width: Number(room.width) || 0,
-          height: Number(room.height) || 0,
-          segments: room.segments ?? [],
-          obstacles: room.obstacles ?? [],
-          wall_sections: room.wallSections ?? [],
-          sub_sections: room.subSections ?? [],
-          windows: room.windows ?? [],
-          doors: room.doors ?? [],
-          works: room.works ?? [],
-          sort_order: room.sortOrder ?? 0,
-        })),
+        rooms: obj.rooms || [],
       }));
     }
 
@@ -919,7 +841,13 @@ export class ApiStorageProvider implements IStorageProvider {
         response = await projectsApi.updateProjectWithObjects(project.id, updateData);
       } else if (updateData.rooms) {
         // Используем транзакционный endpoint для атомарного обновления проекта и комнат (legacy)
-        response = await projectsApi.updateProjectWithRooms(project.id, updateData);
+        response = await projectsApi.updateProjectWithRooms(project.id, {
+          name: updateData.name,
+          city: updateData.city,
+          use_ai_pricing: updateData.use_ai_pricing,
+          last_ai_price_update: updateData.last_ai_price_update,
+          rooms: updateData.rooms,
+        });
       } else {
         // Обычное обновление только проекта
         response = await projectsApi.updateProject(project.id, updateData);

@@ -1,3 +1,4 @@
+import type { RoomData } from '@shared/types';
 /**
  * SummaryMaterials - сводная информация по всем материалам проекта
  * Агрегирует материалы из всех комнат и работ

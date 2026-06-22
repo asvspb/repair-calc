@@ -90,12 +90,9 @@ export function ProjectSettings({
           {activeProject && (
             <div className="shrink-0">
               {IdMapper.isServerId(activeProjectId) ? (
-                <Cloud className="w-4 h-4 text-green-600" title="Синхронизирован с сервером" />
+                <Cloud className="w-4 h-4 text-green-600" />
               ) : (
-                <CloudOff
-                  className="w-4 h-4 text-amber-500"
-                  title="Локальный проект (не синхронизирован)"
-                />
+                <CloudOff className="w-4 h-4 text-amber-500" />
               )}
             </div>
           )}

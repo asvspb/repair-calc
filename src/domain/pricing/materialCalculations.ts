@@ -9,7 +9,8 @@
  * 5. calculateVolumetric — объёмные материалы (стяжка, штукатурка)
  */
 
-import type { MaterialTemplate, Material } from '../../types/workTemplate';
+import type { MaterialTemplate } from '../../types/workTemplate';
+import type { Material } from '@shared/types';
 import type { RoomMetrics } from '../../types/index';
 
 // ============================================

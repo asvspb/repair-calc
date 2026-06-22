@@ -4,6 +4,7 @@ import { MaterialPriceSearch, WorkPriceSearch } from './';
 import { migrateWorkData } from '../../domain/pricing/costs';
 import type { RoomMetrics } from '../../types';
 import type { CalculationType, Material, Tool, WorkData, RoomData } from '@shared/types';
+import { useProjectStore } from '../../store/useProjectStore';
 
 export interface WorkCardHandlers {
   handleWorkChange: (id: string, field: keyof WorkData, value: string | number | boolean) => void;
@@ -31,10 +32,9 @@ interface WorkCardProps {
   city?: string;
   handlers: WorkCardHandlers;
   metrics: RoomMetrics;
-  updateRoomById?: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
 }
-
 export function WorkCard({ work, roomId, city, handlers, metrics }: WorkCardProps) {
+  const updateRoomById = useProjectStore(s => s.updateRoomById);
   const migratedWork = migrateWorkData(work);
 
   let autoQty = 0;

@@ -1,3 +1,4 @@
+import type { RoomData, ProjectData } from '@shared/types';
 /**
  * SummaryTools - сводка по всем инструментам проекта
  * Агрегирует инструменты из всех комнат и работ
@@ -5,7 +6,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { Wrench, ChevronDown, ChevronUp } from 'lucide-react';
-import type { ProjectData, Tool, WorkData } from '@shared/types';
+import type { Tool, WorkData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {

@@ -7,7 +7,8 @@ import React, {
   useRef,
   type ReactNode,
 } from 'react';
-import type { WorkTemplate } from '../types/workTemplate';
+import type { WorkTemplate, WorkCategory } from '../types/workTemplate';
+import { mapWorkCategoryToLegacy } from '../types/workTemplate';
 import type { RoomMetrics } from '../types';
 import type { WorkData } from '@shared/types';
 import { TemplateStorage } from '../utils/templateStorage';
@@ -69,7 +70,7 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       const template: WorkTemplate = {
         id: migratedWork.templateId || `template-${Date.now()}`,
         name: migratedWork.name,
-        category: migratedWork.category || 'other',
+        category: mapWorkCategoryToLegacy((migratedWork.category || 'other') as WorkCategory),
         unit: migratedWork.unit,
         calculationType: migratedWork.calculationType,
         workUnitPrice: migratedWork.workUnitPrice,
@@ -151,8 +152,8 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       workUnitPrice: template.workUnitPrice,
       materialPriceType: 'total',
       materialPrice: 0,
-      materials: scaledMaterials,
-      tools: template.tools || [],
+      materials: scaledMaterials.map(m => ({ ...m, id: `mat-${crypto.randomUUID()}` })),
+      tools: (template.tools || []).map(t => ({ ...t, id: `tool-${crypto.randomUUID()}` })),
       isCustom: false,
       templateId: template.id,
       templateCreatedAt: template.createdAt,

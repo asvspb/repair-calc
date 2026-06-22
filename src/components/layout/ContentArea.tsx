@@ -17,11 +17,17 @@ interface ContentAreaProps {
   roomEditorProps: {
     city: string | undefined;
     updateRoom: (room: RoomData) => void;
-    updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
     onDeleteRoom: () => void;
     templates: WorkTemplate[];
-    onSaveTemplate: (template: WorkTemplate) => void;
-    onLoadTemplate: (template: WorkTemplate) => void;
+    onSaveTemplate: (
+      work: import('@shared/types').WorkData,
+      forceReplace: boolean,
+      workVolume?: number,
+    ) => import('../../hooks/useWorkTemplates').SaveResult;
+    onLoadTemplate: (
+      template: WorkTemplate,
+      metrics?: import('../../types').RoomMetrics,
+    ) => import('@shared/types').WorkData;
     onDeleteTemplate: (id: string) => void;
     isTemplatePickerOpen: boolean;
     onOpenTemplatePicker: () => void;
@@ -92,7 +98,6 @@ export function ContentArea({
           room={room}
           city={activeProject.city}
           updateRoom={roomEditorProps.updateRoom}
-          updateRoomById={roomEditorProps.updateRoomById}
           deleteRoom={roomEditorProps.onDeleteRoom}
           templates={roomEditorProps.templates}
           onSaveTemplate={roomEditorProps.onSaveTemplate}

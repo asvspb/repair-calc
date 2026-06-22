@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
+import { calculateRoomCosts } from '../../domain/pricing/costs';
 import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
 import { useProjectStore } from '../../store/useProjectStore';
@@ -89,15 +90,8 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
     // Calculate total cost
     let totalCost = 0;
     for (const room of allRooms) {
-      for (const work of room.works || []) {
-        totalCost += (work.cost || 0) * (work.quantity || 0);
-      }
-      for (const material of room.materials || []) {
-        totalCost += (material.cost || 0) * (material.quantity || 0);
-      }
-      for (const tool of room.tools || []) {
-        totalCost += (tool.cost || 0) * (tool.quantity || 0);
-      }
+      const roomCosts = calculateRoomCosts(room);
+      totalCost += roomCosts.total;
     }
 
     return { objectsCount, roomsCount, totalCost };
@@ -691,7 +685,6 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
       {deleteConfirmId && (
         <ConfirmDialog
           isOpen={!!deleteConfirmId}
-          onClose={() => setDeleteConfirmId(null)}
           onCancel={() => setDeleteConfirmId(null)}
           onConfirm={() => handleDeleteProject(deleteConfirmId)}
           title="Удалить проект?"
@@ -705,7 +698,6 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
       {copyConfirmId && (
         <ConfirmDialog
           isOpen={!!copyConfirmId}
-          onClose={() => setCopyConfirmId(null)}
           onCancel={() => setCopyConfirmId(null)}
           onConfirm={() => handleCopyProject(copyConfirmId)}
           title="Копировать проект?"

@@ -3,7 +3,7 @@
  * API endpoints для работы с профилем пользователя
  */
 
-import { fetchJson } from './httpClient';
+import httpClient from './httpClient';
 
 // Types
 export interface ApiUser {
@@ -27,7 +27,7 @@ export interface ApiUser {
  * Получение профиля текущего пользователя
  */
 export async function getUserMe(): Promise<{ status: string; data: ApiUser }> {
-  return fetchJson('/api/users/me');
+  return httpClient.get('/api/users/me');
 }
 
 /**
@@ -36,8 +36,5 @@ export async function getUserMe(): Promise<{ status: string; data: ApiUser }> {
 export async function updateUserMe(data: {
   name?: string;
 }): Promise<{ status: string; data: ApiUser }> {
-  return fetchJson('/api/users/me', {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  return httpClient.put('/api/users/me', data);
 }

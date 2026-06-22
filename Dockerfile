@@ -10,6 +10,9 @@ RUN npm ci
 # Copy project files
 COPY . .
 
+ARG COMMIT_HASH=unknown
+ENV COMMIT_HASH=$COMMIT_HASH
+
 # Build the project
 RUN npm run build
 

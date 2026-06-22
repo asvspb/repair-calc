@@ -88,7 +88,7 @@ export function ObjectsList({ className = '' }: ObjectsListProps) {
         message="Все комнаты в этом объекте будут удалены."
         confirmLabel="Удалить"
         cancelLabel="Отмена"
-        isDestructive={true}
+        variant="danger"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirmId(null)}
       />

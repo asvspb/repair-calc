@@ -34,10 +34,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
-    
+
     // Логируем ошибку
-    logError('ErrorBoundary', 'Caught an error', error, { componentStack: errorInfo.componentStack });
-    
+    logError('ErrorBoundary', 'Caught an error', error, {
+      componentStack: errorInfo.componentStack,
+    });
+
     // Вызываем колбэк если передан
     this.props.onError?.(error, errorInfo);
   }
@@ -68,16 +70,14 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
-              Что-то пошло не так
-            </h1>
-            
+
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Что-то пошло не так</h1>
+
             <p className="text-gray-600 mb-6">
               Произошла неожиданная ошибка. Попробуйте обновить страницу или вернуться на главную.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Детали ошибки
@@ -97,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <RefreshCw className="w-4 h-4" />
                 Попробовать снова
               </button>
-              
+
               <button
                 onClick={this.handleGoHome}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -121,7 +121,7 @@ export class ErrorBoundary extends Component<Props, State> {
 export function withErrorBoundary<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  onError?: (error: Error, errorInfo: ErrorInfo) => void,
 ): React.FC<P> {
   return function WithErrorBoundaryWrapper(props: P) {
     return (

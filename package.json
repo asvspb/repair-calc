@@ -20,7 +20,8 @@
     "lint:deps:graph": "depcruise src server/src --include-only \"^src|^server/src\" --output-type dot | dot -T svg > dependency-graph.svg",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "analyze-bundle": "ANALYZE_BUNDLE=true npm run build"
+    "analyze-bundle": "ANALYZE_BUNDLE=true npm run build",
+    "prebuild": "echo '⚠️ Локальный билд НЕ деплоится. Используй: ./scripts/deploy-local.sh'"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

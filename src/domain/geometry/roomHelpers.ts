@@ -286,7 +286,7 @@ export function updateSubSection(
   room: RoomData,
   id: string,
   field: keyof RoomSubSection,
-  value: string | number | RoomSubSection['shape'] | Opening[] | WallSection[],
+  value: string | number | RoomSubSection['shape'] | Opening[],
 ): RoomData {
   const updatedRoom = {
     ...room,

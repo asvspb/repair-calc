@@ -32,7 +32,11 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
   createObject: (data: { name: string; city?: string }): string => {
     const { activeProject } = get();
     if (!activeProject) {
-      logError('ProjectContext', 'Cannot create object: no active project');
+      logError(
+        'ProjectContext',
+        'Cannot create object: no active project',
+        new Error('No active project'),
+      );
       return '';
     }
 

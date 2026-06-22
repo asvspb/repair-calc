@@ -99,6 +99,11 @@ export type WorkData = {
   isCustom?: boolean;
   useManualQty?: boolean;
   manualQty?: number;
+  catalogId?: string;
+  templateId?: string;
+  templateCreatedAt?: string;
+  category?: string;
+  sourceVolume?: number;
 };
 
 export type SimpleModeData = {
@@ -135,6 +140,7 @@ export type RoomData = {
   simpleModeData?: SimpleModeData;
   extendedModeData?: ExtendedModeData;
   advancedModeData?: AdvancedModeData;
+  objectId?: string;
 };
 
 export type ObjectData = {

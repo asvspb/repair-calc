@@ -3,7 +3,7 @@
  * API endpoints для работы с объектами недвижимости
  */
 
-import { fetchJson } from './httpClient';
+import httpClient from './httpClient';
 
 // Types
 export interface ApiObject {
@@ -46,26 +46,23 @@ export async function createObject(
     city?: string;
     address?: string;
     use_ai_pricing?: boolean;
-  }
+  },
 ): Promise<{ status: string; data: ApiObject }> {
-  return fetchJson(`/api/projects/${projectId}/objects`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  return httpClient.post(`/api/projects/${projectId}/objects`, data);
 }
 
 /**
  * Список всех объектов пользователя
  */
 export async function getObjects(): Promise<{ status: string; data: ApiObject[] }> {
-  return fetchJson('/api/objects');
+  return httpClient.get('/api/objects');
 }
 
 /**
  * Получение объекта с комнатами
  */
 export async function getObject(id: string): Promise<{ status: string; data: ApiObjectWithRooms }> {
-  return fetchJson(`/api/objects/${id}`);
+  return httpClient.get(`/api/objects/${id}`);
 }
 
 /**
@@ -80,19 +77,14 @@ export async function updateObject(
     use_ai_pricing?: boolean;
     last_ai_price_update?: string | null;
     sort_order?: number;
-  }
+  },
 ): Promise<{ status: string; data: ApiObject }> {
-  return fetchJson(`/api/objects/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  return httpClient.put(`/api/objects/${id}`, data);
 }
 
 /**
  * Удаление объекта
  */
 export async function deleteObject(id: string): Promise<{ status: string; message: string }> {
-  return fetchJson(`/api/objects/${id}`, {
-    method: 'DELETE',
-  });
+  return httpClient.delete(`/api/objects/${id}`);
 }

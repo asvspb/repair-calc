@@ -8,6 +8,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import type { SaveResult } from '../../hooks/useWorkTemplates';
 import { WorkListItem } from './WorkListItem';
 import type { WorkData } from '@shared/types';
 
@@ -21,10 +22,7 @@ type WorkListProps = {
   onReorderWorks: (works: WorkData[]) => void;
   onToggleExpand: (id: string) => void;
   renderExpandedContent?: (work: WorkData) => React.ReactNode;
-  onSaveTemplate?: (
-    work: WorkData,
-    forceReplace: boolean,
-  ) => { success: boolean; error?: string; needsConfirm?: boolean };
+  onSaveTemplate?: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
 };
 
 export const WorkList: React.FC<WorkListProps> = ({

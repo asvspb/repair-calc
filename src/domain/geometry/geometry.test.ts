@@ -192,7 +192,7 @@ describe('calculateRoomMetrics', () => {
         works: [],
       };
 
-      const result = calculateRoomMetrics(room);
+      const result = calculateRoomMetrics(room as any);
 
       expect(Number.isNaN(result.floorArea)).toBe(false);
       expect(Number.isNaN(result.perimeter)).toBe(false);

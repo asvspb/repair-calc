@@ -47,7 +47,7 @@ function AppContent() {
   const updateProjects = useProjectStore(s => s.updateProjects);
   const updateActiveProject = useProjectStore(s => s.updateActiveProject);
   const updateRoom = useProjectStore(s => s.updateRoom);
-  const updateRoomById = useProjectStore(s => s.updateRoomById);
+
   const deleteRoom = useProjectStore(s => s.deleteRoom);
   const deleteProject = useProjectStore(s => s.deleteProject);
   const addRoom = useProjectStore(s => s.addRoom);
@@ -69,7 +69,9 @@ function AppContent() {
     useWorkTemplateContext();
   const [objectToDeleteId, setObjectToDeleteId] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'summary' | 'editor' | 'estimate'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'editor' | 'estimate' | (string & {})>(
+    'summary',
+  );
   const [isLeftMobileMenuOpen, setIsLeftMobileMenuOpen] = useState(false);
   const [isRightMobileMenuOpen, setIsRightMobileMenuOpen] = useState(false);
 
@@ -193,7 +195,6 @@ function AppContent() {
               roomEditorProps={{
                 city: activeProject?.city,
                 updateRoom,
-                updateRoomById,
                 onDeleteRoom: currentRoom ? () => handleDeleteRoom(activeTab) : () => {},
                 templates,
                 onSaveTemplate: saveTemplate,
@@ -265,7 +266,7 @@ function AppContent() {
         message="Все комнаты в этом объекте будут удалены."
         confirmLabel="Удалить"
         cancelLabel="Отмена"
-        isDestructive={true}
+        variant="danger"
         onConfirm={() => {
           if (objectToDeleteId) {
             deleteObject(objectToDeleteId);

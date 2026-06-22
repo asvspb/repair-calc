@@ -175,7 +175,6 @@ export function ProjectsList({
       {copyConfirmId && (
         <ConfirmDialog
           isOpen={!!copyConfirmId}
-          onClose={() => setCopyConfirmId(null)}
           onConfirm={() => {
             onProjectCopy(copyConfirmId);
             setCopyConfirmId(null);

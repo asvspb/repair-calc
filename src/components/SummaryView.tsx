@@ -245,8 +245,8 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-2xl font-semibold">
           {scope === 'object'
-            ? `${t('sidebar.objectEstimate')} ${activeObject?.name || ''}`.trim()
-            : t('sidebar.projectEstimate')}
+            ? `${t('sidebar.objectEstimate' as any)} ${activeObject?.name || ''}`.trim()
+            : t('sidebar.projectEstimate' as any)}
           {shouldGroupByObject && (
             <span className="text-base font-normal text-gray-500 ml-2">
               ({objects.length} {pluralize(objects.length, 'объект', 'объекта', 'объектов')})

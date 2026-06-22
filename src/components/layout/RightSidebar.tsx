@@ -174,7 +174,7 @@ export function RightSidebar({
               }`}
             >
               <LayoutDashboard className="w-5 h-5" />
-              <span className="font-medium">{t('sidebar.projectEstimate')}</span>
+              <span className="truncate">{t('sidebar.projectEstimate' as any)}</span>
             </button>
           </div>
 
