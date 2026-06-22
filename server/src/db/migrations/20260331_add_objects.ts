@@ -35,8 +35,8 @@ export async function up(knex: Knex): Promise<void> {
       table.timestamp('deleted_at').defaultTo(knex.fn.now());
       table.timestamp('expires_at').notNullable();
 
-      table.index(['user_id', 'deleted_at'], 'idx_deleted_entities_user');
-      table.index(['expires_at'], 'idx_deleted_entities_expire');
+      table.index(['user_id', 'deleted_at']);
+      table.index(['expires_at']);
     });
   }
 
@@ -74,10 +74,10 @@ export async function up(knex: Knex): Promise<void> {
       table.timestamp('updated_at').defaultTo(knex.fn.now());
       table.timestamp('deleted_at').nullable();
 
-      table.index(['project_id'], 'idx_object_project_id');
-      table.index(['user_id'], 'idx_object_user_id');
-      table.index(['project_id', 'sort_order'], 'idx_project_sort');
-      table.index(['deleted_at'], 'idx_object_deleted');
+      table.index(['project_id']);
+      table.index(['user_id']);
+      table.index(['project_id', 'sort_order']);
+      table.index(['deleted_at']);
     });
   }
 
@@ -88,21 +88,21 @@ export async function up(knex: Knex): Promise<void> {
   if (!hasObjectId) {
     await knex.schema.alterTable('rooms', table => {
       table.string('object_id', 36).nullable().after('id');
-      table.index(['object_id'], 'idx_room_object_id');
-      table.index(['object_id', 'sort_order'], 'idx_object_sort');
+      table.index(['object_id']);
+      table.index(['object_id', 'sort_order']);
     });
   } else {
     // Добавляем индексы отдельно если колонка уже есть
     try {
       await knex.schema.alterTable('rooms', table => {
-        table.index(['object_id'], 'idx_room_object_id');
+        table.index(['object_id']);
       });
     } catch (_e) {
       // Индекс уже существует - игнорируем
     }
     try {
       await knex.schema.alterTable('rooms', table => {
-        table.index(['object_id', 'sort_order'], 'idx_object_sort');
+        table.index(['object_id', 'sort_order']);
       });
     } catch (_e) {
       // Индекс уже существует - игнорируем

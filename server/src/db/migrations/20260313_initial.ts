@@ -4,7 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   // ═══════════════════════════════════════════════════════
   // СПРАВОЧНИКИ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('units', (table) => {
+  await knex.schema.createTable('units', table => {
     table.string('id', 36).primary();
     table.string('code', 10).notNullable().unique();
     table.string('name', 100).notNullable();
@@ -13,7 +13,7 @@ export async function up(knex: Knex): Promise<void> {
   // ═══════════════════════════════════════════════════════
   // ПОЛЬЗОВАТЕЛИ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('users', (table) => {
+  await knex.schema.createTable('users', table => {
     table.string('id', 36).primary();
     table.string('email', 255).notNullable().unique();
     table.string('password_hash', 255).notNullable();
@@ -21,14 +21,14 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['email'], 'idx_email');
-    table.index(['deleted_at'], 'idx_deleted');
+    table.index(['email']);
+    table.index(['deleted_at'], 'users_deleted_at_idx');
   });
 
   // ═══════════════════════════════════════════════════════
   // ПРОЕКТЫ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('projects', (table) => {
+  await knex.schema.createTable('projects', table => {
     table.string('id', 36).primary();
     table.string('user_id', 36).notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('name', 255).notNullable();
@@ -39,16 +39,21 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['user_id'], 'idx_user_id');
-    table.index(['deleted_at'], 'idx_deleted');
+    table.index(['user_id']);
+    table.index(['deleted_at'], 'projects_deleted_at_idx');
   });
 
   // ═══════════════════════════════════════════════════════
   // КОМНАТЫ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('rooms', (table) => {
+  await knex.schema.createTable('rooms', table => {
     table.string('id', 36).primary();
-    table.string('project_id', 36).notNullable().references('id').inTable('projects').onDelete('CASCADE');
+    table
+      .string('project_id', 36)
+      .notNullable()
+      .references('id')
+      .inTable('projects')
+      .onDelete('CASCADE');
     table.string('name', 255).notNullable();
     table.enum('geometry_mode', ['simple', 'extended', 'advanced']).defaultTo('simple');
     table.decimal('length', 12, 4).defaultTo(0);
@@ -59,15 +64,15 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['project_id'], 'idx_project_id');
-    table.index(['project_id', 'sort_order'], 'idx_project_sort');
-    table.index(['deleted_at'], 'idx_deleted');
+    table.index(['project_id']);
+    table.index(['project_id', 'sort_order']);
+    table.index(['deleted_at'], 'rooms_deleted_at_idx');
   });
 
   // ═══════════════════════════════════════════════════════
   // ПРОЁМЫ (окна/двери)
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('openings', (table) => {
+  await knex.schema.createTable('openings', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('subsection_id', 36).nullable();
@@ -78,18 +83,20 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
   // ═══════════════════════════════════════════════════════
   // EXTENDED MODE: секции помещения
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('room_subsections', (table) => {
+  await knex.schema.createTable('room_subsections', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('name', 255);
-    table.enum('shape', ['rectangle', 'trapezoid', 'triangle', 'parallelogram']).defaultTo('rectangle');
+    table
+      .enum('shape', ['rectangle', 'trapezoid', 'triangle', 'parallelogram'])
+      .defaultTo('rectangle');
     // Rectangle
     table.decimal('length', 12, 4).defaultTo(0);
     table.decimal('width', 12, 4).defaultTo(0);
@@ -110,19 +117,19 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
   // Add FK for openings -> subsections
-  await knex.schema.alterTable('openings', (table) => {
+  await knex.schema.alterTable('openings', table => {
     table.foreign('subsection_id').references('id').inTable('room_subsections').onDelete('CASCADE');
   });
 
   // ═══════════════════════════════════════════════════════
   // ADVANCED MODE: сегменты, препятствия, перепады
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('room_segments', (table) => {
+  await knex.schema.createTable('room_segments', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('name', 255);
@@ -133,11 +140,11 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
-  await knex.schema.createTable('room_obstacles', (table) => {
+  await knex.schema.createTable('room_obstacles', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('name', 255);
@@ -149,11 +156,11 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
-  await knex.schema.createTable('wall_sections', (table) => {
+  await knex.schema.createTable('wall_sections', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('name', 255);
@@ -163,21 +170,23 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
   // ═══════════════════════════════════════════════════════
   // РАБОТЫ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('works', (table) => {
+  await knex.schema.createTable('works', table => {
     table.string('id', 36).primary();
     table.string('room_id', 36).notNullable().references('id').inTable('rooms').onDelete('CASCADE');
     table.string('name', 255).notNullable();
     table.string('unit', 36).defaultTo('м²');
     table.boolean('enabled').defaultTo(true);
     table.decimal('work_unit_price', 12, 2).defaultTo(0);
-    table.enum('calculation_type', ['floorArea', 'netWallArea', 'skirtingLength', 'customCount']).defaultTo('floorArea');
+    table
+      .enum('calculation_type', ['floorArea', 'netWallArea', 'skirtingLength', 'customCount'])
+      .defaultTo('floorArea');
     table.integer('count').nullable();
     table.decimal('manual_qty', 10, 3).nullable();
     table.boolean('use_manual_qty').defaultTo(false);
@@ -186,14 +195,14 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['room_id'], 'idx_room_id');
-    table.index(['room_id', 'sort_order'], 'idx_room_sort');
+    table.index(['room_id']);
+    table.index(['room_id', 'sort_order']);
   });
 
   // ═══════════════════════════════════════════════════════
   // МАТЕРИАЛЫ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('materials', (table) => {
+  await knex.schema.createTable('materials', table => {
     table.string('id', 36).primary();
     table.string('work_id', 36).notNullable().references('id').inTable('works').onDelete('CASCADE');
     table.string('name', 255);
@@ -213,14 +222,14 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['work_id'], 'idx_work_id');
-    table.index(['work_id', 'sort_order'], 'idx_work_sort');
+    table.index(['work_id']);
+    table.index(['work_id', 'sort_order']);
   });
 
   // ═══════════════════════════════════════════════════════
   // ИНСТРУМЕНТЫ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('tools', (table) => {
+  await knex.schema.createTable('tools', table => {
     table.string('id', 36).primary();
     table.string('work_id', 36).notNullable().references('id').inTable('works').onDelete('CASCADE');
     table.string('name', 255);
@@ -232,17 +241,22 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('sort_order').defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('deleted_at').nullable();
-    table.index(['work_id'], 'idx_work_id');
-    table.index(['work_id', 'sort_order'], 'idx_work_sort');
+    table.index(['work_id']);
+    table.index(['work_id', 'sort_order']);
   });
 
   // ═══════════════════════════════════════════════════════
   // AI: история запросов
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('ai_requests', (table) => {
+  await knex.schema.createTable('ai_requests', table => {
     table.string('id', 36).primary();
     table.string('user_id', 36).notNullable().references('id').inTable('users').onDelete('CASCADE');
-    table.string('project_id', 36).nullable().references('id').inTable('projects').onDelete('SET NULL');
+    table
+      .string('project_id', 36)
+      .nullable()
+      .references('id')
+      .inTable('projects')
+      .onDelete('SET NULL');
     table.enum('provider', ['gemini', 'mistral']).notNullable();
     table.string('request_type', 50).notNullable();
     table.string('prompt_hash', 64);
@@ -250,16 +264,21 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('tokens_used').defaultTo(0);
     table.decimal('cost_usd', 10, 6).defaultTo(0);
     table.timestamp('created_at').defaultTo(knex.fn.now());
-    table.index(['user_id'], 'idx_user_id');
-    table.index(['project_id'], 'idx_project_id');
-    table.index(['prompt_hash', 'provider'], 'idx_prompt_hash');
+    table.index(['user_id']);
+    table.index(['project_id']);
+    table.index(['prompt_hash', 'provider']);
   });
 
   // ═══════════════════════════════════════════════════════
   // КЭШ ВЫЧИСЛЕНИЙ
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('calculated_totals', (table) => {
-    table.string('project_id', 36).primary().references('id').inTable('projects').onDelete('CASCADE');
+  await knex.schema.createTable('calculated_totals', table => {
+    table
+      .string('project_id', 36)
+      .primary()
+      .references('id')
+      .inTable('projects')
+      .onDelete('CASCADE');
     table.decimal('total_area', 12, 2);
     table.decimal('total_works', 12, 2);
     table.decimal('total_materials', 12, 2);
@@ -271,7 +290,7 @@ export async function up(knex: Knex): Promise<void> {
   // ═══════════════════════════════════════════════════════
   // AUDIT LOG
   // ═══════════════════════════════════════════════════════
-  await knex.schema.createTable('audit_log', (table) => {
+  await knex.schema.createTable('audit_log', table => {
     table.string('id', 36).primary();
     table.string('user_id', 36).notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('action', 50).notNullable();
@@ -281,8 +300,8 @@ export async function up(knex: Knex): Promise<void> {
     table.json('new_values').nullable();
     table.string('ip_address', 45);
     table.timestamp('created_at').defaultTo(knex.fn.now());
-    table.index(['user_id', 'created_at'], 'idx_user_action');
-    table.index(['entity_type', 'entity_id'], 'idx_entity');
+    table.index(['user_id', 'created_at']);
+    table.index(['entity_type', 'entity_id']);
   });
 }
 
