@@ -11,7 +11,8 @@ import { CALCULATION_TYPE_LABELS } from '../../types/workTemplate';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
-  project: ProjectData;
+  rooms?: RoomData[];
+  project?: ProjectData;
   onRoomClick: (roomId: string) => void;
   groupByObject?: boolean;
 };
@@ -60,12 +61,15 @@ function getWorkCount(work: WorkData, room: RoomData): number {
 /**
  * Агрегирует работы из всех комнат
  */
-function aggregateWorks(project: ProjectData): WorkAggregate[] {
+function aggregateWorks(input: { rooms?: RoomData[]; project?: ProjectData }): WorkAggregate[] {
   const workMap = new Map<string, WorkAggregate>();
 
-  // Получаем все комнаты из объектов или из старой структуры
+  // Получаем все комнаты из переданного массива или из старой структуры
   const allRooms =
-    project.objects && project.objects.length > 0 ? getAllRooms(project) : project.rooms || [];
+    input.rooms ??
+    (input.project &&
+      (input.project.objects?.length ? getAllRooms(input.project) : input.project.rooms || [])) ??
+    [];
 
   allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
@@ -127,6 +131,7 @@ function aggregateWorks(project: ProjectData): WorkAggregate[] {
 }
 
 const SummaryWorksInternal: React.FC<Props> = ({
+  rooms,
   project,
   onRoomClick,
   groupByObject: _groupByObject = false,
@@ -134,7 +139,7 @@ const SummaryWorksInternal: React.FC<Props> = ({
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [expandedWorks, setExpandedWorks] = React.useState<Set<string>>(new Set());
 
-  const works = useMemo(() => aggregateWorks(project), [project]);
+  const works = useMemo(() => aggregateWorks({ rooms, project }), [rooms, project]);
 
   const grandTotalWork = useMemo(
     () => works.reduce((sum, w) => sum + w.totalWorkPrice, 0),
@@ -326,8 +331,8 @@ const ChevronRight: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const SummaryWorks = memo(SummaryWorksInternal, (prev, next) => {
-  const prevRooms = getAllRooms(prev.project);
-  const nextRooms = getAllRooms(next.project);
+  const prevRooms = prev.rooms ?? (prev.project ? getAllRooms(prev.project) : []);
+  const nextRooms = next.rooms ?? (next.project ? getAllRooms(next.project) : []);
   const prevWorksCount = prevRooms.reduce(
     (sum, r) => sum + r.works.filter(w => w.enabled).length,
     0,
@@ -339,6 +344,7 @@ export const SummaryWorks = memo(SummaryWorksInternal, (prev, next) => {
   return (
     prevWorksCount === nextWorksCount &&
     prevRooms === nextRooms &&
+    prev.rooms === next.rooms &&
     prev.groupByObject === next.groupByObject
   );
 });

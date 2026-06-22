@@ -9,7 +9,8 @@ import type { ProjectData, Material, WorkData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
-  project: ProjectData;
+  rooms?: RoomData[];
+  project?: ProjectData;
   groupByObject?: boolean;
 };
 
@@ -24,10 +25,17 @@ type MaterialAggregate = {
 /**
  * Агрегирует материалы из всех работ по всем комнатам
  */
-function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
+function aggregateMaterials(input: {
+  rooms?: RoomData[];
+  project?: ProjectData;
+}): MaterialAggregate[] {
   const materialMap = new Map<string, MaterialAggregate>();
 
-  const allRooms = getAllRooms(project);
+  const allRooms =
+    input.rooms ??
+    (input.project &&
+      (input.project.objects?.length ? getAllRooms(input.project) : input.project.rooms || [])) ??
+    [];
   allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
       if (!work.materials || !work.enabled) return;
@@ -60,12 +68,13 @@ function aggregateMaterials(project: ProjectData): MaterialAggregate[] {
 }
 
 const SummaryMaterialsInternal: React.FC<Props> = ({
+  rooms,
   project,
   groupByObject: _groupByObject = false,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
-  const materials = useMemo(() => aggregateMaterials(project), [project]);
+  const materials = useMemo(() => aggregateMaterials({ rooms, project }), [rooms, project]);
   const grandTotal = useMemo(
     () => materials.reduce((sum, m) => sum + m.totalPrice, 0),
     [materials],
@@ -164,8 +173,8 @@ const SummaryMaterialsInternal: React.FC<Props> = ({
 
 export const SummaryMaterials = memo(SummaryMaterialsInternal, (prev, next) => {
   // Сравниваем количество работ и материалы в них
-  const prevRooms = getAllRooms(prev.project);
-  const nextRooms = getAllRooms(next.project);
+  const prevRooms = prev.rooms ?? (prev.project ? getAllRooms(prev.project) : []);
+  const nextRooms = next.rooms ?? (next.project ? getAllRooms(next.project) : []);
   const prevMaterialsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.materials?.length || 0), 0),
     0,
@@ -177,6 +186,7 @@ export const SummaryMaterials = memo(SummaryMaterialsInternal, (prev, next) => {
   return (
     prevMaterialsCount === nextMaterialsCount &&
     prevRooms === nextRooms &&
+    prev.rooms === next.rooms &&
     prev.groupByObject === next.groupByObject
   );
 });

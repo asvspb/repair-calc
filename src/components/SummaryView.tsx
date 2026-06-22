@@ -315,12 +315,12 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
 
       {/* Extended details: works, materials, tools */}
       <SummaryWorks
-        project={project}
+        rooms={allRooms}
         onRoomClick={onRoomClick}
         groupByObject={shouldGroupByObject}
       />
-      <SummaryMaterials project={project} groupByObject={shouldGroupByObject} />
-      <SummaryTools project={project} groupByObject={shouldGroupByObject} />
+      <SummaryMaterials rooms={allRooms} groupByObject={shouldGroupByObject} />
+      <SummaryTools rooms={allRooms} groupByObject={shouldGroupByObject} />
     </div>
   );
 };

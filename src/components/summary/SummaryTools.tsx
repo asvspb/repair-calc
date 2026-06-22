@@ -9,7 +9,8 @@ import type { ProjectData, Tool, WorkData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 
 type Props = {
-  project: ProjectData;
+  rooms?: RoomData[];
+  project?: ProjectData;
   groupByObject?: boolean;
 };
 
@@ -25,12 +26,15 @@ type ToolAggregate = {
 /**
  * Агрегирует инструменты из всех работ по всем комнатам
  */
-function aggregateTools(project: ProjectData): ToolAggregate[] {
+function aggregateTools(input: { rooms?: RoomData[]; project?: ProjectData }): ToolAggregate[] {
   const toolMap = new Map<string, ToolAggregate>();
 
   // Получаем все комнаты из объектов или из старой структуры
   const allRooms =
-    project.objects && project.objects.length > 0 ? getAllRooms(project) : project.rooms || [];
+    input.rooms ??
+    (input.project &&
+      (input.project.objects?.length ? getAllRooms(input.project) : input.project.rooms || [])) ??
+    [];
 
   allRooms.forEach(room => {
     room.works.forEach((work: WorkData) => {
@@ -70,12 +74,13 @@ function aggregateTools(project: ProjectData): ToolAggregate[] {
 }
 
 const SummaryToolsInternal: React.FC<Props> = ({
+  rooms,
   project,
   groupByObject: _groupByObject = false,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
-  const tools = useMemo(() => aggregateTools(project), [project]);
+  const tools = useMemo(() => aggregateTools({ rooms, project }), [rooms, project]);
   const grandTotal = useMemo(() => tools.reduce((sum, t) => sum + t.totalPrice, 0), [tools]);
 
   // Разделяем на аренду и покупку
@@ -243,8 +248,8 @@ const SummaryToolsInternal: React.FC<Props> = ({
 };
 
 export const SummaryTools = memo(SummaryToolsInternal, (prev, next) => {
-  const prevRooms = getAllRooms(prev.project);
-  const nextRooms = getAllRooms(next.project);
+  const prevRooms = prev.rooms ?? (prev.project ? getAllRooms(prev.project) : []);
+  const nextRooms = next.rooms ?? (next.project ? getAllRooms(next.project) : []);
   const prevToolsCount = prevRooms.reduce(
     (sum, r) => sum + r.works.reduce((s, w) => s + (w.tools?.length || 0), 0),
     0,
@@ -256,6 +261,7 @@ export const SummaryTools = memo(SummaryToolsInternal, (prev, next) => {
   return (
     prevToolsCount === nextToolsCount &&
     prevRooms === nextRooms &&
+    prev.rooms === next.rooms &&
     prev.groupByObject === next.groupByObject
   );
 });
