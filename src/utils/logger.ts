@@ -2,10 +2,14 @@
  * Утилита для логирования действий пользователя и состояния приложения
  * Логи выводятся в консоль браузера с группировкой и цветовым выделением
  */
+const _c = typeof console !== 'undefined' ? console : (undefined as unknown as Console);
 
-const _c = typeof console !== 'undefined' ? console : undefined as unknown as Console;
+// Получаем версию приложения
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
 
-function bindConsole(method: 'log' | 'group' | 'groupCollapsed' | 'groupEnd' | 'error'): (...args: unknown[]) => void {
+function bindConsole(
+  method: 'log' | 'group' | 'groupCollapsed' | 'groupEnd' | 'error',
+): (...args: unknown[]) => void {
   return (...args: unknown[]) => {
     if (_c && typeof _c[method] === 'function') {
       (_c[method] as (...a: unknown[]) => void)(...args);
@@ -66,7 +70,7 @@ function log(
   category: string,
   action: string,
   data?: unknown,
-  startTime?: number
+  startTime?: number,
 ): void {
   if (!LOG_CONFIG.enabled) return;
 
@@ -90,24 +94,22 @@ function log(
 
   // Формируем сообщение
   const emoji = LEVEL_EMOJI[level];
-  const timestampStr = LOG_CONFIG.showTimestamp 
-    ? `[${timestamp.toLocaleTimeString('ru-RU')}.${String(timestamp.getMilliseconds()).padStart(3, '0')}]` 
+  const timestampStr = LOG_CONFIG.showTimestamp
+    ? `[${timestamp.toLocaleTimeString('ru-RU')}.${String(timestamp.getMilliseconds()).padStart(3, '0')}]`
     : '';
-  const durationStr = duration !== undefined && LOG_CONFIG.showDuration 
-    ? ` (${duration}ms)` 
-    : '';
+  const durationStr = duration !== undefined && LOG_CONFIG.showDuration ? ` (${duration}ms)` : '';
   const style = LEVEL_STYLES[level];
 
   // Выводим в консоль
   _groupCollapsed(
-    `%c${emoji} ${timestampStr} [${category}] ${action}${durationStr}`,
-    style
+    `%c${emoji} ${timestampStr} [v${APP_VERSION}] [${category}] ${action}${durationStr}`,
+    style,
   );
-  
+
   if (data !== undefined) {
     _log('📦 Данные:', data);
   }
-  
+
   _groupEnd();
 }
 
@@ -121,7 +123,12 @@ export function logUserAction(action: string, data?: unknown): void {
 /**
  * Логирование успешного действия
  */
-export function logSuccess(category: string, action: string, data?: unknown, startTime?: number): void {
+export function logSuccess(
+  category: string,
+  action: string,
+  data?: unknown,
+  startTime?: number,
+): void {
   log('success', category, action, data, startTime);
 }
 
@@ -179,18 +186,25 @@ export function logApiRequest(method: string, endpoint: string, data?: unknown):
 /**
  * Логирование успешного API ответа
  */
-export function logApiSuccess(method: string, endpoint: string, startTime: number, data?: unknown): void {
+export function logApiSuccess(
+  method: string,
+  endpoint: string,
+  startTime: number,
+  data?: unknown,
+): void {
   log('success', 'API', `← ${method.toUpperCase()} ${endpoint}`, data, startTime);
 }
 
 /**
  * Логирование ошибки API
  */
-export function logApiError(method: string, endpoint: string, startTime: number, error: unknown): void {
-  _groupCollapsed(
-    `%c❌ [API] ← ${method.toUpperCase()} ${endpoint}`,
-    LEVEL_STYLES.error
-  );
+export function logApiError(
+  method: string,
+  endpoint: string,
+  startTime: number,
+  error: unknown,
+): void {
+  _groupCollapsed(`%c❌ [API] ← ${method.toUpperCase()} ${endpoint}`, LEVEL_STYLES.error);
   _error('🚨 Ошибка:', error);
   _log('⏱️ Время:', `${Date.now() - startTime}ms`);
   _groupEnd();
@@ -199,7 +213,12 @@ export function logApiError(method: string, endpoint: string, startTime: number,
 /**
  * Логирование изменения состояния
  */
-export function logStateChange(component: string, change: string, newValue: unknown, oldValue?: unknown): void {
+export function logStateChange(
+  component: string,
+  change: string,
+  newValue: unknown,
+  oldValue?: unknown,
+): void {
   _groupCollapsed(`%c🔄 [${component}] ${change}`, 'color: #9C27B0; font-weight: bold');
   if (oldValue !== undefined) {
     _log('📤 Было:', oldValue);
@@ -211,14 +230,19 @@ export function logStateChange(component: string, change: string, newValue: unkn
 /**
  * Логирование сохранения проекта
  */
-export function logProjectSave(source: 'local' | 'server', projectId: string, roomsCount: number, startTime: number): void {
+export function logProjectSave(
+  source: 'local' | 'server',
+  projectId: string,
+  roomsCount: number,
+  startTime: number,
+): void {
   const emoji = source === 'server' ? '☁️' : '💾';
   log(
     source === 'server' ? 'success' : 'info',
     'ProjectSave',
     `${emoji} Сохранение проекта на ${source === 'server' ? 'сервер' : 'локально'}`,
     { projectId, roomsCount },
-    startTime
+    startTime,
   );
 }
 
@@ -255,6 +279,11 @@ if (typeof window !== 'undefined') {
     printHistory: printActionHistory,
     clearHistory: clearActionHistory,
   };
+  (window as unknown as Record<string, unknown>).__APP_VERSION__ = APP_VERSION;
+  _log(
+    `%c🚀 Приложение запущено (Версия: ${APP_VERSION})`,
+    'color: #2196F3; font-weight: bold; font-size: 14px',
+  );
 }
 
 export default {
