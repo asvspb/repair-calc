@@ -1,4 +1,5 @@
 import { X, Settings, LayoutDashboard, Plus, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ProjectsList } from '../projects/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '@shared/types';
@@ -58,6 +59,7 @@ export function RightSidebar({
   lastSavedToServer,
   saveError,
 }: RightSidebarProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Delete confirmation modal */}
@@ -172,7 +174,7 @@ export function RightSidebar({
               }`}
             >
               <LayoutDashboard className="w-5 h-5" />
-              <span className="font-medium">Общая смета</span>
+              <span className="font-medium">{t('sidebar.projectEstimate')}</span>
             </button>
           </div>
 

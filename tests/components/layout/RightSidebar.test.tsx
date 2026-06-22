@@ -13,6 +13,15 @@ vi.mock('../../../src/contexts/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      if (key === 'sidebar.projectEstimate') return 'Смета проекта';
+      return key;
+    },
+  }),
+}));
+
 import { useAuth } from '../../../src/contexts/AuthContext';
 
 const mockUseAuth = useAuth as any;
@@ -121,27 +130,27 @@ describe('RightSidebar', () => {
       expect(screen.getByText('Обзор')).toBeInTheDocument();
     });
 
-    it('should display "Общая смета" button', () => {
+    it('should display "Смета проекта" button', () => {
       render(<RightSidebar {...mockProps} />);
-      expect(screen.getByText('Общая смета')).toBeInTheDocument();
+      expect(screen.getByText('Смета проекта')).toBeInTheDocument();
     });
 
     it('should highlight summary button when activeTab is summary', () => {
       render(<RightSidebar {...mockProps} activeTab="summary" />);
-      const summaryButton = screen.getByText('Общая смета').closest('button');
+      const summaryButton = screen.getByText('Смета проекта').closest('button');
       expect(summaryButton).toHaveClass('bg-indigo-50');
       expect(summaryButton).toHaveClass('text-indigo-700');
     });
 
     it('should not highlight summary button when activeTab is not summary', () => {
       render(<RightSidebar {...mockProps} activeTab="room-1" />);
-      const summaryButton = screen.getByText('Общая смета').closest('button');
+      const summaryButton = screen.getByText('Смета проекта').closest('button');
       expect(summaryButton).not.toHaveClass('bg-indigo-50');
     });
 
     it('should call onTabChange with "summary" when summary button is clicked', () => {
       render(<RightSidebar {...mockProps} />);
-      const summaryButton = screen.getByText('Общая смета');
+      const summaryButton = screen.getByText('Смета проекта');
 
       fireEvent.click(summaryButton);
 

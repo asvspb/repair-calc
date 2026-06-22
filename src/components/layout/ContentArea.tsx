@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calculator } from 'lucide-react';
+import { logWarning } from '../../utils/logger';
 import { SummaryView } from '../SummaryView';
 import { RoomEditor } from '../RoomEditor';
 import { getAllRooms } from '../../utils/projectObjects';
@@ -10,6 +11,7 @@ interface ContentAreaProps {
   projects: ProjectData[];
   activeTab: string;
   activeProject: ProjectData | undefined;
+  activeObjectId?: string | null;
   onCreateProject: () => void;
   onTabChange: (tab: string) => void;
   roomEditorProps: {
@@ -31,6 +33,7 @@ export function ContentArea({
   projects,
   activeTab,
   activeProject,
+  activeObjectId,
   onCreateProject,
   onTabChange,
   roomEditorProps,
@@ -56,7 +59,22 @@ export function ContentArea({
     );
   }
 
-  if (activeTab === 'summary' && activeProject) {
+  if (activeTab === 'object-estimate') {
+    if (!activeObjectId) {
+      logWarning('ContentArea', 'object-estimate без activeObjectId');
+    } else if (activeProject) {
+      return (
+        <SummaryView
+          project={activeProject}
+          scope="object"
+          activeObjectId={activeObjectId}
+          onRoomClick={onTabChange}
+        />
+      );
+    }
+  }
+
+  if ((activeTab === 'summary' || activeTab === 'object-estimate') && activeProject) {
     return (
       <SummaryView
         project={activeProject}

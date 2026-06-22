@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, FileText } from 'lucide-react';
+import { logUserAction } from '../../utils/logger';
 import { RoomList } from '../rooms/RoomList';
 import { ObjectSettings } from './ObjectSettings';
 import type { RoomData, ObjectData } from '@shared/types';
@@ -75,6 +76,26 @@ export function LeftSidebar({
           hasProjects={hasProjects}
           onDeleteObject={onDeleteObject}
         />
+
+        {/* Object Estimate NavLink */}
+        <div className="py-2 border-b border-gray-200 shrink-0">
+          <button
+            data-testid="nav-object-estimate"
+            onClick={() => {
+              logUserAction('nav_object_estimate', { objectId: activeObjectId });
+              onTabChange('object-estimate');
+            }}
+            disabled={!activeObjectId}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeTab === 'object-estimate'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-gray-600 hover:bg-gray-50'
+            } ${!activeObjectId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <FileText className="w-5 h-5" />
+            <span className="font-medium">{t('sidebar.objectEstimate')}</span>
+          </button>
+        </div>
 
         {/* Rooms section */}
         <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">

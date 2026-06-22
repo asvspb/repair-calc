@@ -18,6 +18,8 @@
     "addRoom": "Add room",
     "addObject": "Add renovation object",
     "createProjectFirst": "Create a project first",
-    "myRepair": "My Repair"
+    "myRepair": "My Repair",
+    "projectEstimate": "Project estimate",
+    "objectEstimate": "Object estimate"
   }
 }

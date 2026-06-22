@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ProjectData, ObjectData, RoomData } from '@shared/types';
 import { calculateRoomMetrics } from '../domain/geometry/geometry';
 import { calculateRoomCosts } from '../domain/pricing/costs';
@@ -10,6 +11,8 @@ interface SummaryViewProps {
   project: ProjectData;
   onRoomClick: (roomId: string) => void;
   groupByObject?: boolean;
+  scope?: 'project' | 'object';
+  activeObjectId?: string | null;
 }
 
 type ObjectSummary = {
@@ -32,11 +35,15 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
   project,
   onRoomClick,
   groupByObject = false,
+  scope = 'project',
+  activeObjectId,
 }) => {
-  const allRooms = getAllRooms(project);
+  const { t } = useTranslation();
   const objects = project.objects || [];
+  const activeObject = scope === 'object' ? objects.find(o => o.id === activeObjectId) : null;
+  const allRooms = scope === 'object' ? activeObject?.rooms || [] : getAllRooms(project);
   const hasMultipleObjects = objects.length > 1;
-  const shouldGroupByObject = groupByObject && hasMultipleObjects;
+  const shouldGroupByObject = scope === 'project' && groupByObject && hasMultipleObjects;
 
   // Calculate room-level metrics
   const calculateRoomData = (rooms: RoomData[]) => {
@@ -237,7 +244,9 @@ const SummaryViewInternal: React.FC<SummaryViewProps> = ({
       {/* Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-2xl font-semibold">
-          Общая смета
+          {scope === 'object'
+            ? `${t('sidebar.objectEstimate')} ${activeObject?.name || ''}`.trim()
+            : t('sidebar.projectEstimate')}
           {shouldGroupByObject && (
             <span className="text-base font-normal text-gray-500 ml-2">
               ({objects.length} {pluralize(objects.length, 'объект', 'объекта', 'объектов')})
@@ -333,6 +342,8 @@ export const SummaryView = memo(SummaryViewInternal, (prevProps, nextProps) => {
     prevProps.project.name === nextProps.project.name &&
     prevRoomsCount === nextRoomsCount &&
     prevProps.project.rooms === nextProps.project.rooms &&
-    prevProps.groupByObject === nextProps.groupByObject
+    prevProps.groupByObject === nextProps.groupByObject &&
+    prevProps.scope === nextProps.scope &&
+    prevProps.activeObjectId === nextProps.activeObjectId
   );
 });

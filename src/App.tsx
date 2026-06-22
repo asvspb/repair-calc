@@ -184,6 +184,7 @@ function AppContent() {
               projects={projects}
               activeTab={activeTab}
               activeProject={activeProject}
+              activeObjectId={activeObjectId}
               onCreateProject={() => {
                 openModal('projects');
                 setIsRightMobileMenuOpen(false);

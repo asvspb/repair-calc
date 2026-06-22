@@ -18,6 +18,8 @@
     "addRoom": "Добавить комнату",
     "addObject": "Добавить объект ремонта",
     "createProjectFirst": "Сначала создайте проект",
-    "myRepair": "Мой ремонт"
+    "myRepair": "Мой ремонт",
+    "projectEstimate": "Смета проекта",
+    "objectEstimate": "Смета объекта"
   }
 }
