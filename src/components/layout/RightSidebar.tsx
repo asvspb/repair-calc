@@ -114,8 +114,7 @@ export function RightSidebar({
               <button
                 onClick={onDataManagement}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                title="Настройки"
-                data-testid="settings-btn"
+                title={t('sidebar.settings')}
               >
                 <Settings className="w-5 h-5" />
                 <span className="text-sm">Настройки</span>
@@ -174,7 +173,7 @@ export function RightSidebar({
               }`}
             >
               <LayoutDashboard className="w-5 h-5" />
-              <span className="truncate">{t('sidebar.projectEstimate' as any)}</span>
+              <span className="truncate">{t('sidebar.projectEstimate')}</span>
             </button>
           </div>
 

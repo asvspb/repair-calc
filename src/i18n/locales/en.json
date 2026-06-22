@@ -20,6 +20,7 @@
     "createProjectFirst": "Create a project first",
     "myRepair": "My Repair",
     "projectEstimate": "Project estimate",
-    "objectEstimate": "Object estimate"
+    "objectEstimate": "Object estimate",
+    "projectEstimateWithName": "Project estimate \"{{name}}\""
   }
 }

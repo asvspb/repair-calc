@@ -56,7 +56,7 @@ export function LeftSidebar({
         style={{ height: 'calc(1rem + 56px + 1rem)' }}
       >
         <div className="w-6 md:hidden" /> {/* Spacer for balance */}
-        <img src="/logo.svg" alt={t('sidebar.myRepair' as any)} className="h-17 w-auto" />
+        <img src="/logo.svg" alt={t('sidebar.myRepair')} className="h-17 w-auto" />
         <button className="cursor-pointer md:hidden" onClick={onMobileMenuClose}>
           <X className="w-5 h-5 text-gray-500" />
         </button>
@@ -93,13 +93,13 @@ export function LeftSidebar({
             } ${!activeObjectId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <FileText className="w-5 h-5" />
-            <span className="truncate">{t('sidebar.objectEstimate' as any)}</span>
+            <span className="truncate">{t('sidebar.objectEstimate')}</span>
           </button>
         </div>
 
         {/* Rooms section */}
         <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          {t('sidebar.rooms' as any)}
+          {t('sidebar.rooms')}
         </div>
         {rooms.length > 0 && (
           <RoomList
@@ -117,7 +117,7 @@ export function LeftSidebar({
           onClick={onAddRoom}
           disabled={!hasProjects}
           data-testid="add-room-btn"
-          title={!hasProjects ? t('sidebar.createProjectFirst' as any) : ''}
+          title={!hasProjects ? t('sidebar.createProjectFirst') : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all shadow-sm ${
             hasProjects
               ? 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 cursor-pointer'
@@ -125,13 +125,13 @@ export function LeftSidebar({
           }`}
         >
           <Plus className="w-4 h-4" />
-          {t('sidebar.addRoom' as any)}
+          {t('sidebar.addRoom')}
         </button>
         <button
           onClick={onAddObject}
           disabled={!hasProjects}
           data-testid="add-object-btn"
-          title={!hasProjects ? t('sidebar.createProjectFirst' as any) : ''}
+          title={!hasProjects ? t('sidebar.createProjectFirst') : ''}
           className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl font-medium transition-all ${
             hasProjects
               ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 cursor-pointer'
@@ -139,7 +139,7 @@ export function LeftSidebar({
           }`}
         >
           <Plus className="w-4 h-4" />
-          {t('sidebar.addObject' as any)}
+          {t('sidebar.addObject')}
         </button>
       </div>
     </aside>

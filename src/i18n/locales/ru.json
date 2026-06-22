@@ -20,6 +20,7 @@
     "createProjectFirst": "Сначала создайте проект",
     "myRepair": "Мой ремонт",
     "projectEstimate": "Смета проекта",
-    "objectEstimate": "Смета объекта"
+    "objectEstimate": "Смета объекта",
+    "projectEstimateWithName": "Смета проекта «{{name}}»"
   }
 }
