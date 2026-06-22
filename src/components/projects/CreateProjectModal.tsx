@@ -145,9 +145,10 @@ export function CreateProjectModal({
           setBackupError(null);
           setSelectedProjectIds(new Set(result.data.projects.map(p => p.id)));
         } else {
-          dlog(LOG_PREFIX, '[Backup] Parse FAILED:', result.error);
+          const failure = result as Extract<typeof result, { success: false }>;
+          dlog(LOG_PREFIX, '[Backup] Parse FAILED:', failure.error);
           setBackupData(null);
-          setBackupError(result.error);
+          setBackupError(failure.error);
         }
       } catch {
         derror(LOG_PREFIX, '[Backup] Exception during parse');

@@ -161,9 +161,10 @@ function DataTabContent() {
           data: result.data,
         });
       } else {
+        const failure = result as Extract<typeof result, { success: false }>;
         setImportStatus({
           type: 'error',
-          message: result.error,
+          message: failure.error,
         });
       }
     };
