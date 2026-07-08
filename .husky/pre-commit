@@ -1,1 +1,2 @@
+npm run lint:deps
 npx lint-staged
