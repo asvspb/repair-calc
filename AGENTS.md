@@ -17,7 +17,7 @@
 | Стили     | Tailwind CSS                                                                          |
 | Состояние | Context API + hooks (`src/contexts/`, `src/hooks/`)                                   |
 | Backend   | Express + Zod (валидация)                                                             |
-| ORM/БД    | Prisma + PostgreSQL                                                                   |
+| ORM/БД    | Knex (query builder) + PostgreSQL                                                     |
 | AI        | Gemini + Mistral — серверный прокси (`server/services/`, ключи НЕ в клиентский бандл) |
 | Тесты     | Vitest (unit) + Playwright (e2e)                                                      |
 | Линт      | ESLint + Prettier + dependency-cruiser                                                |
@@ -36,7 +36,7 @@ repair-calc/
 │   ├── types/                # index (ProjectData, ObjectData, RoomData...), auth, storage, workTemplate
 │   ├── utils/                # costs, geometry, format, idMapper, localStorageProvider, logger, migration, factories
 │   └── App.tsx
-├── server/                   # BACKEND (Express + Prisma)
+├── server/                   # BACKEND (Express + Knex)
 │   ├── routes/               # HTTP-обработчики (update, ab-test.routes, room.repo...)
 │   ├── services/             # Бизнес-логика + AI-прокси
 │   ├── repositories/         # Доступ к данным (room.repo и др.)
@@ -45,7 +45,7 @@ repair-calc/
 │   ├── dist/                 # Скомпилированный бэкенд (НЕ в git)
 │   ├── index.js              # Точка входа Express
 │   └── worker.js             # Фоновый воркер
-├── prisma/                   # schema.prisma + migrations + seed
+├── server/src/db/            # Knex: db.ts, pool.ts, migrations/, repositories/
 ├── tests/                    # Vitest (unit)
 ├── e2e/                      # Playwright
 ├── shared/                   # Типы/утилиты, общие для frontend и backend
@@ -57,16 +57,16 @@ repair-calc/
 
 ## 4. Команды
 
-| Команда                     | Что делает                                                                    |
-| --------------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`               | Dev-сервер: frontend http://localhost:3993, backend http://localhost:3994     |
-| `npm run build`             | Production-сборка (только анализ, **НЕ для деплоя** — для деплоя Docker!)     |
-| `npm test`                  | Unit-тесты (Vitest)                                                           |
-| `npm run test:e2e`          | E2E-тесты (Playwright)                                                        |
-| `npm run lint`              | TypeScript-проверка + ESLint                                                  |
-| `npm run lint:deps`         | **dependency-cruiser** — проверка архитектуры зависимостей (src + server/src) |
-| `npm run db:migrate:dev`    | Миграции Prisma локально                                                      |
-| `./scripts/deploy-local.sh` | **Единственный способ деплоя**: тесты + линтер + Docker-сборка                |
+| Команда                         | Что делает                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`                   | Dev-сервер: frontend http://localhost:3993, backend http://localhost:3994     |
+| `npm run build`                 | Production-сборка (только анализ, **НЕ для деплоя** — для деплоя Docker!)     |
+| `npm test`                      | Unit-тесты (Vitest)                                                           |
+| `npm run test:e2e`              | E2E-тесты (Playwright)                                                        |
+| `npm run lint`                  | TypeScript-проверка + ESLint                                                  |
+| `npm run lint:deps`             | **dependency-cruiser** — проверка архитектуры зависимостей (src + server/src) |
+| `npm run migrate` (в `server/`) | Knex-миграции (migrate:latest)                                                |
+| `./scripts/deploy-local.sh`     | **Единственный способ деплоя**: тесты + линтер + Docker-сборка                |
 
 ## 5. Порты и окружение
 
@@ -118,7 +118,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 
 **Backend**
 
-- Слои: `routes` → `services` → `repositories` (Prisma изолирован в repositories).
+- Слои: `routes` → `services` → `repositories` (Knex изолирован в `server/src/db/repositories/`).
 - Валидация входа — Zod-схемы в `server/schemas/`.
 - AI-поиск цен: клиент `src/api/prices/` → серверный прокси `/api/ai/search-price` → Gemini/Mistral. Ключи только на сервере.
 
@@ -145,7 +145,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 | ---------------------------- | ---------------------------------------------------------------------------------- |
 | HTTP-маршрут                 | `server/routes/`                                                                   |
 | Бизнес-логику                | `server/services/`                                                                 |
-| Запрос к БД                  | `server/repositories/` + `prisma/schema.prisma`                                    |
+| Запрос к БД                  | `server/src/db/repositories/` + `server/src/db/db.ts` (Knex)                       |
 | Экран/UI                     | `src/components/<Domain>/`                                                         |
 | Состояние (Context)          | `src/contexts/`                                                                    |
 | Хук логики                   | `src/hooks/`                                                                       |

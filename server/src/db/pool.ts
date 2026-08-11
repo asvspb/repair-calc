@@ -2,7 +2,7 @@ import type { Knex } from 'knex';
 import db from './db.js';
 import { winstonLogger } from '../middleware/logger.js';
 
-// NOTE: `any` index signature matches mysql2 RowDataPacket interface.
+// NOTE: `any` index signature matches the legacy RowDataPacket interface.
 // Required to avoid cascading type errors in legacy repo code.
 export interface RowDataPacket {
   [column: string]: any;
@@ -37,7 +37,7 @@ export async function closePool(): Promise<void> {
   await db.destroy();
 }
 
-// Backward-compatible transaction helpers (mimic mysql2 PoolConnection API)
+// Backward-compatible transaction helpers for legacy repo code
 
 class TransactionConnection {
   trx: Knex.Transaction | null = null;

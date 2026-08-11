@@ -161,7 +161,7 @@ repair-calc/
 │   │   │   ├── logger.ts             # Winston логирование
 │   │   │   └── errorHandler.ts       # Обработка ошибок
 │   │   ├── db/
-│   │   │   ├── pool.ts               # PostgreSQL pool (Knex; mysql2-compat API)
+│   │   │   ├── pool.ts               # PostgreSQL pool (Knex)
 │   │   │   ├── migrations/           # Knex миграции
 │   │   │   │   ├── 20260313_initial.ts
 │   │   │   │   ├── 20260314_ab_tests.ts
