@@ -20,7 +20,7 @@
 **Главный ориентир.** Калькулятор должен оставаться **слоистым, тестируемым и
 verifiable-by-tooling**: архитектура enforced через `dependency-cruiser`
 (не на бумаге), бизнес-логика — в чистых модулях, состояние — в zustand-слайсах,
-доступ к данным изолирован в `server/repositories/`. Любое изменение, нарушающее
+доступ к данным изолирован в `server/src/db/repositories/`. Любое изменение, нарушающее
 слои или добавляющее `as any`/`console.log`/хардкод ключей, — регрессия ориентира.
 
 **Текущий фазис (2026-08-11): 🟡 операционный долг при здоровом коде.**
@@ -168,7 +168,8 @@ repair-calc/
 │   │   │   │   ├── 20260314_update_service.ts
 │   │   │   │   ├── 20260314_webhooks.ts
 │   │   │   │   ├── 20260315_room_json_fields.ts
-│   │   │   │   └── 20260331_add_objects.ts
+│   │   │   │   ├── 20260331_add_objects.ts
+│   │   │   │   └── 20260332_add_user_role.ts
 │   │   │   └── repositories/         # Data access (12 файлов)
 │   │   │       ├── abTest.repo.ts
 │   │   │       ├── aiRequest.repo.ts
