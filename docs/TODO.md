@@ -1,140 +1,140 @@
 # TODO: Актуальные задачи (Repair Calculator)
 
-**Дата последнего обновления:** 2026-04-16
-**Статус версий:** Базовые фичи (v1-v4.2) завершены (основные модули, миграция API, рефакторинг UI, геометрия, Objects model, Auth, инкрементальное сохранение).
+**Дата последнего обновления:** 2026-08-11
+**Источник приоритетов:** [AUDIT-2026-08-11.md](./AUDIT-2026-08-11.md) (снимок состояния)
+**Направление проекта:** [INDEX.md → 🧭 Компас](../INDEX.md)
 
-## 🟢 Приоритет 0: Unit-тесты — localStorage фикс + E2E-стабилизация
-
-### Unit-тесты (Vitest)
-
-**Результат:** 833 passed, 0 failed, 8 skipped (из 841)
-
-### Выполнено ✅
-
-- `[x]` **Добавлен мок `localStorage` в `tests/setup.ts`** — исправил 10 падений (Vitest 4.x + jsdom 26 не предоставляет Storage-методы) ✅ 2026-04-16
-
-### E2E-тесты (Playwright)
-
-**Результат (2026-04-15):** 10 passed, 11 failed, 135 skipped (из-за `.skip` на проблемных тестах)
-
-### Выполнено ✅
-
-- `[x]` **Починить `e2e/objects.spec.ts`** (4/4 тестов) ✅ 2026-04-13
-- `[x]` **Исправлены `core-workflow.spec.ts`** — убраны strict mode violations ✅ 2026-04-15
-- `[x]` **Исправлены `auth.spec.ts`** — работают все 3 теста ✅ 2026-04-15
-- `[x]` **Добавлен `waitForLoadState('networkidle')`** во все тесты ✅ 2026-04-15
-
-### Пропущены временно (требуют backend моков)
-
-- `[ ]` **core-workflow.spec.ts** (3 теста) — сложная настройка сценариев
-- `[ ]` **costs.spec.ts** (3 теста) — требуют правильных моков API
-- `[ ]` **export-import.spec.ts** (6 тестов) — требуют настройки localStorage
-- `[ ]` **geometry.spec.ts** (4 теста) — требуют исправления селекторов
-- `[ ]` **projects.spec.ts** (3 теста) — требуют backend моков
-- `[ ]` **regressions.spec.ts** (5 тестов) — требуют работы с openings
-- `[ ]` **responsive.spec.ts** (2 теста) — требуют настройки viewport
-- `[ ]` **room-input.spec.ts** (3 теста) — требуют работы с комнатами
-- `[ ]` **rooms.spec.ts** (5 тестов) — требуют работы с комнатами
-- `[ ]` **work-templates.spec.ts** (7 тестов) — требуют работы с шаблонами
-- `[ ]` **works.spec.ts** (4 теста) — требуют работы с шаблонами
-
-### Следующий шаг
-
-- Распропустить E2E-тесты по одному, исправляя моки и селекторы
-- Добиться >80% pass rate для Chromium
+> **Принцип ведения** (по `AI_DOCUMENTATION_GUIDELINES.md`): выполнил задачу —
+> удали её отсюда и запиши веху в `PROGRESS.md` (его нужно создать — см. P2-3),
+> краткое резюме — append в `devAI/developer_log.md`.
 
 ---
 
-## ✅ Завершено в этом цикле (2026-04-16)
+## 🔴 Приоритет 0: Операционное здоровье (блокирует всё)
 
-- `[x]` **Добавлен мок `localStorage` в `tests/setup.ts`** — исправил 10 падений ✅
-- `[x]` **Миграция `console.*` → структурированные логгеры** ✅
-  - Клиент: `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`)
-  - Сервер: `winstonLogger` (Winston) из `server/src/middleware/logger.ts`
-  - Миграции Knex оставлены на `console.log` (CLI-контекст)
-  - Затронуто 22 файла
-- `[x]` **Обновлена документация логирования** ✅
-  - `docs/LOGGING.md` — полная переработка v2.0
-  - `docs/LOGGING-CHEATSHEET.md` — новые форматы и паттерны
-  - `docs/ARCHITECTURE.md` — добавлена секция 5 «Логирование»
-  - `docs/INDEX.md` — structured logging в фичах
-  - `docs/DEBUG_INSTRUCTIONS.md` — logger вместо console.*
-  - `docs/TECHNICAL-SPECIFICATION.md` — секция 9 + примеры winstonLogger
-  - `docs/FRONTEND-STATUS.md` — секция «Логирование»
+### P0-1. План merge `refactor/architecture-v2` → `main`
 
----
+Ветка на **+160 коммитов** к main (невлито ~5.5 мес.). Главный риск проекта.
 
-## 🟠 Приоритет 1: Архитектура и Декомпозиция (5–8 дней)
+- [ ] Решить стратегию: **big-bang** merge или **разбивка на тематические PR**:
+  - [ ] БД-миграция MySQL→PostgreSQL + миграции
+  - [ ] `src/domain` extract (чистая бизнес-логика)
+  - [ ] zustand-slices (auth/object/room/sync/project)
+  - [ ] IndexedDB (Dexie) persistence + sync push/pull
+  - [ ] security: `adminGuard` RBAC, миграция `20260332_add_user_role`
+  - [ ] update-service decomposition (`routes/update/`)
+  - [ ] i18n scaffold (`react-i18next`)
+- [ ] Запушить 5 локальных коммитов в origin/refactor/architecture-v2
+- [ ] Определить: main обновляется только через merge refactor (refactor — новый «trunk»)?
 
-### 1.1 Декомпозиция ProjectContext (982 → 3 модуля)
-- `[ ]` **useProjectState.ts** — чистый state management (~200 строк)
-- `[ ]` **useProjectSync.ts** — логика синхронизации и persistence (~300 строк)
-- `[ ]` **useObjectManagement.ts** — CRUD для объектов (~200 строк)
-- `[ ]` Исправить stale closures в `deleteRoom`/`addRoom`/`reorderRooms` (перевести на `setProjects(prev => ...)`)
+### P0-2. Активировать CI
 
-### 1.2 Декомпозиция крупных файлов
-- `[ ]` Декомпозиция **RoomEditor (902 строки)** — вынести обработчики в `useRoomHandlers.ts`
-- `[ ]` Декомпозиция **BackupManager (837 строк)** → `ExportPanel` + `ImportPanel` + `SyncPanel`
-- `[ ]` Декомпозиция **ApiStorageProvider (1036 строк)** → `apiClient.ts` + `projectApi.ts` + `objectApi.ts` + `roomApi.ts`
-- `[ ]` Декомпозиция **routes/update.ts (2184 строки)** → controller + service
+`.github/workflows/ci.yml` **уже написан** (`npm ci` → `lint` → `lint:deps` → `test`, триггеры push/PR на main и refactor/\*), но **не в VCS** → ни разу не запускался.
 
-### 1.3 Утилиты и консистентность
-- `[ ]` Единая утилита генерации ID — `utils/factories.ts` (заменить 4+ разных способа генерации ID на `generateId(prefix)`)
-- `[x]` Заменить `console.*` на встроенный logger ✅ 2026-04-16 (клиент → `src/utils/logger.ts`, сервер → `winstonLogger`. Миграции оставлены на `console.log`)
-- `[x]` Добавить ESLint правило `no-console` для предотвращения новых `console.*` ✅ 2026-04-16 (клиент + сервер, миграции освобождены, logger.ts/debugLogger.ts с eslint-disable)
-- `[ ]` Использовать единые константы для localStorage keys (вынести `STORAGE_KEYS` в общий модуль)
+- [ ] Закоммитить `.github/workflows/ci.yml`
+- [ ] (Опц.) Закоммитить хуки: `.husky/*` + `scripts/check-secrets.sh` + `scripts/ai-trailer-check.sh` (сейчас незакоммичены)
+- [ ] Проверить первый прогон CI на refactor-ветке зелёным
 
 ---
 
-## 🧪 Приоритет 2: Расширенное тестирование (5–7 дней)
-> **Зависимости:** п. 1.1 (тесты ProjectContext после декомпозиции)
+## 🟠 Приоритет 1: Деплой и безопасность
 
-- `[ ]` Компонентные тесты для **RoomEditor** — `RoomEditor.test.tsx`
-- `[ ]` Тесты для **ProjectContext** (после разделения на хуки) — `ProjectContext.test.tsx`
-- `[ ]` Тесты для **httpClient** — `httpClient.test.ts`
-- `[ ]` Тесты для **BackupManager** — `BackupManager.test.tsx`
-- `[ ]` Дополнительные E2E для авторизации — `e2e/auth-sync.spec.ts`
+### P1-1. Деплой актуального бэкенда
 
----
+Прод-контейнер `:3994` крутит **старую сборку** (фикс двойного префикса роутинга закоммичен, но не задеплоен).
 
-## 🔧 Приоритет 3: Бэкенд (3–5 дней)
-- `[ ]` DI для репозиториев — `server/src/db/repositories/*.ts`
-- `[ ]` Request ID middleware — `server/src/middleware/requestId.ts`
-- `[ ]` Per-user rate limiting — `server/src/middleware/rateLimiter.ts`
+- [ ] `./scripts/deploy-local.sh` (тесты + линтеры + `docker compose build --no-cache`)
+- [ ] Живая проверка путей: `GET /api/objects` (200, не 404), `POST /api/rooms/:id/works`
 
----
+### P1-2. Ускорить сборку бэкенда
 
-## 📝 Приоритет 4: Документация (1–2 дня)
-- `[x]` Создать код-ревью v5.0 — `docs/CODE_REVIEW.md` ✅ 2026-04-13
-- `[x]` Создать детализированное ТЗ — `devAI/spec/SPEC-001-SYSTEM.md` ✅ 2026-04-13
-- `[x]` Обновить `docs/ARCHITECTURE.md` — добавить Objects model, Auth, HttpClient, сервер ✅ 2026-04-16
-- `[x]` Обновить `docs/INDEX.md` — актуализировать количество тестов, структуру, зависимости ✅ 2026-04-16
-- `[x]` Обновить документацию логирования — `docs/LOGGING.md` (v2.0), `docs/LOGGING-CHEATSHEET.md`, `docs/ARCHITECTURE.md` (секция 5), `docs/DEBUG_INSTRUCTIONS.md`, `docs/TECHNICAL-SPECIFICATION.md` (секция 9), `docs/FRONTEND-STATUS.md` ✅ 2026-04-16
+`playwright` лежит в `dependencies` сервера (не `devDependencies`) → тянется в рантайм-образ, пересборка падает по таймауту >900с.
+
+- [ ] Перенести `playwright` в `server/package.json` → `devDependencies`
+- [ ] Проверить, что `npm ci` в Docker-образе не тянет браузерный тулкит
+
+### P1-3. `npm audit fix`
+
+- [ ] 9 уязвимостей (2 low, 7 high; в т.ч. `ws`) — починить, проверить что не ломает runtime
 
 ---
 
-## 📋 Бэклог (Будущие задачи)
+## 🟡 Приоритет 2: Документация и гигиена
 
-### Управление проектами
-- `[ ]` ObjectSelector в сайдбар
-- `[ ]` Группировка итогов по объектам в SummaryView
+### P2-1. Триаж 12 незакоммиченных файлов (см. `git status`)
 
-### Изолированная работа (Offline + PWA)
-- `[ ]` Установить `idb` (IndexedDB wrapper) и реализовать `OfflineQueue`
-- `[ ]` POST `/api/sync/push`, GET `/api/sync/pull`
-- `[ ]` Детекция online/offline статуса + UI-индикатор
-- `[ ]` PWA: `vite-plugin-pwa`, настройка Service Worker, иконки
+Ценная «висящая» работа — оформить по батчам:
 
-### Улучшения UX
-- `[ ]` Swagger/OpenAPI документация для API
-- `[ ]` i18n (интернационализация)
-- `[ ]` Тёмная тема
-- `[ ]` Печать сметы
+- [ ] CI + husky-хуки → коммит `ci:` (вместе с P0-2)
+- [ ] `.agents/AGENTS.md` (перевод DevOps-правил в RU) → `docs:`
+- [ ] Фронт-тесты (`SummaryView.header/project`, `LeftSidebar.nav`, `i18n`) → `test:`
+- [ ] `server/tests/integration/migrations.test.ts` → `test:`
+
+### P2-2. Починить дрейф документации (по `AUDIT-2026-08-11.md` §6)
+
+- [ ] `INDEX.md`: MySQL → PostgreSQL+Knex (частично выполнено 2026-08-11 — добить остатки)
+- [ ] `AGENTS.md` §2: «Prisma» → **Knex** (SSOT содержит неверный факт; правка за владельцем)
+- [ ] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2`
+
+### P2-3. Создать недостающие статусные документы
+
+Регламент (`AI_DOCUMENTATION_GUIDELINES.md`) и TODO ссылаются на файлы, которых нет.
+
+- [ ] `docs/PROGRESS.md` — лента завершённых вех (миграция на zustand, БД→PG, декомпозиция update.ts, i18n, IndexedDB, RBAC, фикс роутинга 2026-08-11)
+- [ ] `docs/FRONTEND-STATUS.md` — статус фронтенда (или решить: объединить в PROGRESS.md)
+
+### P2-4. Мелкая гигиена
+
+- [ ] Выровнять версии: root `2.0.0` / server `1.0.0`
+- [ ] Расширить `server/package.json` `lint` (`eslint src/`) на `tests/` — тесты сейчас не линтуются
+- [ ] Проверить статус `AUDIT-2026-06-21.md §4.E` (prefer-const в createSyncSlice) — закрыть, если устранено
 
 ---
 
-**См. также:** 
-- [CODE_REVIEW.md](./CODE_REVIEW.md) (код-ревью v5.0)
-- [PROGRESS.md](./PROGRESS.md) (завершенные этапы)
-- [ARCHITECTURE.md](./ARCHITECTURE.md) (архитектура)
-- [spec/SPEC-001-SYSTEM.md](./spec/SPEC-001-SYSTEM.md) (полное техзадание)
+## 🟢 Приоритет 3: Качество кода (техдолг)
+
+### P3-1. Декомпозиция крупных файлов (по `AUDIT-2026-06-21.md` §3 — перепроверить размеры)
+
+- [ ] `src/components/RoomEditor.tsx` (~906) → вынести обработчики в хук
+- [ ] `src/components/BackupManager.tsx` (~848) → `ExportPanel` + `ImportPanel` + `SyncPanel`
+- [ ] `src/api/storage/apiStorageProvider.ts` (~1033) → `apiClient` + `projectApi` + `objectApi` + `roomApi`
+- [ ] `src/components/projects/ProjectsModal.tsx` (~696)
+- [ ] `src/store/createProjectSlice.ts` (~609) — оставить только доменные поля + CRUD
+- [ ] `src/utils/roomHelpers.ts` (~811) — проверить размеры функций
+
+### P3-2. Мёртвый код (подтверждён grep, 0 ссылок)
+
+- [ ] `src/hooks/useProjects.ts` — дубликат store (legacy)
+- [ ] `src/utils/projectContextPatch.ts` — заменён `utils/projectObjects.ts`
+- [ ] `require()` в ESM: `src/api/storage/apiStorageProvider.ts`
+
+### P3-3. Типизация
+
+- [ ] 39 `as any` warnings (`server/src/routes/update/ab-test.routes.ts`, `jobs.routes.ts`, `import.routes.ts`, `priceHistory.repo.ts`) → заменить на типы
+- [ ] Единая утилита ID: `utils/factories.ts` (`generateId(prefix)`), убрать дублирование
+- [ ] Единые константы localStorage keys (`STORAGE_KEYS`)
+
+### P3-4. Тестирование
+
+- [ ] Распропустить E2E-тесты (часть `.skip`): core-workflow, costs, export-import, geometry, projects, regressions, responsive, room-input, rooms, work-templates, works
+- [ ] Компонентные тесты: RoomEditor, BackupManager, httpClient (после декомпозиции)
+- [ ] Добиться >80% pass rate для Chromium
+
+---
+
+## 📋 Бэклог (будущее)
+
+- [ ] ObjectSelector в сайдбар; группировка итогов по объектам в SummaryView
+- [ ] PWA: `vite-plugin-pwa`, Service Worker, оффлайн-индикатор (поверх IndexedDB)
+- [ ] Swagger/OpenAPI для API (контракт уже частично в `docs/openapi.yaml`)
+- [ ] Тёмная тема; печать сметы
+- [ ] `fallow` / SonarQube — dead-code и Quality Gate (по стандарту Principal Architect)
+
+---
+
+**См. также:**
+
+- [AUDIT-2026-08-11.md](./AUDIT-2026-08-11.md) — снимок состояния и дрейф
+- [INDEX.md → 🧭 Компас](../INDEX.md) — направление и главный ориентир
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — архитектура
+- [AUDIT-2026-06-21.md](./AUDIT-2026-06-21.md) — предыдущий аудит

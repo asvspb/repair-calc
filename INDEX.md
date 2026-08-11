@@ -1,7 +1,50 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-06-21
+**Последнее обновление:** 2026-08-11
 **Версия приложения:** 2.0
+**Состояние здоровья:** 🟡 операционный долг при здоровом коде (см. [AUDIT-2026-08-11](./docs/AUDIT-2026-08-11.md))
+
+---
+
+## 🧭 Компас проекта (направление и главный ориентир)
+
+> Эта секция — **north star** для агентов и разработчиков. Читай первой.
+> Подробный снимок состояния — в [`docs/AUDIT-2026-08-11.md`](./docs/AUDIT-2026-08-11.md),
+> бэклог и приоритеты — в [`docs/TODO.md`](./docs/TODO.md).
+
+**Что мы строим.** Repair Calculator v2.0 — калькулятор стоимости ремонта:
+проекты → объекты → комнаты, 3 режима геометрии, AI-поиск цен (серверный
+прокси Gemini/Mistral), экспорт смет в Excel/CSV, JWT-auth, автосохранение
+(IndexedDB + синхронизация с сервером).
+
+**Главный ориентир.** Калькулятор должен оставаться **слоистым, тестируемым и
+verifiable-by-tooling**: архитектура enforced через `dependency-cruiser`
+(не на бумаге), бизнес-логика — в чистых модулях, состояние — в zustand-слайсах,
+доступ к данным изолирован в `server/repositories/`. Любое изменение, нарушающее
+слои или добавляющее `as any`/`console.log`/хардкод ключей, — регрессия ориентира.
+
+**Текущий фазис (2026-08-11): 🟡 операционный долг при здоровом коде.**
+Рефактор-ветка `refactor/architecture-v2` накопила **160 коммитов** (миграция БД
+MySQL→PostgreSQL, zustand, IndexedDB, RBAC, i18n, декомпозиция `update.ts`) и
+**не влита в main** ~5.5 мес.
+
+**Критический путь (что делать следующим):**
+
+1. 🔴 Влить `refactor/architecture-v2` → main (big-bang или тематическими PR).
+2. 🔴 Активировать CI (`.github/workflows/ci.yml` написан, но не в VCS → ни разу не запускался).
+3. 🟡 Деплой актуального бэкенда через `./scripts/deploy-local.sh` (контейнер `:3994` отстаёт от кода).
+
+**Куда движемся** (видение [`docs/IDEAL-ARCHITECTURE.md`](./docs/IDEAL-ARCHITECTURE.md)):
+FSD-3-слоя, npm workspaces, dirty-flag sync, полная декомпозиция монолитов
+(`RoomEditor`, `BackupManager`, `apiStorageProvider`), единая error-архитектура.
+
+**Принципы (не нарушать):**
+
+- Слои `routes → services → repositories`; ORM (**Knex**) изолирован в repositories.
+- Компоненты по доменам `src/components/<Domain>/`; состояние — Context/zustand + hooks.
+- Валидация входа — Zod в `server/schemas/`; секреты — только `.env`; ключи AI — только на сервере.
+- Запреты: `as any`/`as unknown` без обоснования, `@ts-ignore`, пустые `catch`, `console.log` в проде.
+- DoD любого ТЗ: `npm test` + `npm run lint` + `npm run lint:deps` зелёные; `INDEX.md`/`developer_log.md` актуальны.
 
 ---
 
@@ -118,7 +161,7 @@ repair-calc/
 │   │   │   ├── logger.ts             # Winston логирование
 │   │   │   └── errorHandler.ts       # Обработка ошибок
 │   │   ├── db/
-│   │   │   ├── pool.ts               # MySQL pool
+│   │   │   ├── pool.ts               # PostgreSQL pool (Knex; mysql2-compat API)
 │   │   │   ├── migrations/           # Knex миграции
 │   │   │   │   ├── 20260313_initial.ts
 │   │   │   │   ├── 20260314_ab_tests.ts
@@ -187,26 +230,26 @@ repair-calc/
 
 ### Фронтенд
 
-| Файл                                    | Назначение                                   |
-| --------------------------------------- | -------------------------------------------- |
-| `src/contexts/ProjectContext.tsx`       | Управление состоянием проектов (~981 строка) |
-| `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                  |
-| `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)   |
-| `src/api/storage/apiStorageProvider.ts` | Синхронизация с сервером (~1036 строк)       |
-| `src/utils/storage.ts`                  | StorageManager (localStorage)                |
-| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID               |
-| `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)        |
+| Файл                                    | Назначение                                                                         |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext |
+| `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                        |
+| `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                         |
+| `src/api/storage/apiStorageProvider.ts` | Синхронизация с сервером (~1036 строк)                                             |
+| `src/utils/storage.ts`                  | StorageManager (localStorage)                                                      |
+| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID                                                     |
+| `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)                                              |
 
 ### Бэкенд
 
-| Файл                              | Назначение                      |
-| --------------------------------- | ------------------------------- |
-| `server/src/routes/sync.ts`       | Sync API (pull/push)            |
-| `server/src/routes/projects.ts`   | Projects CRUD                   |
-| `server/src/routes/update.ts`     | Сервис обновлений (2184 строки) |
-| `server/src/config/env.ts`        | Конфигурация (DB, JWT, logging) |
-| `server/src/middleware/logger.ts` | Winston логирование             |
-| `server/src/middleware/auth.ts`   | JWT аутентификация              |
+| Файл                              | Назначение                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------ |
+| `server/src/routes/sync.ts`       | Sync API (pull/push)                                                                 |
+| `server/src/routes/projects.ts`   | Projects CRUD                                                                        |
+| `server/src/routes/update/`       | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas) |
+| `server/src/config/env.ts`        | Конфигурация (DB, JWT, logging)                                                      |
+| `server/src/middleware/logger.ts` | Winston логирование                                                                  |
+| `server/src/middleware/auth.ts`   | JWT аутентификация                                                                   |
 
 ---
 
@@ -237,7 +280,8 @@ server/src/db/migrations/
 ├── 20260314_update_service.ts     # Service обновлений
 ├── 20260314_webhooks.ts           # Webhooks
 ├── 20260315_room_json_fields.ts   # JSON поля для комнат
-└── 20260331_add_objects.ts        # Таблица objects + deleted_entities
+├── 20260331_add_objects.ts        # Таблица objects + deleted_entities
+└── 20260332_add_user_role.ts      # Роль user + RBAC (adminGuard)
 ```
 
 ---
@@ -355,8 +399,8 @@ type RoomData = {
 
 - Node.js + Express 4
 - TypeScript
-- MySQL 8
-- Knex.js (migrations)
+- PostgreSQL 16
+- Knex.js (query builder + migrations)
 - JWT (jsonwebtoken)
 - Winston (logging)
 - Zod (validation)
@@ -415,7 +459,9 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ## Документация
 
 - [README](./README.md) — Главная документация
-- [docs/AUDIT-2026-06-21.md](./docs/AUDIT-2026-06-21.md) — **Свежий архитектурный аудит** (актуальный снимок после миграции на zustand)
+- [docs/AUDIT-2026-08-11.md](./docs/AUDIT-2026-08-11.md) — **Актуальный аудит состояния** (операционное здоровье, дрейф документации, roadmap)
+- [docs/TODO.md](./docs/TODO.md) — **Актуальный бэклог и приоритеты** (P0: merge refactor→main, активация CI)
+- [docs/AUDIT-2026-06-21.md](./docs/AUDIT-2026-06-21.md) — Предыдущий аудит (снимок после миграции на zustand)
 - [docs/IDEAL-ARCHITECTURE.md](./docs/IDEAL-ARCHITECTURE.md) — **Видение идеальной архитектуры** (v2: FSD-3-слоя, npm workspaces, dirty-flag sync, декомпозиция update.ts, error-архитектура)
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Архитектура проекта
 - [docs/CODE_REVIEW.md](./docs/CODE_REVIEW.md) — Результаты ревью кода
@@ -426,6 +472,10 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ---
 
 ## Известные проблемы кода (Code Review 2026-04-17)
+
+> ⚠️ **Раздел устарел.** Актуальный снимок проблем и дрейфа документации — в
+> [`docs/AUDIT-2026-08-11.md`](./docs/AUDIT-2026-08-11.md) (§6 Documentation Drift).
+> Ниже оставлено как историческая справка; часть пунктов уже закрыта рефактором.
 
 ### Критические (Security)
 

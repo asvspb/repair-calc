@@ -41,3 +41,23 @@
 
 - Контейнер бэкенда на :3994 ещё содержит старую сборку (пересборка падала по таймауту >900с; причина — `playwright` в `dependencies` сервера тянется в рантайм-образ). Деплой — через `./scripts/deploy-local.sh`.
 - P1-дефект (неродственный): в `vitest.config.ts` захардкожен абсолютный `@shared`-путь — чинится отдельным коммитом.
+
+## 2026-08-11 - Documentation: project state audit + TODO overhaul + INDEX compass
+
+### Accomplishments:
+
+- **Создан `docs/AUDIT-2026-08-11.md`** — авторитетный снимок состояния (формат AUDIT-2026-06-21): метрики, статус по измерениям, топ-риски, roadmap, Documentation Drift. Вердикт: 🟡 операционный долг при здоровом коде.
+- **Переписан `docs/TODO.md`** под текущую реальность: убрано выполненное в рефакторе (zustand, i18n, IndexedDB, sync, декомпозиция update.ts, dep-cruiser); добавлены приоритеты P0 (merge refactor→main, активация CI), P1 (деплой, audit fix), P2 (триаж 12 файлов, дрейф доков), P3 (техдолг).
+- **`INDEX.md` — добавлена секция «🧭 Компас проекта»** (north star: что строим, главный ориентир, критический путь, принципы); обновлена дата (2026-06-21 → 2026-08-11); починен дрейф: MySQL→PostgreSQL+Knex, ProjectContext→zustand store, `update.ts`→модуль `update/`, добавлена миграция `20260332` (RBAC), баннер «устарело» над код-ревью 2026-04-17, ссылки на новый аудит и TODO.
+
+### Technical Details:
+
+- Дрейф SSOT: `AGENTS.md` §2 ошибочно указывает «Prisma» (реальность — Knex+PostgreSQL); `INDEX.md` указывал «MySQL 8». Зафиксировано в AUDIT §6; правка AGENTS.md оставлена за владельцем (привилегированный файл-инструкция).
+- Обнаружено: `docs/PROGRESS.md` и `FRONTEND-STATUS.md` отсутствуют, хотя на них ссылаются регламент и TODO → заведены как задача P2-3.
+- (Предыдущая запись Next Steps про P1 vitest — закрыта коммитом `c3a9f4c`.)
+
+### Next Steps:
+
+- P0: план merge `refactor/architecture-v2` → main (160 коммитов).
+- P0: закоммитить `.github/workflows/ci.yml` (CI написан, но не в VCS).
+- Привести `AGENTS.md` §2 в соответствие с реальностью (Knex, не Prisma).
