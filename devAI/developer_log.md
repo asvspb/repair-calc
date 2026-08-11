@@ -42,6 +42,12 @@
 - Контейнер бэкенда на :3994 ещё содержит старую сборку (пересборка падала по таймауту >900с; причина — `playwright` в `dependencies` сервера тянется в рантайм-образ). Деплой — через `./scripts/deploy-local.sh`.
 - P1-дефект (неродственный): в `vitest.config.ts` захардкожен абсолютный `@shared`-путь — чинится отдельным коммитом.
 
+## [2026-08-11] TASK-BATCH-P2-2-doc-drift @ docs/p2-doc-drift-batch-01 @ 2fef795
+
+- Сделано: `AGENTS.md` (Prisma→Knex: §2 ORM/БД, §3 структура `prisma/`→`server/src/db/`, §4 `db:migrate:dev`→`npm run migrate`, §7 слои, §9 навигация); `INDEX.md` (`pool.ts` — «mysql2-compat API»→Knex); `server/src/db/pool.ts` (комментарии про `mysql2` → «legacy RowDataPacket interface»/«legacy repo code», легаси-совместимость сохранена).
+- Проверено: npm test ✅ (frontend 934 + server 115 passed) / lint ✅ (0 errors; 39 предсуществующих warnings в чужом коде) / lint:deps ✅ (0 violations, 225 модулей) / prettier ✅ (AGENTS.md/INDEX.md)
+- Заметки: batch-файла `TASK-BATCH-NNN-*.md` в `devAI/spec/` нет — батч собран из `docs/TODO.md` P2-2 по решению Архитектора. Остаточный дрейф (вне write-set, на рассмотрение): `INDEX.md:23` «server/repositories/» (факт — `server/src/db/repositories/`); дерево миграций в `INDEX.md:166-171` не содержит `20260332_add_user_role` (есть в полном списке `INDEX.md:284`).
+
 ## 2026-08-11 - Documentation: project state audit + TODO overhaul + INDEX compass
 
 ### Accomplishments:
