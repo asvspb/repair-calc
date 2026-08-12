@@ -67,3 +67,12 @@
 - P0: план merge `refactor/architecture-v2` → main (160 коммитов).
 - P0: закоммитить `.github/workflows/ci.yml` (CI написан, но не в VCS).
 - Привести `AGENTS.md` §2 в соответствие с реальностью (Knex, не Prisma).
+
+## [2026-08-12] SPEC-005-NORMALIZATION — ТЗ «привести проект в норму»
+
+- Создан `devAI/spec/SPEC-005-NORMALIZATION.md` (v1.0, Draft): план перевода проекта из 🟡 в 🟢 по измерениям `AUDIT-2026-08-11`.
+- Решения владельца: merge `refactor/architecture-v2` → `main` через `--no-ff` (сохранить 164 атомарных коммита + явная граница); объём — разблокировка + техдолг (as-any отдельной фазой).
+- Декомпозиция: 4 фазы, 9 task-batch'ей — 01 активация CI → 02 push → 03 merge; 04 триаж 12 файлов ∥ 05 верификация деплоя; 06 server-deps-hygiene → 07 audit-fix, 08 status-docs; 09 as-any cleanup. Карта конфликтов и параллельная безопасность прописаны (BATCH-06∩07 = server/package-lock.json → 07 строго после 06).
+- Снимок в спеке: 164 коммита / +73k−10k строк / 263 новых файла (~62k LOC) вне main; CI untracked; 12 файлов в дереве; 9 незапушено; деплой ≈ актуален (бэкенд 11.08, фронт 22.06 ≈ код).
+- DoD: main==refactor через --no-ff, CI green на main, дерево чистое, gates зелёные, audit 0, PROGRESS.md создан.
+- Статус: Draft — ждёт аппрута владельцем → старт с Фазы 1 (BATCH-01 «Активация CI»).
