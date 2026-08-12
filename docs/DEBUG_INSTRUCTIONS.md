@@ -1,20 +1,28 @@
 # Debug Instructions for Section Dimensions Bug
 
+> **Примечание (2026-04-16):** Все `console.*` в клиенте заменены на структурированный логгер `src/utils/logger.ts`. При добавлении новых точек отладки используйте `logDebug()`, `logError()` и другие функции из модуля.
+
 ## Added Logging
 
-### Console Logs Added:
+### Structured Logger Calls (src/utils/logger.ts):
 
 1. **RoomEditor.tsx** - Section handlers:
-   - `[RoomEditor] addSubSection` - Logs before/after adding section
-   - `[RoomEditor] removeSubSection` - Logs before/after removing section
-   - `[RoomEditor] updateSubSection` - Logs every field update with BEFORE/AFTER states
-   - `[RoomEditor] RENDER - SubSections` - Logs what data is being rendered
-   - `[RoomEditor] RENDER - SUBSECTION` - Logs each subsection's data during render
+   - `logDebug('RoomEditor', 'addSubSection', ...)` - Logs before/after adding section
+   - `logDebug('RoomEditor', 'removeSubSection', ...)` - Logs before/after removing section
+   - `logDebug('RoomEditor', 'updateSubSection', ...)` - Logs every field update with BEFORE/AFTER states
+   - `logDebug('RoomEditor', 'RENDER SubSections', ...)` - Logs what data is being rendered
+   - `logDebug('RoomEditor', 'RENDER SUBSECTION', ...)` - Logs each subsection's data during render
 
 2. **ProjectContext.tsx** - Room updates:
-   - `[ProjectContext] updateRoom - CALL` - Logs incoming update request
-   - `[ProjectContext] updateRoom - PREV ROOM` - Logs previous room state
-   - `[ProjectContext] updateRoom - AFTER UPDATE` - Logs result after update
+   - `logDebug('ProjectContext', 'updateRoom CALL', ...)` - Logs incoming update request
+   - `logDebug('ProjectContext', 'updateRoom PREV ROOM', ...)` - Logs previous room state
+   - `logDebug('ProjectContext', 'updateRoom AFTER UPDATE', ...)` - Logs result after update
+
+> **Не используйте `console.log` напрямую** — вместо этого импортируйте нужную функцию из `src/utils/logger.ts`:
+> ```typescript
+> import { logDebug, logError, logWarning } from '../utils/logger';
+> logDebug('MyComponent', 'action', { key: value });
+> ```
 
 ## How to Debug
 
@@ -36,35 +44,41 @@
 
 ### Step 3: Analyze Logs
 
-Look for this pattern in logs:
+Look for this pattern in DevTools (grouped collapsed format):
 
 ```
-[RoomEditor] addSubSection - BEFORE: { subSectionsCount: 0, ... }
-[RoomEditor] addSubSection - NEW SECTION: { id: 'abc123', ... }
-[RoomEditor] addSubSection - AFTER: { subSectionsCount: 1, ... }
+▼ 🔍 [12:30:13] [RoomEditor] addSubSection (0ms)
+    📦 Данные: { subSectionsCount: 0, ... }
+▼ 🔍 [12:30:13] [RoomEditor] addSubSection AFTER (2ms)
+    📦 Данные: { subSectionsCount: 1, ... }
 
-[ProjectContext] updateRoom - CALL: { roomId: 'xyz', subSectionsCount: 1, ... }
-[ProjectContext] updateRoom - PREV ROOM: { roomId: 'xyz', subSectionsCount: 0, ... }
-[ProjectContext] updateRoom - AFTER UPDATE: { newSubSectionsCount: 1, ... }
+▼ 🔍 [12:30:13] [ProjectContext] updateRoom CALL (0ms)
+    📦 Данные: { roomId: 'xyz', subSectionsCount: 1, ... }
+▼ 🔍 [12:30:14] [ProjectContext] updateRoom AFTER UPDATE (5ms)
+    📦 Данные: { newSubSectionsCount: 1, ... }
 
-[RoomEditor] RENDER - SubSections: { count: 1, ... }
-[RoomEditor] RENDER - SUBSECTION: { index: 0, id: 'abc123', length: 5, width: 4 }
+▼ 🔍 [12:30:14] [RoomEditor] RENDER SubSections (0ms)
+    📦 Данные: { count: 1, ... }
 ```
+
+> Также можно получить историю через `window.debugLogger.getHistory()`.
 
 ### What to Look For:
 
 **Good (bug fixed):**
 - Each section maintains its own `id`
 - `updateSubSection` only updates the section with matching `id`
-- `BEFORE` and `AFTER` logs show correct data preservation
+- BEFORE and AFTER logs show correct data preservation
 - Render logs show correct data for each section
 
 **Bad (bug still exists):**
 - Section IDs are the same or undefined
 - `updateSubSection` updates wrong section
-- `BEFORE` shows correct data but `AFTER` shows reset data
+- BEFORE shows correct data but AFTER shows reset data
 - Render logs show same data for different sections
 - `extendedModeData` count doesn't match `subSections` count
+
+> Для быстрого анализа используйте `window.debugLogger.printHistory()` в DevTools.
 
 ## Playwright Test
 

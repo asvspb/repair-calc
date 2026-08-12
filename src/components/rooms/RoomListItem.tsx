@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, ChevronRight } from 'lucide-react';
-import type { RoomData } from '../../types';
+import type { RoomData } from '@shared/types';
 
 type RoomListItemProps = {
   room: RoomData;
@@ -14,19 +14,10 @@ type RoomListItemProps = {
  * Элемент списка комнат с поддержкой drag-and-drop.
  * Оптимизирован с помощью React.memo для предотвращения лишних рендеров.
  */
-const RoomListItemInternal: React.FC<RoomListItemProps> = ({
-  room,
-  isActive,
-  onClick,
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: room.id });
+const RoomListItemInternal: React.FC<RoomListItemProps> = ({ room, isActive, onClick }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: room.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -37,11 +28,7 @@ const RoomListItemInternal: React.FC<RoomListItemProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center transition-all ${
-        isDragging
-          ? 'opacity-50'
-          : ''
-      }`}
+      className={`group flex items-center transition-all ${isDragging ? 'opacity-50' : ''}`}
     >
       <button
         {...attributes}
@@ -54,6 +41,7 @@ const RoomListItemInternal: React.FC<RoomListItemProps> = ({
       </button>
       <button
         onClick={onClick}
+        data-testid={`room-item-${room.id}`}
         className={`flex-1 flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
           isActive
             ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600'
@@ -74,6 +62,7 @@ const RoomListItemInternal: React.FC<RoomListItemProps> = ({
 export const RoomListItem = memo(RoomListItemInternal, (prevProps, nextProps) => {
   return (
     prevProps.room.id === nextProps.room.id &&
+    prevProps.room.name === nextProps.room.name &&
     prevProps.isActive === nextProps.isActive
   );
 });

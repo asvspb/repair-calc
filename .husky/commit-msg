@@ -1,0 +1,2 @@
+npx --no-install commitlint --edit $1
+sh scripts/ai-trailer-check.sh "$1"

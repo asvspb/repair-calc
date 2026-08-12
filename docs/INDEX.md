@@ -1,180 +1,129 @@
 # Application Index - Repair Calculator
 
-**Last Updated:** 2026-03-04
+**Last Updated:** 2026-04-17
 **Application Name:** Мой ремонт (Repair Calculator)
-**Version:** 0.0.0
+**Version:** 1.1.0
 
 ---
 
-## 📋 Quick Overview
+## Quick Overview
 
 **Purpose:** Web application for calculating renovation/repair costs for rooms with detailed breakdown of works and materials.
 
 **Tech Stack:**
-- **Frontend:** React 19 + TypeScript + Vite 6
-- **Styling:** Tailwind CSS 4
-- **State Management:** localStorage (no external state library)
-- **Testing:** Vitest (unit), Playwright (e2e)
+- **Frontend:** React 19 + TypeScript 5.8 + Vite 6
+- **Backend:** Express 4 + MySQL 8 + Knex 3
+- **Styling:** TailwindCSS 4
+- **State Management:** React Context + localStorage + API sync
+- **Testing:** Vitest (841 tests) + Playwright (E2E, 13 files)
+- **Linting:** ESLint 10 (flat config, no-console: error)
 - **Icons:** Lucide React
+- **Logging:** Winston (server) + logger.ts (client)
 
 **Key Features:**
-- Multi-room project management
-- Three geometry modes: Simple, Extended (multi-section), Advanced (professional)
+- Multi-project management with objects (real estate)
+- Three geometry modes: Simple, Extended, Advanced
 - Automatic cost calculation (works + materials + tools)
-- Auto-save to localStorage
+- Auto-save to localStorage with server sync
+- JWT Authentication
 - JSON backup/restore
 - CSV export for Excel
-- Gemini AI integration (via `@google/genai`)
+- AI price search via Gemini/Mistral API
+- Structured logging
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Entry Points
 - `index.html` - HTML entry point
 - `src/main.tsx` - React app bootstrap
-- `src/App.tsx` - Main application component (~3000 lines) ⚠️ Требует декомпозиции (см. [CODE_REVIEW.md](./CODE_REVIEW.md))
+- `src/App.tsx` - Main application component (~470 lines)
 
 ### Core Structure
 ```
 src/
-├── App.tsx              # Main app: state, calculations, navigation
-├── main.tsx             # React root
-├── index.css            # Global styles + Tailwind
+├── App.tsx                    # Main app (~470 lines)
+├── main.tsx                   # React root
+├── index.css                  # TailwindCSS
+│
+├── api/                       # API clients (9 файлов + prices/)
+│   ├── auth.ts                # Authentication
+│   ├── httpClient.ts          # HTTP client (interceptors, retry, timeout)
+│   ├── objects.ts             # Objects API
+│   ├── projects.ts            # Projects API
+│   ├── rooms.ts               # Rooms API
+│   ├── totals.ts              # Totals API
+│   ├── users.ts               # Users API
+│   ├── storage/
+│   │   ├── apiStorageProvider.ts  # REST API storage provider
+│   │   └── index.ts
+│   └── prices/                # AI price search (6 файлов)
+│
 ├── components/
-│   ├── rooms/           # Room-related UI components
-│   ├── works/           # Work calculation components
-│   └── BackupManager.tsx # Data export/import
-├── hooks/
-│   └── useProjects.ts   # Project persistence hook
-└── utils/
-    └── storage.ts       # localStorage wrapper
+│   ├── auth/                  # (4 файла: Login, Register, ProtectedRoute, index)
+│   ├── geometry/              # (9 файлов: Section, Mode, Simple/Extended/Advanced)
+│   ├── layout/                # (4 файла: LeftSidebar, RightSidebar, Settings)
+│   ├── objects/               # (5 файлов: Card, Selector, List, CreateModal, index)
+│   ├── projects/              # (5 файлов: List, Modal, DataMgmt, Create, index)
+│   ├── rooms/                 # (3 файла: List, ListItem, index)
+│   ├── works/                 # (11 файлов: WorkList, Materials, PriceSearch, index)
+│   ├── summary/               # (4 файла: Materials, Tools, Works, index)
+│   ├── ui/                    # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
+│   ├── BackupManager.tsx      # (~837 строк)
+│   ├── RoomEditor.tsx         # (~906 строк)
+│   └── SummaryView.tsx
+│
+├── contexts/                  # (4 файла)
+│   ├── AuthContext.tsx         # JWT authentication
+│   ├── ProjectContext.tsx      # Project state (~981 строка)
+│   ├── WorkTemplateContext.tsx # Work templates
+│   └── index.ts
+│
+├── types/                     # (5 файлов)
+│   ├── index.ts               # Main types (ProjectData, ObjectData, RoomData...)
+│   ├── auth.ts
+│   ├── storage.ts
+│   ├── workTemplate.ts
+│   └── vite-env.d.ts
+│
+├── hooks/                     # (4 файла)
+│   ├── useGeometryState.ts
+│   ├── useMaterialCalculation.ts
+│   ├── useProjects.ts         # (legacy — дублирует ProjectContext)
+│   └── useWorkTemplates.ts
+│
+├── data/                      # (2 файла)
+│   ├── initialData.ts
+│   └── workTemplatesCatalog.ts
+│
+└── utils/                     # (17 файлов)
+    ├── costs.ts, geometry.ts, factories.ts
+    ├── logger.ts, debugLogger.ts
+    ├── storage.ts, idMapper.ts, saveQueue.ts
+    ├── projectObjects.ts, projectContextPatch.ts, migration.ts
+    ├── roomHelpers.ts, materialCalculations.ts
+    ├── format.ts, localStorageProvider.ts, templateStorage.ts
+    └── geometry.test.ts
 ```
 
-### Data Model (TypeScript Types)
+### Data Hierarchy
 
-**ProjectData:**
-```typescript
-{
-  id: string
-  name: string
-  rooms: RoomData[]
-}
 ```
-
-**RoomData:**
-```typescript
-{
-  id: string
-  name: string
-  geometryMode: 'simple' | 'extended' | 'advanced'
-  length, width, height: number
-  windows: Opening[]
-  doors: Opening[]
-  works: WorkData[]
-  segments: RoomSegment[]        // Advanced mode
-  obstacles: Obstacle[]          // Advanced mode
-  wallSections: WallSection[]    // Advanced mode (height variations)
-  subSections: RoomSubSection[]  // Extended mode (multi-shape)
-  // Mode-specific data storage
-  simpleModeData?: SimpleModeData
-  extendedModeData?: ExtendedModeData
-  advancedModeData?: AdvancedModeData
-}
-```
-
-**WorkData:**
-```typescript
-{
-  id: string
-  name: string
-  unit: string
-  enabled: boolean
-  workUnitPrice: number
-  calculationType: 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount'
-  isCustom?: boolean
-  count?: number                 // For customCount type
-  useManualQty?: boolean
-  manualQty?: number
-  materials: Material[]          // Multiple materials support
-  tools: Tool[]                  // Tools (rental or purchase)
-  // Legacy fields for backward compatibility
-  materialPriceType?: 'per_unit' | 'total'
-  materialPrice?: number
-}
-```
-
-**Material:**
-```typescript
-{
-  id: string
-  name: string
-  quantity: number
-  unit: string
-  pricePerUnit: number
-}
-```
-
-**Tool:**
-```typescript
-{
-  id: string
-  name: string
-  quantity: number
-  price: number
-  isRent: boolean
-  rentPeriod?: number
-}
+User → Project → Object → Room → Work → Material/Tool
 ```
 
 ### Geometry Modes
 
 | Mode | Description | Key Features |
 |------|-------------|--------------|
-| **Simple** | Single rectangular room | Basic length×width, windows, doors |
-| **Extended** | Multiple subsections | Different shapes (rectangle, trapezoid, triangle, parallelogram) per subsection |
-| **Advanced** | Professional mode | Add/subtract segments, obstacles (columns, ducts), wall height variations |
-
-### Calculation Logic
-
-**Metrics** (calculated in `calculateRoomMetrics()`):
-- `floorArea` - Total floor area (m²)
-- `perimeter` - Room perimeter (m)
-- `grossWallArea` - Gross wall area (m²)
-- `netWallArea` - Wall area minus openings (m²)
-- `skirtingLength` - Perimeter minus door widths (m)
-- `volume` - Room volume (m³)
-
-**Costs** (calculated in `calculateRoomCosts()`):
-- Work cost = quantity × workUnitPrice
-- Material cost = Σ(quantity × pricePerUnit) for all materials
-- Tool cost = Σ(quantity × price) [× rentPeriod if rental]
-- Total = work + material + tools
+| **Simple** | Single rectangular room | Basic length x width, windows, doors |
+| **Extended** | Multiple subsections | Different shapes per subsection |
+| **Advanced** | Professional mode | Segments, obstacles, wall height variations |
 
 ---
 
-## 🔧 Key Components
-
-### App.tsx
-- **State:** `projects`, `currentProjectId`, `currentRoomId`, `view`
-- **Views:** `summary`, `room`, `projects`
-- **Functions:** `createNewProject()`, `createNewRoom()`, `calculateRoomMetrics()`, `calculateRoomCosts()`
-- **Migration:** `migrateWorkData()` for backward compatibility
-
-### Components
-- `RoomList` - Project/room navigation
-- `WorkList` - Work items management
-- `BackupManager` - JSON backup/restore, CSV export
-
-### Hooks
-- `useProjects` - Project persistence to localStorage
-
-### Utils
-- `storage.ts` - localStorage wrapper with auto-save (1s debounce)
-
----
-
-## 🚀 Development
+## Development
 
 ### Prerequisites
 - Node.js 18+
@@ -183,41 +132,40 @@ src/
 ```bash
 npm install          # Install dependencies
 npm run dev          # Dev server on port 3993
-npm run build        # Production build to dist/
+npm run build        # Production build
 npm run preview      # Preview production build
 npm test             # Run Vitest tests
 npm run test:e2e     # Run Playwright e2e tests
-npm run lint         # TypeScript type check
+npm run lint         # TypeScript type check + ESLint
 ```
 
 ### Environment
-- **Port:** 3993 (hardcoded in package.json and vite.config.ts)
-- **Env File:** `.env.local` with `GEMINI_API_KEY=your_key`
-
-### Important Rules (from README)
-1. **Stop dev server** before making code changes (`Ctrl+C`)
-2. **Port 3993 only** - application works ONLY on this port
-3. **Test after every change:**
-   - `npm test` - unit tests
-   - `npm run lint` - type check
-   - `npm run dev` - verify in browser
+- **Frontend port:** 3993
+- **Backend port:** 3994
+- **Env File:** `.env.local` with `VITE_GEMINI_API_KEY=your_key`
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
-### Production
+### Production (Frontend)
 | Package | Version | Purpose |
 |---------|---------|---------|
 | react, react-dom | ^19.0.0 | UI framework |
 | lucide-react | ^0.546.0 | Icons |
 | @dnd-kit/* | ^6.3+ | Drag-and-drop |
-| @google/genai | ^1.29.0 | AI integration |
 | tailwindcss | ^4.1.14 | Styling |
 | vite | ^6.2.0 | Build tool |
-| express | ^4.21.2 | (Possibly for API) |
-| better-sqlite3 | ^12.4.1 | (Possibly for backend) |
-| motion | ^12.23.24 | Animations |
+
+### Production (Backend)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| express | ^4.21.0 | HTTP server |
+| mysql2 | ^3.11.0 | MySQL driver |
+| knex | ^3.1.0 | Query builder / migrations |
+| jsonwebtoken | ^9.0.2 | JWT auth |
+| winston | ^3.17.0 | Logging |
+| zod | ^3.23.0 | Validation |
 
 ### Development
 | Package | Version | Purpose |
@@ -225,140 +173,62 @@ npm run lint         # TypeScript type check
 | typescript | ~5.8.2 | Type checking |
 | vitest | ^4.0.18 | Unit testing |
 | @playwright/test | ^1.58.2 | E2E testing |
-| @testing-library/react | ^16.3.2 | React testing |
-| jsdom | ^28.1.0 | Test DOM environment |
+| eslint | ^10.2.0 | Linting |
 
 ---
 
-## 🗄️ Data Persistence
+## Testing
 
-### Storage Strategy
-- **Primary:** localStorage (browser)
-- **Auto-save:** 1 second debounce after changes
-- **Backup:** JSON export/import via UI
-- **Migration:** `migrateWorkData()` handles legacy materialPrice → materials array
+### Test Statistics (2026-04-16)
+| Category | Count |
+|----------|-------|
+| Unit tests | 292+ |
+| Integration tests | 29+ |
+| E2E tests | 13 files |
+| **Total** | **841** |
 
-### Data Flow
-```
-User Action → State Update → StorageManager.save() → localStorage
-                                      ↓
-                              (1s debounce)
-```
+### Results
+- **Passed:** 833
+- **Failed:** 0
+- **Skipped:** 8
 
-### Backup/Restore
-- **Location:** `BackupManager.tsx`
-- **Formats:** JSON (full backup), CSV (Excel export)
-- **UI:** "Данные" button → backup options
-
----
-
-## 🧪 Testing
-
-### Test Structure
-- `tests/` - E2E tests (Playwright)
-- `src/tests/` - Unit tests (Vitest)
-- `e2e/` - Additional e2e tests
-
-### Test Commands
-```bash
-npm test              # Unit tests
-npm run test:e2e      # E2E tests (headless)
-npm run test:e2e:ui   # E2E tests (UI mode)
-```
+### E2E Status (2026-04-17)
+All `test.describe.skip` removed. Tests use unified fixtures with API mocks via `page.route()`.
+- auth.spec.ts — 3/3
+- objects.spec.ts — 4/4
+- export-import.spec.ts — restored
+- All other specs — restored with `data-testid` selectors
 
 ---
 
-## 📝 File Conventions
+## Documentation
 
-### TypeScript
-- Strict mode enabled
-- Path alias: `@` → root directory
-
-### Styling
-- Tailwind CSS 4 (via Vite plugin)
-- Utility-first approach
-- Responsive design (mobile + desktop)
-
-### Component Structure
-- TypeScript interfaces at top of files
-- Custom hooks in `hooks/` directory
-- Reusable components in `components/` directory
+| Document | Description |
+|----------|-------------|
+| [../INDEX.md](../INDEX.md) | Главный индекс (наиболее актуальный) |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 |
+| [TODO.md](./TODO.md) | Рабочий бэклог |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [FRONTEND-STATUS.md](./FRONTEND-STATUS.md) | Статус Frontend |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Код-ревью v5.1 |
+| [LOGGING.md](./LOGGING.md) | Руководство по логированию |
+| [README.md](./README.md) | Индекс документации |
 
 ---
 
-## 🔐 Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Optional | Google Gemini AI API key |
-
----
-
-## 🚨 Important Notes for AI Agents
-
-### ⚠️ CRITICAL: Always Update This Index
-
-**When making ANY changes to the application, you MUST update this index file to reflect the changes.**
-
-This includes:
-- New files/directories added
-- Files deleted or renamed
-- New dependencies added/removed
-- Changes to data models (types/interfaces)
-- New features or components
-- Changes to calculation logic
-- Changes to file structure
-- Changes to commands or configuration
-
-**Why:** This index serves as the single source of truth for understanding the application. Outdated information will cause confusion and errors in future sessions.
+## Notes for AI Agents
 
 ### Before Making Changes
-1. Read this index to understand current state
-2. Plan changes based on existing architecture
-3. Follow existing conventions (naming, structure, patterns)
+1. Read `../INDEX.md` for current state
+2. Check `docs/TODO.md` for current tasks
+3. Check `docs/ARCHITECTURE.md` for architecture details
 
 ### After Making Changes
-1. Update relevant sections in this index
-2. Verify all references are accurate
-3. Mark the update date at the top
-
-### Docker Note
-- Docker configs moved to `.docker/` (archived)
-- Development uses Node.js directly (no Docker)
-
----
-
-## 📂 Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `src/App.tsx` | Main app logic, calculations, state (~3000 lines) |
-| `src/main.tsx` | React entry point |
-| `package.json` | Dependencies, scripts, port config |
-| `vite.config.ts` | Vite + Tailwind + React plugins, port 3993 |
-| `tsconfig.json` | TypeScript configuration |
-| `vitest.config.ts` | Unit test config |
-| `playwright.config.ts` | E2E test config |
-| `README.md` | User documentation, dev rules |
-| `.env.example` | Environment template |
-| `docs/CODE_REVIEW.md` | Код-ревью и план улучшений |
-| `docs/ARCHITECTURE.md` | Архитектурный план (backend + AI + PWA) |
-| `docs/TODO.md` | Список задач и замечаний |
-
----
-
-## 🎯 Quick Start Checklist
-
-For new AI agents joining the project:
-
-- [ ] Read this index file
-- [ ] Read `README.md` for development rules
-- [ ] Check `package.json` for dependencies and scripts
-- [ ] Review `src/App.tsx` for main logic
-- [ ] Understand data types in `App.tsx` (RoomData, WorkData, etc.)
-- [ ] Note the port: **3993**
-- [ ] Remember: Stop server before code changes
-- [ ] Test after every change (tests + lint + browser)
+1. Update relevant documentation
+2. Run tests: `npm test`
+3. Update `../INDEX.md` if structure changed
+4. Update dates in modified documents
 
 ---
 

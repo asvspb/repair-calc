@@ -1,21 +1,18 @@
-import type { ProjectData } from '../types';
+import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../types/workTemplate';
 import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
-import { LocalStorageProvider } from './localStorageProvider';
+import { IndexedDbProvider } from '../api/storage/indexedDbProvider';
 import { TemplateStorage } from './templateStorage';
-import { calculateRoomMetrics } from './geometry';
-import { calculateWorkQuantity, calculateWorkCosts, migrateWorkData } from './costs';
-
-const STORAGE_KEYS = {
-  PROJECTS: 'repair-calc-projects',
-  ACTIVE_PROJECT: 'repair-calc-active-project',
-  VERSION: 'repair-calc-version',
-  LAST_BACKUP: 'repair-calc-last-backup',
-  WORK_TEMPLATES: 'repair-calc-work-templates',
-} as const;
-
-const CURRENT_VERSION = '1.0.0';
+import { STORAGE_KEYS, CURRENT_VERSION } from './storageConstants';
+import { logError } from './logger';
+import { calculateRoomMetrics } from '../domain/geometry/geometry';
+import {
+  calculateWorkQuantity,
+  calculateWorkCosts,
+  migrateWorkData,
+} from '../domain/pricing/costs';
+import { getAllRooms } from './projectObjects';
 
 export interface BackupData {
   version: string;
@@ -31,10 +28,17 @@ export interface StorageError {
 }
 
 /**
+ * Count total objects (rooms, walls, etc.) across all projects in import data.
+ */
+export function countImportedObjects(projects: ProjectData[]): number {
+  return projects.reduce((sum, p) => sum + (p.objects?.length || 0), 0);
+}
+
+/**
  * Storage manager with pluggable storage provider
  */
 export class StorageManager {
-  private static provider: IStorageProvider = LocalStorageProvider.getInstance();
+  private static provider: IStorageProvider = IndexedDbProvider.getInstance();
 
   /**
    * Set a custom storage provider (useful for testing or different storage backends)
@@ -59,7 +63,52 @@ export class StorageManager {
       if (error instanceof StorageProviderError) {
         throw {
           type: error.type,
-          message: error.message
+          message: error.message,
+        } as StorageError;
+      }
+      throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
+    }
+  }
+
+  /**
+   * Incremental save: save only a single project to localStorage
+   * This is more efficient than saveProjects when only one project changes
+   */
+  static saveProject(project: ProjectData): void {
+    try {
+      const projects = this.loadProjects() || [];
+      const index = projects.findIndex(p => p.id === project.id);
+
+      if (index >= 0) {
+        // Update existing project
+        projects[index] = project;
+      } else {
+        // Add new project
+        projects.push(project);
+      }
+
+      StorageManager.provider.set(STORAGE_KEYS.PROJECTS, projects);
+      StorageManager.provider.set(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+    } catch (error) {
+      if (error instanceof StorageProviderError) {
+        throw {
+          type: error.type,
+          message: error.message,
+        } as StorageError;
+      }
+      throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
+    }
+  }
+
+  static async saveProjectsAsync(projects: ProjectData[]): Promise<void> {
+    try {
+      await StorageManager.provider.setAsync(STORAGE_KEYS.PROJECTS, projects);
+      await StorageManager.provider.setAsync(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+    } catch (error) {
+      if (error instanceof StorageProviderError) {
+        throw {
+          type: error.type,
+          message: error.message,
         } as StorageError;
       }
       throw { type: 'unknown', message: 'Ошибка сохранения данных' } as StorageError;
@@ -69,17 +118,35 @@ export class StorageManager {
   static loadProjects(): ProjectData[] | null {
     try {
       const projects = StorageManager.provider.get<ProjectData[]>(STORAGE_KEYS.PROJECTS);
-      
+
       if (!projects) return null;
-      
+
       // Валидация структуры
       if (!Array.isArray(projects)) {
         throw new Error('Invalid data structure');
       }
-      
+
       return projects;
     } catch (error) {
-      console.error('Error loading projects:', error);
+      logError('Storage', 'Error loading projects', error);
+      return null;
+    }
+  }
+
+  static async loadProjectsAsync(): Promise<ProjectData[] | null> {
+    try {
+      const projects = await StorageManager.provider.getAsync<ProjectData[]>(STORAGE_KEYS.PROJECTS);
+
+      if (!projects) return null;
+
+      // Валидация структуры
+      if (!Array.isArray(projects)) {
+        throw new Error('Invalid data structure');
+      }
+
+      return projects;
+    } catch (error) {
+      logError('Storage', 'Error loading projects', error);
       return null;
     }
   }
@@ -88,7 +155,7 @@ export class StorageManager {
     try {
       StorageManager.provider.set(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
     } catch (error) {
-      console.error('Error saving active project:', error);
+      logError('Storage', 'Error saving active project', error);
     }
   }
 
@@ -96,7 +163,16 @@ export class StorageManager {
     try {
       return StorageManager.provider.get<string>(STORAGE_KEYS.ACTIVE_PROJECT);
     } catch (error) {
-      console.error('Error loading active project:', error);
+      logError('Storage', 'Error loading active project', error);
+      return null;
+    }
+  }
+
+  static async loadActiveProjectAsync(): Promise<string | null> {
+    try {
+      return await StorageManager.provider.getAsync<string>(STORAGE_KEYS.ACTIVE_PROJECT);
+    } catch (error) {
+      logError('Storage', 'Error loading active project async', error);
       return null;
     }
   }
@@ -108,12 +184,14 @@ export class StorageManager {
       exportedAt: new Date().toISOString(),
       projects,
       activeProjectId,
-      workTemplates
+      workTemplates,
     };
     return JSON.stringify(backupData, null, 2);
   }
 
-  static importFromJSON(jsonString: string): { success: true; data: BackupData } | { success: false; error: string } {
+  static importFromJSON(
+    jsonString: string,
+  ): { success: true; data: BackupData } | { success: false; error: string } {
     try {
       const data = JSON.parse(jsonString) as BackupData;
 
@@ -128,8 +206,20 @@ export class StorageManager {
 
       // Проверка каждого проекта
       for (const project of data.projects) {
-        if (!project.id || !project.name || !Array.isArray(project.rooms)) {
-          return { success: false, error: `Неверная структура проекта: ${project.name || 'без названия'}` };
+        if (!project.id || !project.name) {
+          return {
+            success: false,
+            error: `Неверная структура проекта: ${project.name || 'без названия'}`,
+          };
+        }
+        // Проверяем наличие rooms или objects
+        const hasRooms = Array.isArray(project.rooms);
+        const hasObjects = Array.isArray(project.objects);
+        if (!hasRooms && !hasObjects) {
+          return {
+            success: false,
+            error: `Неверная структура проекта: ${project.name || 'без названия'} (нет rooms или objects)`,
+          };
         }
       }
 
@@ -141,53 +231,71 @@ export class StorageManager {
         // Проверяем структуру каждого шаблона
         for (const template of data.workTemplates) {
           if (!template.id || !template.name || !template.category) {
-            return { success: false, error: `Неверная структура шаблона: ${template.name || 'без названия'}` };
+            return {
+              success: false,
+              error: `Неверная структура шаблона: ${template.name || 'без названия'}`,
+            };
           }
         }
       }
 
       return { success: true, data };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Неверный формат JSON файла' };
     }
   }
 
   static exportToCSV(projects: ProjectData[]): string {
     const rows: string[] = [];
-    
+
     // Заголовки — добавлена колонка для инструментов
-    rows.push(['Объект', 'Комната', 'Работа', 'Единица', 'Объем', 'Цена работы', 'Цена материалов', 'Цена инструментов', 'Итого'].join(';'));
-    
+    rows.push(
+      [
+        'Объект',
+        'Комната',
+        'Работа',
+        'Единица',
+        'Объем',
+        'Цена работы',
+        'Цена материалов',
+        'Цена инструментов',
+        'Итого',
+      ].join(';'),
+    );
+
     for (const project of projects) {
-      for (const room of project.rooms) {
+      const allRooms = getAllRooms(project);
+      for (const room of allRooms) {
         // Используем общую функцию расчёта метрик (учитывает extended/advanced режимы)
         const metrics = calculateRoomMetrics(room);
-        
+
         for (const work of room.works) {
           if (!work.enabled) continue;
-          
+
           // Мигрируем данные работы для поддержки materials[] и tools[]
           const migratedWork = migrateWorkData(work);
-          
+
           // Используем общие функции расчёта
           const qty = calculateWorkQuantity(migratedWork, metrics);
           const costs = calculateWorkCosts(migratedWork, metrics);
-          
-          rows.push([
-            project.name,
-            room.name,
-            work.name,
-            work.unit,
-            qty.toFixed(2),
-            costs.work.toFixed(2),
-            costs.material.toFixed(2),
-            costs.tools.toFixed(2),
-            costs.total.toFixed(2)
-          ].join(';'));
+
+          rows.push(
+            [
+              project.name,
+              room.name,
+              work.name,
+              work.unit,
+              qty.toFixed(2),
+              costs.work.toFixed(2),
+              costs.material.toFixed(2),
+              costs.tools.toFixed(2),
+              costs.total.toFixed(2),
+            ].join(';'),
+          );
         }
       }
     }
-    
+
     // Добавляем BOM для корректного отображения кириллицы в Excel
     return '\uFEFF' + rows.join('\n');
   }
@@ -207,5 +315,3 @@ export class StorageManager {
     return StorageManager.provider.getStorageInfo();
   }
 }
-
-export { STORAGE_KEYS, CURRENT_VERSION };

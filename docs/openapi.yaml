@@ -1,0 +1,185 @@
+openapi: 3.0.0
+info:
+  title: Repair Calculator API
+  version: 2.0.0
+  description: API documentation for the Repair Calculator application.
+servers:
+  - url: http://localhost:3993
+    description: Local development server
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Auth
+      responses:
+        '201':
+          description: User registered successfully
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Login successful
+  /api/auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Token refreshed
+  /api/auth/me:
+    get:
+      summary: Get current user
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Current user data
+  /api/auth/logout:
+    post:
+      summary: Logout user
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Logout successful
+
+  /api/projects:
+    get:
+      summary: Get list of projects
+      tags:
+        - Projects
+      responses:
+        '200':
+          description: List of projects
+    post:
+      summary: Create a new project
+      tags:
+        - Projects
+      responses:
+        '201':
+          description: Project created
+  /api/projects/{id}:
+    get:
+      summary: Get project by ID with objects
+      tags:
+        - Projects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project details
+    put:
+      summary: Update project
+      tags:
+        - Projects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project updated
+    delete:
+      summary: Delete project
+      tags:
+        - Projects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project deleted
+
+  /api/objects:
+    get:
+      summary: Get list of objects
+      tags:
+        - Objects
+      responses:
+        '200':
+          description: List of objects
+  /api/projects/{projectId}/objects:
+    post:
+      summary: Create an object in a project
+      tags:
+        - Objects
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Object created
+  /api/objects/{id}:
+    get:
+      summary: Get object by ID with rooms
+      tags:
+        - Objects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object details
+    put:
+      summary: Update object
+      tags:
+        - Objects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object updated
+    delete:
+      summary: Delete object
+      tags:
+        - Objects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object deleted
+
+  /api/sync/pull:
+    get:
+      summary: Pull data
+      tags:
+        - Sync
+      responses:
+        '200':
+          description: Data pulled successfully
+  /api/sync/push:
+    post:
+      summary: Push changes
+      tags:
+        - Sync
+      responses:
+        '200':
+          description: Changes pushed successfully

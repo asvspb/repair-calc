@@ -1,0 +1,202 @@
+import { X, Settings, LayoutDashboard, Plus, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ProjectsList } from '../projects/ProjectsList';
+import { OtherObjectsSection } from './ObjectSettings';
+import type { ProjectData, ObjectData } from '@shared/types';
+
+type RightSidebarProps = {
+  isMobileMenuOpen: boolean;
+  onMobileMenuClose: () => void;
+  projects: ProjectData[];
+  activeProjectId: string;
+  activeProject: ProjectData | null;
+  isSyncing: boolean;
+  onProjectChange: (id: string) => void;
+  onRenameProject: (id: string, name: string) => void;
+  onDeleteProject: (id: string) => void;
+  onCopyProject: (id: string) => void;
+  onNewProject: () => void;
+  onDataManagement: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  objects: ObjectData[];
+  activeObjectId: string | null;
+  activeObject: ObjectData | null;
+  onObjectChange: (id: string) => void;
+  showDeleteConfirm: boolean;
+  projectToDeleteId: string | null;
+  onDeleteConfirm: () => void;
+  onDeleteCancel: () => void;
+  lastSaved?: Date | null;
+  lastSavedToServer?: Date | null;
+  saveError?: string | null;
+};
+
+export function RightSidebar({
+  isMobileMenuOpen,
+  onMobileMenuClose,
+  projects,
+  activeProjectId,
+  activeProject: _activeProject,
+  isSyncing,
+  onProjectChange,
+  onRenameProject,
+  onDeleteProject,
+  onCopyProject,
+  onNewProject,
+  onDataManagement,
+  activeTab,
+  onTabChange,
+  objects,
+  activeObjectId,
+  activeObject: _activeObject,
+  onObjectChange,
+  showDeleteConfirm,
+  projectToDeleteId,
+  onDeleteConfirm,
+  onDeleteCancel,
+  lastSaved,
+  lastSavedToServer,
+  saveError,
+}: RightSidebarProps) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить проект?</h3>
+            <p className="text-gray-600 mb-4">
+              Проект «{projects.find(p => p.id === projectToDeleteId)?.name}» будет удалён
+              безвозвратно.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={onDeleteCancel}
+                disabled={isSyncing}
+                className="flex-1 py-2 px-4 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={onDeleteConfirm}
+                disabled={isSyncing}
+                className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSyncing ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>Удаление...</span>
+                  </>
+                ) : (
+                  <span>Удалить</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Right sidebar */}
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 w-72 bg-white border-l border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-screen ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Header */}
+        <div
+          className="px-4 border-b border-gray-200 bg-white shrink-0 flex items-center"
+          style={{ height: 'calc(1rem + 56px + 1rem)' }}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={onDataManagement}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title={t('sidebar.settings')}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-sm">Настройки</span>
+              </button>
+              <button className="md:hidden cursor-pointer" onClick={onMobileMenuClose}>
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            {/* Save status */}
+            {lastSaved && (
+              <div
+                className="flex items-center gap-1 text-xs px-3"
+                title={lastSavedToServer ? 'Сохранено в базу данных' : 'Сохранено локально'}
+              >
+                <Save
+                  className={`w-3 h-3 ${lastSavedToServer ? 'text-green-600' : 'text-gray-500'}`}
+                />
+                <span className="text-gray-500">
+                  Сохранено{' '}
+                  {lastSaved.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+            {saveError && (
+              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded mt-1">
+                {saveError}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Projects List */}
+          <ProjectsList
+            projects={projects}
+            activeProjectId={activeProjectId}
+            onProjectSelect={onProjectChange}
+            onProjectRename={onRenameProject}
+            onProjectCopy={onCopyProject}
+            onProjectDelete={onDeleteProject}
+            onNewProject={onNewProject}
+          />
+
+          {/* Overview section */}
+          <div className="py-4 shrink-0 border-b border-gray-200">
+            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Обзор
+            </div>
+            <button
+              onClick={() => onTabChange('summary')}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors cursor-pointer ${
+                activeTab === 'summary'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="truncate">{t('sidebar.projectEstimate')}</span>
+            </button>
+          </div>
+
+          {/* Other Objects Section */}
+          <OtherObjectsSection
+            objects={objects}
+            activeObjectId={activeObjectId}
+            onObjectClick={onObjectChange}
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className="p-4 space-y-3 bg-white shrink-0">
+          <button
+            onClick={onNewProject}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl font-medium hover:bg-indigo-100 hover:border-indigo-200 transition-all cursor-pointer"
+            data-testid="new-project-btn"
+          >
+            <Plus className="w-4 h-4" />
+            Новый проект
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}

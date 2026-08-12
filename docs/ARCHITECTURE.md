@@ -1,691 +1,755 @@
-# Архитектурный план: Repair Calculator — Server + AI + PWA
+# Архитектура проекта Repair Calculator
 
-**Дата:** 2026-03-01
-**Обновлено:** 2026-03-04
-**Статус:** Планирование (Код-ревью завершён)
-**Контекст:** Ответы на вопросы из [CODE_REVIEW.md](./CODE_REVIEW.md)
-
-| Вопрос | Ответ | Влияние на архитектуру |
-|---|---|---|
-| Серверная часть | MySQL + Gemini + Mistral | Express backend, REST API, абстрактный AI-провайдер |
-| Целевая аудитория | Внутренний инструмент | Упрощённая авторизация, "last write wins" для конфликтов |
-| Масштабирование | Не планируется | Без Redis/очередей, один сервер, простой пул MySQL |
-| `motion` (framer-motion) | Не нужен | Удалить из dependencies |
-| PWA/Offline | Нужен | vite-plugin-pwa, offline-first с sync |
+**Дата:** 2026-06-08
+**Статус:** Актуально
+**Версия клиента:** React 19 + Vite 6
+**Версия сервера:** Express + MySQL + Knex
 
 ---
 
-## Содержание
+## 1. Обзор проекта
 
-1. [Схема базы данных MySQL](#1-схема-базы-данных-mysql)
-2. [Серверная архитектура](#2-серверная-архитектура)
-3. [AI-интеграция (Gemini + Mistral)](#3-ai-интеграция-gemini--mistral)
-4. [PWA / Offline-first архитектура](#4-pwa--offline-first-архитектура)
-5. [Дорожная карта реализации](#5-дорожная-карта-реализации)
-6. [Зависимости: что удалить / добавить / оставить](#6-зависимости)
+**Repair Calculator** — PWA-приложение для расчёта стоимости ремонтных работ. Позволяет:
+- Создавать проекты с несколькими объектами недвижимости
+- Рассчитывать площади стен, полов, потолков с учётом проёмов
+- Вести каталог работ с материалами и инструментами
+- Искать цены через AI (Gemini/Mistral)
+- Экспортировать данные в CSV/JSON
 
----
+### 1.1 Текущий статус (2026-04-17)
 
-## 1. Схема базы данных MySQL
-
-### ER-диаграмма (текстовая)
-
-```
-projects 1──∞ rooms 1──∞ works 1──∞ materials
-                │          └──∞ tools
-                │
-                ├──∞ openings (windows/doors)
-                │     └── FK subsection_id (nullable)
-                │
-                ├──∞ room_subsections (extended mode)
-                │
-                ├──∞ room_segments (advanced mode)
-                ├──∞ room_obstacles (advanced mode)
-                └──∞ wall_sections (advanced mode)
-
-ai_requests (лог AI-запросов, FK → projects)
-```
-
-### SQL-схема
-
-```sql
--- ═══════════════════════════════════════════════════════
--- ПРОЕКТЫ
--- ═══════════════════════════════════════════════════════
-CREATE TABLE projects (
-  id          VARCHAR(36) PRIMARY KEY,
-  name        VARCHAR(255) NOT NULL,
-  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- ═══════════════════════════════════════════════════════
--- КОМНАТЫ
--- height — общий для всех режимов
--- length/width — для simple + advanced режимов
--- ═══════════════════════════════════════════════════════
-CREATE TABLE rooms (
-  id             VARCHAR(36) PRIMARY KEY,
-  project_id     VARCHAR(36) NOT NULL,
-  name           VARCHAR(255) NOT NULL,
-  geometry_mode  ENUM('simple','extended','advanced') DEFAULT 'simple',
-  length         DECIMAL(10,3) DEFAULT 0,
-  width          DECIMAL(10,3) DEFAULT 0,
-  height         DECIMAL(10,3) DEFAULT 0,
-  sort_order     INT DEFAULT 0,
-  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-);
-
--- ═══════════════════════════════════════════════════════
--- ПРОЁМЫ (окна/двери)
--- Принадлежат комнате (simple/advanced) ИЛИ секции (extended)
--- ═══════════════════════════════════════════════════════
-CREATE TABLE openings (
-  id              VARCHAR(36) PRIMARY KEY,
-  room_id         VARCHAR(36) NOT NULL,
-  subsection_id   VARCHAR(36) NULL,
-  type            ENUM('window','door') NOT NULL,
-  width           DECIMAL(10,3) NOT NULL,
-  height          DECIMAL(10,3) NOT NULL,
-  sort_order      INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
--- ═══════════════════════════════════════════════════════
--- EXTENDED MODE: секции помещения (разные формы)
--- ═══════════════════════════════════════════════════════
-CREATE TABLE room_subsections (
-  id          VARCHAR(36) PRIMARY KEY,
-  room_id     VARCHAR(36) NOT NULL,
-  name        VARCHAR(255),
-  shape       ENUM('rectangle','trapezoid','triangle','parallelogram') DEFAULT 'rectangle',
-  -- Rectangle
-  length      DECIMAL(10,3) DEFAULT 0,
-  width       DECIMAL(10,3) DEFAULT 0,
-  -- Trapezoid
-  base1       DECIMAL(10,3) NULL,
-  base2       DECIMAL(10,3) NULL,
-  trap_height DECIMAL(10,3) NULL,
-  side1       DECIMAL(10,3) NULL,
-  side2       DECIMAL(10,3) NULL,
-  -- Triangle
-  side_a      DECIMAL(10,3) NULL,
-  side_b      DECIMAL(10,3) NULL,
-  side_c      DECIMAL(10,3) NULL,
-  -- Parallelogram
-  base        DECIMAL(10,3) NULL,
-  para_height DECIMAL(10,3) NULL,
-  side        DECIMAL(10,3) NULL,
-  sort_order  INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
-ALTER TABLE openings
-  ADD FOREIGN KEY (subsection_id) REFERENCES room_subsections(id) ON DELETE CASCADE;
-
--- ═══════════════════════════════════════════════════════
--- ADVANCED MODE: сегменты, препятствия, перепады высот
--- ═══════════════════════════════════════════════════════
-CREATE TABLE room_segments (
-  id         VARCHAR(36) PRIMARY KEY,
-  room_id    VARCHAR(36) NOT NULL,
-  name       VARCHAR(255),
-  length     DECIMAL(10,3) DEFAULT 0,
-  width      DECIMAL(10,3) DEFAULT 0,
-  operation  ENUM('add','subtract') DEFAULT 'subtract',
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
-CREATE TABLE room_obstacles (
-  id         VARCHAR(36) PRIMARY KEY,
-  room_id    VARCHAR(36) NOT NULL,
-  name       VARCHAR(255),
-  type       ENUM('column','duct','niche','other') DEFAULT 'column',
-  area       DECIMAL(10,3) DEFAULT 0,
-  perimeter  DECIMAL(10,3) DEFAULT 0,
-  operation  ENUM('add','subtract') DEFAULT 'subtract',
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
-CREATE TABLE wall_sections (
-  id         VARCHAR(36) PRIMARY KEY,
-  room_id    VARCHAR(36) NOT NULL,
-  name       VARCHAR(255),
-  length     DECIMAL(10,3) DEFAULT 0,
-  height     DECIMAL(10,3) DEFAULT 0,
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
--- ═══════════════════════════════════════════════════════
--- РАБОТЫ, МАТЕРИАЛЫ, ИНСТРУМЕНТЫ
--- ═══════════════════════════════════════════════════════
-CREATE TABLE works (
-  id                VARCHAR(36) PRIMARY KEY,
-  room_id           VARCHAR(36) NOT NULL,
-  name              VARCHAR(255) NOT NULL,
-  unit              VARCHAR(50) DEFAULT 'м²',
-  enabled           BOOLEAN DEFAULT TRUE,
-  work_unit_price   DECIMAL(12,2) DEFAULT 0,
-  calculation_type  ENUM('floorArea','netWallArea','skirtingLength','customCount') DEFAULT 'floorArea',
-  count             INT NULL,
-  manual_qty        DECIMAL(10,3) NULL,
-  is_custom         BOOLEAN DEFAULT TRUE,
-  sort_order        INT DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-);
-
-CREATE TABLE materials (
-  id             VARCHAR(36) PRIMARY KEY,
-  work_id        VARCHAR(36) NOT NULL,
-  name           VARCHAR(255),
-  quantity       DECIMAL(10,3) DEFAULT 1,
-  unit           VARCHAR(50) DEFAULT 'м²',
-  price_per_unit DECIMAL(12,2) DEFAULT 0,
-  sort_order     INT DEFAULT 0,
-  FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE
-);
-
-CREATE TABLE tools (
-  id          VARCHAR(36) PRIMARY KEY,
-  work_id     VARCHAR(36) NOT NULL,
-  name        VARCHAR(255),
-  quantity    INT DEFAULT 1,
-  price       DECIMAL(12,2) DEFAULT 0,
-  is_rent     BOOLEAN DEFAULT FALSE,
-  rent_period INT NULL,
-  sort_order  INT DEFAULT 0,
-  FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE
-);
-
--- ═══════════════════════════════════════════════════════
--- AI: история запросов (кэш и аналитика расходов)
--- ═══════════════════════════════════════════════════════
-CREATE TABLE ai_requests (
-  id           VARCHAR(36) PRIMARY KEY,
-  project_id   VARCHAR(36) NULL,
-  provider     ENUM('gemini','mistral') NOT NULL,
-  request_type VARCHAR(50) NOT NULL,
-  prompt_hash  VARCHAR(64),
-  response     JSON,
-  tokens_used  INT DEFAULT 0,
-  cost_usd     DECIMAL(10,6) DEFAULT 0,
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
-);
-```
-
-### Ключевые решения по схеме
-
-- **Все режимы хранятся одновременно** — как в текущем localStorage. Поле `geometry_mode` определяет, какие таблицы участвуют в расчётах. При переключении режима данные не удаляются.
-- **`openings.subsection_id` nullable** — в simple/advanced режиме проёмы принадлежат комнате (`subsection_id = NULL`), в extended — секции.
-- **`sort_order`** везде — поддержка drag-and-drop порядка.
-- **`VARCHAR(36)` для ID** — переход на `crypto.randomUUID()` вместо `Math.random()`.
+| Компонент | Статус | Описание |
+|-----------|--------|----------|
+| Клиент | ✅ Готов | React 19, Vite 6, TailwindCSS 4 |
+| Сервер | ✅ Готов | Express, MySQL, Knex, JWT |
+| База данных | ✅ Готова | MySQL 8 с 6 миграциями |
+| Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
+| AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
+| Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
+| Тесты | ✅ 841 тест | 833 passed, 0 failed, 8 skipped |
+| Логирование | ✅ Готов | Winston (сервер) + logger.ts (клиент) |
+| ESLint | ✅ Готов | no-console: error, 0 errors / 47 warnings |
 
 ---
 
-## 2. Серверная архитектура
+## 2. Клиентская архитектура
 
-### Структура файлов
+### 2.1 Структура файлов
+
+```
+src/
+├── App.tsx                    # Главный компонент (~475 строк)
+├── main.tsx                   # Entry point
+├── index.css                  # Глобальные стили (TailwindCSS)
+│
+├── api/                       # API-интеграции
+│   ├── auth.ts                # Аутентификация
+│   ├── httpClient.ts          # HTTP-клиент (interceptors, retry, timeout)
+│   ├── objects.ts             # Objects API
+│   ├── projects.ts            # Projects API
+│   ├── rooms.ts               # Rooms API
+│   ├── totals.ts              # Totals API
+│   ├── users.ts               # Users API
+│   ├── storage/
+│   │   ├── apiStorageProvider.ts  # Storage через REST API (~1036 строк)
+│   │   └── index.ts
+│   └── prices/                # Поиск цен через AI
+│       ├── geminiPriceSearch.ts
+│       ├── mistralPriceSearch.ts
+│       ├── priceCache.ts
+│       ├── unifiedSearch.ts
+│       ├── types.ts
+│       └── index.ts
+│
+├── components/                # React-компоненты
+│   ├── auth/                  # Аутентификация (3 файла)
+│   │   ├── LoginPage.tsx
+│   │   ├── RegisterPage.tsx
+│   │   └── ProtectedRoute.tsx
+│   │
+│   ├── geometry/              # Модуль геометрии (8 файлов)
+│   │   ├── GeometrySection.tsx
+│   │   ├── ModeSelector.tsx
+│   │   ├── SimpleGeometry.tsx
+│   │   ├── ExtendedGeometry.tsx
+│   │   ├── AdvancedGeometry.tsx
+│   │   ├── SubSectionItem.tsx
+│   │   ├── OpeningList.tsx
+│   │   └── GeometryMetrics.tsx
+│   │
+│   ├── layout/                # Layout компоненты (4 файла)
+│   │   ├── LeftSidebar.tsx
+│   │   ├── RightSidebar.tsx
+│   │   ├── ObjectSettings.tsx
+│   │   └── ProjectSettings.tsx
+│   │
+│   ├── objects/               # Управление объектами (4 файла)
+│   │   ├── ObjectCard.tsx
+│   │   ├── ObjectSelector.tsx
+│   │   ├── ObjectsList.tsx
+│   │   └── CreateObjectModal.tsx
+│   │
+│   ├── projects/              # Управление проектами (3 файла)
+│   │   ├── ProjectsList.tsx
+│   │   ├── ProjectsModal.tsx
+│   │   └── DataManagementModal.tsx
+│   │
+│   ├── rooms/                 # Список комнат (2 файла)
+│   │   ├── RoomList.tsx
+│   │   └── RoomListItem.tsx
+│   │
+│   ├── works/                 # Работы и материалы (10 файлов)
+│   │   ├── WorkList.tsx
+│   │   ├── WorkListItem.tsx
+│   │   ├── WorkCatalogPicker.tsx
+│   │   ├── WorkTemplatePickerModal.tsx
+│   │   ├── WorkTemplateSaveButton.tsx
+│   │   ├── WorkPriceSearch.tsx
+│   │   ├── MaterialCalculationCard.tsx
+│   │   ├── MaterialPriceSearch.tsx
+│   │   ├── PaintMaterialCard.tsx
+│   │   └── TileMaterialCard.tsx
+│   │
+│   ├── summary/               # Сводка по проекту (3 файла)
+│   │   ├── SummaryMaterials.tsx
+│   │   ├── SummaryTools.tsx
+│   │   └── SummaryWorks.tsx
+│   │
+│   ├── ui/                    # UI-компоненты (3 файла)
+│   │   ├── ConfirmDialog.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   └── NumberInput.tsx
+│   │
+│   ├── BackupManager.tsx      # Экспорт/импорт проектов
+│   ├── RoomEditor.tsx         # Редактор комнаты (~906 строк)
+│   └── SummaryView.tsx        # Общая смета
+│
+├── contexts/                  # React Context
+│   ├── index.ts
+│   ├── AuthContext.tsx        # Аутентификация (JWT)
+│   ├── ProjectContext.tsx     # Состояние проекта (~981 строка)
+│   └── WorkTemplateContext.tsx
+│
+├── data/                      # Статические данные
+│   ├── initialData.ts         # Начальный проект
+│   └── workTemplatesCatalog.ts # Каталог типовых работ
+│
+├── hooks/                     # Кастомные хуки
+│   ├── useGeometryState.ts    # Состояние геометрии
+│   ├── useMaterialCalculation.ts
+│   ├── useProjects.ts
+│   └── useWorkTemplates.ts
+│
+├── types/                     # TypeScript типы
+│   ├── index.ts               # Основные типы (ProjectData, ObjectData, RoomData...)
+│   ├── auth.ts                # Типы аутентификации
+│   ├── storage.ts             # IStorageProvider
+│   └── workTemplate.ts        # Шаблоны работ
+│
+└── utils/                     # Утилиты
+    ├── costs.ts               # Расчёт стоимости
+    ├── factories.ts           # Фабрики создания сущностей
+    ├── geometry.ts            # Геометрические расчёты
+    ├── localStorageProvider.ts
+    ├── logger.ts             # Структурированный логгер (logError, logWarning, logDebug)
+    ├── materialCalculations.ts # Формулы расчёта материалов
+    ├── roomHelpers.ts         # Хелперы для комнат
+    ├── storage.ts             # StorageManager
+    ├── templateStorage.ts     # Хранилище шаблонов
+    ├── idMapper.ts            # Маппинг локальных/серверных ID
+    ├── projectObjects.ts      # Object-based helpers
+    ├── migration.ts           # Миграция данных
+    └── projectContextPatch.ts  # Context patches
+```
+
+### 2.2 Основные типы данных
+
+```typescript
+// src/types/index.ts
+
+// Проект (группа объектов)
+type ProjectData = {
+  id: string;
+  name: string;
+  description?: string;
+  isPremium?: boolean;
+  objects: ObjectData[];      // Объекты недвижимости
+  version?: number;
+  // Deprecated (для обратной совместимости)
+  rooms?: RoomData[];
+  city?: string;
+  useAiPricing?: boolean;
+  lastAiPriceUpdate?: string;
+};
+
+// Объект недвижимости
+type ObjectData = {
+  id: string;
+  projectId: string;
+  name: string;
+  city?: string;
+  address?: string;
+  useAiPricing?: boolean;
+  lastAiPriceUpdate?: string;
+  rooms: RoomData[];
+  version?: number;
+  sortOrder?: number;
+};
+
+// Комната
+type RoomData = {
+  id: string;
+  name: string;
+  geometryMode: GeometryMode;  // 'simple' | 'extended' | 'advanced'
+  length: number;
+  width: number;
+  height: number;
+  segments: RoomSegment[];      // Advanced mode
+  obstacles: Obstacle[];         // Advanced mode
+  wallSections: WallSection[];  // Advanced mode
+  subSections: RoomSubSection[]; // Extended mode
+  windows: Opening[];
+  doors: Opening[];
+  works: WorkData[];
+};
+
+// Работа
+type WorkData = {
+  id: string;
+  name: string;
+  unit: string;
+  enabled: boolean;
+  workUnitPrice: number;
+  materials?: Material[];
+  tools?: Tool[];
+  calculationType: CalculationType;
+  isCustom?: boolean;
+  useManualQty?: boolean;
+  manualQty?: number;
+};
+```
+
+### 2.3 Иерархия данных
+
+```
+Пользователь (users)
+└── Проект (projects) — группа объектов
+    └── Объект (objects) — недвижимость
+        └── Комната (rooms)
+            └── Работа (works)
+                ├── Материал (materials)
+                └── Инструмент (tools)
+```
+
+### 2.4 Хранилище (Storage)
+
+**Абстракция:** `IStorageProvider` в `src/types/storage.ts`
+
+```typescript
+export interface IStorageProvider {
+  get<T>(key: string): T | null;
+  set<T>(key: string, value: T): void;
+  remove(key: string): void;
+  clear(): void;
+  getStorageInfo(): { used: number; total: number; percentage: number };
+}
+```
+
+**Текущая реализация:** `LocalStorageProvider` — сохраняет данные в localStorage браузера.
+
+**Архитектура готова к замене** на:
+- `ApiStorageProvider` — сохранение через REST API
+- `IndexedDBProvider` — оффлайн-хранение
+
+### 2.5 Контексты
+
+#### AuthContext
+```typescript
+interface AuthContextValue {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+}
+```
+
+#### ProjectContext
+```typescript
+interface ProjectContextValue {
+  // State
+  projects: ProjectData[];
+  activeProjectId: string;
+  activeProject: ProjectData | null;
+  activeObjectId: string;
+  activeObject: ObjectData | null;
+  isLoading: boolean;
+  isSyncing: boolean;
+  
+  // Actions
+  setActiveProjectId: (id: string) => void;
+  setActiveObjectId: (id: string) => void;
+  updateProjects: (projects: ProjectData[]) => void;
+  updateActiveProject: (project: ProjectData) => void;
+  updateRoom: (room: RoomData) => void;
+  updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => void;
+  deleteRoom: (roomId: string) => void;
+  addRoom: (room: RoomData) => void;
+  reorderRooms: (rooms: RoomData[]) => void;
+  
+  // Object management
+  createObject: (object: ObjectData) => void;
+  updateObject: (object: ObjectData) => void;
+  deleteObject: (objectId: string) => void;
+  copyObject: (objectId: string) => void;
+}
+```
+
+**Особенности:**
+- Автосохранение с debounce (1-2 сек)
+- Защита от потери данных при закрытии (`beforeunload`)
+- Миграция данных при загрузке
+- Синхронизация с сервером при авторизации
+
+> **Статус стейт-менеджмента (2026-06-08):** На этапе миграции. Монолитный `ProjectContext.tsx` (~981 строка) готовится к декомпозиции на доменные хуки (`useProjectDomain`, `useRoomDomain`, `useSyncDomain`) через паттерн Facade. Текущий контекст выполняет роль единого провайдера состояния для всех сущностей проекта.
+
+---
+
+## 3. Серверная архитектура
+
+### 3.1 Структура сервера
 
 ```
 server/
 ├── src/
-│   ├── index.ts                  -- Express entry point (порт 3994)
-│   ├── config/
-│   │   ├── database.ts           -- MySQL pool (mysql2/promise)
-│   │   └── ai.ts                 -- API keys, provider configs
-│   ├── routes/
-│   │   ├── projects.ts           -- CRUD /api/projects
-│   │   ├── rooms.ts              -- CRUD /api/rooms
-│   │   ├── works.ts              -- CRUD /api/works
-│   │   ├── ai.ts                 -- POST /api/ai/*
-│   │   ├── sync.ts               -- POST /api/sync/push|pull
-│   │   └── export.ts             -- GET /api/export/csv|json
-│   ├── services/
-│   │   ├── calculations.ts       -- shared: calculateRoomMetrics, calculateRoomCosts
-│   │   └── ai/
-│   │       ├── provider.ts       -- Abstract AIProvider interface
-│   │       ├── gemini.ts         -- GeminiProvider (@google/genai)
-│   │       ├── mistral.ts        -- MistralProvider (@mistralai/mistralai)
-│   │       └── prompts.ts        -- Domain-specific prompt templates
+│   ├── index.ts                    # Entry point
+│   ├── app.ts                      # Express app setup
+│   │
+│   ├── config/                     # Конфигурация
+│   │   └── env.ts                  # DB, JWT, logging config
+│   │
+│   ├── routes/                     # API роуты
+│   │   ├── index.ts                # Роутер
+│   │   ├── auth.ts                 # Аутентификация
+│   │   ├── projects.ts             # CRUD проектов
+│   │   ├── objects.ts              # CRUD объектов
+│   │   ├── rooms.ts                # CRUD комнат
+│   │   ├── works.ts                # CRUD работ
+│   │   ├── geometry.ts             # Геометрические расчёты
+│   │   ├── ai.ts                   # AI-провайдеры
+│   │   ├── sync.ts                 # Синхронизация
+│   │   ├── totals.ts               # Итоги
+│   │   ├── users.ts                # Пользователи
+│   │   └── update.ts               # Обновления
+│   │
+│   ├── middleware/                 # Middleware
+│   │   ├── auth.ts                 # JWT аутентификация
+│   │   ├── validation.ts           # Валидация (Zod)
+│   │   ├── rateLimiter.ts          # Rate limiting
+│   │   ├── logger.ts               # Логирование
+│   │   └── errorHandler.ts         # Обработка ошибок
+│   │
 │   ├── db/
-│   │   ├── pool.ts               -- MySQL connection pool
-│   │   ├── migrations/           -- Knex migration files
-│   │   └── repositories/
-│   │       ├── projects.repo.ts
-│   │       ├── rooms.repo.ts
-│   │       └── works.repo.ts
-│   └── middleware/
-│       ├── errorHandler.ts
-│       └── validation.ts         -- zod-based request validation
+│   │   ├── pool.ts                 # MySQL pool
+│   │   ├── migrations/             # Knex миграции
+│   │   └── repositories/           # Data access (12 файлов)
+│   │       ├── user.repo.ts
+│   │       ├── project.repo.ts
+│   │       ├── room.repo.ts
+│   │       ├── object.repo.ts
+│   │       ├── work.repo.ts
+│   │       ├── abTest.repo.ts
+│   │       ├── aiRequest.repo.ts
+│   │       ├── calculatedTotals.repo.ts
+│   │       ├── priceCatalog.repo.ts
+│   │       ├── priceHistory.repo.ts
+│   │       ├── updateJob.repo.ts
+│   │       └── webhook.repo.ts
+│   │
+│   ├── services/                   # Бизнес-логика
+│   │   ├── ai/                     # AI-провайдеры (Gemini, Mistral, cache)
+│   │   ├── update/                 # Сервис обновлений (parsers, scheduler, runner)
+│   │   └── webhook.service.ts
+│   │
+│   └── types/                      # TypeScript типы
+│
 ├── knexfile.ts
 ├── tsconfig.json
 └── package.json
 ```
 
-### REST API
+### 3.2 API Endpoints
+
+#### Аутентификация
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/auth/register` | Регистрация |
+| POST | `/api/auth/login` | Вход |
+| POST | `/api/auth/refresh` | Обновление токена |
+| GET | `/api/auth/me` | Текущий пользователь |
+| POST | `/api/auth/logout` | Выход |
+
+#### Проекты
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/projects` | Список проектов |
+| POST | `/api/projects` | Создание |
+| GET | `/api/projects/:id` | Проект с объектами |
+| PUT | `/api/projects/:id` | Обновление |
+| DELETE | `/api/projects/:id` | Удаление |
+
+#### Объекты
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/objects` | Список объектов |
+| POST | `/api/projects/:projectId/objects` | Создание объекта |
+| GET | `/api/objects/:id` | Объект с комнатами |
+| PUT | `/api/objects/:id` | Обновление |
+| DELETE | `/api/objects/:id` | Удаление |
+
+#### Синхронизация
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/sync/pull` | Получить данные |
+| POST | `/api/sync/push` | Отправить изменения |
+
+### 3.3 База данных (MySQL)
+
+**ER-диаграмма:**
 
 ```
-# ─── Проекты ────────────────────────────────────────
-GET    /api/projects                    Список проектов
-POST   /api/projects                    Создать проект
-GET    /api/projects/:id                Полный проект (rooms + works + geometry)
-PUT    /api/projects/:id                Обновить проект
-DELETE /api/projects/:id                Удалить проект
-
-# ─── Комнаты ────────────────────────────────────────
-POST   /api/projects/:pid/rooms         Добавить комнату
-GET    /api/rooms/:id                   Комната со всей геометрией и работами
-PUT    /api/rooms/:id                   Обновить комнату
-DELETE /api/rooms/:id                   Удалить комнату
-PUT    /api/projects/:pid/rooms/order    Обновить порядок комнат (drag-and-drop)
-
-# ─── Работы + Материалы + Инструменты ──────────────
-POST   /api/rooms/:rid/works            Добавить работу
-PUT    /api/works/:id                   Обновить работу
-DELETE /api/works/:id                   Удалить работу
-PUT    /api/rooms/:rid/works/order       Обновить порядок работ
-POST   /api/works/:wid/materials        Добавить материал
-PUT    /api/materials/:id               Обновить материал
-DELETE /api/materials/:id               Удалить материал
-POST   /api/works/:wid/tools            Добавить инструмент
-PUT    /api/tools/:id                   Обновить инструмент
-DELETE /api/tools/:id                   Удалить инструмент
-
-# ─── Геометрия (extended/advanced) ─────────────────
-POST   /api/rooms/:rid/subsections      Добавить секцию
-PUT    /api/subsections/:id             Обновить секцию
-DELETE /api/subsections/:id             Удалить секцию
-POST   /api/rooms/:rid/segments         Добавить сегмент
-POST   /api/rooms/:rid/obstacles        Добавить препятствие
-POST   /api/rooms/:rid/wall-sections    Добавить перепад высоты
-POST   /api/rooms/:rid/openings         Добавить проём (окно/дверь)
-
-# ─── Синхронизация (offline-first) ─────────────────
-POST   /api/sync/push                   Отправить локальные изменения на сервер
-GET    /api/sync/pull?since=<timestamp> Получить изменения с сервера
-
-# ─── AI ────────────────────────────────────────────
-POST   /api/ai/estimate                 Оценка стоимости по описанию
-POST   /api/ai/suggest-materials        Предложить материалы для работы
-POST   /api/ai/generate-template        Шаблон работ для типа комнаты
-POST   /api/ai/chat                     Свободный диалог о проекте
-
-# ─── Экспорт/Импорт (серверный, с правильными расчётами) ──
-GET    /api/export/csv/:projectId        Экспорт проекта в CSV
-GET    /api/export/json                  Экспорт всех проектов в JSON
-POST   /api/import/json                  Импорт проектов из JSON
+users 1──∞ projects 1──∞ objects 1──∞ rooms 1──∞ works
+                                              ├──∞ materials
+                                              └──∞ tools
+rooms 1──∞ openings
+rooms 1──∞ room_subsections (extended)
+rooms 1──∞ room_segments (advanced)
+rooms 1──∞ room_obstacles (advanced)
+rooms 1──∞ wall_sections (advanced)
 ```
 
-### Конфигурация MySQL
-
-```typescript
-// server/src/db/pool.ts
-import mysql from 'mysql2/promise';
-
-export const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'repair_calc',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
-```
+**Ключевые таблицы:**
+- `users` — пользователи (id, email, name, password_hash, is_premium)
+- `projects` — проекты (user_id, name, description)
+- `objects` — объекты недвижимости (project_id, name, city, address, use_ai_pricing)
+- `rooms` — комнаты (object_id, name, geometry_mode, dimensions)
+- `works` — работы (room_id, name, price, materials)
+- `materials` — материалы (work_id, name, quantity, price)
+- `tools` — инструменты (work_id, name, price, is_rent)
+- `openings` — окна/двери (room_id, type, dimensions)
+- `ai_requests` — лог AI-запросов
+- `deleted_entities` — отслеживание удалений (30 дней)
 
 ---
 
-## 3. AI-интеграция (Gemini + Mistral)
+## 4. AI-интеграция
 
-### Абстрактный провайдер
+### 4.1 Клиентская реализация
 
 ```typescript
-// server/src/services/ai/provider.ts
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-export interface AIOptions {
-  temperature?: number;
-  maxTokens?: number;
-  model?: string;
-}
-
-export interface AIProvider {
-  name: 'gemini' | 'mistral';
-  chat(messages: ChatMessage[], options?: AIOptions): Promise<string>;
-  generateStructured<T>(prompt: string, schema: object): Promise<T>;
+// src/api/prices/geminiPriceSearch.ts
+export async function searchPrices(
+  query: string,
+  city?: string
+): Promise<PriceSearchResult[]> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  // ... запрос к Gemini API
 }
 ```
 
-### Провайдеры
+### 4.2 Серверная реализация
 
 ```typescript
 // server/src/services/ai/gemini.ts
-import { GoogleGenAI } from '@google/genai';
-import type { AIProvider, ChatMessage, AIOptions } from './provider';
-
 export class GeminiProvider implements AIProvider {
   name = 'gemini' as const;
-  private client: GoogleGenAI;
-
-  constructor(apiKey: string) {
-    this.client = new GoogleGenAI({ apiKey });
-  }
-
-  async chat(messages: ChatMessage[], options?: AIOptions): Promise<string> {
-    const response = await this.client.models.generateContent({
-      model: options?.model || 'gemini-2.5-flash',
-      contents: messages.map(m => ({
-        parts: [{ text: m.content }],
-        role: m.role === 'assistant' ? 'model' : 'user',
-      })),
-    });
-    return response.text || '';
-  }
-
-  async generateStructured<T>(prompt: string, schema: object): Promise<T> {
-    const response = await this.chat([
-      { role: 'system', content: `Respond ONLY with valid JSON matching this schema: ${JSON.stringify(schema)}` },
-      { role: 'user', content: prompt },
-    ]);
-    return JSON.parse(response) as T;
+  
+  async chat(messages: ChatMessage[]): Promise<string> {
+    // ... серверный запрос с защитой API-ключа
   }
 }
 ```
 
-```typescript
-// server/src/services/ai/mistral.ts
-import { Mistral } from '@mistralai/mistralai';
-import type { AIProvider, ChatMessage, AIOptions } from './provider';
-
-export class MistralProvider implements AIProvider {
-  name = 'mistral' as const;
-  private client: Mistral;
-
-  constructor(apiKey: string) {
-    this.client = new Mistral({ apiKey });
-  }
-
-  async chat(messages: ChatMessage[], options?: AIOptions): Promise<string> {
-    const response = await this.client.chat.complete({
-      model: options?.model || 'mistral-small-latest',
-      messages: messages.map(m => ({ role: m.role, content: m.content })),
-    });
-    return response.choices?.[0]?.message?.content as string || '';
-  }
-
-  async generateStructured<T>(prompt: string, schema: object): Promise<T> {
-    const response = await this.chat([
-      { role: 'system', content: `Respond ONLY with valid JSON matching this schema: ${JSON.stringify(schema)}` },
-      { role: 'user', content: prompt },
-    ]);
-    return JSON.parse(response) as T;
-  }
-}
-```
-
-### Распределение задач по провайдерам
-
-| Задача | Провайдер | Модель | Обоснование |
-|---|---|---|---|
-| Оценка стоимости по описанию | Gemini | `gemini-2.5-flash` | Хорошо понимает контекст, поддержка русского |
-| Генерация шаблонов работ | Mistral | `mistral-small-latest` | Дешевле ($0.1/1M input), структурированный вывод |
-| Предложение материалов | Gemini | `gemini-2.5-flash` | Нужны знания о стройматериалах и ценах |
-| Классификация работ | Mistral | `mistral-small-latest` | Простая задача, Mistral дешевле |
-| Свободный чат о проекте | Gemini | `gemini-2.5-flash` | Лучше для диалогов и рассуждений |
-| Анализ фото помещения | Gemini | `gemini-2.5-flash` | Единственный с vision capabilities |
-
-### AI-сценарии использования
-
-#### Сценарий 1: «Оцени ремонт»
-```
-Пользователь: "Ванная 3×2м, стандартный ремонт, Москва"
-→ AI генерирует: список работ с ценами, материалы, итого
-→ Пользователь может импортировать как новую комнату
-```
-
-#### Сценарий 2: «Подбери материалы»
-```
-Пользователь выбирает работу "Укладка плитки"
-→ AI предлагает:
-   - Плитка (30×30, Kerama Marazzi, ~1200₽/м²)
-   - Клей (Ceresit CM11, 25кг, ~450₽)
-   - Затирка (Ceresit CE40, ~350₽)
-→ Пользователь добавляет в materials[] одним кликом
-```
-
-#### Сценарий 3: «Шаблон для комнаты»
-```
-Пользователь создаёт комнату "Кухня"
-→ AI предлагает типовой набор работ:
-   - Укладка плитки на пол
-   - Фартук из плитки
-   - Покраска стен
-   - Натяжной потолок
-   - Электрика (10 точек)
-→ С примерными ценами по региону
-```
-
-#### Сценарий 4: «Свободный чат»
-```
-Пользователь: "Как сэкономить на ремонте кухни? Бюджет 200к."
-→ AI анализирует текущую смету и предлагает:
-   - Заменить плитку на линолеум (-15к)
-   - Покрасить стены вместо обоев (-8к)
-   - Оставить натяжной потолок (оптимальное соотношение цена/качество)
-```
+**API endpoints:**
+- `POST /api/ai/estimate` — оценка стоимости по описанию
+- `POST /api/ai/suggest-materials` — предложить материалы
 
 ---
 
-## 4. PWA / Offline-first архитектура
+## 5. Логирование
 
-### Стратегия синхронизации
+### 5.1 Общая архитектура
+
+Проект использует **два структурированных логгера** вместо прямых вызовов `console.*`:
+
+| Среда | Логгер | Модуль | Уровни |
+|-------|--------|--------|--------|
+| **Сервер** | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug` |
+| **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
+| **Миграции Knex** | `console.log` | — | CLI-контекст, вне Express |
+
+> **Важно:** ESLint правило `no-console: error` добавлено (2026-04-16). Все `console.*` заменены на структурированные логгеры.
+
+### 5.2 Сервер — winstonLogger (Winston)
+
+```typescript
+// server/src/middleware/logger.ts
+import winston from 'winston';
+import { config } from '../config/env.js';
+
+export const winstonLogger = winston.createLogger({
+  level: config.logging.level,  // Управляется через env
+  format: combine(
+    errors({ stack: true }),     // Автоматический стек-трейс
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    logFormat
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: combine(errors({ stack: true }), colorize(), timestamp(), logFormat),
+    }),
+  ],
+});
+```
+
+**Использование в маршрутах:**
+```typescript
+import { winstonLogger } from '../middleware/logger.js';
+
+winstonLogger.info('[POST /projects] Created project', {
+  projectId: project.id, name: project.name, duration: Date.now() - startTime,
+});
+winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
+winstonLogger.error('[POST /projects] Error', { duration, error });
+```
+
+**HTTP-логгер (middleware):**
+```typescript
+export function logger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const message = `${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`;
+    if (res.statusCode >= 400) {
+      winstonLogger.warn(message, { ip: req.ip, userAgent: req.get('user-agent') });
+    } else {
+      winstonLogger.info(message);
+    }
+  });
+  next();
+}
+```
+
+**Преимущества над console.*:**
+- Уровни логирования с фильтрацией через `config.logging.level`
+- Структурированные JSON-метаданные (парсимые ELK/Grafana)
+- Автоматические стек-трейсы через `errors({ stack: true })`
+- Расширяемые транспорты (файл, syslog, Elasticsearch, Datadog)
+- Цветовой вывод через `colorize()`
+
+### 5.3 Клиент — src/utils/logger.ts
+
+```typescript
+import { logError, logWarning, logDebug } from '../utils/logger';
+
+logError('ProjectContext', 'saveProject', error, { projectId });
+logWarning('Sync', 'Version conflict', { clientVersion, serverVersion });
+logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
+```
+
+**Ключевые возможности:**
+- Категории и контекст: каждый лог имеет `category` + `action`
+- История действий: последние 100 операций через `window.debugLogger`
+- Группировка: `console.groupCollapsed()` — компактный вывод в DevTools
+- Таймеры операций: `logStart/logEnd` — автоматический замер
+- Отключение: `LOG_CONFIG.enabled = false`
+
+---
+
+## 6. Синхронизация данных
+
+### 6.1 Архитектура синхронизации
 
 ```
 ┌──────────────────┐    immediate     ┌───────────────┐
 │   React State    │ ──────────────→  │  localStorage  │  ← Первичное хранилище
 │   (UI)           │ ←──────────────  │  (persistent)  │
-└──────────────────┘                  └───────┬────────┘
-                                              │ async queue
-                                      ┌───────▼────────┐
-                                      │   Sync Queue    │  ← IndexedDB (надёжнее)
-                                      │   (pending ops) │
-                                      └───────┬────────┘
-                                              │ when online
-                                      ┌───────▼────────┐
-                                      │  Express API    │  ← Persistent backup + AI
-                                      │  + MySQL        │
-                                      └────────────────┘
+└──────────────────┘                  └───────┬───────┘
+                                              │ async (when authenticated)
+                                      ┌───────▼───────┐
+                                      │   Sync API    │
+                                      │  /pull /push  │
+                                      └───────┬───────┘
+                                              │
+                                      ┌───────▼───────┐
+                                      │  Express API  │
+                                      │  + MySQL      │
+                                      └──────────────┘
 ```
 
-- **Offline:** Всё работает как сейчас (localStorage). Изменения ставятся в очередь (IndexedDB).
-- **Online:** Очередь сбрасывается на сервер. Конфликты: "last write wins" (для внутреннего инструмента достаточно).
-- **AI:** Доступен только online. Кэш ответов в таблице `ai_requests`.
+### 6.2 Механизм синхронизации
 
-### Конфигурация vite-plugin-pwa
+- **Optimistic updates:** UI обновляется мгновенно, сохранение в фоне
+- **Debounce:** 1-2 секунды задержка перед сохранением
+- **Conflict resolution:** server wins при конфликтах
+- **Offline support:** данные сохраняются в localStorage
 
-```typescript
-// В vite.config.ts добавить:
-import { VitePWA } from 'vite-plugin-pwa';
+---
 
-VitePWA({
-  registerType: 'autoUpdate',
-  workbox: {
-    globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-    runtimeCaching: [{
-      urlPattern: /^\/api\/.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'api-cache',
-        networkTimeoutSeconds: 5,
-      },
-    }],
-  },
-  manifest: {
-    name: 'Мой ремонт — Калькулятор',
-    short_name: 'Мой ремонт',
-    start_url: '/',
-    display: 'standalone',
-    theme_color: '#4f46e5',       // indigo-600 (текущая тема)
-    background_color: '#f5f5f5',  // bg-[#f5f5f5]
-    lang: 'ru',
-    icons: [
-      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-      { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-    ],
-  },
-})
+## 7. Тестирование
+
+### 7.1 Статистика тестов
+
+| Категория | Количество |
+|-----------|------------|
+| Unit тесты (utils) | 220+ |
+| Unit тесты (hooks) | 72+ |
+| Integration тесты | 7+ |
+| API тесты | 22+ |
+| E2E тесты | 13 файлов |
+| **Итого** | **841 тест** |
+
+### 7.2 Результаты (2026-04-16)
+
+- **Passed:** 833
+- **Failed:** 0
+- **Skipped:** 8
+
+> **Примечание:** Добавлен мок `localStorage` в `tests/setup.ts` для совместимости с Vitest 4.x + jsdom 26, где `globalThis.localStorage` — пустой объект без Storage-методов. Это исправило 10 падений в `apiStorageProvider.test.ts` и `syncPull.test.ts`.
+>
+> **Логирование (2026-04-16):** Все `console.*` в клиенте заменены на `src/utils/logger.ts` (`logError`, `logWarning`, `logDebug`), в сервере — на `winstonLogger` из `server/src/middleware/logger.ts`. Миграции Knex оставлены на `console.log` (CLI-контекст).
+
+### 7.3 E2E тесты (Playwright)
+
+| Категория | Статус |
+|-----------|--------|
+| auth.spec.ts | ✅ 3/3 |
+| objects.spec.ts | ✅ 4/4 |
+| export-import.spec.ts | 🔧 восстановлен (6 тестов) |
+| core-workflow.spec.ts | 🔧 восстановлен (3 теста) |
+| costs.spec.ts | 🔧 восстановлен (3 теста) |
+| geometry.spec.ts | 🔧 восстановлен (4 теста) |
+| projects.spec.ts | 🔧 восстановлен (3 теста) |
+| rooms.spec.ts | 🔧 восстановлен (5 тестов) |
+| works.spec.ts | 🔧 восстановлен (4 теста) |
+| work-templates.spec.ts | 🔧 восстановлен (7 тестов) |
+| regressions.spec.ts | 🔧 восстановлен (5 тестов) |
+| responsive.spec.ts | 🔧 восстановлен (2 теста) |
+| room-input.spec.ts | 🔧 восстановлен (3 теста) |
+
+> **E2E стабилизация (2026-04-17):** Все `test.describe.skip` сняты. Тесты переведены на унифицированные фикстуры (`setupTestEnvironment`/`setupCleanEnvironment`) с API-моками через `page.route()`. Убраны хардкод JWT-токены. Селекторы обновлены на `data-testid`. Убраны `waitForTimeout` в пользу `toPass()` и `expect().toBeVisible()`.
+
+### 7.4 Покрытие по файлам
+
+- `src/utils/geometry.ts` — 100%
+- `src/utils/costs.ts` — 100%
+- `src/utils/materialCalculations.ts` — 100%
+- `src/hooks/useProjects.ts` — 100%
+- `src/hooks/useWorkTemplates.ts` — 100%
+
+---
+
+## 8. Зависимости
+
+### 8.1 Основные зависимости (клиент)
+
+```json
+{
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^6.2.0"
+  }
+}
 ```
 
-### Offline-индикатор в UI
+### 8.2 Зависимости (сервер)
 
-```typescript
-// src/hooks/useOnlineStatus.ts
-export function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingChanges, setPendingChanges] = useState(0);
+```json
+{
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "mysql2": "^3.11.0",
+    "knex": "^3.1.0",
+    "zod": "^3.23.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "uuid": "^10.0.0",
+    "winston": "^3.17.0"
+  }
+}
+```
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+### 8.3 Development зависимости
 
-  return { isOnline, pendingChanges };
+```json
+{
+  "devDependencies": {
+    "typescript": "~5.8.2",
+    "vitest": "^4.0.18",
+    "@playwright/test": "^1.58.2",
+    "@testing-library/react": "^16.3.2"
+  }
 }
 ```
 
 ---
 
-## 5. Дорожная карта реализации
+## 9. Документация
 
-### Фаза 0: Подготовка (сделать сейчас)
-- [ ] Создать этот документ `docs/ARCHITECTURE.md` ✅
-- [ ] Обновить `.env.example` с новыми переменными
-
-### Фаза 1: Исправление блокеров из CODE_REVIEW (1–2 дня)
-- [ ] Fix stale closure в `useProjects.ts` (→ функциональное обновление `setProjects`)
-- [ ] Fix порт в `playwright.config.ts` (3995 → 3993)
-- [ ] Удалить `GEMINI_API_KEY` из `vite.config.ts` `define` блока
-- [ ] Fix CSV-экспорт (переиспользовать `calculateRoomMetrics`/`calculateRoomCosts`)
-- [ ] Удалить мёртвые зависимости: `better-sqlite3`, `dotenv`, `motion`
-- [ ] Удалить `vite` из `dependencies` (оставить в `devDependencies`)
-
-### Фаза 2: Декомпозиция App.tsx (3–5 дней)
-- [ ] Вынести типы → `src/types/index.ts`
-- [ ] Вынести расчёты → `src/utils/calculations.ts` (shared между клиентом и сервером)
-- [ ] Вынести фабрики → `src/utils/factories.ts`
-- [ ] Вынести `NumberInput` → `src/components/NumberInput.tsx`
-- [ ] Вынести `SummaryView` → `src/components/SummaryView.tsx`
-- [ ] Разбить `RoomEditor` на подкомпоненты:
-  - `src/components/RoomEditor/index.tsx`
-  - `src/components/RoomEditor/GeometrySection.tsx`
-  - `src/components/RoomEditor/WorksSection.tsx`
-- [ ] Добавить `useMemo` для `calculateRoomMetrics`/`calculateRoomCosts`
-- [ ] Добавить `ErrorBoundary`
-- [ ] Убрать дублирование обработчиков (generic `withModeSync` helper)
-
-### Фаза 3: Express + MySQL (5–7 дней)
-- [ ] Инициализировать `server/` с Express + TypeScript
-- [ ] Настроить `mysql2/promise` connection pool
-- [ ] Создать MySQL-схему и Knex-миграции
-- [ ] Реализовать REST API: CRUD для всех сущностей
-- [ ] Реализовать `POST /api/sync/push` и `GET /api/sync/pull`
-- [ ] Перенести `calculations.ts` в shared-пакет (клиент + сервер)
-- [ ] Добавить серверный CSV/JSON экспорт с корректными расчётами
-- [ ] Добавить фронтенд-сервис синхронизации (`src/services/api.ts`)
-- [ ] Добавить `zod`-валидацию для API-запросов
-
-### Фаза 4: AI-интеграция (3–5 дней)
-- [ ] Абстрактный `AIProvider` интерфейс
-- [ ] `GeminiProvider` (`@google/genai` ≥ v1.43) — оценка стоимости, материалы, чат
-- [ ] `MistralProvider` (`@mistralai/mistralai`) — шаблоны, классификация
-- [ ] Промпт-шаблоны для строительной тематики (русский язык)
-- [ ] UI: панель AI-ассистента (sidebar или модальное окно)
-- [ ] Кэширование AI-ответов в таблице `ai_requests`
-- [ ] Rate limiting для AI-запросов (внутренний инструмент, но контроль расходов)
-
-### Фаза 5: PWA (2–3 дня)
-- [ ] Установить `vite-plugin-pwa`
-- [ ] Создать иконки (192, 512, maskable)
-- [ ] Настроить manifest и service worker
-- [ ] Добавить offline-детекцию и статус синхронизации в UI
-- [ ] IndexedDB sync queue для offline-изменений (`idb` library)
-- [ ] Тестирование offline-сценариев
-
-### Итого: ~14–22 рабочих дня
+| Файл | Описание |
+|------|----------|
+| [INDEX.md](../INDEX.md) | Главный индексный файл |
+| [TODO.md](./TODO.md) | Актуальные задачи и прогресс |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
+| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода v5.0 |
+| [LOGGING.md](./LOGGING.md) | Руководство по логированию |
+| [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md) | Инструкции по отладке |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
 
 ---
 
-## 6. Зависимости
+## 10. Дорожная карта
 
-### Удалить
+### Выполнено ✅
 
-| Пакет | Причина |
-|---|---|
-| `better-sqlite3` | Не нужен, используем MySQL |
-| `dotenv` | Vite сам загружает `.env` |
-| `motion` | Не используется, пользователь подтвердил — не нужен |
-| `vite` из `dependencies` | Дублируется в `devDependencies` |
+1. ✅ Декомпозиция App.tsx (2700 → 475 строк)
+2. ✅ Рефакторинг геометрии (GeometrySection, useGeometryState)
+3. ✅ IStorageProvider абстракция
+4. ✅ Каталог материалов и расчёт
+5. ✅ Поиск цен через AI (клиентский + серверный)
+6. ✅ Backend на Express + MySQL
+7. ✅ JWT аутентификация
+8. ✅ Объектная модель (Project → Objects → Rooms)
+9. ✅ Синхронизация localStorage ↔ API
+10. ✅ 841 тест
 
-### Оставить / Обновить
+### Планируется 🚧
 
-| Пакет | Действие | Причина |
-|---|---|---|
-| `express` | ✅ Оставить | Будет использоваться для сервера |
-| `@google/genai` | ⬆️ Обновить до `^1.43` | Gemini AI, текущая v1.29 устарела |
-| `@types/express` | ✅ Оставить | TypeScript types для Express |
+1. **Декомпозиция:**
+   - ProjectContext (981 строк → 3 модуля)
+   - RoomEditor (906 строк → обработчики в хуки)
+   - BackupManager (837 строк → панели)
 
-### Добавить (сервер)
+2. **Offline-first:**
+   - IndexedDB для pending changes
+   - PWA с Service Worker
 
-| Пакет | Назначение |
-|---|---|
-| `mysql2` | MySQL-драйвер (promise API) |
-| `knex` | Миграции БД |
-| `@mistralai/mistralai` | Mistral AI SDK |
-| `zod` | Валидация API-запросов и AI-ответов |
-| `cors` | CORS для dev-режима (клиент :3993, сервер :3994) |
-| `tsx` | ✅ Уже есть — запуск TypeScript сервера |
-
-### Добавить (клиент / dev)
-
-| Пакет | Назначение |
-|---|---|
-| `vite-plugin-pwa` | PWA-поддержка (service worker + manifest) |
-| `idb` | IndexedDB wrapper для sync queue |
+3. **Улучшения:**
+   - Request ID middleware
+   - Per-user rate limiting
+   - Swagger/OpenAPI документация
 
 ---
 
-## Приложение: обновлённый .env.example
-
-```env
-# ─── AI ───────────────────────────────────────────
-GEMINI_API_KEY="your-gemini-api-key"
-MISTRAL_API_KEY="your-mistral-api-key"
-
-# ─── MySQL ────────────────────────────────────────
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=repair_calc
-
-# ─── Server ───────────────────────────────────────
-SERVER_PORT=3994
-APP_URL=http://localhost:3993
-```
+**Последнее обновление:** 2026-06-08

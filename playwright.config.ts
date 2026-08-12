@@ -6,22 +6,28 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['html'], ['list']],
+
   use: {
-    baseURL: 'http://localhost:3993',
+    baseURL: 'http://localhost:4567',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    testIdAttribute: 'data-testid',
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+
+  // Автозапуск dev-сервера
+  // NB: npm run dev содержит grep-пайп, поэтому используем vite напрямую
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3993',
-    reuseExistingServer: true,
-    timeout: 120 * 1000,
+    command: 'node_modules/.bin/vite --port=4567 --host',
+    url: 'http://localhost:4567',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
   },
+
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'mobile', use: { ...devices['Pixel 5'] } },
+  ],
 });

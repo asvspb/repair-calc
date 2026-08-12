@@ -49,17 +49,27 @@ Thumbs.db
 .cache/
 *.tsbuildinfo
 .vite/
+dev-dist/
 
 # Local files
 *.local
+# Артефакты тестов/отладки (не версионировать)
+test-output.txt
+tsc_errors.log
 
 # Project specific directories
-backups/          # Local backups created by scripts
-temp/             # Temporary files
-videos/           # Browser session recordings
-tests/            # Test files
-test-results/     # Test results from CI/CD pipelines
-logs/             # Application logs
+# Local screenshots: ignore contents, keep folder via .gitkeep
+screenshots/*
+!screenshots/.gitkeep
+backups/
+temp/
+videos/
+# ВАЖНО: tests/ НЕ игнорировать — тесты должны быть в git
+test-results/
+logs/
+playwright-report/
+# playwright/ целиком не игнорируем (нужен конфиг); игнорируем только артефакты
+playwright/.cache/
 
 
 # Docker
@@ -97,12 +107,26 @@ secret.*
 
 # CI/CD
 .semaphore/
-.github/workflows/
+# .github/workflows/ НЕ игнорировать — CI-конфиг должен быть в git
 .circleci/
 .travis.yml
 .gitlab-ci.yml
+
+# Database
+# database/ НЕ игнорировать — миграции и схемы БД должны быть в git
+# (бинарные дампы/бэкапы, если появятся, игнорируем точечно):
+*.sqlite
+*.db
+*.dump
 
 # AI/Editor specific
 .blackbox/
 .blackboxcli/
 .qodo/
+.kilo/
+.cline/
+.qwen/
+.codegraph/
+
+
+playwright-profile

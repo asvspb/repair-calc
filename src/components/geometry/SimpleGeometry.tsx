@@ -1,5 +1,5 @@
 import React from 'react';
-import type { RoomData, Opening } from '../../types';
+import type { RoomData, Opening } from '@shared/types';
 import { OpeningList } from './OpeningList';
 
 interface SimpleGeometryProps {

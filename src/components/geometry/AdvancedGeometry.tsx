@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Layers, Box, Ruler, X } from 'lucide-react';
-import type { RoomData, Opening, RoomSegment, Obstacle, WallSection } from '../../types';
+import type { RoomData, Opening, RoomSegment, Obstacle, WallSection } from '@shared/types';
 import { NumberInput } from '../ui/NumberInput';
 import { OpeningList } from './OpeningList';
 
@@ -120,7 +120,8 @@ export function AdvancedGeometry({
         {(room.segments || []).length > 0 && (
           <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
             <div className="text-sm text-indigo-700">
-              <span className="font-medium">Итого сегменты:</span> {segmentsDelta > 0 ? '+' : ''}{segmentsDelta.toFixed(2)} м²
+              <span className="font-medium">Итого сегменты:</span> {segmentsDelta > 0 ? '+' : ''}
+              {segmentsDelta.toFixed(2)} м²
             </div>
           </div>
         )}
@@ -220,7 +221,9 @@ export function AdvancedGeometry({
         {(room.obstacles || []).length > 0 && (
           <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
             <div className="text-sm text-indigo-700">
-              <span className="font-medium">Итого препятствия:</span> {obstaclesDelta > 0 ? '+' : ''}{obstaclesDelta.toFixed(2)} м²
+              <span className="font-medium">Итого препятствия:</span>{' '}
+              {obstaclesDelta > 0 ? '+' : ''}
+              {obstaclesDelta.toFixed(2)} м²
             </div>
           </div>
         )}

@@ -6,6 +6,8 @@ type NumberInputProps = {
   className?: string;
   min?: number;
   step?: number;
+  'data-testid'?: string;
+  'data-testprefix'?: string;
 };
 
 const NumberInputInternal: React.FC<NumberInputProps> = ({
@@ -14,27 +16,20 @@ const NumberInputInternal: React.FC<NumberInputProps> = ({
   className = '',
   min = 0,
   step = 1,
+  'data-testid': dataTestId,
+  'data-testprefix': dataTestPrefix,
 }) => {
   const [str, setStr] = useState(value.toString());
   const isTypingRef = React.useRef(false);
-  const blurTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Синхронизируем с внешним value только если пользователь не вводит данные
-    // и не находится в периоде после blur (чтобы избежать race condition)
-    if (!isTypingRef.current && !blurTimeoutRef.current) {
+    // Синхронизируем с внешним value только если пользователь не вводит данные.
+    // Всегда синхронизируем при смене value (включая смену комнаты),
+    // чтобы не блокировать обновления от родителя.
+    if (!isTypingRef.current) {
       setStr(value.toString());
     }
   }, [value]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (blurTimeoutRef.current) {
-        clearTimeout(blurTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleFocus = () => {
     isTypingRef.current = true;
@@ -42,16 +37,11 @@ const NumberInputInternal: React.FC<NumberInputProps> = ({
 
   const handleBlur = () => {
     isTypingRef.current = false;
-    // Устанавливаем таймаут, чтобы предотвратить race condition между onChange и useEffect
-    // useEffect не будет синхронизировать str с value в течение 100мс после blur
-    blurTimeoutRef.current = setTimeout(() => {
-      blurTimeoutRef.current = null;
-      // После таймаута синхронизируем если нужно
-      const parsed = parseFloat(str);
-      if (str === '' || isNaN(parsed)) {
-        setStr(value.toString());
-      }
-    }, 100);
+    // Валидация после blur: исправляем пустые/NaN значения
+    const parsed = parseFloat(str);
+    if (str === '' || isNaN(parsed)) {
+      setStr(value.toString());
+    }
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +64,8 @@ const NumberInputInternal: React.FC<NumberInputProps> = ({
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      data-testid={dataTestId}
+      data-testprefix={dataTestPrefix}
       className={`px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-text [&::-webkit-inner-spin-button]:cursor-pointer [&::-webkit-outer-spin-button]:cursor-pointer [&::-webkit-inner-spin-button]:hover:bg-indigo-50 [&::-webkit-outer-spin-button]:hover:bg-indigo-50 ${className}`}
     />
   );

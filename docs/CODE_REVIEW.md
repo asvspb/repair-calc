@@ -1,235 +1,408 @@
 # 📋 Код-ревью проекта repair-calc
 
-**Дата:** 2026-03-04  
-**Версия:** 1.0  
-**Автор:** AI Agent (Augment Code)
+**Дата:** 2026-04-17  
+**Версия ревью:** 5.1  
+**Предыдущее ревью:** 2026-04-13 (v5.0)  
+**Статус:** Обновлено по результатам полного аудита документации
 
 ---
 
-## 🔴 Критические проблемы
+## 📊 Сводка
 
-### 1. God Component — App.tsx (~3000 строк)
-
-**Проблема:** Основной файл `src/App.tsx` содержит:
-- 20+ типов данных (Opening, WorkData, RoomData, ProjectData и др.)
-- Начальные данные (initialRooms, initialProjects)
-- Утилитарные функции (calculateRoomMetrics, calculateRoomCosts, migrateWorkData)
-- 4 крупных компонента (SummaryView, RoomEditor, GeometrySection, и др.)
-- Вся логика редактирования комнат
-
-**Влияние:**
-- Нарушение Single Responsibility Principle
-- Затруднённое тестирование (невозможно импортировать функции отдельно)
-- Долгие code review (изменения в одном месте требуют просмотра всего файла)
-- Медленная сборка при изменениях
-
-**Решение:** См. [План декомпозиции](#фаза-1-декомпозиция-1-2-недели--критическая)
+| Категория | Оценка | Изменение (от v4.2) | Комментарий |
+|-----------|--------|---------------------|-------------|
+| Архитектура | 🟡 Средне | → | ProjectContext 982 строки, ApiStorageProvider 1036 строк |
+| Безопасность | 🟢 Хорошо | → | JWT, helmet, CORS — исправлены ранее |
+| Производительность | 🟢 Хорошо | → | useMemo для метрик, инкрементальное сохранение |
+| Состояние и данные | 🟢 Хорошо | → | Object model, SaveQueue, IdMapper |
+| Бэкенд | 🟡 Средне | → | God-файл update.ts (2184 строки), статические репозитории |
+| Тестирование | 🟢 Хорошо | → | 841 тест, 0 failing, 8 skipped |
+| Типизация | 🟢 Отлично | → | 0 мест с `any` в production коде |
+| Код клиент | 🟡 Средне | → | 7 файлов >500 строк без декомпозиции |
+| Документация | 🟢 Хорошо | ↑ | ARCHITECTURE.md + INDEX.md обновлены (2026-04-17) |
 
 ---
 
-### 2. Stale Closure в useProjects
+## 📐 Метрики кодовой базы
 
-**Файл:** `src/hooks/useProjects.ts`, строки 115-121
+### Размер кода
+
+| Компонент | Строк кода | Файлов |
+|-----------|-----------|--------|
+| Frontend (`src/`) — production | ~22,450 | ~60 |
+| Frontend (`src/`) — тесты | ~11,000 | ~30 |
+| Backend (`server/src/`) | ~18,400 | ~40 |
+| Backend — тесты | ~2,200 | ~10 |
+| E2E тесты | ~1,300 | ~10 |
+| **Итого production** | **~40,850** | **~100** |
+| **Итого тесты** | **~14,500** | **~50** |
+
+### Крупные файлы (>500 строк) — Frontend
+
+| Файл | Строк | Тип | Проблема |
+|------|-------|-----|----------|
+| `data/workTemplatesCatalog.ts` | 1048 | 📊 Данные | Нормально — каталог данных |
+| `api/storage/apiStorageProvider.ts` | 1036 | 🔴 Логика | God-модуль: CRUD + sync + rate limiting |
+| `contexts/ProjectContext.tsx` | 982 | 🔴 Логика | State + persistence + sync + CRUD objects |
+| `components/RoomEditor.tsx` | 902 | 🔴 UI | Огромный компонент без декомпозиции |
+| `components/BackupManager.tsx` | 837 | 🔴 UI | Export + Import + Sync в одном файле |
+| `utils/roomHelpers.ts` | 814 | 🟡 Утилиты | Много функций, но pure |
+| `components/projects/ProjectsModal.tsx` | 698 | 🟡 UI | Можно декомпозировать |
+| `hooks/useGeometryState.ts` | 597 | 🟡 Хук | Сложный, но обоснованно |
+| `components/projects/CreateProjectModal.tsx` | 537 | 🟡 UI | Мастер с объектами |
+| `App.tsx` | 470 | 🟡 UI | Улучшен с 2700, но содержит бизнес-логику |
+
+### Крупные файлы (>500 строк) — Backend
+
+| Файл | Строк | Проблема |
+|------|-------|----------|
+| `routes/update.ts` | 2184 | 🔴 God file — маршруты + бизнес-логика |
+| `repositories/updateJob.repo.ts` | 772 | 🟡 Много операций |
+| `repositories/room.repo.ts` | 700 | 🟡 Много полей |
+| `repositories/project.repo.ts` | 666 | 🟡 Sync-логика |
+| `services/update/parserManager.ts` | 661 | 🟡 Много парсеров |
+| `services/update/runner.ts` | 647 | 🟡 Оркестрация |
+| `repositories/abTest.repo.ts` | 641 | 🟡 Feature flags |
+| `routes/geometry.ts` | 636 | 🟡 25+ endpoints |
+
+---
+
+## ✅ Исправленные проблемы (v1.0–v4.2) — Архив
+
+<details>
+<summary>Развернуть список (25 пунктов)</summary>
+
+1. ~~**God Component App.tsx**~~ — декомпозиция 2700 → 470 строк ✅
+2. ~~**Stale closure в updateActiveProject**~~ — functional updates ✅
+3. ~~**CSV экспорт не учитывает сложную геометрию**~~ — `calculateRoomMetrics` ✅
+4. ~~**Дублирование геометрических расчётов**~~ — единые функции в `geometry.ts`/`costs.ts` ✅
+5. ~~**Несогласованные порты**~~ — Vite: 3993, Server: 3994 ✅
+6. ~~**Rules of Hooks в App.tsx**~~ — useEffect перемещён выше условного возврата ✅
+7. ~~**C-4: Дублирование удаления проекта**~~ — Логика перенесена в `RightSidebar.onDeleteConfirm` ✅
+8. ~~**C-5: Создание проекта не синхронизируется**~~ — `createProject` в контексте создаёт на сервере ✅
+9. ~~**W-7: ID mapping теряется при перезагрузке**~~ — IdMapper теперь персистентен в localStorage ✅
+10. ~~**C-1: Hardcoded JWT-секреты**~~ — сервер падает без JWT_SECRET в production ✅
+11. ~~**C-2: Нет HTTP Security Headers**~~ — добавлен helmet ✅
+12. ~~**C-3: CORS bypass (`!origin`)**~~ — убран обход CORS ✅
+13. ~~**C-4: 4× Дублирование `isServerId`**~~ — единая функция из `idMapper.ts` ✅
+14. ~~**C-5: Регрессия типизации ~12 `any`**~~ — 0 в production ✅
+15. ~~**C-6: Двойная инъекция токена**~~ — оставлена только в interceptor ✅
+16. ~~**C-7: 4 Failing теста ObjectSettings**~~ — тесты обновлены ✅
+17. ~~**C-8: Фиктивные поля auth middleware**~~ — только `{ id, email }` ✅
+18. ~~**QW-1: Опечатка "Страниццы"**~~ → "Страницы" ✅
+19. ~~**QW-2: Unused ProtectedRoute import**~~ — удалён ✅
+20. ~~**QW-4: Magic numbers debounce**~~ — вынесены в константы ✅
+21. ~~**QW-5: Мёртвый код handleDeleteActiveProject**~~ — удалён ✅
+22. ~~**W-12: isServerId wrapper в ApiStorageProvider**~~ — прямой импорт ✅
+23. ~~**W-1: Пересчёт метрик на каждый рендер**~~ — useMemo ✅ (v4.2)
+24. ~~**W-2: Двойная нормализация данных комнаты**~~ — только при загрузке ✅ (v4.2)
+25. ~~**W-7: Полная сериализация при каждом сохранении**~~ — инкрементально ✅ (v4.2)
+26. ~~**E2E-1: `objects.spec.ts` — 4 failing теста**~~ — JWT-токены очищены, 4/4 passed ✅ (v5.0)
+
+</details>
+
+---
+
+## 🔴 Критические проблемы (Blockers)
+
+> ✅ **Все критические проблемы исправлены** (начиная с v4.1).
+
+---
+
+## ⚠️ Проблемы средней серьёзности (Warnings)
+
+### S-NEW. API ключи в клиентском бандле 🔴 С v1.0
+
+**Файлы:** `src/api/prices/geminiPriceSearch.ts`, `src/api/prices/mistralPriceSearch.ts`
+
+**Проблема:** `VITE_GEMINI_API_KEY` и `VITE_MISTRAL_API_KEY` встраиваются в клиентский JS-бандл. Доступны через DevTools.
+
+**Решение:** Перенести AI-вызовы на сервер (`/api/prices/search`).
+
+### S-NEW. 19 admin endpoints без проверки прав 🔴
+
+**Файл:** `server/src/routes/update.ts`
+
+**Проблема:** 19 TODO-комментариев `// TODO: Проверить права администратора`. Любой авторизованный пользователь может управлять обновлениями.
+
+**Решение:** Реализовать admin middleware.
+
+### W-1. ProjectContext — 982 строки (God Module) ⚠️ С v3.0, ухудшается
+
+**Файл:** `src/contexts/ProjectContext.tsx` — **982 строк**
+
+**Проблема:** Контекст управляет 7+ ответственностями:
+1. State (projects, activeProjectId, activeObjectId, loading, errors)
+2. Persistence (localStorage, API sync, debounce)
+3. Серверная синхронизация (createProject, deleteProject)
+4. Бизнес-логика (расчёт totals, миграция)
+5. Object CRUD (create, update, delete, copy)
+6. Room sync error tracking
+7. ID mapping и миграция
+
+**Решение:** Разделить на:
+- `useProjectState.ts` — чистый state management (~200 строк)
+- `useProjectSync.ts` — логика синхронизации и persistence (~300 строк)
+- `useObjectManagement.ts` — CRUD для объектов (~200 строк)
+
+---
+
+### W-2. Stale closures в deleteRoom, addRoom, reorderRooms ⚠️ С v3.0
+
+**Файл:** `src/contexts/ProjectContext.tsx`
 
 ```typescript
-// ПРОБЛЕМА: projects в замыкании может быть устаревшим
-const updateActiveProject = useCallback((updatedProject: ProjectData) => {
-  const newProjects = projects.map(p =>   // ← stale closure
-    p.id === updatedProject.id ? updatedProject : p
-  );
-  setProjects(newProjects);
-  scheduleSave(newProjects);
-}, [projects, scheduleSave]);
+const deleteRoom = useCallback((roomId: string) => {
+  if (!activeProject) return;       // ← захват из замыкания
+  const updatedProject = deleteRoomFromProject(activeProject, roomId);
+  updateActiveProject(updatedProject);
+}, [activeProject, updateActiveProject]);
 ```
 
-**Решение:**
-```typescript
-const updateActiveProject = useCallback((updatedProject: ProjectData) => {
-  setProjects(prevProjects => {
-    const newProjects = prevProjects.map(p => 
-      p.id === updatedProject.id ? updatedProject : p
-    );
-    scheduleSave(newProjects);
-    return newProjects;
-  });
-}, [scheduleSave]);  // projects убрана из зависимостей
-```
+**Проблема:** При быстрых последовательных вызовах могут использовать устаревшие данные.
+
+**Решение:** Перевести на `setProjects(prev => ...)`.
 
 ---
 
-### 3. CSV экспорт не учитывает сложную геометрию
+### W-3. RoomEditor — 902 строки ⚠️ С v3.0
 
-**Файл:** `src/utils/storage.ts`, строки 140-147
+**Файл:** `src/components/RoomEditor.tsx`
 
-```typescript
-// ПРОБЛЕМА: упрощённый расчёт, игнорирующий segments/obstacles
-const floorArea = room.length * room.width;
-const perimeter = (room.length + room.width) * 2;
-```
-
-**Влияние:** Экспортируемые данные не соответствуют расчётам в приложении для extended/advanced режимов.
-
-**Решение:** Вынести `calculateRoomMetrics` в `src/utils/geometry.ts` и использовать в обоих местах.
+**Решение:** Вынести обработчики в `useRoomHandlers.ts`, разделить UI на секции.
 
 ---
 
-## 🟠 Архитектурные недостатки
+### W-4. ApiStorageProvider — 1036 строк ⚠️ Ухудшение с v4.0
 
-### 4. Использование `any` типов
+**Файл:** `src/api/storage/apiStorageProvider.ts`
 
-**Файл:** `src/components/BackupManager.tsx`, строка 11
+**Проблема:** Singleton с множественными ответственностями: CRUD проектов/объектов/комнат, rate limiting, retry logic, sync.
 
-```typescript
-onImportTemplates?: (templates: any[]) => void;  // потеря типобезопасности
-```
-
-**Решение:** Использовать `WorkTemplate[]` из `src/types/workTemplate.ts`.
-
----
-
-### 5. GEMINI_API_KEY на клиенте
-
-**Файл:** `vite.config.ts`, строки 10-12
-
-```typescript
-define: {
-  'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-},
-```
-
-**Риск:** API-ключ будет виден в исходниках браузера.
-
-**Решение:** Проксировать AI-запросы через бэкенд (см. [ARCHITECTURE.md](./ARCHITECTURE.md)).
+**Решение:** Разделить на:
+- `apiClient.ts` — HTTP-обёртка
+- `projectApi.ts` — CRUD проектов
+- `objectApi.ts` — CRUD объектов
+- `roomApi.ts` — CRUD комнат
 
 ---
 
-### 6. Дублирование геометрических расчётов
+### W-5. BackupManager.tsx — 837 строк ⚠️ С v4.0
 
-- `calculateRoomMetrics` в App.tsx (~200 строк)
-- Частичная копия в `storage.ts` для CSV-экспорта
+**Файл:** `src/components/BackupManager.tsx`
 
-**Решение:** Вынести в `src/utils/geometry.ts` и импортировать в оба места.
-
----
-
-## 🟡 Проблемы качества кода
-
-### 7. Несогласованные конфигурации портов
-
-| Файл | Порт |
-|------|------|
-| vite.config.ts | 3993 |
-| playwright.config.ts | 3995 |
-| .env.example (SERVER_PORT) | 3994 |
-| .env.example (APP_URL) | 3993 |
-
-**Решение:** Привести playwright.config.ts к порту 3993.
+**Решение:** Декомпозировать на `ExportPanel`, `ImportPanel`, `SyncPanel`.
 
 ---
 
-### 8. Отсутствие валидации на границах
+### W-6. routes/update.ts — 2184 строки (God File) ⚠️ С v4.0
+
+**Файл:** `server/src/routes/update.ts`
+
+**Проблема:** Самый большой файл всей кодовой базы.
+
+**Решение:** `routes/update.ts` (~100) + `controllers/updateController.ts` (~300) + services.
+
+---
+
+### W-7. ~~64 прямых `console.*` вызова в production коде~~ ✅ ИСПРАВЛЕНО (2026-04-16)
+
+Все `console.*` заменены на структурированные логгеры. ESLint правило `no-console: error` добавлено.
+
+---
+
+### W-8. Дублирование генерации ID ⚠️ С v3.0
+
+4+ разных способов генерации ID:
+- `ProjectContext.tsx`: `${prefix}-${Date.now()}-${crypto.randomUUID()...}`
+- `projectObjects.ts`: `local-obj-${Date.now()}-${Math.random()...}`
+- `App.tsx`: `local-${Date.now()}`
+- `RoomEditor.tsx`: `Math.random().toString(36)...`
+
+**Решение:** Единая утилита `generateId(prefix)` в `utils/factories.ts`.
+
+---
+
+### W-9. Magic strings для ключей localStorage ⚠️ С v3.0
+
+**Файл:** `src/contexts/ProjectContext.tsx` (строка 729)
 
 ```typescript
-// В useWorkTemplates.ts — что если template не найден?
-const loadTemplate = useCallback((template: WorkTemplate, metrics?: RoomMetrics): WorkData => {
-  // Нет проверки на undefined template
+localStorage.removeItem('repair-calc-active-project');  // magic string
 ```
 
----
-
-## 🟢 Покрытие тестами
-
-### Текущее состояние:
-- ✅ 1 unit-тест файл (`tests/App.test.tsx`) — тестирует NumberInput
-- ✅ E2E тесты (`e2e/room-input.spec.ts`) — проверяют критический баг
-- ❌ Нет тестов для: calculateRoomMetrics, calculateRoomCosts, StorageManager, TemplateStorage
-
-### Рекомендации:
-1. Добавить тесты для утилитарных функций после их выноса
-2. Покрыть тестами миграцию данных
-3. Добавить тесты для экспорта/импорта
+Проект определяет `STORAGE_KEYS`, но не везде использует.
 
 ---
 
-## 📊 План улучшений (Roadmap)
+### W-10. ~~ARCHITECTURE.md сильно устарел~~ ✅ ИСПРАВЛЕНО (2026-04-17)
 
-### Фаза 1: Декомпозиция (1-2 недели) 🔴 Критическая
-
-| Задача | Файлы | Приоритет |
-|--------|-------|-----------|
-| 1.1 Вынести типы | App.tsx → src/types/ | P0 |
-| 1.2 Вынести расчёты | App.tsx → src/utils/geometry.ts, costs.ts | P0 |
-| 1.3 Вынести SummaryView | App.tsx → src/components/SummaryView/ | P0 |
-| 1.4 Вынести RoomEditor | App.tsx → src/components/RoomEditor/ | P0 |
-| 1.5 Вынести GeometrySection | App.tsx → src/components/GeometrySection/ | P1 |
-| 1.6 Вынести начальные данные | App.tsx → src/data/initialData.ts | P1 |
-
-**Результат:** App.tsx сократится до ~300 строк (роутинг + композиция).
+Документ обновлён: актуальная структура сервера, полные списки файлов, секция логирования.
 
 ---
 
-### Фаза 2: Исправление багов (3-5 дней) 🟠 Высокая
+## 💡 Замечания (Nitpicks)
 
-| Задача | Описание |
-|--------|----------|
-| 2.1 Stale closure | Исправить useProjects.ts с functional update |
-| 2.2 CSV экспорт | Использовать общую функцию calculateRoomMetrics |
-| 2.3 Типизация | Заменить `any` на конкретные типы |
-| 2.4 Порты | Унифицировать конфигурацию портов |
+### N-1. `require()` в ESM-модуле
 
----
+**Файл:** `src/api/storage/apiStorageProvider.ts`
 
-### Фаза 3: Улучшение архитектуры (1 неделя) 🟡 Средняя
+```typescript
+const { LocalStorageProvider } = require('../../utils/localStorageProvider');
+```
 
-| Задача | Описание |
-|--------|----------|
-| 3.1 Абстракция storage | Создать интерфейс IStorageProvider для будущей замены на API |
-| 3.2 Error Boundaries | Добавить React Error Boundaries для graceful degradation |
-| 3.3 Context API | Вынести глобальное состояние (projects, templates) в Context |
-| 3.4 Оптимизация memo | Добавить React.memo для тяжёлых компонентов |
+Следует использовать `import()` или статический import.
 
 ---
 
-### Фаза 4: Тестирование (1 неделя) 🟢 Средняя
+### N-2. Vitest не запускается из-за Node.js несовместимости
 
-| Задача | Покрытие |
-|--------|----------|
-| 4.1 Unit-тесты utils | geometry.ts, costs.ts, storage.ts |
-| 4.2 Unit-тесты хуков | useProjects, useWorkTemplates |
-| 4.3 Integration тесты | Полный flow создания/редактирования комнаты |
-| 4.4 E2E расширение | Экспорт/импорт, работа с шаблонами |
+Текущая версия Node.js несовместима с `vitest@4.0.18` (ошибка `Unexpected token '.'` в `pathe`). Требуется Node.js 18+.
 
 ---
 
-### Фаза 5: Подготовка к бэкенду (согласно ARCHITECTURE.md)
+## 🟢 Сильные стороны проекта
 
-| Задача | Описание |
-|--------|----------|
-| 5.1 PWA Manifest | Добавить service worker для offline |
-| 5.2 API Client | Создать абстракцию для HTTP-запросов |
-| 5.3 Sync Layer | Подготовить механизм синхронизации localStorage ↔ Server |
-| 5.4 AI Integration | Проксирование запросов к Gemini/Mistral через бэкенд |
+1. **841 тест** — обширное покрытие (unit, integration, E2E)
+2. **Строгая типизация** — 0 `any` в production, `tsc --noEmit` проходит чисто
+3. **Objects data model** — чистая архитектура `projectObjects.ts` (380 строк, pure functions)
+4. **Полная система аутентификации** — AuthContext, refresh tokens, auto-retry на 401
+5. **HttpClient** — singleton с interceptors, auto-retry, AbortController timeout
+6. **SaveQueue** — персистентная очередь с восстановлением после перезагрузки
+7. **Rate limiting** — exponential backoff в ApiStorageProvider
+8. **IdMapper** — персистентное хранение маппингов с TTL и device ID
+9. **Error Boundaries** — защита от крашей в рендере
+10. **Optimistic locking** — поле `version` для защиты от конфликтов
+11. **AI-интеграция** — двойной fallback (Gemini + Mistral) с кэшированием
+12. **Каталог работ** — 1048 строк типовых шаблонов
+13. **Инкрементальное сохранение** — сериализация только изменённого проекта
+14. **E2E инфраструктура** — Playwright с `data-testid`, кроссбраузерное тестирование
 
 ---
 
-## 📈 Метрики успеха
+## 🧪 Покрытие тестами
 
-| Метрика | Текущее | Целевое |
-|---------|---------|---------|
-| Размер App.tsx | ~3000 строк | <300 строк |
-| Покрытие тестами | ~5% | >60% |
-| Типизация (any) | 3 места | 0 |
-| Время сборки | базовое | -20% |
+| Категория | v4.2 | Изменение |
+|-----------|------|-----------|
+| Всего тестов | 841 | → |
+| Passing | 833 | → |
+| Failing | 0 | ✅ |
+| Skipped | 8 | → |
+| Тестовых файлов | 51 | → |
+
+### Хорошо покрыто ✅
+- `utils/geometry.ts` — 100%
+- `utils/costs.ts` — 100%
+- `utils/materialCalculations.ts` — 100%
+- `utils/idMapper.ts` — полные тесты
+- `utils/roomHelpers.ts` — полные тесты
+- `hooks/useGeometryState.ts` — полные тесты
+- `hooks/useMaterialCalculation.ts` — полные тесты
+- Layout компоненты: LeftSidebar, RightSidebar, ObjectSettings, ProjectSettings
+
+### Пробелы в покрытии ❌
+- `RoomEditor.tsx` (902 строки) — нет тестов
+- `ProjectContext.tsx` (982 строки) — нет тестов
+- `BackupManager.tsx` (837 строк) — нет тестов
+- `httpClient.ts` (408 строк) — нет тестов
+- E2E: Стабилизация завершена (2026-04-17), все `test.describe.skip` сняты
+
+---
+
+## 📈 Тренды между ревью
+
+| Аспект | v3.0 | v4.0 | v4.1 | v4.2 | v5.0 | Тренд |
+|--------|------|------|------|------|------|-------|
+| Тесты | 402 | 841 | 841 | 841 | 841 | → Стабильно |
+| App.tsx | 557 | 489 | 478 | 478 | 470 | 📈 Улучшается |
+| ProjectContext | 660 | 933 | 931 | 982 | 982 | 📉 Стагнация |
+| ApiStorageProvider | — | 933 | 933 | 1035 | 1036 | 📉 Растёт |
+| `any` в prod | 0 | ~12 | 0 | 0 | 0 | ✅ Стабильно |
+| Stale closures | 1 | 3 | 3 | 3 | 3 | → Без изменений |
+| console.* в prod | — | 52 | 52 | 52 | **64** | **0** | ✅ Исправлено |
+| Файлы >500 строк | ~4 | ~10 | ~10 | ~10 | ~10 | → Без изменений |
+| Безопасность | 🔴 | 🔴 | 🟢 | 🟢 | 🟢 | ✅ Стабильно |
+| Производительность | 🔴 | 🔴 | 🔴 | 🟢 | 🟢 | ✅ Стабильно |
+
+---
+
+## 📋 План улучшений (приоритизированный)
+
+### Приоритет 0: E2E Стабилизация (1–2 дня)
+
+| # | Задача | Сложность |
+|---|--------|-----------|
+| 0.1 | Обновить селекторы на `data-testid` в оставшихся E2E-тестах | Средняя |
+| 0.2 | Починить загрузку/авторизацию в тестовом окружении | Средняя |
+| 0.3 | Довести >80% E2E тестов до стабильного прохождения | Средняя |
+
+### Приоритет 1: Архитектура (5–8 дней)
+
+| # | Задача | Целевое | Статус |
+|---|--------|---------|--------|
+| 1.1 | Декомпозиция ProjectContext (982 → 3 модуля) | <300 строк каждый | ⏳ С v3.0 |
+| 1.2 | Исправить stale closures (`deleteRoom`, `addRoom`, `reorderRooms`) | 0 closures | ⏳ С v3.0 |
+| 1.3 | Декомпозиция RoomEditor (902 → компоненты + хук) | <400 строк | ⏳ С v3.0 |
+| 1.4 | Декомпозиция BackupManager (837 → 3 панели) | <300 строк | ⏳ С v4.0 |
+| 1.5 | Декомпозиция ApiStorageProvider (1036 → модули) | <400 строк | ⏳ С v4.0 |
+| 1.6 | Декомпозиция routes/update.ts (2184 → controller + service) | <300 строк | ⏳ С v4.0 |
+| 1.7 | Единая утилита генерации ID | 1 функция | ⏳ С v3.0 |
+| 1.8 | Заменить 64 console.* на logger | 0 console.* | ⏳ С v3.0 |
+
+### Приоритет 2: Тестирование (5–7 дней)
+
+| # | Задача | Сложность |
+|---|--------|-----------|
+| 2.1 | Тесты для ProjectContext (после декомпозиции) | Высокая |
+| 2.2 | Тесты для RoomEditor | Средняя |
+| 2.3 | Тесты для httpClient (retry, refresh, timeout) | Средняя |
+| 2.4 | Тесты для BackupManager | Средняя |
+| 2.5 | E2E для авторизации | Средняя |
+
+### Приоритет 3: Бэкенд (3–5 дней)
+
+| # | Задача | Статус |
+|---|--------|--------|
+| 3.1 | DI для репозиториев | ⏳ С v3.0 |
+| 3.2 | Request ID middleware | ⏳ С v3.0 |
+| 3.3 | Per-user rate limiting | ⏳ С v3.0 |
+
+### Приоритет 4: Документация (1–2 дня) — ✅ ЗАВЕРШЕНО (2026-04-17)
+
+| # | Задача | Статус |
+|---|--------|--------|
+| 4.1 | Обновить ARCHITECTURE.md | ✅ |
+| 4.2 | Актуализировать INDEX.md | ✅ |
+| 4.3 | Обновить docs/README.md | ✅ |
+| 4.4 | Провести аудит всех docs/ | ✅ |
+
+**Итого:** ~16–24 рабочих дня для полной реализации.
+
+---
+
+## 🔧 Общая оценка v5.0
+
+### Что хорошо
+Проект — зрелое, функционально полное приложение с продуманной архитектурой данных, полным auth flow, серверной синхронизацией и AI-интеграцией. Строгая типизация (0 `any`), 841 тест, инкрементальное сохранение — всё это показатели высокого качества. Модуль `projectObjects.ts` — образец clean architecture.
+
+### Что требует внимания
+Технический долг в виде крупных файлов (ProjectContext, RoomEditor, BackupManager, ApiStorageProvider) накапливается и усложняет поддержку. Stale closures создают потенциал для скрытых багов. 64 прямых `console.*` в продакшн-коде свидетельствуют о непоследовательности в подходе к логированию. E2E-тесты требуют стабилизации.
+
+### Рекомендация
+Следующий спринт — **Приоритет 0 + 1**: стабилизировать E2E и провести декомпозицию крупнейших модулей.
 
 ---
 
 ## 🔗 Связанные документы
 
-- [TODO.md](./TODO.md) — Текущий список задач
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — Архитектурный план развития
-- [WORK_TEMPLATES_SPEC.md](./WORK_TEMPLATES_SPEC.md) — Спецификация шаблонов работ
+| Документ | Описание |
+|----------|----------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта (⚠️ устарел) |
+| [TODO.md](./TODO.md) | Актуальные задачи |
+| [PROGRESS.md](./PROGRESS.md) | История прогресса |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
+| [spec/](./spec/) | Детализированные спецификации |
 
 ---
 
 **Конец документа**
-

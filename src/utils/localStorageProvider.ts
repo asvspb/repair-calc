@@ -1,5 +1,6 @@
 import type { IStorageProvider } from '../types/storage';
 import { StorageProviderError } from '../types/storage';
+import { logError, logWarning, logDebug } from './logger';
 
 /**
  * LocalStorage-based implementation of IStorageProvider
@@ -23,13 +24,13 @@ export class LocalStorageProvider implements IStorageProvider {
   private constructor() {}
 
   /**
-   * Get a value from localStorage
+   * Get a value from localStorage (synchronous)
    */
   get<T>(key: string): T | null {
     try {
       const data = localStorage.getItem(key);
       if (!data) return null;
-      
+
       try {
         return JSON.parse(data) as T;
       } catch {
@@ -37,10 +38,10 @@ export class LocalStorageProvider implements IStorageProvider {
         // If so, it's corrupted data that should be removed
         const trimmed = data.trim();
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          console.error(`Error reading from localStorage key "${key}": Corrupted JSON data`);
+          logWarning('LocalStorage', 'Corrupted JSON data', { key });
           try {
             localStorage.removeItem(key);
-            console.info(`Removed corrupted data from localStorage key "${key}"`);
+            logDebug('LocalStorage', 'Removed corrupted data', { key });
           } catch {
             // Ignore removal errors
           }
@@ -51,13 +52,21 @@ export class LocalStorageProvider implements IStorageProvider {
         return data as unknown as T;
       }
     } catch (error) {
-      console.error(`Error reading from localStorage key "${key}":`, error);
+      logError('LocalStorage', 'Error reading from localStorage', error, { key });
       return null;
     }
   }
 
   /**
-   * Set a value in localStorage
+   * Get a value from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async getAsync<T>(key: string): Promise<T | null> {
+    return Promise.resolve(this.get<T>(key));
+  }
+
+  /**
+   * Set a value in localStorage (synchronous)
    */
   set<T>(key: string, value: T): void {
     try {
@@ -69,25 +78,49 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   /**
-   * Remove a value from localStorage
+   * Set a value in localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async setAsync<T>(key: string, value: T): Promise<void> {
+    return Promise.resolve(this.set(key, value));
+  }
+
+  /**
+   * Remove a value from localStorage (synchronous)
    */
   remove(key: string): void {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`Error removing localStorage key "${key}":`, error);
+      logError('LocalStorage', 'Error removing localStorage key', error, { key });
     }
   }
 
   /**
-   * Clear all values from localStorage
+   * Remove a value from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async removeAsync(key: string): Promise<void> {
+    return Promise.resolve(this.remove(key));
+  }
+
+  /**
+   * Clear all values from localStorage (synchronous)
    */
   clear(): void {
     try {
       localStorage.clear();
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      logError('LocalStorage', 'Error clearing localStorage', error);
     }
+  }
+
+  /**
+   * Clear all values from localStorage (asynchronous)
+   * Wraps synchronous operation in Promise for API compatibility
+   */
+  async clearAsync(): Promise<void> {
+    return Promise.resolve(this.clear());
   }
 
   /**
@@ -95,21 +128,21 @@ export class LocalStorageProvider implements IStorageProvider {
    */
   getStorageInfo(): { used: number; total: number; percentage: number } {
     let used = 0;
-    
+
     try {
       for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
           used += localStorage[key].length * 2; // UTF-16 = 2 bytes per char
         }
       }
     } catch (error) {
-      console.error('Error calculating storage usage:', error);
+      logError('LocalStorage', 'Error calculating storage usage', error);
     }
-    
+
     // Approximate localStorage limit (5-10 MB)
     const total = 5 * 1024 * 1024; // 5 MB
     const percentage = Math.min((used / total) * 100, 100);
-    
+
     return { used, total, percentage };
   }
 }

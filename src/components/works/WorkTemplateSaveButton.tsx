@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Save, Check, X } from 'lucide-react';
-import type { WorkData } from '../../types';
+import { Save, Check } from 'lucide-react';
+import type { WorkData } from '@shared/types';
 import type { SaveResult } from '../../hooks/useWorkTemplates';
 
 type Props = {
@@ -15,13 +15,13 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
 
   const handleClick = () => {
     if (showConfirm) return;
-    
+
     const result = onSave(work, false);
-    
+
     if (result.success) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
-    } else if (result.needsConfirm) {
+    } else if ('needsConfirm' in result && result.needsConfirm) {
       setShowConfirm(true);
     }
   };
@@ -68,6 +68,7 @@ export function WorkTemplateSaveButton({ work, onSave, className = '' }: Props) 
 
   return (
     <button
+      data-testid="save-template-btn"
       onClick={handleClick}
       className={`flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer ${className}`}
       title="Сохранить как шаблон"

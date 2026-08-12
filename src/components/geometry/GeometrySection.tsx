@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronUp, AlertCircle } from 'lucide-react';
-import type { RoomData, Opening, WallSection, RoomSubSection, GeometryMode } from '../../types';
+import type { RoomData, Opening, WallSection, RoomSubSection, GeometryMode } from '@shared/types';
 import { NumberInput } from '../ui/NumberInput';
 import { ModeSelector } from './ModeSelector';
 import { SimpleGeometry } from './SimpleGeometry';
@@ -32,23 +32,49 @@ interface GeometrySectionProps {
   // Extended mode handlers
   addSubSection: () => void;
   removeSubSection: (id: string) => void;
-  updateSubSection: (id: string, field: keyof RoomSubSection, val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[]) => void;
-  updateSubSectionWindow: (subSectionId: string, windowId: string, field: keyof Opening, val: number | string) => void;
+  updateSubSection: (
+    id: string,
+    field: keyof RoomSubSection,
+    val: string | number | RoomSubSection['shape'] | Opening[] | WallSection[],
+  ) => void;
+  updateSubSectionWindow: (
+    subSectionId: string,
+    windowId: string,
+    field: keyof Opening,
+    val: number | string,
+  ) => void;
   addSubSectionWindow: (subSectionId: string) => void;
   removeSubSectionWindow: (subSectionId: string, windowId: string) => void;
-  updateSubSectionDoor: (subSectionId: string, doorId: string, field: keyof Opening, val: number | string) => void;
+  updateSubSectionDoor: (
+    subSectionId: string,
+    doorId: string,
+    field: keyof Opening,
+    val: number | string,
+  ) => void;
   addSubSectionDoor: (subSectionId: string) => void;
   removeSubSectionDoor: (subSectionId: string, doorId: string) => void;
   // Advanced mode handlers
   addSegment: () => void;
   removeSegment: (id: string) => void;
-  updateSegment: (id: string, field: keyof import('../../types').RoomSegment, val: string | number) => void;
+  updateSegment: (
+    id: string,
+    field: keyof import('../../types').RoomSegment,
+    val: string | number,
+  ) => void;
   addObstacle: () => void;
   removeObstacle: (id: string) => void;
-  updateObstacle: (id: string, field: keyof import('../../types').Obstacle, val: string | number) => void;
+  updateObstacle: (
+    id: string,
+    field: keyof import('../../types').Obstacle,
+    val: string | number,
+  ) => void;
   addWallSection: () => void;
   removeWallSection: (id: string) => void;
-  updateWallSection: (id: string, field: keyof import('../../types').WallSection, val: string | number) => void;
+  updateWallSection: (
+    id: string,
+    field: keyof import('../../types').WallSection,
+    val: string | number,
+  ) => void;
   // Advanced mode calculations
   segmentsDelta: number;
   obstaclesDelta: number;
@@ -56,7 +82,7 @@ interface GeometrySectionProps {
 
 export function GeometrySection({
   room,
-  updateRoom,
+  updateRoom: _updateRoom,
   updateRoomById,
   isGeometryCollapsed,
   isExtendedGeometryCollapsed,
@@ -141,48 +167,53 @@ export function GeometrySection({
       <div className="mb-4 p-3 bg-gray-50 rounded-lg">
         {room.geometryMode === 'simple' && (
           <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-700">Простой режим:</span> одна прямоугольная комната с окнами и дверями.
+            <span className="font-medium text-gray-700">Простой режим:</span> одна прямоугольная
+            комната с окнами и дверями.
           </p>
         )}
         {room.geometryMode === 'extended' && (
           <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-700">Расширенный режим:</span> несколько прямоугольных секций (например, L-образная комната). Каждая секция имеет свои проёмы.
+            <span className="font-medium text-gray-700">Расширенный режим:</span> несколько
+            прямоугольных секций (например, L-образная комната). Каждая секция имеет свои проёмы.
           </p>
         )}
         {room.geometryMode === 'advanced' && (
           <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-700">Профессиональный режим:</span> сегменты, препятствия, перепады высоты стен — для помещений сложной формы.
+            <span className="font-medium text-gray-700">Профессиональный режим:</span> сегменты,
+            препятствия, перепады высоты стен — для помещений сложной формы.
           </p>
         )}
       </div>
 
       {/* Warning about existing data */}
       {normalizedRoom.geometryMode === 'simple' &&
-        (normalizedRoom.segments.length +
+        normalizedRoom.segments.length +
           normalizedRoom.obstacles.length +
           normalizedRoom.wallSections.length +
           normalizedRoom.subSections.length >
-          0) && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-yellow-800">
-            Есть данные в других режимах. Переключение в простой режим сохранит их, но они не будут учитываться в расчетах.
-          </p>
-        </div>
-      )}
+          0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">
+              Есть данные в других режимах. Переключение в простой режим сохранит их, но они не
+              будут учитываться в расчетах.
+            </p>
+          </div>
+        )}
 
       {normalizedRoom.geometryMode === 'extended' &&
-        (normalizedRoom.segments.length +
+        normalizedRoom.segments.length +
           normalizedRoom.obstacles.length +
           normalizedRoom.wallSections.length >
-          0) && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-yellow-800">
-            Есть данные в профессиональном режиме. При переключении они сохранятся, но не будут использоваться.
-          </p>
-        </div>
-      )}
+          0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">
+              Есть данные в профессиональном режиме. При переключении они сохранятся, но не будут
+              использоваться.
+            </p>
+          </div>
+        )}
 
       {/* Height is always visible when not collapsed */}
       {((room.geometryMode === 'simple' || room.geometryMode === 'advanced') &&
@@ -195,6 +226,7 @@ export function GeometrySection({
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Длина (м)</label>
                   <NumberInput
+                    data-testid="geom-length"
                     value={room.length}
                     onChange={(v: number) => updateSimpleField('length', v)}
                     className="w-full"
@@ -204,6 +236,7 @@ export function GeometrySection({
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Ширина (м)</label>
                   <NumberInput
+                    data-testid="geom-width"
                     value={room.width}
                     onChange={(v: number) => updateSimpleField('width', v)}
                     className="w-full"
@@ -222,6 +255,7 @@ export function GeometrySection({
             <div>
               <label className="block text-sm text-gray-500 mb-1">Высота (м)</label>
               <NumberInput
+                data-testid="geom-height"
                 value={room.height}
                 onChange={(v: number) => updateRoomById(room.id, prev => ({ ...prev, height: v }))}
                 className="w-full"

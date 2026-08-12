@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import type { Opening } from '../../types';
+import type { Opening } from '@shared/types';
 import { NumberInput } from '../ui/NumberInput';
 
 interface OpeningListProps {
@@ -28,6 +28,7 @@ export function OpeningList({
         <h4 className="text-sm font-medium text-gray-700">{title}</h4>
         <button
           onClick={onAdd}
+          data-testid={`add-${title === 'Окна' ? 'window' : 'door'}-btn`}
           className="text-xs text-indigo-600 font-medium hover:text-indigo-700 cursor-pointer"
         >
           + Добавить
@@ -38,7 +39,11 @@ export function OpeningList({
       ) : (
         <div className="space-y-3">
           {openings.map((opening, i) => (
-            <div key={opening.id} className="p-2 bg-white rounded border border-gray-200">
+            <div
+              key={opening.id}
+              data-testid={`opening-item-${opening.id}`}
+              className="p-2 bg-white rounded border border-gray-200"
+            >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs text-gray-400 w-4 font-medium">{i + 1}.</span>
                 <NumberInput
@@ -65,7 +70,7 @@ export function OpeningList({
                 type="text"
                 placeholder={commentPlaceholder}
                 value={opening.comment || ''}
-                onChange={(e) => onUpdate(opening.id, 'comment', e.target.value)}
+                onChange={e => onUpdate(opening.id, 'comment', e.target.value)}
                 className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-indigo-500"
               />
             </div>

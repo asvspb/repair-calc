@@ -1,53 +1,128 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { ProjectProvider, useProjectContext } from '../../src/contexts/ProjectContext';
+import React from 'react';
+import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
 import { WorkTemplateProvider } from '../../src/contexts/WorkTemplateContext';
+import { AuthContext } from '../../src/contexts/AuthContext';
 import type { RoomData, RoomSubSection } from '../../src/types';
-import { createNewProject, createNewRoom } from '../../src/utils/factories';
+import type { AuthContextValue } from '../../src/types/auth';
+import { createNewProject, createNewRoom } from '../../src/domain/factories/projectFactory';
+
+vi.mock('../../src/utils/storage', () => ({
+  StorageManager: {
+    loadProjectsAsync: vi.fn(() => Promise.resolve(null)),
+    loadActiveProjectAsync: vi.fn(() => Promise.resolve(null)),
+    saveProjects: vi.fn(),
+    saveActiveProject: vi.fn(),
+    saveProject: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/api/storage', () => ({
+  ApiStorageProvider: {
+    getInstance: vi.fn(() => ({
+      loadProjectsAsync: vi.fn(() => Promise.resolve([])),
+      saveProjectsAsync: vi.fn(() => Promise.resolve([])),
+      saveProjectAsync: vi.fn(() => Promise.resolve({})),
+      createProjectAsync: vi.fn(),
+      deleteProjectAsync: vi.fn(),
+      markProjectDeleted: vi.fn(),
+      getRoomSyncErrors: vi.fn(() => new Map()),
+    })),
+    resetInstance: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/api/totals', () => ({ saveTotals: vi.fn() }));
+vi.mock('../../src/utils/logger', () => ({
+  logUserAction: vi.fn(),
+  logSuccess: vi.fn(),
+  logError: vi.fn(),
+  logStart: vi.fn(() => Date.now()),
+  logEnd: vi.fn(),
+  logStateChange: vi.fn(),
+  logWarning: vi.fn(),
+  logDebug: vi.fn(),
+}));
+vi.mock('../../src/utils/migration', () => ({
+  runMigrations: vi.fn(),
+  needsMigration: vi.fn(() => false),
+}));
+vi.mock('../../src/utils/idMapper', () => ({
+  idMapper: { getServerId: vi.fn(), addMapping: vi.fn(), clear: vi.fn() },
+  IdMapper: { isServerId: vi.fn(), isLocalId: vi.fn() },
+  isServerId: vi.fn(),
+}));
+vi.mock('../../src/utils/saveQueue', () => ({
+  saveQueue: {
+    enqueue: vi.fn((task: () => Promise<void>) => task()),
+    cancelPending: vi.fn(),
+    hasPendingData: false,
+    getPendingData: vi.fn(),
+  },
+}));
+vi.mock('../../src/utils/geometry', () => ({
+  calculateRoomMetrics: vi.fn(() => ({ floorArea: 0 })),
+}));
+vi.mock('../../src/utils/costs', () => ({
+  calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
+}));
 
 const TEST_PROJECTS = [
   {
     ...createNewProject(),
     name: 'Test Project',
-  }
+  },
 ];
+
+const mockAuthValue: AuthContextValue = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  clearError: vi.fn(),
+};
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <ProjectProvider initialProjects={TEST_PROJECTS}>
-      <WorkTemplateProvider>
-        {children}
-      </WorkTemplateProvider>
-    </ProjectProvider>
+    <AuthContext.Provider value={mockAuthValue}>
+      <WorkTemplateProvider>{children}</WorkTemplateProvider>
+    </AuthContext.Provider>
   );
 }
 
 describe('Extended Mode - Section Dimensions Data Integrity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetStore();
+  });
+
   const createExtendedRoom = (): RoomData => ({
     ...createNewRoom(),
     name: 'Test Room',
     geometryMode: 'extended',
     subSections: [],
     extendedModeData: {
-      subSections: []
-    }
+      subSections: [],
+    },
   });
 
-  it('should preserve dimensions when adding second section', () => {
-    const { result } = renderHook(() => useProjectContext(), {
-      wrapper: TestWrapper,
-    });
+  async function initStore() {
+    await useProjectStore.getState().initialize(TEST_PROJECTS, false);
+  }
 
-    // First add a room to the project
+  it('should preserve dimensions when adding second section', async () => {
+    await initStore();
+
     const room = createExtendedRoom();
-    act(() => {
-      result.current.addRoom(room);
-    });
+    useProjectStore.getState().addRoom(room);
 
-    const roomId = result.current.activeProject?.rooms[0].id;
+    const roomId = useProjectStore.getState().activeProject?.objects?.[0]?.rooms[0].id;
     expect(roomId).toBeDefined();
-    
-    // Add first section with dimensions
+
     const section1: RoomSubSection = {
       id: 's1',
       name: 'Section 1',
@@ -58,19 +133,19 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       doors: [],
     };
 
-    // Simulate adding section 1 via updateRoom
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({ ...currentRoom, subSections: [section1] });
-      }
-    });
+    const currentRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom) {
+      useProjectStore.getState().updateRoom({ ...currentRoom, subSections: [section1] });
+    }
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+    let updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].length).toBe(5);
     expect(updatedRoom?.subSections[0].width).toBe(4);
 
-    // Add second section
     const section2: RoomSubSection = {
       id: 's2',
       name: 'Section 2',
@@ -81,41 +156,34 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       doors: [],
     };
 
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({
-          ...currentRoom,
-          subSections: [section1, section2]
-        });
-      }
-    });
+    const currentRoom2 = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom2) {
+      useProjectStore.getState().updateRoom({
+        ...currentRoom2,
+        subSections: [section1, section2],
+      });
+    }
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
-    // Section 1 should preserve its dimensions
+    updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+
     expect(updatedRoom?.subSections[0].length).toBe(5);
     expect(updatedRoom?.subSections[0].width).toBe(4);
-    
-    // Section 2 should have its own dimensions
     expect(updatedRoom?.subSections[1].length).toBe(3);
     expect(updatedRoom?.subSections[1].width).toBe(3);
   });
 
-  it('should preserve trapezoid dimensions when updating another section', () => {
-    const { result } = renderHook(() => useProjectContext(), {
-      wrapper: TestWrapper,
-    });
+  it('should preserve trapezoid dimensions when updating another section', async () => {
+    await initStore();
 
-    // Add room first
     const room = createExtendedRoom();
-    act(() => {
-      result.current.addRoom(room);
-    });
+    useProjectStore.getState().addRoom(room);
 
-    const roomId = result.current.activeProject?.rooms[0].id!;
-    
-    // Add two trapezoid sections
+    const roomId = useProjectStore.getState().activeProject?.objects?.[0]?.rooms[0].id!;
+
     const section1: RoomSubSection = {
       id: 's1',
       name: 'Trapezoid 1',
@@ -146,65 +214,51 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       doors: [],
     };
 
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({ ...currentRoom, subSections: [section1, section2] });
-      }
-    });
+    const currentRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom) {
+      useProjectStore.getState().updateRoom({ ...currentRoom, subSections: [section1, section2] });
+    }
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
-    // Verify initial values
+    let updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].base1).toBe(6);
     expect(updatedRoom?.subSections[0].base2).toBe(4);
     expect(updatedRoom?.subSections[0].depth).toBe(5);
-    
     expect(updatedRoom?.subSections[1].base1).toBe(8);
     expect(updatedRoom?.subSections[1].base2).toBe(6);
     expect(updatedRoom?.subSections[1].depth).toBe(4);
 
-    // Update section 1's base1
     const updatedSection1 = { ...section1, base1: 10 };
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({
-          ...currentRoom,
-          subSections: [updatedSection1, section2]
-        });
-      }
-    });
+    const currentRoom2 = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom2) {
+      useProjectStore.getState().updateRoom({
+        ...currentRoom2,
+        subSections: [updatedSection1, section2],
+      });
+    }
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
-    // Section 1 should have new value
+    updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].base1).toBe(10);
-    
-    // Section 2 should be unchanged - THIS IS THE KEY TEST
     expect(updatedRoom?.subSections[1].base1).toBe(8);
     expect(updatedRoom?.subSections[1].base2).toBe(6);
     expect(updatedRoom?.subSections[1].depth).toBe(4);
   });
 
-  // Note: extendedModeData is only updated via RoomEditor handlers (updateSubSection etc.)
-  // Direct updateRoom calls don't sync extendedModeData - this is by design
-  // The important tests above verify that section data is preserved correctly
+  it('should handle shape change without losing data', async () => {
+    await initStore();
 
-  it('should handle shape change without losing data', () => {
-    const { result } = renderHook(() => useProjectContext(), {
-      wrapper: TestWrapper,
-    });
-
-    // Add room first
     const room = createExtendedRoom();
-    act(() => {
-      result.current.addRoom(room);
-    });
+    useProjectStore.getState().addRoom(room);
 
-    const roomId = result.current.activeProject?.rooms[0].id!;
-    
-    // Start with rectangle
+    const roomId = useProjectStore.getState().activeProject?.objects?.[0]?.rooms[0].id!;
+
     const section: RoomSubSection = {
       id: 's1',
       name: 'Section',
@@ -215,18 +269,19 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       doors: [],
     };
 
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({ ...currentRoom, subSections: [section] });
-      }
-    });
+    const currentRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom) {
+      useProjectStore.getState().updateRoom({ ...currentRoom, subSections: [section] });
+    }
 
-    let updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
+    let updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].shape).toBe('rectangle');
     expect(updatedRoom?.subSections[0].length).toBe(5);
 
-    // Change to trapezoid
     const updatedSection = {
       ...section,
       shape: 'trapezoid' as const,
@@ -237,22 +292,20 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
       side2: 5,
     };
 
-    act(() => {
-      const currentRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-      if (currentRoom) {
-        result.current.updateRoom({
-          ...currentRoom,
-          subSections: [updatedSection]
-        });
-      }
-    });
+    const currentRoom2 = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
+    if (currentRoom2) {
+      useProjectStore.getState().updateRoom({
+        ...currentRoom2,
+        subSections: [updatedSection],
+      });
+    }
 
-    updatedRoom = result.current.activeProject?.rooms.find(r => r.id === roomId);
-    
-    // Shape should be updated
+    updatedRoom = useProjectStore
+      .getState()
+      .activeProject?.objects?.[0]?.rooms.find(r => r.id === roomId);
     expect(updatedRoom?.subSections[0].shape).toBe('trapezoid');
-    
-    // Trapezoid fields should be present
     expect(updatedRoom?.subSections[0].base1).toBe(6);
     expect(updatedRoom?.subSections[0].base2).toBe(4);
     expect(updatedRoom?.subSections[0].depth).toBe(5);
