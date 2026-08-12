@@ -46,12 +46,14 @@
 - [ ] `./scripts/deploy-local.sh` (тесты + линтеры + `docker compose build --no-cache`)
 - [ ] Живая проверка путей: `GET /api/objects` (200, не 404), `POST /api/rooms/:id/works`
 
-### P1-2. Ускорить сборку бэкенда
+### P1-2. Ускорить сборку бэкенда (Docker browser-cache)
 
-`playwright` лежит в `dependencies` сервера (не `devDependencies`) → тянется в рантайм-образ, пересборка падает по таймауту >900с.
+⚠️ **Коррекция (2026-08-12):** `playwright` — **runtime-зависимость** сервера (`import { chromium }` в `server/src/services/update/parsers/lemanaParser.ts`, `bazavitParser.ts` — скрейперы цен). Перенос в `devDependencies` **сломал бы prod** (`Cannot find module`). Прежний диагноз «не в той секции» неверен.
 
-- [ ] Перенести `playwright` в `server/package.json` → `devDependencies`
-- [ ] Проверить, что `npm ci` в Docker-образе не тянет браузерный тулкит
+Реальная проблема — медленная установка browser-binaries при каждой сборке. Чинить кэшированием:
+
+- [ ] Закэшировать `PLAYWRIGHT_BROWSERS_PATH` в Docker-слой (multi-stage cache, `--mount=type=cache`)
+- [ ] (Опц.) Вынести `lint` → `eslint src/ tests/` отдельным коммитом (не связано с playwright)
 
 ### P1-3. `npm audit fix`
 

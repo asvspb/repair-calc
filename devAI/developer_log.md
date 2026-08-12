@@ -76,3 +76,11 @@
 - Снимок в спеке: 164 коммита / +73k−10k строк / 263 новых файла (~62k LOC) вне main; CI untracked; 12 файлов в дереве; 9 незапушено; деплой ≈ актуален (бэкенд 11.08, фронт 22.06 ≈ код).
 - DoD: main==refactor через --no-ff, CI green на main, дерево чистое, gates зелёные, audit 0, PROGRESS.md создан.
 - Статус: Draft — ждёт аппрута владельцем → старт с Фазы 1 (BATCH-01 «Активация CI»).
+
+## [2026-08-12] SPEC-005 Фаза 1+2 выполнена — проект разблокирован
+
+- **Фаза 1 (разблок):** BATCH-01 активация CI (`b60b352`: workflow + husky secret/AI-trailer хуки + скрипты); BATCH-02 push refactor → origin (11 коммитов); BATCH-03 merge `--no-ff` refactor → main (`588c76b`, 164 коммита, 0 конфликтов) + push main. `main..refactor = 0`. CI жив — первый прогон запущен на main.
+- **Фаза 2 (триаж):** BATCH-04 — 7 «висящих» файлов закоммичены (`72c406b` test: 4 фронт-теста + migrations; `b1050f8` docs: RU-AGENTS + шаблон плана). Рабочее дерево чистое.
+- **BATCH-08:** создан `docs/PROGRESS.md` (вехи); INDEX compass обновлён (🟡→🟢, критпуть 1+2 ✅); AUDIT получил status-update.
+- ⚠️ **BATCH-06 ОТМЕНЁН:** `playwright` — runtime-dep сервера (`import { chromium }` в `lemanaParser`/`bazavitParser`, скрейперы цен), перенос в devDeps сломал бы prod. Диагноз в AUDIT/TODO/SPEC исправлен. Медленная сборка → отдельная Docker-cache задача.
+- **Нит:** commitlint `subject-case` требует lowercase-first subject (дважды ловил на `SPEC-…`/`RU-…`).

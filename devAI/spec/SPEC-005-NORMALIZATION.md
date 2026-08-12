@@ -146,8 +146,9 @@ PWA, расширение i18n — отдельные ТЗ.
 - **Цель:** ускорить Docker-сборку бэкенда; покрыть тесты линтом; выровнять версию.
 - **Read:** `server/package.json`, `server/Dockerfile`, `server/eslint.config.js`
 - **Write (EXCLUSIVE):** `server/package.json`, `server/package-lock.json`
-- **Изменения:** `playwright` → `devDependencies`; `lint` → `eslint src/ tests/`; `version` `1.0.0` → `2.0.0` (выровнять с root).
-- **DoD:** `npm ci` в server не тянет браузерный тулкит в prod-стадии; `npm run lint` (server) покрывает `tests/`; `npm test` зелёный.
+- **Изменения:** `lint` → `eslint src/ tests/`; `version` `1.0.0` → `2.0.0` (выровнять с root).
+- **DoD:** `npm run lint` (server) покрывает `tests/`; `npm test` зелёный; `version` выровнена.
+- ⛔ **ОТМЕНЕНО (2026-08-12):** `playwright` → `devDependencies` — это **runtime-dep** сервера (`import { chromium }` в `server/src/services/update/parsers/lemanaParser.ts`, `bazavitParser.ts`, скрейперы цен). Перенос сломал бы prod (`Cannot find module 'playwright'`). Медленная сборка чинится Docker-кэшированием `PLAYWRIGHT_BROWSERS_PATH` — отдельная задача (TODO P1-2).
 - **Зависит от:** нет (но конфликтует с BATCH-07 → 07 после).
 
 #### TASK-BATCH-07 — `npm audit fix`
