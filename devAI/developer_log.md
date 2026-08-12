@@ -84,3 +84,11 @@
 - **BATCH-08:** создан `docs/PROGRESS.md` (вехи); INDEX compass обновлён (🟡→🟢, критпуть 1+2 ✅); AUDIT получил status-update.
 - ⚠️ **BATCH-06 ОТМЕНЁН:** `playwright` — runtime-dep сервера (`import { chromium }` в `lemanaParser`/`bazavitParser`, скрейперы цен), перенос в devDeps сломал бы prod. Диагноз в AUDIT/TODO/SPEC исправлен. Медленная сборка → отдельная Docker-cache задача.
 - **Нит:** commitlint `subject-case` требует lowercase-first subject (дважды ловил на `SPEC-…`/`RU-…`).
+
+## [2026-08-12] SPEC-005 Шаг 3 — техдолг (audit, types, lint-scope, docker)
+
+- **audit+version** (`a2fff40`): npm audit fix — 7 high → 0 (residual 1 low `esbuild`, devDep); server version 1.0.0 → 2.0.0.
+- **types** (`d2928ea`): `as any` в update-роутах (9 сайтов) → `AuthRequest` + Zod-вывод; eslint warnings 39 → 30. Repo as-any (10, Knex) оставлен отдельной задачей.
+- **lint scope** (`4ab34d7`): server-eslint → `tests/` (0 errors, пермиссивный tests-блок) + `varsIgnorePattern: '^_'`; `lint` script → `eslint src/ tests/`.
+- **docker** (`5bdbbe9`): `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` в builder-stage (~150 МБ экономии; prod не тронут — runtime-скрейперам нужен chromium).
+- **CI green** на main — авторитетная верификация всего Шага 3 (lint src+tests 0 errors, lint:deps 0 violations, tests pass в чистом CI).

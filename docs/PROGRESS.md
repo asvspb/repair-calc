@@ -14,6 +14,16 @@
 - ✅ **Триаж дерева (BATCH-04)**: 7 «висящих» файлов закоммичены (4 фронт-теста, `migrations.test.ts`, RU-`AGENTS.md`, шаблон плана). Рабочее дерево чистое.
 - ⚠️ **BATCH-06 отменён**: `playwright` — runtime-dep сервера (скрейперы цен), перенос в devDeps сломал бы prod. Медленная сборка → отдельная задача по Docker browser-cache.
 
+### Шаг 3 — техдолг (2026-08-12)
+
+- ✅ `npm audit fix`: **7 high → 0** (residual 1 low `esbuild`, devDep/Windows-only, не форсируется без `--force`).
+- ✅ version align: `server` 1.0.0 → 2.0.0.
+- ✅ `as any` в update-роутах (9 сайтов: ab-test 5, jobs 4) → `AuthRequest` + Zod-вывод; eslint warnings 39 → 30.
+- ✅ server-lint scope → `tests/` (0 errors, пермиссивный tests-блок) + `varsIgnorePattern: '^_'`.
+- ✅ Docker: `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` в builder-stage (~150 МБ экономии).
+- 🟡 Остаток: repo `as any` (10, Knex-типизация — отдельная задача), Docker full browser-cache (P1-2).
+- ✅ **CI green** на main (авторитетная верификация всего Шага 3).
+
 ## 2026-08-11 — Стабилизация и документирование
 
 - ✅ Фикс двойного префикса роутинга (`110f7f0`) + интеграционные тесты (8, mutation-verified).

@@ -26,7 +26,7 @@ verifiable-by-tooling**: архитектура enforced через `dependency-
 **Текущий фазис (2026-08-12): 🟢 операционно разблокирован.**
 Рефактор-ветка `refactor/architecture-v2` **влита в main** (merge `--no-ff` `588c76b`,
 164 коммита); CI активирован (первый прогон запущен); рабочее дерево чистое.
-Остаётся техдолг: npm audit (7 high), `as any` cleanup (39), server-lint scope.
+Остаётся техдолг: repo `as any` (10, Knex-типизация — отдельная задача), npm audit residual (1 low `esbuild`), Docker full browser-cache (P1-2). Шаг 3 закрыл: audit 7 high→0, route `as any` (9), lint scope → `tests/`, Docker builder-skip.
 
 **Критический путь (что делать следующим):**
 
