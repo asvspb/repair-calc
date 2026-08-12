@@ -1,6 +1,22 @@
-# DevOps / Deployment Rules
+# DevOps & Development Rules
 
-1. **Docker Multi-Stage Build:** This project uses multi-stage Docker builds for the frontend and backend.
-2. **Never deploy via local npm run build:** Running `npm run build` locally will only place files in the local `dist/` folder, which is NOT mounted into the Nginx container. The Nginx container compiles and bakes its own `dist/` directory at build time.
-3. **Use the deploy script:** Always use `./scripts/deploy-local.sh` to deploy changes locally. It includes safety checks, runs linters/tests, and correctly triggers the Docker rebuild.
-4. **Manual Rebuilds:** If you must restart/rebuild manually without the script, always use `docker compose up -d --build frontend` (or `--build` for the specific service) to force Docker to invalidate the cache and rebuild the internal `dist/` directory.
+## 1. Режим Разработки (Hybrid Dev Scheme - Default)
+
+Для мгновенной отладки и применения HMR (замены кода на лету), мы используем гибридную схему разработки:
+
+- **База Данных и Бэкенд** крутятся в Docker (`docker compose up -d db backend migrate`).
+- **Фронтенд** разрабатывается **локально** без Docker.
+
+**Действия агента при старте задачи по фронтенду:**
+
+1. Останови фронтенд в докере, чтобы освободить порт `3993`: `docker compose stop frontend`.
+2. Запусти (или попроси пользователя запустить) `npm run dev` в локальном терминале.
+
+## 2. Режим Деплоя и Проверки Сборки (Production Build)
+
+Архитектура проекта подразумевает Multi-Stage сборку в Docker (папка `dist/` компилируется внутри контейнера, а не маунтится снаружи).
+**Строгие правила деплоя:**
+
+- **Никогда** не используй `npm run build` локально для раскатки релиза (он соберет файлы только на хосте).
+- Для полноценной тестировки production-режима используй скрипт: `./scripts/deploy-local.sh`. Он прогонит линтеры, тесты и заставит Docker пересобрать образы (`docker compose build --no-cache`).
+- Если нужен ручной перезапуск продакшен-образа: `docker compose up -d --build frontend`.
