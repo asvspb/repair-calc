@@ -11,7 +11,10 @@ COPY package*.json ./
 # Устанавливаем build dependencies для native modules (например, better-sqlite3)
 RUN apk add --no-cache python3 make g++
 
-# Устанавливаем ВСЕ зависимости (включая devDependencies для сборки)
+# Устанавливаем ВСЕ зависимости (включая devDependencies для сборки).
+# Builder-stage делает только tsc — браузеры playwright здесь не нужны,
+# пропускаем их загрузку (~150 МБ). Prod-stage ниже браузеры ставит (runtime).
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 
 # Копируем исходный код
