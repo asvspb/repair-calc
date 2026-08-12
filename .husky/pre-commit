@@ -1,2 +1,3 @@
+sh scripts/check-secrets.sh
 npm run lint:deps
 npx lint-staged
