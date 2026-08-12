@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import type { AuthRequest } from '../../types/index.js';
 import {
   ABTestRepository,
   type ParserType as ABParserType,
@@ -78,7 +79,7 @@ router.get('/ab-tests', async (req: Request, res: Response, next: NextFunction) 
 router.post('/ab-tests', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const input = createABTestSchema.parse(req.body);
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     if (input.parser_a === input.parser_b) {
       return res.status(400).json({
@@ -355,7 +356,7 @@ router.delete('/ab-tests/:id', async (req: Request, res: Response, next: NextFun
 router.post('/ab-tests/:id/start', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     const test = await ABTestRepository.start(id, userId);
     if (!test) {
@@ -451,7 +452,7 @@ router.post('/ab-tests/:id/complete', async (req: Request, res: Response, next: 
   try {
     const { id } = req.params;
     const input = completeABTestSchema.parse(req.body);
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     const test = await ABTestRepository.complete(id, input.winner, input.confidence_level, userId);
     if (!test) {
@@ -493,7 +494,7 @@ router.post('/ab-tests/:id/complete', async (req: Request, res: Response, next: 
 router.post('/ab-tests/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     const test = await ABTestRepository.cancel(id, userId);
     if (!test) {
@@ -682,7 +683,7 @@ router.post(
       }
 
       if (stats.confidenceLevel !== null && stats.confidenceLevel >= threshold && stats.winner) {
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user?.id;
         await ABTestRepository.complete(id, stats.winner, stats.confidenceLevel, userId);
 
         const parserManager = getParserManager();

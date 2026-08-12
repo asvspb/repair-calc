@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import type { AuthRequest } from '../../types/index.js';
 import {
   UpdateJobRepository,
   UpdateJobItemRepository,
@@ -28,7 +29,7 @@ router.use(authenticate, adminGuard);
 router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const input = runUpdateSchema.parse(req.body);
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     const runningJobs = await UpdateJobRepository.findRunning();
     if (runningJobs.length >= 3) {
@@ -45,8 +46,8 @@ router.post('/run', async (req: Request, res: Response, next: NextFunction) => {
 
     const job = await runner.runManual({
       city: input.city,
-      categories: input.categories as any,
-      sources: input.sources as any,
+      categories: input.categories,
+      sources: input.sources,
       force: input.force,
       priority: input.priority,
       triggeredBy: userId,
@@ -221,7 +222,7 @@ router.post('/cancel/:jobId', async (req: Request, res: Response, next: NextFunc
 router.post('/retry/:jobId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthRequest).user?.id;
 
     const originalJob = await UpdateJobRepository.findById(jobId);
     if (!originalJob) {
