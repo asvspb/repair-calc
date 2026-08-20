@@ -6,6 +6,7 @@ import {
   addRoomToProject,
   deleteRoomFromProject,
   reorderRoomsInProject,
+  getObjectFromProject,
 } from '../utils/projectObjects';
 import { logUserAction, logSuccess, logWarning } from '../utils/logger';
 
@@ -27,13 +28,17 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
         p.id === updatedProject.id ? updatedProject : p,
       );
       const activeProject = newProjects.find(p => p.id === state.activeProjectId) || null;
+      const activeObject =
+        activeProject && state.activeObjectId
+          ? getObjectFromProject(activeProject, state.activeObjectId)
+          : activeProject?.objects?.[0] || null;
 
       scheduleSave(newProjects);
       if (isAuthenticated) {
         scheduleTotalsSave(updatedProject);
       }
 
-      return { projects: newProjects, activeProject };
+      return { projects: newProjects, activeProject, activeObject };
     });
   },
 
@@ -48,13 +53,17 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
         p.id === updatedProject.id ? updatedProject : p,
       );
       const activeProject = newProjects.find(p => p.id === state.activeProjectId) || null;
+      const activeObject =
+        activeProject && state.activeObjectId
+          ? getObjectFromProject(activeProject, state.activeObjectId)
+          : activeProject?.objects?.[0] || null;
 
       scheduleSave(newProjects);
       if (isAuthenticated) {
         scheduleTotalsSave(updatedProject);
       }
 
-      return { projects: newProjects, activeProject };
+      return { projects: newProjects, activeProject, activeObject };
     });
   },
 

@@ -92,3 +92,10 @@
 - **lint scope** (`4ab34d7`): server-eslint → `tests/` (0 errors, пермиссивный tests-блок) + `varsIgnorePattern: '^_'`; `lint` script → `eslint src/ tests/`.
 - **docker** (`5bdbbe9`): `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` в builder-stage (~150 МБ экономии; prod не тронут — runtime-скрейперам нужен chromium).
 - **CI green** на main — авторитетная верификация всего Шага 3 (lint src+tests 0 errors, lint:deps 0 violations, tests pass в чистом CI).
+
+## [2026-08-20] FIX: sync activeObject on room rename (RoomHeader → LeftSidebar)
+
+- **Defect:** `updateRoom`/`updateRoomById` в `src/store/createRoomSlice.ts` обновляли только `projects` и `activeProject`, не пересчитывая `activeObject`. LeftSidebar (`rooms={activeObject?.rooms || []}` в App.tsx) показывал устаревшую ссылку на объект после переименования комнаты в RoomHeader.
+- **Fix:** в обоих методах в коллбэке `set(state => ...)` вычисляется `activeObject` через `getObjectFromProject(activeProject, state.activeObjectId)` (fallback `activeProject?.objects?.[0] || null` при `activeObjectId === null`) и возвращается в состоянии `{ projects, activeProject, activeObject }`.
+- **Tests:** в `tests/hooks/domains/useRoomDomain.test.ts` добавлены проверки синхронизации `state.activeObject?.rooms...name` в блоках `updateRoom` и `updateRoomById` + новый тест-кейс с явно заданным `activeObjectId`. Файл: 12 passed.
+- **Gates:** `npm test` exit 0 (front + server), `npm run lint` exit 0 (0 errors), `npm run lint:deps` exit 0 (0 violations).

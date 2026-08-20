@@ -222,6 +222,7 @@ describe('useRoomDomain (Zustand)', () => {
       );
       expect(room?.name).toBe('Updated Room');
       expect(room?.length).toBe(10);
+      expect(state.activeObject?.rooms.find(r => r.id === 'room-1')?.name).toBe('Updated Room');
     });
 
     it('should not update when active project not found', () => {
@@ -255,6 +256,23 @@ describe('useRoomDomain (Zustand)', () => {
       );
       expect(room?.name).toBe('Renamed Room');
       expect(room?.length).toBe(99);
+      expect(state.activeObject?.rooms.find(r => r.id === 'room-1')?.name).toBe('Renamed Room');
+    });
+
+    it('should update room and sync activeObject when activeObjectId is set', () => {
+      setupStore();
+      useProjectStore.setState({ activeObjectId: 'obj-p1' });
+
+      useProjectStore.getState().updateRoomById('room-1', prev => ({
+        ...prev,
+        name: 'Renamed via ObjectId',
+      }));
+
+      const state = useProjectStore.getState();
+      expect(state.activeObject?.id).toBe('obj-p1');
+      expect(state.activeObject?.rooms.find(r => r.id === 'room-1')?.name).toBe(
+        'Renamed via ObjectId',
+      );
     });
 
     it('should not update when active project not found', () => {

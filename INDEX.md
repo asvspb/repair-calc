@@ -1,6 +1,6 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-08-12
+**Последнее обновление:** 2026-08-20
 **Версия приложения:** 2.0
 **Состояние здоровья:** 🟢 операционно разблокирован (main актуален, CI жив); остатётся техдолг (см. [AUDIT-2026-08-11](./docs/AUDIT-2026-08-11.md))
 
@@ -516,6 +516,11 @@ npm run analyze:graph # Codegraph: переиндексация графа за�
 ---
 
 ## История изменений (кодревью)
+
+### 2026-08-20: fix: sync activeObject on room rename
+
+- **Изменено:** `src/store/createRoomSlice.ts` — `updateRoom` и `updateRoomById` теперь пересчитывают `activeObject` через `getObjectFromProject(activeProject, state.activeObjectId)` (fallback на первый объект при `activeObjectId === null`) и возвращают `{ projects, activeProject, activeObject }`. Дефект: после переименования комнаты в RoomHeader левая панель (LeftSidebar) не обновляла название из-за устаревшей ссылки на объект.
+- **Изменено:** `tests/hooks/domains/useRoomDomain.test.ts` — проверки синхронизации `state.activeObject` в `updateRoom`/`updateRoomById` + тест с явным `activeObjectId` (12 passed).
 
 ### 2026-04-17: P0-SEC Исправление утечки API-ключей
 
