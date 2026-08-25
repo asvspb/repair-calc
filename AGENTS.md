@@ -119,7 +119,8 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 **Backend**
 
 - Слои: `routes` → `services` → `repositories` (Knex изолирован в `server/src/db/repositories/`).
-- Валидация входа — Zod-схемы в `server/schemas/`.
+- Валидация входа — Zod-схемы в `server/src/middleware/validation.ts` (проекты/общие) и `server/src/routes/update/schemas.ts` (update-сервисы).
+- Логирование сервера — winstonLogger (`server/src/middleware/logger.ts`).
 - AI-поиск цен: клиент `src/api/prices/` → серверный прокси `/api/ai/search-price` → Gemini/Mistral. Ключи только на сервере.
 
 ## 8. Правила работы агента
@@ -143,7 +144,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 
 | Хочу изменить...             | Иду в...                                                                           |
 | ---------------------------- | ---------------------------------------------------------------------------------- |
-| HTTP-маршрут                 | `server/routes/`                                                                   |
+| HTTP-маршрут                 | `server/src/routes/`                                                               |
 | Бизнес-логику                | `server/services/`                                                                 |
 | Запрос к БД                  | `server/src/db/repositories/` + `server/src/db/db.ts` (Knex)                       |
 | Экран/UI                     | `src/components/<Domain>/`                                                         |
@@ -154,7 +155,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 | Типы (общие)                 | `src/types/`, `shared/`                                                            |
 | Расчёт стоимости/геометрии   | `src/utils/costs.ts`, `src/utils/geometry.ts`, `src/utils/materialCalculations.ts` |
 | AI-поиск цен                 | `src/api/prices/` (клиент), `server/services/` (прокси)                            |
-| Валидацию                    | `server/schemas/` (Zod)                                                            |
+| Валидацию                    | `server/src/middleware/validation.ts` (Zod)                                        |
 
 ## 10. Git-конвенции (разработка через ИИ-агентов)
 
