@@ -99,3 +99,11 @@
 - **Fix:** в обоих методах в коллбэке `set(state => ...)` вычисляется `activeObject` через `getObjectFromProject(activeProject, state.activeObjectId)` (fallback `activeProject?.objects?.[0] || null` при `activeObjectId === null`) и возвращается в состоянии `{ projects, activeProject, activeObject }`.
 - **Tests:** в `tests/hooks/domains/useRoomDomain.test.ts` добавлены проверки синхронизации `state.activeObject?.rooms...name` в блоках `updateRoom` и `updateRoomById` + новый тест-кейс с явно заданным `activeObjectId`. Файл: 12 passed.
 - **Gates:** `npm test` exit 0 (front + server), `npm run lint` exit 0 (0 errors), `npm run lint:deps` exit 0 (0 violations).
+
+## [2026-08-25] TASK-BATCH-01 (T1 архива проектов, plan-project-archive) — влита в main
+
+- **Исполнитель:** coder-агент (deepseek-v4-flash), ветка feat/project-archive-t1, коммит 3f39967. Архитектор код фичи не писал (откат собственной правки — нарушение анти-цели #1, см. сессию 2026-08-25).
+- **Сделано:** атомарный delete() (transaction(conn) + единый JS-штамп, проект первым, идемпотентность); findArchivedByIdAndUserId/findArchivedByUserId (счётчики subquery); restore (not_found/not_archived, дети колонка-с-колонкой через subquery — µs-безопасно, снятие штампа проекта последним, ответ = полный проект); hardDelete (guard «только архивный», COUNT до DELETE, DELETE + FK CASCADE, audit_log 'project.permanent_delete' в той же транзакции). 12 юнит-тестов, вкл. BLOCKING идентичности штампов.
+- **Ревью Архитектора:** write-set ровно 2 файла; паттерны/секреты чисто; gates лично: vitest 127 passed | 2 skipped, tsc 0, eslint 0 errors, depcruise 0 violations. Mutation-check: старый не-атомарный delete() → 3 теста падают (вкл. BLOCKING), 9 зелёных.
+- **Ревью владельца (независимое):** тесты, мутационная проверка, сверка (a)–(d) с кодом, FK/audit_log по миграциям — «рантайм-ловушек нет». Merge ff-only → main (4bbe168..3f39967), ветка удалена.
+- **Отклонения Исполнителя (approved):** defensive-ветка вместо non-null assertion в restore; +2 теста сверх списка.
