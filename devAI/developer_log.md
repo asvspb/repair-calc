@@ -170,3 +170,31 @@
 - TASK-BATCH-003-openapi-archive (coder): P2-5 — архивные эндпоинты в docs/openapi.yaml.
 - TASK-BATCH-004-docs-p2-2 (doc-keeper): сверка 6 документов с «Проверено: —», закрытие P2-2.
   Write-set'ы непересекающиеся: 001 (src/api/projects.ts, createProjectSlice, idMapper) / 002 (src/components/projects/_) / 003 (docs/openapi.yaml) / 004 (docs/_.md) — 001–003 можно параллельно; 002 после 001.
+
+## 2026-10-03 — Doc Keeper: P2-2 закрыт — сверка 6 документов (ветка docs/verify-p2-2-batch-004)
+
+Задача TASK-BATCH-004-docs-p2-2. Все факты сверены чтением кода/grep; команды — `ls`, `wc -l`, `grep -rn`, `python3 -c` по package.json, эмпирический прогон winston-формата через `node -e` (server/node_modules).
+
+**docs/LOGGING.md + LOGGING-CHEATSHEET.md** (↔ `server/src/middleware/logger.ts`, `src/utils/logger.ts`):
+
+- Проверено: функции клиентского логгера (logError/logWarning/logDebug/logSuccess/logUserAction/logApi\*/logStateChange/logProjectSave — точные сигнатуры), LOG_CONFIG, история 100 записей + window.debugLogger, HTTP-middleware warn≥400 (ip/userAgent), errorHandler (Request error/Validation error), console.log в миграциях (20260331_add_objects, 20260314_webhooks), контейнер repair-calc-backend (docker-compose.yml:49), строки-события (Created project, Project updated, Deleted, Создание нового объекта (project.repo.ts:658), Version conflict, Invalid or expired token, Database connection failed (pool.ts:31), Failed to cache AI response).
+- Исправлено: сниппет winstonLogger (добавлены defaultMeta {version} и префикс `[v2.0.0]` в форматах — подтверждено прогоном winston); ESLint no-console — не «планируется», а действует (`eslint.config.js:20`, allow warn/error); таблица §3.1 — AI-маршруты НЕ логируют provider/duration (в ai.ts только error кэша), добавлены archived/restore/permanent, формулировка «все маршруты» → «ключевые» (rooms/works/geometry/auth — 0 вызовов winstonLogger); grep-фильтры уровней не работают из-за ANSI-colorize — добавлен sed-strip (проверено: уровень приходит как `\x1b[32minfo\x1b[39m`).
+
+**docs/ARCHITECTURE.md** (полная сверка; в прошлый проход — только БД):
+
+- Канон состояния: §2.5 переписан — zustand-слайсы `src/store/` (project 481/object/room/auth/sync), ProjectContext.tsx УДАЛЁН, легаси-контексты AuthContext (280) и WorkTemplateContext.
+- Storage §2.4: `getStorageProvider()` (apiStorageProvider.ts:989) — токен → ApiStorageProvider, иначе IndexedDbProvider (Dexie); StorageManager/templateStorage на IndexedDbProvider; localStorageProvider.ts — 0 использований. Диаграмма §6: localStorage → IndexedDB.
+- Структура §2.1 актуализирована: +`src/domain/` (geometry/pricing/factories), +`src/i18n/`, +`src/store/`, api/storage (+dexieDb, indexedDb\*), api/prices без gemini/mistral файлов (прокси `/api/ai/search-price`), utils (costs/factories/geometry/materialCalculations/roomHelpers/projectContextPatch переехали в domain или удалены; +debugLogger/format/saveQueue/storageConstants), hooks без useProjects.ts, components (+room/, layout: AppHeader/ContentArea). Объёмы: App 323, RoomEditor 277, BackupManager 898, apiStorageProvider 995, workTemplatesCatalog 1220.
+- Маршруты §3.1/3.2: update.ts → каталог update/ (jobs 430/prices 409/webhooks 243/ab-test/import/schemas), middleware +adminGuard.ts, db +db.ts; проекты: archived, PATCH restore, DELETE permanent, ai-settings, with-rooms, with-objects; users /me; AI: estimate, suggest-materials, generate-template, search-price, status/history/stats.
+- AI §4: клиентские VITE_GEMINI/VITE_MISTRAL ключи в src/ отсутствуют; класс GeminiAIProvider (geminiProvider.ts), не GeminiProvider/gemini.ts.
+- Зависимости §8 — по манифестам (zustand ^5.0.14, dexie ^4.4.4, i18next, helmet, cron, exceljs...). §10: выполнено +zustand/domain/IndexedDB/декомпозиция update.ts/openapi; планируется: PWA, Request ID, per-user rate limit, очистка deleted_entities. Тестовые цифры оставлены как датированные срезы (2026-04-16/17, не пересчитывались).
+
+**docs/IDEAL-ARCHITECTURE.md**: помечен «видение, НЕ текущее состояние» (Проверено как текущее не проставлен); добавлен контекстный блок 2026-10-03: фазы 1/2/4 и IndexedDB уже реализованы, «npm workspaces» противоречит принятому pnpm, «ProjectSlice 609 строк» устарел.
+
+**docs/TECHNICAL-SPECIFICATION.md**: помечен историческим ТЗ (реализовано); таблица «Состояние реализации»: /api/users/me ✅, миграция 20260331 ✅, CRUD объектов ✅, лимит 10 ✅; ⚠️ job очистки deleted_entities НЕ найден (планировщик cron, а не node-schedule), middleware deprecation.ts НЕ найден, конвертер v1→v2 в BackupManager.tsx (не src/utils/importExport.ts).
+
+**docs/CODE_REVIEW.md**: помечен историческим срезом (v5.1 от 2026-04-17) + постскриптум 2026-10-03: ProjectContext удалён (zustand), update.ts декомпозирован (adminGuard, 0 TODO-комментариев прав), клиентские AI-ключи убраны, IndexedDB внедрён, текущие объёмы файлов; битая ссылка ./spec/ → ../devAI/spec/ (docs/spec/ не существует), метка ARCHITECTURE «устарел» снята.
+
+**docs/README.md**: строки P2-2 (LOGGING и ARCHITECTURE/IDEAL/TECH-SPEC/CODE_REVIEW) закрыты «устранён»; +2 строки: (1) первичное хранилище localStorage↔IndexedDB — в ARCHITECTURE устранён, формулировка AGENTS.md §7 — «нужен архитектор» (вне write-set); (2) нереализованные требования ТЗ (cleanup deleted_entities, deprecation middleware) — открыт, решение за архитектором. Строку P2-5 (openapi) НЕ закрывал: коммиты b47ac67/37c2218 есть на fix/openapi-archive-batch-003, в main не слиты.
+
+- Проверки: `bash scripts/docs-check.sh` — прогон после правок; код не менялся (write-set — только docs + developer_log).
