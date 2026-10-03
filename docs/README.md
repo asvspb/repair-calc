@@ -74,6 +74,21 @@ how-to / статусы-история. У каждого документа о�
 
 ---
 
+## 🔎 Известные дрейфы
+
+> Реестр ведёт Doc Keeper (`prompts/doc-keeper.md`). Формат строки:
+> `| дата | что расходится | где ↔ где | статус |`.
+> Статусы: устранён (commit) / открыт → TODO-NN / нужен архитектор.
+
+| Дата | Что расходится | Где ↔ где | Статус |
+|------|----------------|-----------|--------|
+| 2026-10-03 | Эндпоинты архива проектов (`/archived`, `/:id/restore`, `/:id/permanent`) не отражены в контракте API | docs/openapi.yaml ↔ server/src/routes/projects.ts (коммиты 3f39967, 774ccab) | открыт → TODO-P2-5 |
+| 2026-10-03 | То же для INDEX.md — таблица API не содержала архивные и `ai-settings`/`with-rooms`/`with-objects` эндпоинты | INDEX.md ↔ server/src/routes/projects.ts | устранён (docs/doc-keeper-2026-10-03) |
+| 2026-10-03 | `docs/LOGGING.md` и `docs/LOGGING-CHEATSHEET.md` — «Проверено: —», содержимое не сверено с кодом (winston-логгер: server/src/middleware/logger.ts) | docs/LOGGING*.md ↔ server/src/middleware/logger.ts | открыт → TODO-P2-2 |
+| 2026-10-03 | `ARCHITECTURE.md` сверен частично (только блок БД); `IDEAL-ARCHITECTURE.md`, `TECHNICAL-SPECIFICATION.md`, `CODE_REVIEW.md` — «Проверено: —» | docs/*.md ↔ код | открыт → TODO-P2-2 |
+
+---
+
 ### Правила карты
 
 1. Добавил/удалил/переместил документ → обнови карту **в том же PR** (это пункт DoD).

@@ -53,7 +53,8 @@
 ### P2-2. Остатки дрейфа документации (по `AUDIT-2026-08-11.md` §6; AGENTS.md и ARCHITECTURE.md закрыты 2026-10-03)
 
 - [ ] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2` / legacy RowDataPacket
-- [ ] Сверить `ARCHITECTURE.md` полностью (сейчас «Проверено» — только блок БД) и проставить даты остальным docs/*.md с «Проверено: —»
+- [ ] Сверить `ARCHITECTURE.md` полностью (сейчас «Проверено» — только блок БД) и проставить даты остальным docs/*.md с «Проверено: —» (LOGGING.md, LOGGING-CHEATSHEET.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md)
+- [ ] **P2-5.** Дополнить `docs/openapi.yaml` эндпоинтами архива проектов: `GET /api/projects/archived`, `PATCH /api/projects/:id/restore`, `DELETE /api/projects/:id/permanent` (реестр дрейфов, 2026-10-03)
 
 ### P2-4. Мелкая гигиена
 
