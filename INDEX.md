@@ -15,7 +15,7 @@
 **Что мы строим.** Repair Calculator v2.0 — калькулятор стоимости ремонта:
 проекты → объекты → комнаты, 3 режима геометрии, AI-поиск цен (серверный
 прокси Gemini/Mistral), экспорт смет в Excel/CSV, JWT-auth, автосохранение
-(IndexedDB + синхронизация с сервером).
+(localStorage + синхронизация с сервером).
 
 **Главный ориентир.** Калькулятор должен оставаться **слоистым, тестируемым и
 verifiable-by-tooling**: архитектура enforced через `dependency-cruiser`
@@ -41,10 +41,10 @@ FSD-3-слоя, npm workspaces, dirty-flag sync, полная декомпози
 **Принципы (не нарушать):**
 
 - Слои `routes → services → repositories`; ORM (**Knex**) изолирован в repositories.
-- Компоненты по доменам `src/components/<Domain>/`; состояние — Context/zustand + hooks.
+- Компоненты по доменам `src/components/<Domain>/`; состояние — zustand-слайсы `src/store/` (канон; легаси-контексты не наращивать).
 - Валидация входа — Zod в `server/schemas/`; секреты — только `.env`; ключи AI — только на сервере.
 - Запреты: `as any`/`as unknown` без обоснования, `@ts-ignore`, пустые `catch`, `console.log` в проде.
-- DoD любого ТЗ: `npm test` + `npm run lint` + `npm run lint:deps` зелёные; `INDEX.md`/`developer_log.md` актуальны.
+- DoD любого ТЗ: `pnpm test` + `pnpm run lint` + `pnpm run lint:deps` зелёные; `INDEX.md`/`developer_log.md` актуальны.
 
 ---
 
@@ -429,8 +429,8 @@ type RoomData = {
 
 ```bash
 # Фронтенд
-npm install
-npm run dev  # http://localhost:3993
+pnpm install
+pnpm run dev  # http://localhost:3993
 
 # Бэкенд (в Docker)
 docker-compose up -d backend db
@@ -447,18 +447,18 @@ docker-compose up -d
 ## Тестирование
 
 ```bash
-npm test             # Unit тесты (Vitest)
-npm run test:e2e     # E2E тесты (Playwright)
-npm run test:e2e:ui  # E2E с UI
-npm run lint         # TypeScript + ESLint
-npm run analyze:graph # Codegraph: переиндексация графа зависимостей
+pnpm test             # Unit тесты (Vitest)
+pnpm run test:e2e     # E2E тесты (Playwright)
+pnpm run test:e2e:ui  # E2E с UI
+pnpm run lint         # TypeScript + ESLint
+pnpm run analyze:graph # Codegraph: переиндексация графа зависимостей
 ```
 
 ---
 
 ## Правила разработки
 
-1. **Перед коммитом:** `npm test` + `npm run lint` + обновить `INDEX.md`
+1. **Перед коммитом:** `pnpm test` + `pnpm run lint` + обновить `INDEX.md`
 2. **Порт приложения:** Только **3993** (фронтенд), **3994** (бэкенд)
 3. **Логирование:** Winston (сервер) + logger.ts (клиент), `no-console: error` в ESLint
 4. **Миграции БД:** Только через Knex migrations

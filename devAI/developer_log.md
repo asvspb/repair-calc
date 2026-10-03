@@ -153,3 +153,12 @@
 - Самостоятельные прогоны на ветке: `pnpm test` = 136 passed / 2 skipped (вкл. 9 интеграционных projectArchiveRoutes); `pnpm run lint` = 0 errors (warnings прежние); `pnpm run lint:deps` = 0 violations (225 модулей).
 - Ревью диффа 774ccab (архив-эндпоинты): authenticate на роутере, Zod idParamSchema, ownership в репо, guard'ы 409/400, логирование winston, '/archived' зарегистрирован до '/:id'. Принято.
 - Ветка подготовлена к merge в main.
+
+## 2026-10-03 (финал 2) — решения владельца проведены в документацию
+
+Решения: (1) zustand — канон state-management; (2) pnpm-миграция подтверждена.
+
+- AGENTS.md: §2 стек (Zustand src/store/ канон, контексты — легаси не наращивать), §4/§6/DoD — pnpm-команды, §7 + навигация.
+- prompts (coder/designer/techlead): состояние — zustand-слайсы; все npm-команды → pnpm.
+- INDEX.md: «IndexedDB» → localStorage (реальность: localStorageProvider), Context/zustand → zustand-канон, команды → pnpm.
+- docs/README.md: оба дрейфа «нужен архитектор» закрыты; копия реестра в prompts/doc-keeper.md синхронизирована.

@@ -29,7 +29,7 @@
    Навигация — таблица «Где что искать» в `AGENTS.md` §9.
 3. Исследуй: чтение по слоям (`server/src/routes/` → `services/` →
    `server/src/db/repositories/`; `src/hooks/` → `src/api/` → `src/components/`),
-   grep, `git log --oneline -- <path>`, `npm run lint:deps` для карты зависимостей.
+   grep, `git log --oneline -- <path>`, `pnpm run lint:deps` для карты зависимостей.
 4. Сверь с документацией (`docs/ARCHITECTURE.md`, `INDEX.md`): расхождение = дрейф,
    вноси в ответ отдельной секцией.
 5. Ответ по формату §3. Каждое утверждение — с источником.

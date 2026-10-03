@@ -4,7 +4,7 @@
 Один batch = одна подветка = один PR. Архитектурных решений не принимаешь.
 
 **Цель (проверяемая):** write-set batch'а реализован на подветке `feat/<slug>-batch-NN`;
-`npm test` + `npm run lint` + `npm run lint:deps` (в корне) зелёные; запись в
+`pnpm test` + `pnpm run lint` + `pnpm run lint:deps` (в корне) зелёные; запись в
 `devAI/developer_log.md`; статус batch'а ✅. Работа закончена только после approve
 архитектора — не раньше.
 
@@ -36,7 +36,7 @@ Gate упал из-за среды, а не кода → зафиксируй в
 2. Прочитай read-set. Не залезай в файлы чужого параллельного batch'а.
 3. Реализуй по алгоритму batch'а; каждый edge-кейс покрыт тестом (внешние API — моки).
 4. Атомарные коммиты (Conventional Commits + `Co-Authored-By:`), каждый коммит зелёный.
-5. **Сам перезапусти** в корне: `npm test`, `npm run lint`, `npm run lint:deps`.
+5. **Сам перезапусти** в корне: `pnpm test`, `pnpm run lint`, `pnpm run lint:deps`.
 6. Обнови `INDEX.md` (если структура изменилась); допиши `developer_log.md` (append).
 7. В batch'е: `Статус: ✅`, DoD-чекбоксы, подветка + sha последнего коммита.
 8. Отчёт: «✅ TASK-BATCH-NNN @ <branch> @ <sha>: сделано/не сделано/заметки».
@@ -45,7 +45,7 @@ Gate упал из-за среды, а не кода → зафиксируй в
 
 1. **Слои/размеры:** `routes → services → repositories`; Knex — только в
    `server/src/db/repositories/`; компоненты — `src/components/<Domain>/`; состояние —
-   Context+hooks. Новые файлы ≤400 строк, функции ≤60. Legacy-монолит не наращивать:
+   zustand-слайсы `src/store/` (канон; легаси-контексты `src/contexts/` не наращивать). Новые файлы ≤400 строк, функции ≤60. Legacy-монолит не наращивать:
    превысил порог → `// SPLIT-ME` маркер + репорт архитектору.
 2. **BREAKING-INTENT:** нужно сломать контракт (API/схему/экспорт) → стоп, эскалация
    архитектору (маркер ставит он, в ТЗ). Сам не ломай тихо.
@@ -59,12 +59,12 @@ Gate упал из-за среды, а не кода → зафиксируй в
    `src/utils/logger.ts`. PII/токены/секреты в логи — никогда.
 7. 🛡 **Безопасность:** GEMINI/MISTRAL ключи — только на сервере; серверное (`server/`)
    не импортировать в `src/`; весь вход (HTTP) — Zod (`server/src/middleware/validation.ts`);
-   секреты — `.env`; миграции — `cd server && npm run migrate`.
+   секреты — `.env`; миграции — `cd server && pnpm run migrate`.
 
 ## 3. Definition of Done
 
 - [ ] Изменён только write-set (`git diff --name-only` проверен мной)
-- [ ] `npm test` / `npm run lint` / `npm run lint:deps` зелёные — сам перезапустил
+- [ ] `pnpm test` / `pnpm run lint` / `pnpm run lint:deps` зелёные — сам перезапустил
 - [ ] Нет запрещённых паттернов §2.3; edge-кейсы покрыты тестами
 - [ ] `developer_log.md` дописан; `INDEX.md` обновлён при изменении структуры
 - [ ] Секреты в `.env`; ключи AI не в клиентском коде

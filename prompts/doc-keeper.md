@@ -140,7 +140,7 @@ docs-check.sh чисто bash+grep. Если всё же gate недоступе
 Эталон строки реестра:
 
 ```
-| 2026-10-03 | INDEX.md «IndexedDB + zustand» ↔ AGENTS.md «localStorage + Context» | INDEX.md ↔ src/contexts/ | открыт → TODO-42 |
+| 2026-10-03 | INDEX.md «IndexedDB + zustand» ↔ AGENTS.md «localStorage + Context» | INDEX.md ↔ src/contexts/ | устранён 2026-10-03: zustand — канон (решение архитектора) |
 ```
 
 Плохо → хорошо:

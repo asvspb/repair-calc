@@ -11,17 +11,17 @@
 
 ## 2. Стек технологий
 
-| Слой      | Технология                                                                            |
-| --------- | ------------------------------------------------------------------------------------- |
-| Frontend  | React + TypeScript + Vite                                                             |
-| Стили     | Tailwind CSS                                                                          |
-| Состояние | Context API + hooks (`src/contexts/`, `src/hooks/`)                                   |
-| Backend   | Express + Zod (валидация)                                                             |
-| ORM/БД    | Knex (query builder) + PostgreSQL                                                     |
-| AI        | Gemini + Mistral — серверный прокси (`server/services/`, ключи НЕ в клиентский бандл) |
-| Тесты     | Vitest (unit) + Playwright (e2e)                                                      |
-| Линт      | ESLint + Prettier + dependency-cruiser                                                |
-| Деплой    | Docker (docker-compose) + `scripts/deploy-local.sh`                                   |
+| Слой      | Технология                                                                                |
+| --------- | ----------------------------------------------------------------------------------------- |
+| Frontend  | React + TypeScript + Vite                                                                 |
+| Стили     | Tailwind CSS                                                                              |
+| Состояние | **Zustand** — слайсы в `src/store/` (канон); легаси-контексты `src/contexts/` в поддержке |
+| Backend   | Express + Zod (валидация)                                                                 |
+| ORM/БД    | Knex (query builder) + PostgreSQL                                                         |
+| AI        | Gemini + Mistral — серверный прокси (`server/services/`, ключи НЕ в клиентский бандл)     |
+| Тесты     | Vitest (unit) + Playwright (e2e)                                                          |
+| Линт      | ESLint + Prettier + dependency-cruiser                                                    |
+| Деплой    | Docker (docker-compose) + `scripts/deploy-local.sh`                                       |
 
 ## 3. Структура проекта
 
@@ -29,7 +29,8 @@
 repair-calc/
 ├── src/                      # FRONTEND (React + TS)
 │   ├── components/           # По доменам: auth, geometry, layout, objects, projects, rooms, works, summary, ui
-│   ├── contexts/             # AuthContext, WorkTemplateContext
+│   ├── contexts/             # ЛЕГАСИ (AuthContext, WorkTemplateContext) — не наращивать
+│   ├── store/                # Zustand-слайсы (canon): createProjectSlice, createRoomSlice, useProjectStore...
 │   ├── data/                 # initialData, workTemplatesCatalog
 │   ├── hooks/                # useGeometryState, useMaterialCalculation, useProjects, useWorkTemplates
 │   ├── api/                  # API-клиенты (auth, httpClient, objects, projects, rooms, totals, users, storage/, prices/)
@@ -58,16 +59,16 @@ repair-calc/
 
 ## 4. Команды
 
-| Команда                         | Что делает                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`                   | Dev-сервер: frontend http://localhost:3993, backend http://localhost:3994     |
-| `npm run build`                 | Production-сборка (только анализ, **НЕ для деплоя** — для деплоя Docker!)     |
-| `npm test`                      | Unit-тесты (Vitest)                                                           |
-| `npm run test:e2e`              | E2E-тесты (Playwright)                                                        |
-| `npm run lint`                  | TypeScript-проверка + ESLint                                                  |
-| `npm run lint:deps`             | **dependency-cruiser** — проверка архитектуры зависимостей (src + server/src) |
-| `npm run migrate` (в `server/`) | Knex-миграции (migrate:latest)                                                |
-| `./scripts/deploy-local.sh`     | **Единственный способ деплоя**: тесты + линтер + Docker-сборка                |
+| Команда                          | Что делает                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm run dev`                   | Dev-сервер: frontend http://localhost:3993, backend http://localhost:3994     |
+| `pnpm run build`                 | Production-сборка (только анализ, **НЕ для деплоя** — для деплоя Docker!)     |
+| `pnpm test`                      | Unit-тесты (Vitest)                                                           |
+| `pnpm run test:e2e`              | E2E-тесты (Playwright)                                                        |
+| `pnpm run lint`                  | TypeScript-проверка + ESLint                                                  |
+| `pnpm run lint:deps`             | **dependency-cruiser** — проверка архитектуры зависимостей (src + server/src) |
+| `pnpm run migrate` (в `server/`) | Knex-миграции (migrate:latest)                                                |
+| `./scripts/deploy-local.sh`      | **Единственный способ деплоя**: тесты + линтер + Docker-сборка                |
 
 ## 5. Порты и окружение
 
@@ -96,11 +97,11 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 **Действия при старте задачи по фронтенду:**
 
 1. Останови фронтенд в Docker, чтобы освободить порт 3993: `docker compose stop frontend`.
-2. Запусти локально: `npm run dev`.
+2. Запусти локально: `pnpm run dev`.
 
 **Строгие правила деплоя (Multi-Stage Docker):**
 
-- **Никогда** не используй `npm run build` локально для релиза (соберёт файлы только на хосте).
+- **Никогда** не используй `pnpm run build` локально для релиза (соберёт файлы только на хосте).
 - Production-проверка: `./scripts/deploy-local.sh` (линтеры, тесты, `docker compose build --no-cache`).
 - Ручной перезапуск прод-образа: `docker compose up -d --build frontend`.
 
@@ -113,7 +114,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 **Frontend**
 
 - Компоненты — по доменам в `src/components/<Domain>/`.
-- Состояние — React Context (`src/contexts/`: AuthContext, WorkTemplateContext) + hooks.
+- Состояние — **Zustand** (`src/store/`: слайсы projects/objects/rooms/sync/auth + useProjectStore). Канон нового кода — слайсы; легаси-контексты `src/contexts/` (Auth, WorkTemplate) не наращивать, мигрируются по мере касания.
 - Storage abstraction: `src/api/storage/` (apiStorageProvider через REST) + `src/utils/localStorageProvider.ts`. Данные автосохраняются в localStorage (1с debounce) + синхронизация с сервером при авторизации.
 - API-вызовы — через `src/api/` (httpClient с interceptors/retry/timeout).
 
@@ -133,9 +134,9 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 
 После ЛЮБЫХ изменений:
 
-- [ ] `npm test` — тесты зелёные
-- [ ] `npm run lint` — без ошибок типов/линта
-- [ ] `npm run lint:deps` — без нарушений архитектуры
+- [ ] `pnpm test` — тесты зелёные
+- [ ] `pnpm run lint` — без ошибок типов/линта
+- [ ] `pnpm run lint:deps` — без нарушений архитектуры
 - [ ] Обновлён `INDEX.md` (новые файлы, изменённые типы, зависимости, архитектура)
 - [ ] Секреты остались в `.env`
 
@@ -149,7 +150,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 | Бизнес-логику                | `server/services/`                                                                 |
 | Запрос к БД                  | `server/src/db/repositories/` + `server/src/db/db.ts` (Knex)                       |
 | Экран/UI                     | `src/components/<Domain>/`                                                         |
-| Состояние (Context)          | `src/contexts/`                                                                    |
+| Состояние (Zustand-слайсы)   | `src/store/` (легаси-контексты: `src/contexts/`)                                   |
 | Хук логики                   | `src/hooks/`                                                                       |
 | API-клиент                   | `src/api/`                                                                         |
 | Хранилище (localStorage/API) | `src/api/storage/`, `src/utils/localStorageProvider.ts`                            |
@@ -187,6 +188,6 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 
 ## 14. Известные ограничения и грабли
 
-- `dist/` компилируется **внутри Docker** (Multi-Stage), не маунтится снаружи — локальный `npm run build` не равен деплою.
+- `dist/` компилируется **внутри Docker** (Multi-Stage), не маунтится снаружи — локальный `pnpm run build` не равен деплою.
 - localStorage и сервер могут расходиться — есть миграции (`src/utils/migration.ts`) и idMapper (`src/utils/idMapper.ts`) для маппинга локальных/серверных ID.
 - `.env` и `.env.local` в корне — не коммитить (правило в `.gitignore`).

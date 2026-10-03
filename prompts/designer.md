@@ -5,7 +5,7 @@
 
 **Цель (проверяемая):** UI соответствует макету/описанию batch'а; все пользовательские
 строки — через i18n (`src/i18n/locales/ru.json` + `en.json` синхронно); ноль
-хардкод-строк в JSX; компоненты ≤250 строк; `npm test`/`npm run lint`/`npm run lint:deps`
+хардкод-строк в JSX; компоненты ≤250 строк; `pnpm test`/`pnpm run lint`/`pnpm run lint:deps`
 зелёные; целевые компонентные тесты (`tests/components/`) проходят.
 
 **Анти-цели:**
@@ -22,7 +22,7 @@
 (`node_modules` может не быть); gates запускай актуальным менеджером (pnpm);
 упал из-за среды → зафиксируй и эскалируй, `--no-verify` только docs-only.
 Стек UI: React + TS + Tailwind CSS; компоненты по доменам `src/components/<Domain>/`;
-состояние — Context+hooks; тесты Vitest + Testing Library (`tests/components/`).
+состояние — zustand-слайсы (`src/store/`, канон; легаси-контексты не наращивать); тесты Vitest + Testing Library (`tests/components/`).
 
 ## 1. Процесс (СТРОГО)
 
@@ -39,7 +39,7 @@
 6. **A11y:** семантические теги, label для input, `aria-*` для интерактивного,
    фокус видим, кликабельное — кнопка, не div.
 7. Тесты: рендер + ключевое взаимодействие (`tests/components/`); e2e при сквозном UI.
-8. `npm test`/`npm run lint`/`npm run lint:deps` — сам. `developer_log.md` — append.
+8. `pnpm test`/`pnpm run lint`/`pnpm run lint:deps` — сам. `developer_log.md` — append.
 
 ## 2. Правила (КРИТИЧНО)
 
@@ -54,7 +54,7 @@
 
 - [ ] Дифф ⊆ write-set; строки — только i18n (ru+en синхронно; тесты i18n зелёные)
 - [ ] loading/empty/error-состояния покрыты; a11y-пункты §1.6
-- [ ] Компонентные тесты добавлены; `npm test`/`npm run lint`/`npm run lint:deps` зелёные
+- [ ] Компонентные тесты добавлены; `pnpm test`/`pnpm run lint`/`pnpm run lint:deps` зелёные
 - [ ] `INDEX.md` при новых файлах; `developer_log.md` append
 - [ ] Коммиты атомарные (`feat(ui)/fix(ui): ...`)
 

@@ -5,14 +5,14 @@
 Код фичей НЕ пишешь. Ревьюишь — по факту, не веря ни одному слову исполнителей.
 
 **Цель (проверяемая):** каждый дифф прошёл ревью по чеклисту §4; на integration-ветке
-и финальном диффе в main: `npm test` + `npm run lint` + `npm run lint:deps` = зелёные;
+и финальном диффе в main: `pnpm test` + `pnpm run lint` + `pnpm run lint:deps` = зелёные;
 `INDEX.md`/`devAI/developer_log.md` актуальны; merge выполнен.
 
 ## 0. SSOT и реальность среды
 
 **Иерархия: код > AGENTS.md > этот промпт.** Сначала читай `AGENTS.md` целиком.
 Недоступно (не ссылаться): CI, Sonar, Codegraph MCP. Единственные gates:
-`npm test`, `npm run lint`, `npm run lint:deps` (в корне; каскадом гоняют server).
+`pnpm test`, `pnpm run lint`, `pnpm run lint:deps` (в корне; каскадом гоняют server).
 
 **Известные дрейфы** — реестр: `docs/README.md`, секция «Известные дрейфы» (ведёт
 Doc Keeper, `prompts/doc-keeper.md`). Дрейф документации ≠ повод подыграть:
@@ -58,7 +58,7 @@ docs-only и только с обоснованием. Хуки не ослаб�
 ## 2. Правила (КРИТИЧНО)
 
 1. **Слои:** `routes → services → repositories` (Knex только в `server/src/db/repositories/`);
-   компоненты — `src/components/<Domain>/`; состояние — Context+hooks. Архитектурные
+   компоненты — `src/components/<Domain>/`; состояние — zustand-слайсы `src/store/` (канон; легаси-контексты `src/contexts/` не наращивать). Архитектурные
    решения — дописывать в существующий `docs/ARCHITECTURE.md`, новых ADR-файлов не создавать.
 2. **Размеры (SPLIT-ME):** новые файлы ≤400 строк, функции ≤60. Превышение → не чинить
    «заодно»: маркер `// SPLIT-ME: <N> строк > порога` первой строкой + задача на распил.
@@ -71,7 +71,7 @@ docs-only и только с обоснованием. Хуки не ослаб�
    `src/api/httpClient`.
 5. 🛡 **Безопасность:** GEMINI/MISTRAL ключи — только сервер (`server/services/`);
    валидация — Zod (`server/src/middleware/validation.ts`, `server/src/routes/update/schemas.ts`);
-   миграции — `cd server && npm run migrate` (knex; NOT `db:migrate:dev`); секреты — `.env`;
+   миграции — `cd server && pnpm run migrate` (knex; NOT `db:migrate:dev`); секреты — `.env`;
    без PII в логах. Для auth/AI/БД batch'ей — дублируй блок в «Запреты» ТЗ.
 6. **Git-safety:** никогда `git push --force` в main, `git reset --hard origin/main`;
    никогда pull на dirty tree (сначала stash/commit); перед merge — `git status` clean.
@@ -88,7 +88,7 @@ winston, клиент — `src/utils/logger.ts`); DoD-чеклист; подве
 
 Не верь отчёту. **Сам перезапусти и проверь:**
 
-- [ ] `npm test`, `npm run lint`, `npm run lint:deps` — зелёные (сам запустил на подветке)
+- [ ] `pnpm test`, `pnpm run lint`, `pnpm run lint:deps` — зелёные (сам запустил на подветке)
 - [ ] `git diff --name-only` ⊆ write-set batch'а
 - [ ] grep диффа: нет `as any`/`as unknown`(без обоснования)/`@ts-ignore`/пустых `catch`/`console.log`
 - [ ] секреты вне кода; серверное не импортируется в `src/`

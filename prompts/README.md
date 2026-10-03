@@ -53,4 +53,4 @@ AGENTS.md расходится с кодом → главнее код, дрей
 ### Недоступно в этой среде (НЕ ссылаться)
 
 CI/CD (GitHub Actions не настроен для gates), SonarQube, Codegraph MCP, сторонние ревью-боты.
-Единственные gates: `npm test`, `npm run lint`, `npm run lint:deps` (в корне).
+Единственные gates: `pnpm test`, `pnpm run lint`, `pnpm run lint:deps` (в корне).
