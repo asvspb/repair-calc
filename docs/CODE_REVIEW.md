@@ -1,11 +1,38 @@
 # 📋 Код-ревью проекта repair-calc
 
-> **Проверено:** —
+> **Статус:** исторический срез ревью (не актуальное состояние) • **Проверено:** 2026-10-03 (факты о существовании модулей сверены; ключевые изменения после среза — в постскриптуме в конце документа)
 
 **Дата:** 2026-04-17  
 **Версия ревью:** 5.1  
 **Предыдущее ревью:** 2026-04-13 (v5.0)  
-**Статус:** Обновлено по результатам полного аудита документации
+**Статус:** Обновлено по результатам полного аудита документации (срез 2026-04-17)
+
+---
+
+> **⚠️ Постскриптум doc-keeper (2026-10-03):** срез v5.1 описывает код на 2026-04-17.
+> Сверка фактов о модулях показала, что крупные позиции плана улучшений уже изменились:
+>
+> - `src/contexts/ProjectContext.tsx` **удалён** — состояние в zustand-слайсах
+>   `src/store/` (`createProjectSlice` 481 строка, object/room/auth/sync; канон —
+>   zustand, решение владельца). W-1 и «ProjectContext 982 строки» устарели.
+> - `server/src/routes/update.ts` (2184 строки) **декомпозирован** в
+>   `server/src/routes/update/` (jobs 430, prices 409, webhooks 243, ab-test,
+>   import + schemas.ts); admin-guard — `server/src/middleware/adminGuard.ts`,
+>   TODO-комментариев «проверить права администратора» в маршрутах — 0. W-6 и
+>   S-NEW «19 admin endpoints» закрыты в коде.
+> - AI-ключи в клиентском бандле (S-NEW): `geminiPriceSearch.ts` /
+>   `mistralPriceSearch.ts` удалены из `src/api/prices/`, `VITE_*_API_KEY` в `src/`
+>   не встречаются — вызовы через серверный прокси `/api/ai/search-price`.
+> - Хранилище: первичное локальное — **IndexedDB (Dexie)** (`src/api/storage/
+indexedDbProvider.ts`), при авторизации — ApiStorageProvider; «ApiStorageProvider
+>   1036 строк» — теперь 995.
+> - Текущие объёмы (2026-10-03): `App.tsx` 323, `RoomEditor.tsx` 277,
+>   `BackupManager.tsx` 898, `workTemplatesCatalog.ts` 1220, `ProjectsModal.tsx` 723,
+>   `useGeometryState.ts` 747, `room.repo.ts` 777, `project.repo.ts` 839,
+>   `updateJob.repo.ts` 811, `abTest.repo.ts` 640, `parserManager.ts` 662,
+>   `runner.ts` 647, `geometry.ts` (routes) 636.
+> - Из фазы 1 (IDEAL-ARCHITECTURE) сделано: удалены `useProjects.ts`,
+>   `projectContextPatch.ts`; `window.confirm` в `src/` не найден.
 
 ---
 
@@ -409,13 +436,13 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 
 ## 🔗 Связанные документы
 
-| Документ                                                   | Описание                         |
-| ---------------------------------------------------------- | -------------------------------- |
-| [ARCHITECTURE.md](./ARCHITECTURE.md)                       | Архитектура проекта (⚠️ устарел) |
-| [TODO.md](./TODO.md)                                       | Актуальные задачи                |
-| [PROGRESS.md](./PROGRESS.md)                               | История прогресса                |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов   |
-| [spec/](./spec/)                                           | Детализированные спецификации    |
+| Документ                                                   | Описание                                      |
+| ---------------------------------------------------------- | --------------------------------------------- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md)                       | Актуальная архитектура (сверена 2026-10-03)   |
+| [TODO.md](./TODO.md)                                       | Актуальные задачи                             |
+| [PROGRESS.md](./PROGRESS.md)                               | История прогресса                             |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов (историческое) |
+| [../devAI/spec/](../devAI/spec/)                           | Детализированные спецификации                 |
 
 ---
 
