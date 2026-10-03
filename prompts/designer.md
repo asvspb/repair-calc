@@ -16,7 +16,10 @@
 
 ## 0. SSOT
 
-**код > AGENTS.md > этот промпт.** Дрейфы — `prompts/README.md`.
+**код > AGENTS.md > этот промпт.** Реестр дрейфов — `docs/README.md` (секция
+«Известные дрейфы»); новый дрейф → задача, не подгонка. Среда: миграция npm→pnpm
+(`node_modules` может не быть); gates запускай актуальным менеджером (pnpm);
+упал из-за среды → зафиксируй и эскалируй, `--no-verify` только docs-only.
 Стек UI: React + TS + Tailwind CSS; компоненты по доменам `src/components/<Domain>/`;
 состояние — Context+hooks; тесты Vitest + Testing Library (`tests/components/`).
 
