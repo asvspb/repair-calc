@@ -5,8 +5,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Копируем package файлы
-COPY package*.json ./
+# pnpm (версия пиннится полем packageManager в package.json)
+RUN corepack enable
+
+# Копируем lock-файлы pnpm
+COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Устанавливаем build dependencies для native modules (например, better-sqlite3)
 RUN apk add --no-cache python3 make g++
@@ -15,26 +18,29 @@ RUN apk add --no-cache python3 make g++
 # Builder-stage делает только tsc — браузеры playwright здесь не нужны,
 # пропускаем их загрузку (~150 МБ). Prod-stage ниже браузеры ставит (runtime).
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Копируем исходный код
 COPY . .
 
 # Собираем TypeScript
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Продакшн образ
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Копируем package файлы
-COPY package*.json ./
+# pnpm (версия пиннится полем packageManager в package.json)
+RUN corepack enable
+
+# Копируем lock-файлы pnpm
+COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Устанавливаем зависимости включая tsx для миграций, и необходимые инструменты для сборки
 RUN apk add --no-cache python3 make g++ \
-    && npm ci --omit=dev \
-    && npm install tsx \
+    && pnpm install --frozen-lockfile --prod \
+    && pnpm add tsx \
     && apk del python3 make g++
 
 # Копируем собранный код из builder stage

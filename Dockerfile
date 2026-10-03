@@ -3,9 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# pnpm (версия пиннится полем packageManager в package.json)
+RUN corepack enable
+
 # Install dependencies
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy project files
 COPY . .
@@ -14,7 +17,7 @@ ARG COMMIT_HASH=unknown
 ENV COMMIT_HASH=$COMMIT_HASH
 
 # Build the project
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
