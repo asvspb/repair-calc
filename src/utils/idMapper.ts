@@ -101,7 +101,7 @@ class IdMapper {
 
     this.mappings.set(localId, mapping);
     this.save();
-    
+
     logDebug('IdMapper', 'Добавлен маппинг', { localId, serverId });
   }
 
@@ -195,6 +195,31 @@ class IdMapper {
   }
 
   /**
+   * Удалить маппинги проекта и всех его потомков (objects/rooms).
+   * Вызывается при безвозвратном удалении архивного проекта.
+   * @param projectId - ID проекта, как он хранится в state (локальный или серверный)
+   * @param descendantIds - ID объектов и комнат, найденные обходом дерева из state;
+   *                        idMapper сам не знает parent-chain, обход делает вызывающий слой
+   * @returns число фактически удалённых маппингов
+   */
+  clearProject(projectId: string, descendantIds: readonly string[] = []): number {
+    let removed = 0;
+    if (this.mappings.delete(projectId)) {
+      removed++;
+    }
+    for (const id of descendantIds) {
+      if (this.mappings.delete(id)) {
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.save();
+      logDebug('IdMapper', 'Очищены маппинги проекта', { projectId, removed });
+    }
+    return removed;
+  }
+
+  /**
    * Проверка, является ли ID серверным UUID
    */
   static isServerId(id: string): boolean {
@@ -242,7 +267,10 @@ export function isServerId(id: string): boolean {
  * @param mapping - объект маппингов { localId: serverId }
  * @returns серверный ID или null
  */
-export function mapLocalToServerId(localId: string, mapping: Record<string, number | string>): number | string | null {
+export function mapLocalToServerId(
+  localId: string,
+  mapping: Record<string, number | string>,
+): number | string | null {
   return mapping[localId] ?? null;
 }
 
@@ -252,7 +280,10 @@ export function mapLocalToServerId(localId: string, mapping: Record<string, numb
  * @param mapping - объект маппингов { localId: serverId }
  * @returns локальный ID или null
  */
-export function mapServerToLocalId(serverId: number | string, mapping: Record<string, number | string>): string | null {
+export function mapServerToLocalId(
+  serverId: number | string,
+  mapping: Record<string, number | string>,
+): string | null {
   for (const [localId, mappedServerId] of Object.entries(mapping)) {
     if (mappedServerId === serverId) {
       return localId;
