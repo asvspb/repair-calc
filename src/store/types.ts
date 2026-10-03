@@ -7,6 +7,8 @@ export interface ProjectSlice {
   activeProject: ProjectData | null;
   isLoading: boolean;
   error: StorageError | null;
+  /** ID проектов, для которых сейчас выполняется безвозвратное удаление (гейт повторных кликов) */
+  deletingIds: string[];
 
   initialize: (initialProjects: ProjectData[], isAuthenticated: boolean) => Promise<void>;
   setActiveProjectId: (id: string) => void;
@@ -18,6 +20,15 @@ export interface ProjectSlice {
     objects?: string[];
   }) => Promise<ProjectData>;
   deleteProject: (projectId: string) => Promise<void>;
+
+  /** Список архивных проектов (только для авторизованных; гостю — пустой список) */
+  fetchArchivedProjects: () => Promise<
+    (ProjectData & { objectsCount: number; roomsCount: number })[]
+  >;
+  /** Восстановление проекта из архива; добавляет/заменяет проект в state.projects */
+  restoreProject: (projectId: string) => Promise<ProjectData>;
+  /** Безвозвратное удаление архивного проекта + вычистка idMapper-маппингов */
+  permanentDeleteProject: (projectId: string) => Promise<{ objects: number; rooms: number }>;
 }
 
 export interface AuthSlice {

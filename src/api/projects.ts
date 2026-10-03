@@ -244,6 +244,46 @@ export async function deleteProject(id: string): Promise<{ status: string; messa
 }
 
 /**
+ * Получение списка архивных проектов пользователя (T3).
+ * Сервер возвращает проекты с агрегатами objectsCount/roomsCount, без вложенных objects.
+ */
+export async function getArchivedProjects(): Promise<{
+  status: string;
+  data: (ApiProject & { objectsCount: number; roomsCount: number })[];
+}> {
+  return fetchJson<{
+    status: string;
+    data: (ApiProject & { objectsCount: number; roomsCount: number })[];
+  }>('/api/projects/archived');
+}
+
+/**
+ * Восстановление архивного проекта (T3).
+ * Ошибки: 404 Project not found; 400 Project is not archived.
+ */
+export async function restoreProject(id: string): Promise<{ status: string; data: ApiProject }> {
+  return fetchJson<{ status: string; data: ApiProject }>(`/api/projects/${id}/restore`, {
+    method: 'PATCH',
+  });
+}
+
+/**
+ * Безвозвратное удаление архивного проекта (T3).
+ * Ошибки: 404 Project not found; 409 Archive the project first.
+ */
+export async function permanentDeleteProject(id: string): Promise<{
+  status: string;
+  data: { deleted: { objects: number; rooms: number } };
+}> {
+  return fetchJson<{ status: string; data: { deleted: { objects: number; rooms: number } } }>(
+    `/api/projects/${id}/permanent`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
+/**
  * Обновление настроек AI для проекта
  */
 export async function updateAiSettings(

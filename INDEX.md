@@ -64,7 +64,7 @@ repair-calc/
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
 │   │   ├── objects.ts                # Objects API
-│   │   ├── projects.ts               # Projects API
+│   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
 │   │   ├── rooms.ts                  # Rooms API
 │   │   ├── totals.ts                 # Totals API
 │   │   ├── users.ts                  # Users API
@@ -113,7 +113,7 @@ repair-calc/
 │   │   ├── factories.ts              # Фабрики создания сущностей
 │   │   ├── format.ts                 # Форматирование чисел
 │   │   ├── geometry.ts               # Геометрические расчёты
-│   │   ├── idMapper.ts               # Маппинг локальных/серверных ID
+│   │   ├── idMapper.ts               # Маппинг локальных/серверных ID (+clearProject: вычистка маппингов при hard-delete)
 │   │   ├── localStorageProvider.ts   # localStorage StorageProvider
 │   │   ├── logger.ts                 # Структурированный логгер
 │   │   ├── materialCalculations.ts   # Формулы расчёта материалов
@@ -126,7 +126,7 @@ repair-calc/
 │   │   └── templateStorage.ts        # Хранилище шаблонов
 │   ├── store/                        # Zustand-стор (мигрировано из ProjectContext)
 │   │   ├── useProjectStore.ts        # Композиция слайсов
-│   │   ├── createProjectSlice.ts     # Проекты + persistence + sync-поля
+│   │   ├── createProjectSlice.ts     # Проекты + persistence + sync-поля (+архив T3: fetchArchivedProjects/restoreProject/permanentDeleteProject, deletingIds)
 │   │   ├── createObjectSlice.ts      # Объекты
 │   │   ├── createRoomSlice.ts        # Комнаты
 │   │   ├── createSyncSlice.ts        # Слушатели синхронизации
@@ -211,7 +211,7 @@ repair-calc/
 │   ├── works.spec.ts
 │   └── work-templates.spec.ts
 │
-├── tests/                            # Unit/integration тесты
+├── tests/                            # Unit/integration тесты (в т.ч. tests/unit/ — слайсы/клиентские api)
 ├── prompts/                          # Библиотека ролевых промптов ИИ-агентов (иерархия: techlead-architect → coder/debugger/designer/analyst; pentester — отдельный контур)
 ├── docs/                             # Документация (карта: docs/README.md; решения: docs/adr/)
 │   └── adr/                          # Architecture Decision Records (MADR)

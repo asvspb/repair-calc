@@ -170,3 +170,13 @@
 - TASK-BATCH-003-openapi-archive (coder): P2-5 — архивные эндпоинты в docs/openapi.yaml.
 - TASK-BATCH-004-docs-p2-2 (doc-keeper): сверка 6 документов с «Проверено: —», закрытие P2-2.
   Write-set'ы непересекающиеся: 001 (src/api/projects.ts, createProjectSlice, idMapper) / 002 (src/components/projects/_) / 003 (docs/openapi.yaml) / 004 (docs/_.md) — 001–003 можно параллельно; 002 после 001.
+
+## 2026-10-03 — Coder: TASK-BATCH-001-archive-t3 (клиент архива, ветка feat/archive-t3-batch-001)
+
+- `src/api/projects.ts`: +`getArchivedProjects()` (GET /api/projects/archived, тип учитывает агрегаты objectsCount/roomsCount из `ProjectRepository.findArchivedByUserId`), +`restoreProject(id)` (PATCH /:id/restore), +`permanentDeleteProject(id)` (DELETE /:id/permanent) — по образцу `deleteProject`, через `fetchJson`/httpClient, без новой логики в api-слое.
+- `src/utils/idMapper.ts`: +`clearProject(projectId, descendantIds)` — удаляет маппинги проекта и переданных потомков (обход дерева делает slice, т.к. idMapper не знает parent-chain); существующий API не тронут.
+- `src/store/createProjectSlice.ts` + `src/store/types.ts`: экшены `fetchArchivedProjects` (гостю — [] без вызова api), `restoreProject` (serverId из idMapper ?? id; добавить/заменить в state.projects), `permanentDeleteProject` (deletingIds-гейт + dedup in-flight promise; 409/400 пробрасываются, состояние не тронуто; после успеха — remove из state, вычистка маппингов, scheduleSave). Псевдокод ТЗ соблюдён.
+- Отступление от write-set (минимальное, вынужденное): `src/store/types.ts` — интерфейс ProjectSlice лежит именно там, без него новые экшены не типируются.
+- Тесты `tests/unit/`: `archiveProjectsApi.test.ts` (6: endpoints/методы, ApiError→ProjectsApiError) + `archiveProjectSlice.test.ts` (12: slice-экшены, edge-кейсы гостя/409/400/idempotency, реальный idMapper.clearProject). Моки: httpClient / api+storage-слой по образцу tests/hooks/domains/useProjectDomain.test.ts.
+- Gates (сам прогнал): `pnpm test` — 974 passed/4 skipped (root) + 136 passed/2 skipped (server); `pnpm run lint` — exit 0, 0 errors (36 warnings — прежние, моих файлов нет); `pnpm run lint:deps` — 0 violations (225 модулей). `./scripts/docs-check.sh` — зелёный.
+- INDEX.md обновлён (api/projects.ts, idMapper.ts, createProjectSlice.ts, tests/).
