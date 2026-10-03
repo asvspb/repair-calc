@@ -9,7 +9,7 @@ WORKDIR /app
 RUN corepack enable
 
 # Копируем lock-файлы pnpm
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 
 # Устанавливаем build dependencies для native modules (например, better-sqlite3)
 RUN apk add --no-cache python3 make g++
@@ -35,7 +35,7 @@ WORKDIR /app
 RUN corepack enable
 
 # Копируем lock-файлы pnpm
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 
 # Устанавливаем зависимости включая tsx для миграций, и необходимые инструменты для сборки
 RUN apk add --no-cache python3 make g++ \
