@@ -32,6 +32,7 @@
 |---|---|---|
 | [techlead-architect.md](./techlead-architect.md) | Архитектор-контролёр: декомпозиция, параноидальное ревью, git-цикл, merge | 1 |
 | [coder.md](./coder.md) | Исполнитель: один task-batch → одна подветка → один PR | 2 |
+| [prompt-architect.md](./prompt-architect.md) | **Мета-роль:** создаёт/улучшает промпты других агентов (v3) | мета |
 | [debugger.md](./debugger.md) | Отладчик: hypothesis-driven, репродукция → изоляция → фикс | 2 |
 | [designer.md](./designer.md) | UI/UX: Tailwind, i18n-строки, a11y | 2 |
 | [analyst.md](./analyst.md) | Исследователь: разведка кодовой базы, ответы с цитатами | 2 |
