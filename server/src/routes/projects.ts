@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { createProjectSchema, updateProjectSchema, idParamSchema, updateProjectWithObjectsSchema } from '../middleware/validation.js';
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  idParamSchema,
+  updateProjectWithObjectsSchema,
+} from '../middleware/validation.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
-import { notFound, forbidden } from '../middleware/errorHandler.js';
+import { notFound, forbidden, badRequest, conflict } from '../middleware/errorHandler.js';
 import { winstonLogger } from '../middleware/logger.js';
 import type { AuthRequest, Project } from '../types/index.js';
 
@@ -11,14 +16,15 @@ const router = Router();
 // Middleware для детального логирования
 router.use((req, res, next) => {
   const userId = (req as AuthRequest).user?.id || 'ANONYMOUS';
-  
+
   winstonLogger.info(`PROJECTS API ${req.method} ${req.path}`, {
     userId,
-    body: req.method !== 'GET' && req.body && Object.keys(req.body).length > 0
-      ? JSON.stringify(req.body).substring(0, 500)
-      : undefined,
+    body:
+      req.method !== 'GET' && req.body && Object.keys(req.body).length > 0
+        ? JSON.stringify(req.body).substring(0, 500)
+        : undefined,
   });
-  
+
   next();
 });
 
@@ -30,12 +36,12 @@ router.get('/', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
   try {
     const projects = await ProjectRepository.findByUserId(req.user!.id);
-    
+
     winstonLogger.info('[GET /projects] Found projects', {
       count: projects.length,
       duration: Date.now() - startTime,
     });
-    
+
     res.json({
       status: 'success',
       data: projects,
@@ -75,6 +81,129 @@ router.post('/', async (req: AuthRequest, res, next) => {
     next(error);
   }
 });
+
+// ===== Archive endpoints (T2 плана архива) =====
+
+// GET /api/projects/archived - List archived projects for user
+// ВАЖНО: регистрируется СТРОГО ДО GET /:id — Express матчит маршруты в порядке
+// регистрации, иначе '/archived' был бы захвачен как :id='archived'.
+router.get('/archived', async (req: AuthRequest, res, next) => {
+  const startTime = Date.now();
+  try {
+    const projects = await ProjectRepository.findArchivedByUserId(req.user!.id);
+
+    winstonLogger.info('[GET /projects/archived] Found archived projects', {
+      count: projects.length,
+      duration: Date.now() - startTime,
+    });
+
+    res.json({
+      status: 'success',
+      data: projects,
+    });
+  } catch (error) {
+    winstonLogger.error('[GET /projects/archived] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
+    next(error);
+  }
+});
+
+// PATCH /api/projects/:id/restore - Restore project from archive
+router.patch('/:id/restore', async (req: AuthRequest, res, next) => {
+  const startTime = Date.now();
+  try {
+    const { id } = idParamSchema.parse(req.params);
+
+    const result = await ProjectRepository.restore(id, req.user!.id);
+
+    if (result.status === 'not_found') {
+      winstonLogger.warn('[PATCH /projects/:id/restore] Project not found', {
+        projectId: id,
+        outcome: result.status,
+        duration: Date.now() - startTime,
+      });
+      throw notFound('Project not found');
+    }
+
+    if (result.status === 'not_archived') {
+      winstonLogger.warn('[PATCH /projects/:id/restore] Project is not archived', {
+        projectId: id,
+        outcome: result.status,
+        duration: Date.now() - startTime,
+      });
+      throw badRequest('Project is not archived');
+    }
+
+    winstonLogger.info('[PATCH /projects/:id/restore] Project restored', {
+      projectId: id,
+      outcome: result.status,
+      duration: Date.now() - startTime,
+    });
+
+    res.json({
+      status: 'success',
+      data: result.project,
+    });
+  } catch (error) {
+    winstonLogger.error('[PATCH /projects/:id/restore] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
+    next(error);
+  }
+});
+
+// DELETE /api/projects/:id/permanent - Полное удаление проекта из БД.
+// ЕДИНСТВЕННЫЙ путь real-DELETE в приложении; вызывается только из
+// «Настройки → Архив» (UI в T4). Активный проект удалить нельзя — guard 409.
+router.delete('/:id/permanent', async (req: AuthRequest, res, next) => {
+  const startTime = Date.now();
+  try {
+    const { id } = idParamSchema.parse(req.params);
+
+    const result = await ProjectRepository.hardDelete(id, req.user!.id);
+
+    if (result.status === 'not_found') {
+      winstonLogger.warn('[DELETE /projects/:id/permanent] Project not found', {
+        projectId: id,
+        outcome: result.status,
+        duration: Date.now() - startTime,
+      });
+      throw notFound('Project not found');
+    }
+
+    if (result.status === 'not_archived') {
+      winstonLogger.warn('[DELETE /projects/:id/permanent] Project is not archived', {
+        projectId: id,
+        outcome: result.status,
+        duration: Date.now() - startTime,
+      });
+      throw conflict('Archive the project first');
+    }
+
+    winstonLogger.warn('[DELETE /projects/:id/permanent] Permanent delete', {
+      projectId: id,
+      objects: result.deleted.objects,
+      rooms: result.deleted.rooms,
+      duration: Date.now() - startTime,
+    });
+
+    res.json({
+      status: 'success',
+      data: { deleted: result.deleted },
+    });
+  } catch (error) {
+    winstonLogger.error('[DELETE /projects/:id/permanent] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
+    next(error);
+  }
+});
+
+// ===== /Archive endpoints =====
 
 // GET /api/projects/:id - Get single project with objects
 router.get('/:id', async (req: AuthRequest, res, next) => {
@@ -178,14 +307,21 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
 
     await ProjectRepository.delete(id);
 
-    winstonLogger.info('[DELETE /projects/:id] Deleted', { projectId: id, name: existing.name, duration: Date.now() - startTime });
+    winstonLogger.info('[DELETE /projects/:id] Deleted', {
+      projectId: id,
+      name: existing.name,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       message: 'Project deleted',
     });
   } catch (error) {
-    winstonLogger.error('[DELETE /projects/:id] Error', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[DELETE /projects/:id] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -221,7 +357,10 @@ router.put('/:id/ai-settings', async (req: AuthRequest, res, next) => {
       data: project,
     });
   } catch (error) {
-    winstonLogger.error('[PUT /projects/:id/ai-settings] Error', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[PUT /projects/:id/ai-settings] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -251,24 +390,31 @@ router.put('/:id/with-rooms', async (req: AuthRequest, res, next) => {
     if (city !== undefined) projectData.city = city;
     if (use_ai_pricing !== undefined) projectData.use_ai_pricing = use_ai_pricing;
     if (last_ai_price_update !== undefined) {
-      projectData.last_ai_price_update = last_ai_price_update ? new Date(last_ai_price_update) : null;
+      projectData.last_ai_price_update = last_ai_price_update
+        ? new Date(last_ai_price_update)
+        : null;
     }
 
     const updated = await ProjectRepository.updateWithRooms(
       id,
       req.user!.id,
       projectData,
-      rooms || []
+      rooms || [],
     );
 
-    winstonLogger.info('[PUT /projects/:id/with-rooms] Updated', { duration: Date.now() - startTime });
+    winstonLogger.info('[PUT /projects/:id/with-rooms] Updated', {
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: updated,
     });
   } catch (error) {
-    winstonLogger.error('[PUT /projects/:id/with-rooms] Error', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[PUT /projects/:id/with-rooms] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -278,7 +424,8 @@ router.put('/:id/with-objects', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
   try {
     const { id } = idParamSchema.parse(req.params);
-    const { name, city, use_ai_pricing, last_ai_price_update, objects } = updateProjectWithObjectsSchema.parse(req.body);
+    const { name, city, use_ai_pricing, last_ai_price_update, objects } =
+      updateProjectWithObjectsSchema.parse(req.body);
 
     // Check ownership
     const existing = await ProjectRepository.findByIdAndUserId(id, req.user!.id);
@@ -298,24 +445,31 @@ router.put('/:id/with-objects', async (req: AuthRequest, res, next) => {
     if (city !== undefined) projectData.city = city;
     if (use_ai_pricing !== undefined) projectData.use_ai_pricing = use_ai_pricing;
     if (last_ai_price_update !== undefined) {
-      projectData.last_ai_price_update = last_ai_price_update ? new Date(last_ai_price_update) : null;
+      projectData.last_ai_price_update = last_ai_price_update
+        ? new Date(last_ai_price_update)
+        : null;
     }
 
     const updated = await ProjectRepository.updateWithObjects(
       id,
       req.user!.id,
       projectData,
-      objects || []
+      objects || [],
     );
 
-    winstonLogger.info('[PUT /projects/:id/with-objects] Updated', { duration: Date.now() - startTime });
+    winstonLogger.info('[PUT /projects/:id/with-objects] Updated', {
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: updated,
     });
   } catch (error) {
-    winstonLogger.error('[PUT /projects/:id/with-objects] Error', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[PUT /projects/:id/with-objects] Error', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });

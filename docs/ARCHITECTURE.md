@@ -1,15 +1,18 @@
 # Архитектура проекта Repair Calculator
 
+> **Статус:** актуально • **Проверено:** 2026-10-03 (частично: блок БД MySQL→PostgreSQL сверен с кодом; остальное — при ближайшей вехе)
+
 **Дата:** 2026-06-08
 **Статус:** Актуально
 **Версия клиента:** React 19 + Vite 6
-**Версия сервера:** Express + MySQL + Knex
+**Версия сервера:** Express + PostgreSQL + Knex
 
 ---
 
 ## 1. Обзор проекта
 
 **Repair Calculator** — PWA-приложение для расчёта стоимости ремонтных работ. Позволяет:
+
 - Создавать проекты с несколькими объектами недвижимости
 - Рассчитывать площади стен, полов, потолков с учётом проёмов
 - Вести каталог работ с материалами и инструментами
@@ -18,17 +21,17 @@
 
 ### 1.1 Текущий статус (2026-04-17)
 
-| Компонент | Статус | Описание |
-|-----------|--------|----------|
-| Клиент | ✅ Готов | React 19, Vite 6, TailwindCSS 4 |
-| Сервер | ✅ Готов | Express, MySQL, Knex, JWT |
-| База данных | ✅ Готова | MySQL 8 с 6 миграциями |
-| Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
-| AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
-| Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
-| Тесты | ✅ 841 тест | 833 passed, 0 failed, 8 skipped |
-| Логирование | ✅ Готов | Winston (сервер) + logger.ts (клиент) |
-| ESLint | ✅ Готов | no-console: error, 0 errors / 47 warnings |
+| Компонент      | Статус      | Описание                                  |
+| -------------- | ----------- | ----------------------------------------- |
+| Клиент         | ✅ Готов    | React 19, Vite 6, TailwindCSS 4           |
+| Сервер         | ✅ Готов    | Express, PostgreSQL, Knex, JWT            |
+| База данных    | ✅ Готова   | PostgreSQL, миграции Knex                 |
+| Хранилище      | ✅ Готов    | localStorage + ApiStorageProvider         |
+| AI-интеграция  | ✅ Готов    | Клиентская + серверная реализация         |
+| Аутентификация | ✅ Готова   | JWT tokens, регистрация/логин             |
+| Тесты          | ✅ 841 тест | 833 passed, 0 failed, 8 skipped           |
+| Логирование    | ✅ Готов    | Winston (сервер) + logger.ts (клиент)     |
+| ESLint         | ✅ Готов    | no-console: error, 0 errors / 47 warnings |
 
 ---
 
@@ -173,7 +176,7 @@ type ProjectData = {
   name: string;
   description?: string;
   isPremium?: boolean;
-  objects: ObjectData[];      // Объекты недвижимости
+  objects: ObjectData[]; // Объекты недвижимости
   version?: number;
   // Deprecated (для обратной совместимости)
   rooms?: RoomData[];
@@ -200,13 +203,13 @@ type ObjectData = {
 type RoomData = {
   id: string;
   name: string;
-  geometryMode: GeometryMode;  // 'simple' | 'extended' | 'advanced'
+  geometryMode: GeometryMode; // 'simple' | 'extended' | 'advanced'
   length: number;
   width: number;
   height: number;
-  segments: RoomSegment[];      // Advanced mode
-  obstacles: Obstacle[];         // Advanced mode
-  wallSections: WallSection[];  // Advanced mode
+  segments: RoomSegment[]; // Advanced mode
+  obstacles: Obstacle[]; // Advanced mode
+  wallSections: WallSection[]; // Advanced mode
   subSections: RoomSubSection[]; // Extended mode
   windows: Opening[];
   doors: Opening[];
@@ -258,12 +261,14 @@ export interface IStorageProvider {
 **Текущая реализация:** `LocalStorageProvider` — сохраняет данные в localStorage браузера.
 
 **Архитектура готова к замене** на:
+
 - `ApiStorageProvider` — сохранение через REST API
 - `IndexedDBProvider` — оффлайн-хранение
 
 ### 2.5 Контексты
 
 #### AuthContext
+
 ```typescript
 interface AuthContextValue {
   user: User | null;
@@ -278,6 +283,7 @@ interface AuthContextValue {
 ```
 
 #### ProjectContext
+
 ```typescript
 interface ProjectContextValue {
   // State
@@ -288,7 +294,7 @@ interface ProjectContextValue {
   activeObject: ObjectData | null;
   isLoading: boolean;
   isSyncing: boolean;
-  
+
   // Actions
   setActiveProjectId: (id: string) => void;
   setActiveObjectId: (id: string) => void;
@@ -299,7 +305,7 @@ interface ProjectContextValue {
   deleteRoom: (roomId: string) => void;
   addRoom: (room: RoomData) => void;
   reorderRooms: (rooms: RoomData[]) => void;
-  
+
   // Object management
   createObject: (object: ObjectData) => void;
   updateObject: (object: ObjectData) => void;
@@ -309,6 +315,7 @@ interface ProjectContextValue {
 ```
 
 **Особенности:**
+
 - Автосохранение с debounce (1-2 сек)
 - Защита от потери данных при закрытии (`beforeunload`)
 - Миграция данных при загрузке
@@ -353,7 +360,7 @@ server/
 │   │   └── errorHandler.ts         # Обработка ошибок
 │   │
 │   ├── db/
-│   │   ├── pool.ts                 # MySQL pool
+│   │   ├── pool.ts                 # PostgreSQL pool (Knex)
 │   │   ├── migrations/             # Knex миграции
 │   │   └── repositories/           # Data access (12 файлов)
 │   │       ├── user.repo.ts
@@ -384,39 +391,43 @@ server/
 ### 3.2 API Endpoints
 
 #### Аутентификация
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| POST | `/api/auth/register` | Регистрация |
-| POST | `/api/auth/login` | Вход |
-| POST | `/api/auth/refresh` | Обновление токена |
-| GET | `/api/auth/me` | Текущий пользователь |
-| POST | `/api/auth/logout` | Выход |
+
+| Метод | Endpoint             | Описание             |
+| ----- | -------------------- | -------------------- |
+| POST  | `/api/auth/register` | Регистрация          |
+| POST  | `/api/auth/login`    | Вход                 |
+| POST  | `/api/auth/refresh`  | Обновление токена    |
+| GET   | `/api/auth/me`       | Текущий пользователь |
+| POST  | `/api/auth/logout`   | Выход                |
 
 #### Проекты
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/projects` | Список проектов |
-| POST | `/api/projects` | Создание |
-| GET | `/api/projects/:id` | Проект с объектами |
-| PUT | `/api/projects/:id` | Обновление |
-| DELETE | `/api/projects/:id` | Удаление |
+
+| Метод  | Endpoint            | Описание           |
+| ------ | ------------------- | ------------------ |
+| GET    | `/api/projects`     | Список проектов    |
+| POST   | `/api/projects`     | Создание           |
+| GET    | `/api/projects/:id` | Проект с объектами |
+| PUT    | `/api/projects/:id` | Обновление         |
+| DELETE | `/api/projects/:id` | Удаление           |
 
 #### Объекты
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/objects` | Список объектов |
-| POST | `/api/projects/:projectId/objects` | Создание объекта |
-| GET | `/api/objects/:id` | Объект с комнатами |
-| PUT | `/api/objects/:id` | Обновление |
-| DELETE | `/api/objects/:id` | Удаление |
+
+| Метод  | Endpoint                           | Описание           |
+| ------ | ---------------------------------- | ------------------ |
+| GET    | `/api/objects`                     | Список объектов    |
+| POST   | `/api/projects/:projectId/objects` | Создание объекта   |
+| GET    | `/api/objects/:id`                 | Объект с комнатами |
+| PUT    | `/api/objects/:id`                 | Обновление         |
+| DELETE | `/api/objects/:id`                 | Удаление           |
 
 #### Синхронизация
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/sync/pull` | Получить данные |
-| POST | `/api/sync/push` | Отправить изменения |
 
-### 3.3 База данных (MySQL)
+| Метод | Endpoint         | Описание            |
+| ----- | ---------------- | ------------------- |
+| GET   | `/api/sync/pull` | Получить данные     |
+| POST  | `/api/sync/push` | Отправить изменения |
+
+### 3.3 База данных (PostgreSQL)
 
 **ER-диаграмма:**
 
@@ -432,6 +443,7 @@ rooms 1──∞ wall_sections (advanced)
 ```
 
 **Ключевые таблицы:**
+
 - `users` — пользователи (id, email, name, password_hash, is_premium)
 - `projects` — проекты (user_id, name, description)
 - `objects` — объекты недвижимости (project_id, name, city, address, use_ai_pricing)
@@ -451,10 +463,7 @@ rooms 1──∞ wall_sections (advanced)
 
 ```typescript
 // src/api/prices/geminiPriceSearch.ts
-export async function searchPrices(
-  query: string,
-  city?: string
-): Promise<PriceSearchResult[]> {
+export async function searchPrices(query: string, city?: string): Promise<PriceSearchResult[]> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   // ... запрос к Gemini API
 }
@@ -466,7 +475,7 @@ export async function searchPrices(
 // server/src/services/ai/gemini.ts
 export class GeminiProvider implements AIProvider {
   name = 'gemini' as const;
-  
+
   async chat(messages: ChatMessage[]): Promise<string> {
     // ... серверный запрос с защитой API-ключа
   }
@@ -474,6 +483,7 @@ export class GeminiProvider implements AIProvider {
 ```
 
 **API endpoints:**
+
 - `POST /api/ai/estimate` — оценка стоимости по описанию
 - `POST /api/ai/suggest-materials` — предложить материалы
 
@@ -485,11 +495,11 @@ export class GeminiProvider implements AIProvider {
 
 Проект использует **два структурированных логгера** вместо прямых вызовов `console.*`:
 
-| Среда | Логгер | Модуль | Уровни |
-|-------|--------|--------|--------|
-| **Сервер** | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug` |
-| **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
-| **Миграции Knex** | `console.log` | — | CLI-контекст, вне Express |
+| Среда             | Логгер                    | Модуль                            | Уровни                                         |
+| ----------------- | ------------------------- | --------------------------------- | ---------------------------------------------- |
+| **Сервер**        | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug`               |
+| **Клиент**        | Функции логирования       | `src/utils/logger.ts`             | `error`, `warning`, `info`, `success`, `debug` |
+| **Миграции Knex** | `console.log`             | —                                 | CLI-контекст, вне Express                      |
 
 > **Важно:** ESLint правило `no-console: error` добавлено (2026-04-16). Все `console.*` заменены на структурированные логгеры.
 
@@ -501,11 +511,11 @@ import winston from 'winston';
 import { config } from '../config/env.js';
 
 export const winstonLogger = winston.createLogger({
-  level: config.logging.level,  // Управляется через env
+  level: config.logging.level, // Управляется через env
   format: combine(
-    errors({ stack: true }),     // Автоматический стек-трейс
+    errors({ stack: true }), // Автоматический стек-трейс
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
+    logFormat,
   ),
   transports: [
     new winston.transports.Console({
@@ -516,17 +526,21 @@ export const winstonLogger = winston.createLogger({
 ```
 
 **Использование в маршрутах:**
+
 ```typescript
 import { winstonLogger } from '../middleware/logger.js';
 
 winstonLogger.info('[POST /projects] Created project', {
-  projectId: project.id, name: project.name, duration: Date.now() - startTime,
+  projectId: project.id,
+  name: project.name,
+  duration: Date.now() - startTime,
 });
 winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
 winstonLogger.error('[POST /projects] Error', { duration, error });
 ```
 
 **HTTP-логгер (middleware):**
+
 ```typescript
 export function logger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
@@ -543,7 +557,8 @@ export function logger(req: Request, res: Response, next: NextFunction): void {
 }
 ```
 
-**Преимущества над console.*:**
+**Преимущества над console.\*:**
+
 - Уровни логирования с фильтрацией через `config.logging.level`
 - Структурированные JSON-метаданные (парсимые ELK/Grafana)
 - Автоматические стек-трейсы через `errors({ stack: true })`
@@ -561,6 +576,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 ```
 
 **Ключевые возможности:**
+
 - Категории и контекст: каждый лог имеет `category` + `action`
 - История действий: последние 100 операций через `window.debugLogger`
 - Группировка: `console.groupCollapsed()` — компактный вывод в DevTools
@@ -586,7 +602,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
                                               │
                                       ┌───────▼───────┐
                                       │  Express API  │
-                                      │  + MySQL      │
+                                      │  + PostgreSQL│
                                       └──────────────┘
 ```
 
@@ -603,14 +619,14 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
 ### 7.1 Статистика тестов
 
-| Категория | Количество |
-|-----------|------------|
-| Unit тесты (utils) | 220+ |
-| Unit тесты (hooks) | 72+ |
-| Integration тесты | 7+ |
-| API тесты | 22+ |
-| E2E тесты | 13 файлов |
-| **Итого** | **841 тест** |
+| Категория          | Количество   |
+| ------------------ | ------------ |
+| Unit тесты (utils) | 220+         |
+| Unit тесты (hooks) | 72+          |
+| Integration тесты  | 7+           |
+| API тесты          | 22+          |
+| E2E тесты          | 13 файлов    |
+| **Итого**          | **841 тест** |
 
 ### 7.2 Результаты (2026-04-16)
 
@@ -624,21 +640,21 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
 ### 7.3 E2E тесты (Playwright)
 
-| Категория | Статус |
-|-----------|--------|
-| auth.spec.ts | ✅ 3/3 |
-| objects.spec.ts | ✅ 4/4 |
-| export-import.spec.ts | 🔧 восстановлен (6 тестов) |
-| core-workflow.spec.ts | 🔧 восстановлен (3 теста) |
-| costs.spec.ts | 🔧 восстановлен (3 теста) |
-| geometry.spec.ts | 🔧 восстановлен (4 теста) |
-| projects.spec.ts | 🔧 восстановлен (3 теста) |
-| rooms.spec.ts | 🔧 восстановлен (5 тестов) |
-| works.spec.ts | 🔧 восстановлен (4 теста) |
+| Категория              | Статус                     |
+| ---------------------- | -------------------------- |
+| auth.spec.ts           | ✅ 3/3                     |
+| objects.spec.ts        | ✅ 4/4                     |
+| export-import.spec.ts  | 🔧 восстановлен (6 тестов) |
+| core-workflow.spec.ts  | 🔧 восстановлен (3 теста)  |
+| costs.spec.ts          | 🔧 восстановлен (3 теста)  |
+| geometry.spec.ts       | 🔧 восстановлен (4 теста)  |
+| projects.spec.ts       | 🔧 восстановлен (3 теста)  |
+| rooms.spec.ts          | 🔧 восстановлен (5 тестов) |
+| works.spec.ts          | 🔧 восстановлен (4 теста)  |
 | work-templates.spec.ts | 🔧 восстановлен (7 тестов) |
-| regressions.spec.ts | 🔧 восстановлен (5 тестов) |
-| responsive.spec.ts | 🔧 восстановлен (2 теста) |
-| room-input.spec.ts | 🔧 восстановлен (3 теста) |
+| regressions.spec.ts    | 🔧 восстановлен (5 тестов) |
+| responsive.spec.ts     | 🔧 восстановлен (2 теста)  |
+| room-input.spec.ts     | 🔧 восстановлен (3 теста)  |
 
 > **E2E стабилизация (2026-04-17):** Все `test.describe.skip` сняты. Тесты переведены на унифицированные фикстуры (`setupTestEnvironment`/`setupCleanEnvironment`) с API-моками через `page.route()`. Убраны хардкод JWT-токены. Селекторы обновлены на `data-testid`. Убраны `waitForTimeout` в пользу `toPass()` и `expect().toBeVisible()`.
 
@@ -679,7 +695,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
   "dependencies": {
     "express": "^4.21.0",
     "cors": "^2.8.5",
-    "mysql2": "^3.11.0",
+    "pg": "^8.22.0",
     "knex": "^3.1.0",
     "zod": "^3.23.0",
     "jsonwebtoken": "^9.0.2",
@@ -707,15 +723,15 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 
 ## 9. Документация
 
-| Файл | Описание |
-|------|----------|
-| [INDEX.md](../INDEX.md) | Главный индексный файл |
-| [TODO.md](./TODO.md) | Актуальные задачи и прогресс |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
-| [CODE_REVIEW.md](./CODE_REVIEW.md) | Результаты ревью кода v5.0 |
-| [LOGGING.md](./LOGGING.md) | Руководство по логированию |
-| [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md) | Инструкции по отладке |
-| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации |
+| Файл                                                               | Описание                       |
+| ------------------------------------------------------------------ | ------------------------------ |
+| [INDEX.md](../INDEX.md)                                            | Главный индексный файл         |
+| [TODO.md](./TODO.md)                                               | Актуальные задачи и прогресс   |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md)         | ТЗ v1.1 — группировка объектов |
+| [CODE_REVIEW.md](./CODE_REVIEW.md)                                 | Результаты ревью кода v5.0     |
+| [LOGGING.md](./LOGGING.md)                                         | Руководство по логированию     |
+| [DEBUG_INSTRUCTIONS.md](./DEBUG_INSTRUCTIONS.md)                   | Инструкции по отладке          |
+| [AI_DOCUMENTATION_GUIDELINES.md](./AI_DOCUMENTATION_GUIDELINES.md) | Правила ведения документации   |
 
 ---
 
@@ -728,7 +744,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 3. ✅ IStorageProvider абстракция
 4. ✅ Каталог материалов и расчёт
 5. ✅ Поиск цен через AI (клиентский + серверный)
-6. ✅ Backend на Express + MySQL
+6. ✅ Backend на Express + PostgreSQL
 7. ✅ JWT аутентификация
 8. ✅ Объектная модель (Project → Objects → Rooms)
 9. ✅ Синхронизация localStorage ↔ API

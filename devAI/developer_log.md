@@ -107,3 +107,49 @@
 - **Ревью Архитектора:** write-set ровно 2 файла; паттерны/секреты чисто; gates лично: vitest 127 passed | 2 skipped, tsc 0, eslint 0 errors, depcruise 0 violations. Mutation-check: старый не-атомарный delete() → 3 теста падают (вкл. BLOCKING), 9 зелёных.
 - **Ревью владельца (независимое):** тесты, мутационная проверка, сверка (a)–(d) с кодом, FK/audit_log по миграциям — «рантайм-ловушек нет». Merge ff-only → main (4bbe168..3f39967), ветка удалена.
 - **Отклонения Исполнителя (approved):** defensive-ветка вместо non-null assertion в restore; +2 теста сверх списка.
+
+## [2026-10-03] prompts/ — библиотека ролевых промптов ИИ-агентов (иерархия)
+
+- Создано: prompts/{README, techlead-architect, coder, debugger, designer, analyst, pentester}.md — 6 ролей + README с иерархией (L1 архитектор-контролёр → L2 исполнители; пентестер — отдельный контур с re-test).
+- Практики перенесены из соседних проектов (kino-club, private-cinema): негативный grounding, SSOT-иерархия код>AGENTS>промпт, реестр дрейфов, SPLIT-ME/BREAKING-INTENT, git-safety, параноидальное ревью «факт, а не отчёт».
+- Обновлён INDEX.md (структура: + prompts/).
+- Изменён только код: не менялся (docs/prompts only).
+
+## [2026-10-03] Документация v2 — Diátaxis + ADR + freshness-контроль
+
+- Принята система документирования (ADR-0001): docs/README.md — Diátaxis-карта (навигация), docs/adr/ — ADR (MADR-шаблон + рекорд 0001), freshness-заголовки у всех docs/\*.md, docs/PROGRESS.md (вехи), scripts/docs-check.sh (автопроверка: ссылки карты/заголовки/ADR-нумерация).
+- Переписан docs/AI_DOCUMENTATION_GUIDELINES.md → v2.0 (типы документов, жизненный цикл, запреты, обязанности ролей).
+- Исправлен дрейф: PROGRESS.md создан; старая карта ссылалась на 6 удалённых файлов.
+- Найденные дрейфы (в карте, ждут владельца): plan-project-archive.md (план в docs/), docs/INDEX.md (устарел).
+- Проверки: docs-check.sh зелёный; код не менялся.
+
+## [2026-10-03] Актуализация всей документации + сохранение в git
+
+- Сверка с кодом: ARCHITECTURE.md MySQL→PostgreSQL (8 мест, по факту `pg` в server/package.json); AGENTS.md — уже Knex (прежний «дрейф db:migrate:dev» был ошибкой сравнения с kino-club, записи исправлены в ADR-0001 и prompts/README).
+- Перенос: docs/plan-project-archive.md → devAI/spec/ (регламент v2); docs/INDEX.md → docs/archive/ (устарел, замещён корневым).
+- TODO.md: снято выполненное (P0-1 merge, P0-2 CI, P2-1 триаж, P2-2 частично, P2-3 PROGRESS) — секция «Закрыто 2026-10-03».
+- PROGRESS.md: вехи 2026-10 дополнены (merge рефактора, CI, T1 архива, docs v2, дрейф БД).
+- devAI/spec/README.md: реестр спек/планов со статусами; AGENTS.md: структура + prompts/, docs/adr, docs-check.
+- Проверки: docs-check.sh зелёный; код не менялся.
+
+## [2026-10-03] Мастер-промпт v3 → prompts/prompt-architect.md
+
+- Мета-роль «Промпт-Инженер» переведена из чата в репо, версионируется как код.
+- Ключевые апгрейды v2→v3: правило одного репо (факты только из целевого проекта — урок ложного дрейфа db:migrate:dev); иерархия ролей L1/L2/контур с эксклюзивными write-set'ами; промпты=код (версия+регистр в README); протокол деградации инфраструктуры (bypass только с обоснованием в артефакте — урок --no-verify); dry-run расширен 4-м сценарием «недоступная инфраструктура»; связь с ADR-процессом.
+
+## [2026-10-03] Doc Keeper — плановый аудит (режим A) @ ветка docs/doc-keeper-2026-10-03
+
+- Граница git-сверки: 3f39967..HEAD (коммиты архива проектов + docs v2 + мета-промпт).
+- Автопроверка: `docs-check.sh` ✅ (до и после прохода).
+- Найдено дрейфов: 3. Устранены: INDEX.md (таблица API дополнена архивными и ai-settings/with-rooms/with-objects эндпоинтами по факту `server/src/routes/projects.ts`, дата → 2026-10-03); реестр дрейфов создан в docs/README.md («Известные дрейфы», 4 строки); регистрация doc-keeper в prompts/README.md закоммичена.
+- Открыты → TODO: openapi.yaml без архивные эндпоинтов (P2-5); LOGGING\*.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md — «Проверено: —» (P2-2).
+- Не тронуто (вне write-set): миграция на pnpm в рабочем дереве (pnpm-lock.yaml, удалённые package-lock.json) — зона архитектора.
+
+## 2026-10-03 (позже) — Архитектор: ревью + подготовка merge docs/doc-keeper-2026-10-03
+
+- Закоммичен незакоммиченный хвост doc-keeper: указатели реестра дрейфов в 6 промптах + 2 новые записи в docs/README.md (state-management канон, pnpm-миграция) — c7a960b.
+- chore: миграция lockfiles npm→pnpm (удалён package-lock.json root/server, добавлены pnpm-lock.yaml) — f9f2b1f; .kilo lockfile — 1071d33.
+- Среда/гейты под pnpm v10 починены (onlyBuiltDependencies, @types/express-serve-static-core@4.19.8 против TS2742 при declaration:true) — eaec414.
+- Самостоятельные прогоны на ветке: `pnpm test` = 136 passed / 2 skipped (вкл. 9 интеграционных projectArchiveRoutes); `pnpm run lint` = 0 errors (warnings прежние); `pnpm run lint:deps` = 0 violations (225 модулей).
+- Ревью диффа 774ccab (архив-эндпоинты): authenticate на роутере, Zod idParamSchema, ownership в репо, guard'ы 409/400, логирование winston, '/archived' зарегистрирован до '/:id'. Принято.
+- Ветка подготовлена к merge в main.

@@ -42,6 +42,7 @@
     "@types/cors": "^2.8.17",
     "@types/exceljs": "^0.5.3",
     "@types/express": "^4.17.21",
+    "@types/express-serve-static-core": "4.19.8",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.14.0",
     "@types/supertest": "^7.2.0",
@@ -54,5 +55,11 @@
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.58.2",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "better-sqlite3"
+    ]
   }
 }

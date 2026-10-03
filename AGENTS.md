@@ -49,9 +49,10 @@ repair-calc/
 ├── tests/                    # Vitest (unit)
 ├── e2e/                      # Playwright
 ├── shared/                   # Типы/утилиты, общие для frontend и backend
-├── docs/                     # ARCHITECTURE, CODE_REVIEW, LOGGING, PROGRESS, AI_DOCUMENTATION_GUIDELINES
-├── devAI/                    # SDD-флоу: spec/, PLANNING.md, developer_log.md (см. раздел 13)
-├── scripts/                  # deploy-local.sh, docker-rebuild, monitor
+├── docs/                     # Знания: карта docs/README.md, ARCHITECTURE, adr/ (решения), PROGRESS, регламент
+├── prompts/                  # Ролевые промпты ИИ-агентов: techlead-architect → coder/debugger/designer/analyst; pentester
+├── devAI/                    # SDD-флоу: spec/ (спеки/планы/task-batch'и), PLANNING.md, developer_log.md (см. раздел 13)
+├── scripts/                  # deploy-local.sh, docker-rebuild, monitor, docs-check.sh (автопроверка документации)
 └── INDEX.md                  # Главный живой индекс (обновляй после ЛЮБЫХ изменений!)
 ```
 

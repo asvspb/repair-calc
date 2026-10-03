@@ -1,39 +1,26 @@
 # TODO: Актуальные задачи (Repair Calculator)
 
-**Дата последнего обновления:** 2026-08-11
-**Источник приоритетов:** [AUDIT-2026-08-11.md](./AUDIT-2026-08-11.md) (снимок состояния)
+> **Статус:** актуально (живой бэклог) • **Проверено:** 2026-10-03
+
+**Дата последнего обновления:** 2026-10-03
+**Источник приоритетов:** [AUDIT-2026-08-11.md](./AUDIT-2026-08-11.md) (снимок состояния) + сверка 2026-10-03
 **Направление проекта:** [INDEX.md → 🧭 Компас](../INDEX.md)
 
 > **Принцип ведения** (по `AI_DOCUMENTATION_GUIDELINES.md`): выполнил задачу —
-> удали её отсюда и запиши веху в `PROGRESS.md` (его нужно создать — см. P2-3),
+> удали её отсюда и запиши веху в [PROGRESS.md](./PROGRESS.md),
 > краткое резюме — append в `devAI/developer_log.md`.
 
 ---
 
-## 🔴 Приоритет 0: Операционное здоровье (блокирует всё)
+## ✅ Закрыто 2026-10-03 (сверка TODO с фактическим состоянием)
 
-### P0-1. План merge `refactor/architecture-v2` → `main`
+- **P0-1** (merge `refactor/architecture-v2` → `main`) — выполнено: main содержит рефактор, актуальная рабочая ветка `feat/project-archive-t2`.
+- **P0-2** (CI) — `ci.yml`, husky-хуки, `check-secrets.sh` закоммичены.
+- **P2-1** (триаж незакоммиченных файлов) — файлы в git.
+- **P2-2** частично — AGENTS.md уже Knex; ARCHITECTURE.md MySQL→PostgreSQL исправлено.
+- **P2-3** — `docs/PROGRESS.md` создан; `FRONTEND-STATUS.md` решено не вести отдельно (вехи фронтенда — в PROGRESS.md).
 
-Ветка на **+160 коммитов** к main (невлито ~5.5 мес.). Главный риск проекта.
-
-- [ ] Решить стратегию: **big-bang** merge или **разбивка на тематические PR**:
-  - [ ] БД-миграция MySQL→PostgreSQL + миграции
-  - [ ] `src/domain` extract (чистая бизнес-логика)
-  - [ ] zustand-slices (auth/object/room/sync/project)
-  - [ ] IndexedDB (Dexie) persistence + sync push/pull
-  - [ ] security: `adminGuard` RBAC, миграция `20260332_add_user_role`
-  - [ ] update-service decomposition (`routes/update/`)
-  - [ ] i18n scaffold (`react-i18next`)
-- [ ] Запушить 5 локальных коммитов в origin/refactor/architecture-v2
-- [ ] Определить: main обновляется только через merge refactor (refactor — новый «trunk»)?
-
-### P0-2. Активировать CI
-
-`.github/workflows/ci.yml` **уже написан** (`npm ci` → `lint` → `lint:deps` → `test`, триггеры push/PR на main и refactor/\*), но **не в VCS** → ни разу не запускался.
-
-- [ ] Закоммитить `.github/workflows/ci.yml`
-- [ ] (Опц.) Закоммитить хуки: `.husky/*` + `scripts/check-secrets.sh` + `scripts/ai-trailer-check.sh` (сейчас незакоммичены)
-- [ ] Проверить первый прогон CI на refactor-ветке зелёным
+## 🟠 Приоритет 1: Деплой и безопасность
 
 ---
 
@@ -63,27 +50,11 @@
 
 ## 🟡 Приоритет 2: Документация и гигиена
 
-### P2-1. Триаж 12 незакоммиченных файлов (см. `git status`)
+### P2-2. Остатки дрейфа документации (по `AUDIT-2026-08-11.md` §6; AGENTS.md и ARCHITECTURE.md закрыты 2026-10-03)
 
-Ценная «висящая» работа — оформить по батчам:
-
-- [ ] CI + husky-хуки → коммит `ci:` (вместе с P0-2)
-- [ ] `.agents/AGENTS.md` (перевод DevOps-правил в RU) → `docs:`
-- [ ] Фронт-тесты (`SummaryView.header/project`, `LeftSidebar.nav`, `i18n`) → `test:`
-- [ ] `server/tests/integration/migrations.test.ts` → `test:`
-
-### P2-2. Починить дрейф документации (по `AUDIT-2026-08-11.md` §6)
-
-- [ ] `INDEX.md`: MySQL → PostgreSQL+Knex (частично выполнено 2026-08-11 — добить остатки)
-- [ ] `AGENTS.md` §2: «Prisma» → **Knex** (SSOT содержит неверный факт; правка за владельцем)
-- [ ] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2`
-
-### P2-3. Создать недостающие статусные документы
-
-Регламент (`AI_DOCUMENTATION_GUIDELINES.md`) и TODO ссылаются на файлы, которых нет.
-
-- [ ] `docs/PROGRESS.md` — лента завершённых вех (миграция на zustand, БД→PG, декомпозиция update.ts, i18n, IndexedDB, RBAC, фикс роутинга 2026-08-11)
-- [ ] `docs/FRONTEND-STATUS.md` — статус фронтенда (или решить: объединить в PROGRESS.md)
+- [ ] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2` / legacy RowDataPacket
+- [ ] Сверить `ARCHITECTURE.md` полностью (сейчас «Проверено» — только блок БД) и проставить даты остальным docs/\*.md с «Проверено: —» (LOGGING.md, LOGGING-CHEATSHEET.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md)
+- [ ] **P2-5.** Дополнить `docs/openapi.yaml` эндпоинтами архива проектов: `GET /api/projects/archived`, `PATCH /api/projects/:id/restore`, `DELETE /api/projects/:id/permanent` (реестр дрейфов, 2026-10-03)
 
 ### P2-4. Мелкая гигиена
 

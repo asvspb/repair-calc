@@ -1,5 +1,7 @@
 # TODO: Замечания к реализации шаблонов работ
 
+> **Статус:** актуально • **Проверено:** 2026-10-03
+
 **Дата:** 2026-03-01  
 **Источник:** Ревью реализации vs [WORK_TEMPLATES_SPEC.md](./WORK_TEMPLATES_SPEC.md)
 
@@ -35,7 +37,7 @@
 
 - [ ] **`CATEGORY_LABELS` в модальном окне расходится с типом** — `src/components/works/WorkTemplatePickerModal.tsx` строка 15–20: локальный объект содержит `ceiling: 'Потолок'` (которого нет в типе `WorkTemplateCategory`) и **не содержит** `perimeter: 'Периметр'`. В результате фильтр «Потолок» никогда ничего не покажет, а шаблоны с `calculationType: 'skirtingLength'` не видны по категории. **Исправление:** импортировать `CATEGORY_LABELS` из `src/types/workTemplate.ts` и добавить ключ `all: 'Все'`.
 
-- [ ] **Скрытые `any` в пропсах `RoomEditor`** — `src/App.tsx`, компонент `RoomEditor`: пропсы `templates: any[]`, `onSaveTemplate: (...) => any`, `onLoadTemplate: (template: any) => WorkData`. Теряется типобезопасность. **Исправление:** заменить на `WorkTemplate[]`, `SaveResult` и `(template: WorkTemplate) => WorkData`. *(будет исправлено вместе с v2)*
+- [ ] **Скрытые `any` в пропсах `RoomEditor`** — `src/App.tsx`, компонент `RoomEditor`: пропсы `templates: any[]`, `onSaveTemplate: (...) => any`, `onLoadTemplate: (template: any) => WorkData`. Теряется типобезопасность. **Исправление:** заменить на `WorkTemplate[]`, `SaveResult` и `(template: WorkTemplate) => WorkData`. _(будет исправлено вместе с v2)_
 
 - [x] **Статус ТЗ устарел** — `docs/WORK_TEMPLATES_SPEC.md` указывал «Статус: Проектирование». **Исправлено:** обновлён на «Реализовано (v1)».
 

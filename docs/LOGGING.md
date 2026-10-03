@@ -1,5 +1,7 @@
 # 📋 Руководство по логированию
 
+> **Статус:** непроверено — требует сверки с кодом • **Проверено:** —
+
 **Дата обновления:** 2026-04-16
 **Версия:** 2.0
 
@@ -9,11 +11,11 @@
 
 Проект использует **два структурированных логгера** вместо прямых вызовов `console.*`:
 
-| Среда | Логгер | Модуль | Уровни |
-|-------|--------|--------|--------|
-| **Сервер** | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug` |
-| **Клиент** | Функции логирования | `src/utils/logger.ts` | `error`, `warning`, `info`, `success`, `debug` |
-| **Миграции Knex** | `console.log` | — | Только CLI-контекст, вне Express |
+| Среда             | Логгер                    | Модуль                            | Уровни                                         |
+| ----------------- | ------------------------- | --------------------------------- | ---------------------------------------------- |
+| **Сервер**        | `winstonLogger` (Winston) | `server/src/middleware/logger.ts` | `error`, `warn`, `info`, `debug`               |
+| **Клиент**        | Функции логирования       | `src/utils/logger.ts`             | `error`, `warning`, `info`, `success`, `debug` |
+| **Миграции Knex** | `console.log`             | —                                 | Только CLI-контекст, вне Express               |
 
 > **Важно:** Прямые вызовы `console.*` в клиенте и сервере заменены на структурированные логгеры. Для предотвращения возврата к `console.*` планируется добавить ESLint правило `no-console`.
 
@@ -29,11 +31,11 @@ import winston from 'winston';
 import { config } from '../config/env.js';
 
 export const winstonLogger = winston.createLogger({
-  level: config.logging.level,  // Управляется через env
+  level: config.logging.level, // Управляется через env
   format: combine(
-    errors({ stack: true }),     // Автоматический стек-трейс
+    errors({ stack: true }), // Автоматический стек-трейс
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
+    logFormat,
   ),
   transports: [
     new winston.transports.Console({
@@ -46,16 +48,19 @@ export const winstonLogger = winston.createLogger({
 ### 1.2 Формат логов
 
 #### Стандартный HTTP-лог (middleware)
+
 ```
 2026-04-16 14:30:13 [info]: GET /api/sync/pull 200 14ms
 ```
 
 #### Лог с метаданными (маршруты)
+
 ```
 2026-04-16 14:30:13 [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
 ```
 
 #### Лог ошибки (со стек-трейсом)
+
 ```
 2026-04-16 14:30:14 [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
 2026-04-16 14:30:14 [debug]: Request error details {"error":{...}}
@@ -65,6 +70,7 @@ Error: Project not found
 ```
 
 #### Ошибка валидации (ZodError)
+
 ```
 2026-04-16 14:30:15 [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
 ```
@@ -88,17 +94,17 @@ winstonLogger.warn('[GET /projects/:id] Project not found', { projectId: id });
 winstonLogger.error('[POST /projects] Error', { duration: Date.now() - startTime, error });
 ```
 
-### 1.4 Преимущества Winston над console.*
+### 1.4 Преимущества Winston над console.\*
 
-| Свойство | `console.*` | `winstonLogger` |
-|----------|-------------|-----------------|
-| Уровни логирования | Нет фильтрации | `config.logging.level` — отключает debug на проде |
-| Структурированные данные | Строковая интерполяция | JSON-объекты — парсимые ELK/Grafana |
-| Стек-трейсы | `console.error(err)` теряет стек | `errors({ stack: true })` сохраняет стек |
-| Транспорты | Только консоль | Файл, syslog, Elasticsearch, Datadog |
-| Форматирование | Ручное | `printf`, `colorize`, `timestamp` |
-| Ротация логов | Нет | `winston-daily-rotate-file` *(планируется)* |
-| Контекст запроса | Разрозненные логи | Единый HTTP-логгер + контекст в маршрутах |
+| Свойство                 | `console.*`                      | `winstonLogger`                                   |
+| ------------------------ | -------------------------------- | ------------------------------------------------- |
+| Уровни логирования       | Нет фильтрации                   | `config.logging.level` — отключает debug на проде |
+| Структурированные данные | Строковая интерполяция           | JSON-объекты — парсимые ELK/Grafana               |
+| Стек-трейсы              | `console.error(err)` теряет стек | `errors({ stack: true })` сохраняет стек          |
+| Транспорты               | Только консоль                   | Файл, syslog, Elasticsearch, Datadog              |
+| Форматирование           | Ручное                           | `printf`, `colorize`, `timestamp`                 |
+| Ротация логов            | Нет                              | `winston-daily-rotate-file` _(планируется)_       |
+| Контекст запроса         | Разрозненные логи                | Единый HTTP-логгер + контекст в маршрутах         |
 
 ---
 
@@ -110,18 +116,18 @@ winstonLogger.error('[POST /projects] Error', { duration: Date.now() - startTime
 
 #### Основные функции
 
-| Функция | Назначение | Уровень |
-|---------|-----------|---------|
-| `logError(category, action, error, data?)` | Ошибка | error |
-| `logWarning(category, action, data?)` | Предупреждение | warning |
-| `logDebug(category, action, data?)` | Отладка | debug |
-| `logSuccess(category, action, data?, startTime?)` | Успех | success |
-| `logUserAction(action, data?)` | Действие пользователя | info |
-| `logApiRequest(method, endpoint, data?)` | → API запрос | info |
-| `logApiSuccess(method, endpoint, startTime, data?)` | ← API ответ | success |
-| `logApiError(method, endpoint, startTime, error)` | ← API ошибка | error |
-| `logStateChange(component, change, newValue, oldValue?)` | Изменение состояния | info |
-| `logProjectSave(source, projectId, roomsCount, startTime)` | Сохранение проекта | success/info |
+| Функция                                                    | Назначение            | Уровень      |
+| ---------------------------------------------------------- | --------------------- | ------------ |
+| `logError(category, action, error, data?)`                 | Ошибка                | error        |
+| `logWarning(category, action, data?)`                      | Предупреждение        | warning      |
+| `logDebug(category, action, data?)`                        | Отладка               | debug        |
+| `logSuccess(category, action, data?, startTime?)`          | Успех                 | success      |
+| `logUserAction(action, data?)`                             | Действие пользователя | info         |
+| `logApiRequest(method, endpoint, data?)`                   | → API запрос          | info         |
+| `logApiSuccess(method, endpoint, startTime, data?)`        | ← API ответ           | success      |
+| `logApiError(method, endpoint, startTime, error)`          | ← API ошибка          | error        |
+| `logStateChange(component, change, newValue, oldValue?)`   | Изменение состояния   | info         |
+| `logProjectSave(source, projectId, roomsCount, startTime)` | Сохранение проекта    | success/info |
 
 ### 2.2 Формат логов в браузере
 
@@ -143,11 +149,11 @@ winstonLogger.error('[POST /projects] Error', { duration: Date.now() - startTime
 
 ```typescript
 const LOG_CONFIG = {
-  enabled: true,           // Глобальный переключатель
-  showTimestamp: true,      // Показывать время
-  showDuration: true,       // Показывать длительность
-  groupRelated: true,       // Группировать логи
-  maxDataLength: 1000,      // Усечь длинные данные
+  enabled: true, // Глобальный переключатель
+  showTimestamp: true, // Показывать время
+  showDuration: true, // Показывать длительность
+  groupRelated: true, // Группировать логи
+  maxDataLength: 1000, // Усечь длинные данные
 };
 ```
 
@@ -157,15 +163,22 @@ const LOG_CONFIG = {
 
 ```javascript
 // В DevTools:
-window.debugLogger.getHistory()    // Массив последних 100 действий
-window.debugLogger.printHistory()  // Вывести в консоль
-window.debugLogger.clearHistory()  // Очистить
+window.debugLogger.getHistory(); // Массив последних 100 действий
+window.debugLogger.printHistory(); // Вывести в консоль
+window.debugLogger.clearHistory(); // Очистить
 ```
 
 ### 2.5 Использование в компонентах
 
 ```typescript
-import { logError, logWarning, logDebug, logApiRequest, logApiSuccess, logApiError } from '../utils/logger';
+import {
+  logError,
+  logWarning,
+  logDebug,
+  logApiRequest,
+  logApiSuccess,
+  logApiError,
+} from '../utils/logger';
 
 // Ошибка
 logError('ProjectContext', 'saveProject', error, { projectId });
@@ -194,21 +207,21 @@ try {
 
 Все маршруты логируют через `winstonLogger`:
 
-| Маршрут | Логируемые данные |
-|---------|-------------------|
-| `GET /api/sync/pull` | userId, count, duration |
-| `POST /api/projects` | projectId, name, duration |
-| `GET /api/projects` | count, duration |
-| `GET /api/projects/:id` | projectId, name, objectsCount, duration |
-| `PUT /api/projects/:id` | projectId, version, duration |
-| `DELETE /api/projects/:id` | projectId, name, duration |
+| Маршрут                                 | Логируемые данные                         |
+| --------------------------------------- | ----------------------------------------- |
+| `GET /api/sync/pull`                    | userId, count, duration                   |
+| `POST /api/projects`                    | projectId, name, duration                 |
+| `GET /api/projects`                     | count, duration                           |
+| `GET /api/projects/:id`                 | projectId, name, objectsCount, duration   |
+| `PUT /api/projects/:id`                 | projectId, version, duration              |
+| `DELETE /api/projects/:id`              | projectId, name, duration                 |
 | `POST /api/projects/:projectId/objects` | projectId, name, city, objectId, duration |
-| `GET /api/objects` | userId, count, duration |
-| `GET /api/objects/:id` | id, roomsCount, duration |
-| `PUT /api/objects/:id` | id, duration |
-| `DELETE /api/objects/:id` | id, name, duration |
-| `POST /api/ai/estimate` | provider, duration |
-| `POST /api/ai/suggest-materials` | provider, duration |
+| `GET /api/objects`                      | userId, count, duration                   |
+| `GET /api/objects/:id`                  | id, roomsCount, duration                  |
+| `PUT /api/objects/:id`                  | id, duration                              |
+| `DELETE /api/objects/:id`               | id, name, duration                        |
+| `POST /api/ai/estimate`                 | provider, duration                        |
+| `POST /api/ai/suggest-materials`        | provider, duration                        |
 
 ### 3.2 Middleware логирование
 
@@ -292,9 +305,9 @@ docker logs repair-calc-backend 2>&1 | grep -E "(401|Invalid or expired token)"
 
 ```javascript
 // В браузере:
-window.debugLogger.getHistory()    // Массив последних 100 действий
-window.debugLogger.printHistory()  // Вывести в консоль
-window.debugLogger.clearHistory()  // Очистить историю
+window.debugLogger.getHistory(); // Массив последних 100 действий
+window.debugLogger.printHistory(); // Вывести в консоль
+window.debugLogger.clearHistory(); // Очистить историю
 ```
 
 ---
@@ -325,6 +338,7 @@ window.debugLogger.clearHistory()  // Очистить историю
 ## 7. Безопасность
 
 Логи содержат:
+
 - ✅ ID пользователей
 - ✅ ID проектов, объектов, комнат
 - ✅ Названия проектов

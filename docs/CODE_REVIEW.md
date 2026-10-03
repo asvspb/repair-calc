@@ -1,5 +1,7 @@
 # 📋 Код-ревью проекта repair-calc
 
+> **Проверено:** —
+
 **Дата:** 2026-04-17  
 **Версия ревью:** 5.1  
 **Предыдущее ревью:** 2026-04-13 (v5.0)  
@@ -9,17 +11,17 @@
 
 ## 📊 Сводка
 
-| Категория | Оценка | Изменение (от v4.2) | Комментарий |
-|-----------|--------|---------------------|-------------|
-| Архитектура | 🟡 Средне | → | ProjectContext 982 строки, ApiStorageProvider 1036 строк |
-| Безопасность | 🟢 Хорошо | → | JWT, helmet, CORS — исправлены ранее |
-| Производительность | 🟢 Хорошо | → | useMemo для метрик, инкрементальное сохранение |
-| Состояние и данные | 🟢 Хорошо | → | Object model, SaveQueue, IdMapper |
-| Бэкенд | 🟡 Средне | → | God-файл update.ts (2184 строки), статические репозитории |
-| Тестирование | 🟢 Хорошо | → | 841 тест, 0 failing, 8 skipped |
-| Типизация | 🟢 Отлично | → | 0 мест с `any` в production коде |
-| Код клиент | 🟡 Средне | → | 7 файлов >500 строк без декомпозиции |
-| Документация | 🟢 Хорошо | ↑ | ARCHITECTURE.md + INDEX.md обновлены (2026-04-17) |
+| Категория          | Оценка     | Изменение (от v4.2) | Комментарий                                               |
+| ------------------ | ---------- | ------------------- | --------------------------------------------------------- |
+| Архитектура        | 🟡 Средне  | →                   | ProjectContext 982 строки, ApiStorageProvider 1036 строк  |
+| Безопасность       | 🟢 Хорошо  | →                   | JWT, helmet, CORS — исправлены ранее                      |
+| Производительность | 🟢 Хорошо  | →                   | useMemo для метрик, инкрементальное сохранение            |
+| Состояние и данные | 🟢 Хорошо  | →                   | Object model, SaveQueue, IdMapper                         |
+| Бэкенд             | 🟡 Средне  | →                   | God-файл update.ts (2184 строки), статические репозитории |
+| Тестирование       | 🟢 Хорошо  | →                   | 841 тест, 0 failing, 8 skipped                            |
+| Типизация          | 🟢 Отлично | →                   | 0 мест с `any` в production коде                          |
+| Код клиент         | 🟡 Средне  | →                   | 7 файлов >500 строк без декомпозиции                      |
+| Документация       | 🟢 Хорошо  | ↑                   | ARCHITECTURE.md + INDEX.md обновлены (2026-04-17)         |
 
 ---
 
@@ -27,43 +29,43 @@
 
 ### Размер кода
 
-| Компонент | Строк кода | Файлов |
-|-----------|-----------|--------|
-| Frontend (`src/`) — production | ~22,450 | ~60 |
-| Frontend (`src/`) — тесты | ~11,000 | ~30 |
-| Backend (`server/src/`) | ~18,400 | ~40 |
-| Backend — тесты | ~2,200 | ~10 |
-| E2E тесты | ~1,300 | ~10 |
-| **Итого production** | **~40,850** | **~100** |
-| **Итого тесты** | **~14,500** | **~50** |
+| Компонент                      | Строк кода  | Файлов   |
+| ------------------------------ | ----------- | -------- |
+| Frontend (`src/`) — production | ~22,450     | ~60      |
+| Frontend (`src/`) — тесты      | ~11,000     | ~30      |
+| Backend (`server/src/`)        | ~18,400     | ~40      |
+| Backend — тесты                | ~2,200      | ~10      |
+| E2E тесты                      | ~1,300      | ~10      |
+| **Итого production**           | **~40,850** | **~100** |
+| **Итого тесты**                | **~14,500** | **~50**  |
 
 ### Крупные файлы (>500 строк) — Frontend
 
-| Файл | Строк | Тип | Проблема |
-|------|-------|-----|----------|
-| `data/workTemplatesCatalog.ts` | 1048 | 📊 Данные | Нормально — каталог данных |
-| `api/storage/apiStorageProvider.ts` | 1036 | 🔴 Логика | God-модуль: CRUD + sync + rate limiting |
-| `contexts/ProjectContext.tsx` | 982 | 🔴 Логика | State + persistence + sync + CRUD objects |
-| `components/RoomEditor.tsx` | 902 | 🔴 UI | Огромный компонент без декомпозиции |
-| `components/BackupManager.tsx` | 837 | 🔴 UI | Export + Import + Sync в одном файле |
-| `utils/roomHelpers.ts` | 814 | 🟡 Утилиты | Много функций, но pure |
-| `components/projects/ProjectsModal.tsx` | 698 | 🟡 UI | Можно декомпозировать |
-| `hooks/useGeometryState.ts` | 597 | 🟡 Хук | Сложный, но обоснованно |
-| `components/projects/CreateProjectModal.tsx` | 537 | 🟡 UI | Мастер с объектами |
-| `App.tsx` | 470 | 🟡 UI | Улучшен с 2700, но содержит бизнес-логику |
+| Файл                                         | Строк | Тип        | Проблема                                  |
+| -------------------------------------------- | ----- | ---------- | ----------------------------------------- |
+| `data/workTemplatesCatalog.ts`               | 1048  | 📊 Данные  | Нормально — каталог данных                |
+| `api/storage/apiStorageProvider.ts`          | 1036  | 🔴 Логика  | God-модуль: CRUD + sync + rate limiting   |
+| `contexts/ProjectContext.tsx`                | 982   | 🔴 Логика  | State + persistence + sync + CRUD objects |
+| `components/RoomEditor.tsx`                  | 902   | 🔴 UI      | Огромный компонент без декомпозиции       |
+| `components/BackupManager.tsx`               | 837   | 🔴 UI      | Export + Import + Sync в одном файле      |
+| `utils/roomHelpers.ts`                       | 814   | 🟡 Утилиты | Много функций, но pure                    |
+| `components/projects/ProjectsModal.tsx`      | 698   | 🟡 UI      | Можно декомпозировать                     |
+| `hooks/useGeometryState.ts`                  | 597   | 🟡 Хук     | Сложный, но обоснованно                   |
+| `components/projects/CreateProjectModal.tsx` | 537   | 🟡 UI      | Мастер с объектами                        |
+| `App.tsx`                                    | 470   | 🟡 UI      | Улучшен с 2700, но содержит бизнес-логику |
 
 ### Крупные файлы (>500 строк) — Backend
 
-| Файл | Строк | Проблема |
-|------|-------|----------|
-| `routes/update.ts` | 2184 | 🔴 God file — маршруты + бизнес-логика |
-| `repositories/updateJob.repo.ts` | 772 | 🟡 Много операций |
-| `repositories/room.repo.ts` | 700 | 🟡 Много полей |
-| `repositories/project.repo.ts` | 666 | 🟡 Sync-логика |
-| `services/update/parserManager.ts` | 661 | 🟡 Много парсеров |
-| `services/update/runner.ts` | 647 | 🟡 Оркестрация |
-| `repositories/abTest.repo.ts` | 641 | 🟡 Feature flags |
-| `routes/geometry.ts` | 636 | 🟡 25+ endpoints |
+| Файл                               | Строк | Проблема                               |
+| ---------------------------------- | ----- | -------------------------------------- |
+| `routes/update.ts`                 | 2184  | 🔴 God file — маршруты + бизнес-логика |
+| `repositories/updateJob.repo.ts`   | 772   | 🟡 Много операций                      |
+| `repositories/room.repo.ts`        | 700   | 🟡 Много полей                         |
+| `repositories/project.repo.ts`     | 666   | 🟡 Sync-логика                         |
+| `services/update/parserManager.ts` | 661   | 🟡 Много парсеров                      |
+| `services/update/runner.ts`        | 647   | 🟡 Оркестрация                         |
+| `repositories/abTest.repo.ts`      | 641   | 🟡 Feature flags                       |
+| `routes/geometry.ts`               | 636   | 🟡 25+ endpoints                       |
 
 ---
 
@@ -132,6 +134,7 @@
 **Файл:** `src/contexts/ProjectContext.tsx` — **982 строк**
 
 **Проблема:** Контекст управляет 7+ ответственностями:
+
 1. State (projects, activeProjectId, activeObjectId, loading, errors)
 2. Persistence (localStorage, API sync, debounce)
 3. Серверная синхронизация (createProject, deleteProject)
@@ -141,6 +144,7 @@
 7. ID mapping и миграция
 
 **Решение:** Разделить на:
+
 - `useProjectState.ts` — чистый state management (~200 строк)
 - `useProjectSync.ts` — логика синхронизации и persistence (~300 строк)
 - `useObjectManagement.ts` — CRUD для объектов (~200 строк)
@@ -152,11 +156,14 @@
 **Файл:** `src/contexts/ProjectContext.tsx`
 
 ```typescript
-const deleteRoom = useCallback((roomId: string) => {
-  if (!activeProject) return;       // ← захват из замыкания
-  const updatedProject = deleteRoomFromProject(activeProject, roomId);
-  updateActiveProject(updatedProject);
-}, [activeProject, updateActiveProject]);
+const deleteRoom = useCallback(
+  (roomId: string) => {
+    if (!activeProject) return; // ← захват из замыкания
+    const updatedProject = deleteRoomFromProject(activeProject, roomId);
+    updateActiveProject(updatedProject);
+  },
+  [activeProject, updateActiveProject],
+);
 ```
 
 **Проблема:** При быстрых последовательных вызовах могут использовать устаревшие данные.
@@ -180,6 +187,7 @@ const deleteRoom = useCallback((roomId: string) => {
 **Проблема:** Singleton с множественными ответственностями: CRUD проектов/объектов/комнат, rate limiting, retry logic, sync.
 
 **Решение:** Разделить на:
+
 - `apiClient.ts` — HTTP-обёртка
 - `projectApi.ts` — CRUD проектов
 - `objectApi.ts` — CRUD объектов
@@ -214,6 +222,7 @@ const deleteRoom = useCallback((roomId: string) => {
 ### W-8. Дублирование генерации ID ⚠️ С v3.0
 
 4+ разных способов генерации ID:
+
 - `ProjectContext.tsx`: `${prefix}-${Date.now()}-${crypto.randomUUID()...}`
 - `projectObjects.ts`: `local-obj-${Date.now()}-${Math.random()...}`
 - `App.tsx`: `local-${Date.now()}`
@@ -228,7 +237,7 @@ const deleteRoom = useCallback((roomId: string) => {
 **Файл:** `src/contexts/ProjectContext.tsx` (строка 729)
 
 ```typescript
-localStorage.removeItem('repair-calc-active-project');  // magic string
+localStorage.removeItem('repair-calc-active-project'); // magic string
 ```
 
 Проект определяет `STORAGE_KEYS`, но не везде использует.
@@ -282,15 +291,16 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 
 ## 🧪 Покрытие тестами
 
-| Категория | v4.2 | Изменение |
-|-----------|------|-----------|
-| Всего тестов | 841 | → |
-| Passing | 833 | → |
-| Failing | 0 | ✅ |
-| Skipped | 8 | → |
-| Тестовых файлов | 51 | → |
+| Категория       | v4.2 | Изменение |
+| --------------- | ---- | --------- |
+| Всего тестов    | 841  | →         |
+| Passing         | 833  | →         |
+| Failing         | 0    | ✅        |
+| Skipped         | 8    | →         |
+| Тестовых файлов | 51   | →         |
 
 ### Хорошо покрыто ✅
+
 - `utils/geometry.ts` — 100%
 - `utils/costs.ts` — 100%
 - `utils/materialCalculations.ts` — 100%
@@ -301,6 +311,7 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 - Layout компоненты: LeftSidebar, RightSidebar, ObjectSettings, ProjectSettings
 
 ### Пробелы в покрытии ❌
+
 - `RoomEditor.tsx` (902 строки) — нет тестов
 - `ProjectContext.tsx` (982 строки) — нет тестов
 - `BackupManager.tsx` (837 строк) — нет тестов
@@ -311,18 +322,18 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 
 ## 📈 Тренды между ревью
 
-| Аспект | v3.0 | v4.0 | v4.1 | v4.2 | v5.0 | Тренд |
-|--------|------|------|------|------|------|-------|
-| Тесты | 402 | 841 | 841 | 841 | 841 | → Стабильно |
-| App.tsx | 557 | 489 | 478 | 478 | 470 | 📈 Улучшается |
-| ProjectContext | 660 | 933 | 931 | 982 | 982 | 📉 Стагнация |
-| ApiStorageProvider | — | 933 | 933 | 1035 | 1036 | 📉 Растёт |
-| `any` в prod | 0 | ~12 | 0 | 0 | 0 | ✅ Стабильно |
-| Stale closures | 1 | 3 | 3 | 3 | 3 | → Без изменений |
-| console.* в prod | — | 52 | 52 | 52 | **64** | **0** | ✅ Исправлено |
-| Файлы >500 строк | ~4 | ~10 | ~10 | ~10 | ~10 | → Без изменений |
-| Безопасность | 🔴 | 🔴 | 🟢 | 🟢 | 🟢 | ✅ Стабильно |
-| Производительность | 🔴 | 🔴 | 🔴 | 🟢 | 🟢 | ✅ Стабильно |
+| Аспект             | v3.0 | v4.0 | v4.1 | v4.2 | v5.0   | Тренд           |
+| ------------------ | ---- | ---- | ---- | ---- | ------ | --------------- | ------------- |
+| Тесты              | 402  | 841  | 841  | 841  | 841    | → Стабильно     |
+| App.tsx            | 557  | 489  | 478  | 478  | 470    | 📈 Улучшается   |
+| ProjectContext     | 660  | 933  | 931  | 982  | 982    | 📉 Стагнация    |
+| ApiStorageProvider | —    | 933  | 933  | 1035 | 1036   | 📉 Растёт       |
+| `any` в prod       | 0    | ~12  | 0    | 0    | 0      | ✅ Стабильно    |
+| Stale closures     | 1    | 3    | 3    | 3    | 3      | → Без изменений |
+| console.\* в prod  | —    | 52   | 52   | 52   | **64** | **0**           | ✅ Исправлено |
+| Файлы >500 строк   | ~4   | ~10  | ~10  | ~10  | ~10    | → Без изменений |
+| Безопасность       | 🔴   | 🔴   | 🟢   | 🟢   | 🟢     | ✅ Стабильно    |
+| Производительность | 🔴   | 🔴   | 🔴   | 🟢   | 🟢     | ✅ Стабильно    |
 
 ---
 
@@ -330,51 +341,51 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 
 ### Приоритет 0: E2E Стабилизация (1–2 дня)
 
-| # | Задача | Сложность |
-|---|--------|-----------|
-| 0.1 | Обновить селекторы на `data-testid` в оставшихся E2E-тестах | Средняя |
-| 0.2 | Починить загрузку/авторизацию в тестовом окружении | Средняя |
-| 0.3 | Довести >80% E2E тестов до стабильного прохождения | Средняя |
+| #   | Задача                                                      | Сложность |
+| --- | ----------------------------------------------------------- | --------- |
+| 0.1 | Обновить селекторы на `data-testid` в оставшихся E2E-тестах | Средняя   |
+| 0.2 | Починить загрузку/авторизацию в тестовом окружении          | Средняя   |
+| 0.3 | Довести >80% E2E тестов до стабильного прохождения          | Средняя   |
 
 ### Приоритет 1: Архитектура (5–8 дней)
 
-| # | Задача | Целевое | Статус |
-|---|--------|---------|--------|
-| 1.1 | Декомпозиция ProjectContext (982 → 3 модуля) | <300 строк каждый | ⏳ С v3.0 |
-| 1.2 | Исправить stale closures (`deleteRoom`, `addRoom`, `reorderRooms`) | 0 closures | ⏳ С v3.0 |
-| 1.3 | Декомпозиция RoomEditor (902 → компоненты + хук) | <400 строк | ⏳ С v3.0 |
-| 1.4 | Декомпозиция BackupManager (837 → 3 панели) | <300 строк | ⏳ С v4.0 |
-| 1.5 | Декомпозиция ApiStorageProvider (1036 → модули) | <400 строк | ⏳ С v4.0 |
-| 1.6 | Декомпозиция routes/update.ts (2184 → controller + service) | <300 строк | ⏳ С v4.0 |
-| 1.7 | Единая утилита генерации ID | 1 функция | ⏳ С v3.0 |
-| 1.8 | Заменить 64 console.* на logger | 0 console.* | ⏳ С v3.0 |
+| #   | Задача                                                             | Целевое           | Статус    |
+| --- | ------------------------------------------------------------------ | ----------------- | --------- |
+| 1.1 | Декомпозиция ProjectContext (982 → 3 модуля)                       | <300 строк каждый | ⏳ С v3.0 |
+| 1.2 | Исправить stale closures (`deleteRoom`, `addRoom`, `reorderRooms`) | 0 closures        | ⏳ С v3.0 |
+| 1.3 | Декомпозиция RoomEditor (902 → компоненты + хук)                   | <400 строк        | ⏳ С v3.0 |
+| 1.4 | Декомпозиция BackupManager (837 → 3 панели)                        | <300 строк        | ⏳ С v4.0 |
+| 1.5 | Декомпозиция ApiStorageProvider (1036 → модули)                    | <400 строк        | ⏳ С v4.0 |
+| 1.6 | Декомпозиция routes/update.ts (2184 → controller + service)        | <300 строк        | ⏳ С v4.0 |
+| 1.7 | Единая утилита генерации ID                                        | 1 функция         | ⏳ С v3.0 |
+| 1.8 | Заменить 64 console.\* на logger                                   | 0 console.\*      | ⏳ С v3.0 |
 
 ### Приоритет 2: Тестирование (5–7 дней)
 
-| # | Задача | Сложность |
-|---|--------|-----------|
-| 2.1 | Тесты для ProjectContext (после декомпозиции) | Высокая |
-| 2.2 | Тесты для RoomEditor | Средняя |
-| 2.3 | Тесты для httpClient (retry, refresh, timeout) | Средняя |
-| 2.4 | Тесты для BackupManager | Средняя |
-| 2.5 | E2E для авторизации | Средняя |
+| #   | Задача                                         | Сложность |
+| --- | ---------------------------------------------- | --------- |
+| 2.1 | Тесты для ProjectContext (после декомпозиции)  | Высокая   |
+| 2.2 | Тесты для RoomEditor                           | Средняя   |
+| 2.3 | Тесты для httpClient (retry, refresh, timeout) | Средняя   |
+| 2.4 | Тесты для BackupManager                        | Средняя   |
+| 2.5 | E2E для авторизации                            | Средняя   |
 
 ### Приоритет 3: Бэкенд (3–5 дней)
 
-| # | Задача | Статус |
-|---|--------|--------|
-| 3.1 | DI для репозиториев | ⏳ С v3.0 |
-| 3.2 | Request ID middleware | ⏳ С v3.0 |
+| #   | Задача                 | Статус    |
+| --- | ---------------------- | --------- |
+| 3.1 | DI для репозиториев    | ⏳ С v3.0 |
+| 3.2 | Request ID middleware  | ⏳ С v3.0 |
 | 3.3 | Per-user rate limiting | ⏳ С v3.0 |
 
 ### Приоритет 4: Документация (1–2 дня) — ✅ ЗАВЕРШЕНО (2026-04-17)
 
-| # | Задача | Статус |
-|---|--------|--------|
-| 4.1 | Обновить ARCHITECTURE.md | ✅ |
-| 4.2 | Актуализировать INDEX.md | ✅ |
-| 4.3 | Обновить docs/README.md | ✅ |
-| 4.4 | Провести аудит всех docs/ | ✅ |
+| #   | Задача                    | Статус |
+| --- | ------------------------- | ------ |
+| 4.1 | Обновить ARCHITECTURE.md  | ✅     |
+| 4.2 | Актуализировать INDEX.md  | ✅     |
+| 4.3 | Обновить docs/README.md   | ✅     |
+| 4.4 | Провести аудит всех docs/ | ✅     |
 
 **Итого:** ~16–24 рабочих дня для полной реализации.
 
@@ -383,25 +394,28 @@ const { LocalStorageProvider } = require('../../utils/localStorageProvider');
 ## 🔧 Общая оценка v5.0
 
 ### Что хорошо
+
 Проект — зрелое, функционально полное приложение с продуманной архитектурой данных, полным auth flow, серверной синхронизацией и AI-интеграцией. Строгая типизация (0 `any`), 841 тест, инкрементальное сохранение — всё это показатели высокого качества. Модуль `projectObjects.ts` — образец clean architecture.
 
 ### Что требует внимания
+
 Технический долг в виде крупных файлов (ProjectContext, RoomEditor, BackupManager, ApiStorageProvider) накапливается и усложняет поддержку. Stale closures создают потенциал для скрытых багов. 64 прямых `console.*` в продакшн-коде свидетельствуют о непоследовательности в подходе к логированию. E2E-тесты требуют стабилизации.
 
 ### Рекомендация
+
 Следующий спринт — **Приоритет 0 + 1**: стабилизировать E2E и провести декомпозицию крупнейших модулей.
 
 ---
 
 ## 🔗 Связанные документы
 
-| Документ | Описание |
-|----------|----------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектура проекта (⚠️ устарел) |
-| [TODO.md](./TODO.md) | Актуальные задачи |
-| [PROGRESS.md](./PROGRESS.md) | История прогресса |
-| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов |
-| [spec/](./spec/) | Детализированные спецификации |
+| Документ                                                   | Описание                         |
+| ---------------------------------------------------------- | -------------------------------- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md)                       | Архитектура проекта (⚠️ устарел) |
+| [TODO.md](./TODO.md)                                       | Актуальные задачи                |
+| [PROGRESS.md](./PROGRESS.md)                               | История прогресса                |
+| [TECHNICAL-SPECIFICATION.md](./TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов   |
+| [spec/](./spec/)                                           | Детализированные спецификации    |
 
 ---
 
