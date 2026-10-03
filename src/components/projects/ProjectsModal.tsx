@@ -28,6 +28,7 @@ import { cloneProject } from '../../domain/factories/projectFactory';
 import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
+import { ArchivePanel } from './ArchivePanel';
 import { dlog, derror } from '../../utils/debugLogger';
 import { logError } from '../../utils/logger';
 
@@ -603,6 +604,9 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
               </div>
             )}
           </div>
+
+          {/* Archive section (T4): гостю рендерится null внутри компонента */}
+          <ArchivePanel />
 
           {/* Server sync section */}
           {isAuthenticated && (
