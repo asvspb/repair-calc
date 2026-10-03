@@ -29,6 +29,9 @@ RUN pnpm run build
 # Stage 2: Продакшн образ
 FROM node:20-alpine
 
+ARG COMMIT_HASH=unknown
+ENV COMMIT_HASH=${COMMIT_HASH}
+
 WORKDIR /app
 
 # pnpm (версия пиннится полем packageManager в package.json)
