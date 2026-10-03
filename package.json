@@ -67,5 +67,11 @@
     "vite": "^6.2.0",
     "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@12.8.1"
+  "packageManager": "pnpm@12.8.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "better-sqlite3"
+    ]
+  }
 }
