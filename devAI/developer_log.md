@@ -190,3 +190,13 @@
 - Тесты `tests/components/projects/ArchivePanel.test.tsx` (16): гость скрыт и fetch не зовётся; загрузка/ошибка+retry/пустое состояние/spinner; строка (dd.MM.yyyy, '—' без даты, pluralize); restore успех/ошибка; pending-блокировка; диалог (несовпадение, регистр, trim, успех, ошибка удаления); unmount-безопасность.
 - Gates (сам прогнал на финальном коде): `pnpm test` exit 0 — root 990 passed/4 skipped (66 файлов) + server 136 passed/2 skipped; `pnpm run lint` exit 0 — 0 errors, мои файлы без варнингов (правлен catch-binding); `pnpm run lint:deps` exit 0 — 0 violations (226 модулей).
 - INDEX.md обновлён (components/projects → 6 файлов; tests/components упомянут).
+
+## 2026-10-03 — TASK-BATCH-003-openapi-archive (coder, fix/openapi-archive-batch-003)
+
+- docs/openapi.yaml: описаны три архивных эндпоинта из T2 — `GET /api/projects/archived` (200 → `{status:'success', data:[Project+deleted_at+objectsCount+roomsCount]}`), `PATCH /api/projects/{id}/restore` (200 → `{status:'success', data:ProjectWithObjects}`; 400 «Validation error / Project is not archived»; 404 «Project not found»), `DELETE /api/projects/{id}/permanent` (200 → `{status:'success', data:{deleted:{objects,rooms}}}`; 400/404/409 «Archive the project first»). Источники форм: server/src/routes/projects.ts:85-206, server/src/db/repositories/project.repo.ts:13-21,89-113,251-285, server/tests/integration/projectArchiveRoutes.test.ts.
+- Гейты ответов выверены по интеграционным тестам projectArchiveRoutes (все 9 кейсов: 200×3, 404×2, 400×3, 409×1); id в path — UUID (`idParamSchema`, validation.ts:265-267), поэтому `format: uuid` + 400 на не-UUID.
+- Минимальная интерпретация (расхождение ТЗ): ТЗ требует «переиспользовать компонент Project», но в docs/openapi.yaml секция components отсутствует. Чтобы не плодить новые компоненты (по ТЗ новые схемы — только `deleted`-объект), все схемы вписаны inline; `$ref` в файле нет (проверено парсингом).
+- Security: на существующих /api/projects в спеке security не задан вовсе — новые пути оставлены в том же виде (auth реально висит в коде: server/src/routes/projects.ts:32 `router.use(authenticate)`); securityScheme глобально не вводил — вне write-set'а.
+- Схемы REST: путь для restore в ТЗ — patch (как в коде/тестах); remote 400 на permanent добавлен как фактический (не-UUID id → Zod 400), сверх перечня псевдокода — совместимо с сервером.
+- Проверки: PyYAML-парс docs/openapi.yaml — 15 путей, refs пуст; `bash scripts/docs-check.sh` — зелёный (23 ссылки). docs/README.md: дрейф P2-5 закрыт → «устранён (fix/openapi-archive-batch-003: b47ac67)».
+- Read-путь ТЗ `server/src/tests/integration/...` не существует — файл лежит в `server/tests/integration/projectArchiveRoutes.test.ts` (прочитан он).

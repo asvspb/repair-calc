@@ -63,6 +63,429 @@ paths:
       responses:
         '201':
           description: Project created
+  /api/projects/archived:
+    get:
+      summary: List archived projects for the current user
+      description: >
+        Projects of the current user with a non-null deleted_at (archive),
+        ordered by deleted_at DESC. Each item carries the archive date
+        (deleted_at) and the objectsCount / roomsCount counters. Returns an
+        empty array when the archive is empty. Requires Bearer JWT.
+      tags:
+        - Projects
+      responses:
+        '200':
+          description: Archived projects list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - data
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - user_id
+                        - name
+                        - city
+                        - use_ai_pricing
+                        - last_ai_price_update
+                        - version
+                        - created_at
+                        - updated_at
+                        - deleted_at
+                        - objectsCount
+                        - roomsCount
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        user_id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        city:
+                          type: string
+                          nullable: true
+                        use_ai_pricing:
+                          type: boolean
+                        last_ai_price_update:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        version:
+                          type: integer
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+                        deleted_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Archive date (non-null for archived projects)
+                        objectsCount:
+                          type: integer
+                          description: Number of objects in the project
+                        roomsCount:
+                          type: integer
+                          description: Number of rooms in the project
+  /api/projects/{id}/restore:
+    patch:
+      summary: Restore an archived project
+      description: >
+        Clears deleted_at of the project and of its objects/rooms whose stamp
+        matches the project stamp, then returns the restored project with its
+        objects and rooms. Requires Bearer JWT.
+      tags:
+        - Projects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Project UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project restored
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - data
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - success
+                  data:
+                    type: object
+                    description: Restored project with nested objects and rooms
+                    required:
+                      - id
+                      - user_id
+                      - name
+                      - city
+                      - use_ai_pricing
+                      - last_ai_price_update
+                      - version
+                      - created_at
+                      - updated_at
+                      - objects
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      user_id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                      city:
+                        type: string
+                        nullable: true
+                      use_ai_pricing:
+                        type: boolean
+                      last_ai_price_update:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      version:
+                        type: integer
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+                      objects:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - id
+                            - project_id
+                            - user_id
+                            - name
+                            - city
+                            - address
+                            - use_ai_pricing
+                            - last_ai_price_update
+                            - version
+                            - sort_order
+                            - created_at
+                            - updated_at
+                            - deleted_at
+                            - rooms
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            project_id:
+                              type: string
+                              format: uuid
+                            user_id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            city:
+                              type: string
+                              nullable: true
+                            address:
+                              type: string
+                              nullable: true
+                            use_ai_pricing:
+                              type: boolean
+                            last_ai_price_update:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            version:
+                              type: integer
+                            sort_order:
+                              type: integer
+                            created_at:
+                              type: string
+                              format: date-time
+                            updated_at:
+                              type: string
+                              format: date-time
+                            deleted_at:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            rooms:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - id
+                                  - object_id
+                                  - name
+                                  - geometry_mode
+                                  - length
+                                  - width
+                                  - height
+                                  - version
+                                  - sort_order
+                                  - created_at
+                                  - updated_at
+                                properties:
+                                  id:
+                                    type: string
+                                    format: uuid
+                                  object_id:
+                                    type: string
+                                    format: uuid
+                                  name:
+                                    type: string
+                                  geometry_mode:
+                                    type: string
+                                    enum:
+                                      - simple
+                                      - extended
+                                      - advanced
+                                  length:
+                                    type: number
+                                  width:
+                                    type: number
+                                  height:
+                                    type: number
+                                  version:
+                                    type: integer
+                                  sort_order:
+                                    type: integer
+                                  created_at:
+                                    type: string
+                                    format: date-time
+                                  updated_at:
+                                    type: string
+                                    format: date-time
+                                  segments:
+                                    type: string
+                                    nullable: true
+                                  obstacles:
+                                    type: string
+                                    nullable: true
+                                  wall_sections:
+                                    type: string
+                                    nullable: true
+                                  sub_sections:
+                                    type: string
+                                    nullable: true
+                                  windows:
+                                    type: string
+                                    nullable: true
+                                  doors:
+                                    type: string
+                                    nullable: true
+                                  works:
+                                    type: string
+                                    nullable: true
+                                  simple_mode_data:
+                                    type: string
+                                    nullable: true
+                                  extended_mode_data:
+                                    type: string
+                                    nullable: true
+                                  advanced_mode_data:
+                                    type: string
+                                    nullable: true
+        '400':
+          description: >
+            Validation error (id is not a UUID) or the project is not in the
+            archive — nothing to restore ('Project is not archived')
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - error
+                  message:
+                    type: string
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - error
+                  message:
+                    type: string
+                    enum:
+                      - Project not found
+  /api/projects/{id}/permanent:
+    delete:
+      summary: Permanently delete an archived project
+      description: >
+        The only real DELETE in the API: removes the project row from the DB
+        (objects and rooms are removed by FK CASCADE) and returns the deleted
+        counters counted before the DELETE. Allowed only for archived projects
+        — otherwise 409. Requires Bearer JWT.
+      tags:
+        - Projects
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Project UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project permanently deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - data
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - success
+                  data:
+                    type: object
+                    required:
+                      - deleted
+                    properties:
+                      deleted:
+                        type: object
+                        required:
+                          - objects
+                          - rooms
+                        properties:
+                          objects:
+                            type: integer
+                            description: Number of deleted objects
+                          rooms:
+                            type: integer
+                            description: Number of deleted rooms
+        '400':
+          description: Validation error (id is not a UUID)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - error
+                  message:
+                    type: string
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - error
+                  message:
+                    type: string
+                    enum:
+                      - Project not found
+        '409':
+          description: The project is active — archive it first ('Archive the project first')
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - error
+                  message:
+                    type: string
+                    enum:
+                      - Archive the project first
   /api/projects/{id}:
     get:
       summary: Get project by ID with objects
