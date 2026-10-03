@@ -1,8 +1,8 @@
 # 📋 Шпаргалка по логированию
 
-> **Статус:** непроверено — требует сверки с кодом • **Проверено:** —
+> **Статус:** актуально • **Проверено:** 2026-10-03 (сверено с `server/src/middleware/logger.ts`, `src/utils/logger.ts` и маршрутами `server/src/routes/`)
 
-**Дата обновления:** 2026-04-16
+**Дата обновления:** 2026-10-03
 
 ---
 
@@ -36,22 +36,26 @@ docker logs repair-calc-backend --tail 1000
 
 ## Формат логов (Winston)
 
+> Вывод содержит префикс версии `[v2.0.0]`, а уровень лога окрашен ANSI-кодами
+> (`colorize()` в `server/src/middleware/logger.ts`) — при grep-фильтрации цвета
+> снимайте через `sed` (см. ниже). Сверено 2026-10-03.
+
 ### HTTP-лог
 
 ```
-2026-04-16 14:30:13 [info]: GET /api/sync/pull 200 14ms
+2026-04-16 14:30:13 [v2.0.0] [info]: GET /api/sync/pull 200 14ms
 ```
 
 ### Лог маршрута с метаданными
 
 ```
-2026-04-16 14:30:13 [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
+2026-04-16 14:30:13 [v2.0.0] [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
 ```
 
 ### Ошибка (со стек-трейсом)
 
 ```
-2026-04-16 14:30:14 [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
+2026-04-16 14:30:14 [v2.0.0] [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
 Error: Project not found
     at ProjectRepository.findByIdAndUserId (project.repo.ts:45:11)
 ```
@@ -59,25 +63,31 @@ Error: Project not found
 ### Предупреждение (валидация)
 
 ```
-2026-04-16 14:30:15 [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
+2026-04-16 14:30:15 [v2.0.0] [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
 ```
 
 ---
 
 ## Фильтрация по уровням Winston
 
+> `grep "[error]"` без `sed` не сработает: из-за `colorize()` между `[` и `error`
+> стоят ANSI-коды, а `grep "[error]"` вдобавок трактуется как символьный класс.
+> Всегда снимайте цвета:
+
 ```bash
+STRIP='s/\x1b\[[0-9;]*m//g'
+
 # Только ошибки
-docker logs repair-calc-backend 2>&1 | grep "[error]"
+docker logs repair-calc-backend 2>&1 | sed "$STRIP" | grep -E "\[error\]"
 
 # Ошибки и предупреждения
-docker logs repair-calc-backend 2>&1 | grep -E "\[(error|warn)\]"
+docker logs repair-calc-backend 2>&1 | sed "$STRIP" | grep -E "\[(error|warn)\]"
 
 # Только info
-docker logs repair-calc-backend 2>&1 | grep "[info]"
+docker logs repair-calc-backend 2>&1 | sed "$STRIP" | grep -E "\[info\]"
 
 # Только debug
-docker logs repair-calc-backend 2>&1 | grep "[debug]"
+docker logs repair-calc-backend 2>&1 | sed "$STRIP" | grep -E "\[debug\]"
 ```
 
 ---
@@ -124,7 +134,7 @@ window.debugLogger.clearHistory();
 ### ❌ Токен истёк
 
 ```
-2026-04-16 14:30:14 [warn]: GET /api/auth/me 401 6ms {"ip":"...","userAgent":"..."}
+2026-04-16 14:30:14 [v2.0.0] [warn]: GET /api/auth/me 401 6ms {"ip":"...","userAgent":"..."}
 ```
 
 **Решение:** Автоматически обновляется через `/api/auth/refresh`
@@ -132,7 +142,7 @@ window.debugLogger.clearHistory();
 ### ❌ Проект не найден
 
 ```
-2026-04-16 14:30:14 [warn]: [GET /projects/:id] Project not found {"projectId":"uuid"}
+2026-04-16 14:30:14 [v2.0.0] [warn]: [GET /projects/:id] Project not found {"projectId":"uuid"}
 ```
 
 **Причина:** Удалён или неверный ID
@@ -140,7 +150,7 @@ window.debugLogger.clearHistory();
 ### ❌ Конфликт версий
 
 ```
-2026-04-16 14:30:14 [warn]: [PUT /projects/:id] Version conflict {"projectId":"uuid"}
+2026-04-16 14:30:14 [v2.0.0] [warn]: [PUT /projects/:id] Version conflict {"projectId":"uuid"}
 ```
 
 **Решение:** Обновить данные с сервера
@@ -148,7 +158,7 @@ window.debugLogger.clearHistory();
 ### ❌ Ошибка валидации (ZodError)
 
 ```
-2026-04-16 14:30:15 [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
+2026-04-16 14:30:15 [v2.0.0] [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
 ```
 
 **Причина:** Клиент отправил невалидные данные
@@ -172,13 +182,13 @@ docker logs repair-calc-backend 2>&1 | grep "da07594f-"
 ### 3. Найти ошибки
 
 ```bash
-docker logs repair-calc-backend 2>&1 | grep "[error]"
+docker logs repair-calc-backend 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E "\[error\]"
 ```
 
 ### 4. Найти предупреждения
 
 ```bash
-docker logs repair-calc-backend 2>&1 | grep "[warn]"
+docker logs repair-calc-backend 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E "\[warn\]"
 ```
 
 ### 5. Посмотреть детали синхронизации

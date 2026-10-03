@@ -1,9 +1,9 @@
 # 📋 Руководство по логированию
 
-> **Статус:** непроверено — требует сверки с кодом • **Проверено:** —
+> **Статус:** актуально • **Проверено:** 2026-10-03 (сверено с `server/src/middleware/logger.ts` и `src/utils/logger.ts`; см. developer_log от 2026-10-03)
 
-**Дата обновления:** 2026-04-16
-**Версия:** 2.0
+**Дата обновления:** 2026-10-03
+**Версия:** 2.1
 
 ---
 
@@ -17,7 +17,7 @@
 | **Клиент**        | Функции логирования       | `src/utils/logger.ts`             | `error`, `warning`, `info`, `success`, `debug` |
 | **Миграции Knex** | `console.log`             | —                                 | Только CLI-контекст, вне Express               |
 
-> **Важно:** Прямые вызовы `console.*` в клиенте и сервере заменены на структурированные логгеры. Для предотвращения возврата к `console.*` планируется добавить ESLint правило `no-console`.
+> **Важно:** Прямые вызовы `console.*` в клиенте и сервере заменены на структурированные логгеры. ESLint-правило `no-console: ['error', { allow: ['warn', 'error'] }]` действует в `eslint.config.js` и `server/eslint.config.js` (добавлено 2026-04-16). Исключение — `src/utils/debugLogger.ts`: намеренно минимальный raw-console-логгер, переживающий прод-минификацию.
 
 ---
 
@@ -32,14 +32,20 @@ import { config } from '../config/env.js';
 
 export const winstonLogger = winston.createLogger({
   level: config.logging.level, // Управляется через env
+  defaultMeta: { version: appVersion }, // APP_VERSION или версия из package.json
   format: combine(
     errors({ stack: true }), // Автоматический стек-трейс
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat,
+    logFormat, // printf: `${timestamp} ${[v<версия>]} [${level}]: ${message} ${meta}${stack}`
   ),
   transports: [
     new winston.transports.Console({
-      format: combine(errors({ stack: true }), colorize(), timestamp(), logFormat),
+      format: combine(
+        errors({ stack: true }),
+        colorize(), // уровень окрашивается ANSI-кодами (важно для grep — см. §5)
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        logFormat,
+      ),
     }),
   ],
 });
@@ -47,23 +53,27 @@ export const winstonLogger = winston.createLogger({
 
 ### 1.2 Формат логов
 
+> Вывод содержит префикс версии приложения (`[v2.0.0]` — из `defaultMeta`; версия
+> читается из `package.json`). Уровень лога окрашивается ANSI-кодами (`colorize()`),
+> поэтому при фильтрации через `grep` цвета нужно снять (см. §5).
+
 #### Стандартный HTTP-лог (middleware)
 
 ```
-2026-04-16 14:30:13 [info]: GET /api/sync/pull 200 14ms
+2026-04-16 14:30:13 [v2.0.0] [info]: GET /api/sync/pull 200 14ms
 ```
 
 #### Лог с метаданными (маршруты)
 
 ```
-2026-04-16 14:30:13 [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
+2026-04-16 14:30:13 [v2.0.0] [info]: [POST /projects] Created project {"projectId":"da07594f-...","name":"Квартира","duration":13}
 ```
 
 #### Лог ошибки (со стек-трейсом)
 
 ```
-2026-04-16 14:30:14 [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
-2026-04-16 14:30:14 [debug]: Request error details {"error":{...}}
+2026-04-16 14:30:14 [v2.0.0] [error]: Request error {"errorMessage":"Project not found","errorName":"AppError"}
+2026-04-16 14:30:14 [v2.0.0] [debug]: Request error details {"error":{...}}
 Error: Project not found
     at ProjectRepository.findByIdAndUserId (project.repo.ts:45:11)
     ...
@@ -72,7 +82,7 @@ Error: Project not found
 #### Ошибка валидации (ZodError)
 
 ```
-2026-04-16 14:30:15 [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
+2026-04-16 14:30:15 [v2.0.0] [warn]: Validation error {"errors":[{"field":"name","message":"Обязательно","code":"too_small"}]}
 ```
 
 ### 1.3 Использование в маршрутах
@@ -205,23 +215,31 @@ try {
 
 ### 3.1 Серверные маршруты
 
-Все маршруты логируют через `winstonLogger`:
+Ключевые маршруты логируют метаданные через `winstonLogger` (остальные маршруты —
+только через HTTP-middleware из §3.2). Сверено с кодом 2026-10-03
+(`server/src/routes/projects.ts`, `objects.ts`, `sync.ts`, `ai.ts`):
 
-| Маршрут                                 | Логируемые данные                         |
-| --------------------------------------- | ----------------------------------------- |
-| `GET /api/sync/pull`                    | userId, count, duration                   |
-| `POST /api/projects`                    | projectId, name, duration                 |
-| `GET /api/projects`                     | count, duration                           |
-| `GET /api/projects/:id`                 | projectId, name, objectsCount, duration   |
-| `PUT /api/projects/:id`                 | projectId, version, duration              |
-| `DELETE /api/projects/:id`              | projectId, name, duration                 |
-| `POST /api/projects/:projectId/objects` | projectId, name, city, objectId, duration |
-| `GET /api/objects`                      | userId, count, duration                   |
-| `GET /api/objects/:id`                  | id, roomsCount, duration                  |
-| `PUT /api/objects/:id`                  | id, duration                              |
-| `DELETE /api/objects/:id`               | id, name, duration                        |
-| `POST /api/ai/estimate`                 | provider, duration                        |
-| `POST /api/ai/suggest-materials`        | provider, duration                        |
+| Маршрут                                 | Логируемые данные                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| `GET /api/sync/pull`                    | userId, count, roomsCount, duration                                    |
+| `POST /api/projects`                    | projectId, name, city, duration                                        |
+| `GET /api/projects`                     | count, duration                                                        |
+| `GET /api/projects/:id`                 | projectId, name, objectsCount, duration                                |
+| `PUT /api/projects/:id`                 | projectId, version, duration (при конфликте — warn `Version conflict`) |
+| `DELETE /api/projects/:id`              | projectId, name, duration                                              |
+| `GET /api/projects/archived`            | count, duration                                                        |
+| `PATCH /api/projects/:id/restore`       | projectId, duration                                                    |
+| `DELETE /api/projects/:id/permanent`    | projectId, duration (warn)                                             |
+| `POST /api/projects/:projectId/objects` | projectId, name, city, objectId, duration                              |
+| `GET /api/objects`                      | userId, count, duration                                                |
+| `GET /api/objects/:id`                  | id, roomsCount, duration                                               |
+| `PUT /api/objects/:id`                  | id, duration                                                           |
+| `DELETE /api/objects/:id`               | id, name, duration                                                     |
+
+> **AI-маршруты** (`/api/ai/estimate`, `/api/ai/suggest-materials`, `/api/ai/search-price`,
+> `/api/ai/generate-template`) — маршрутных info-логов с `provider`/`duration` нет;
+> фиксируются только ошибки кэша: `winstonLogger.error('Failed to cache AI response')`
+> (`server/src/routes/ai.ts`). Время ответа видно в HTTP-логе middleware.
 
 ### 3.2 Middleware логирование
 
@@ -282,14 +300,18 @@ docker logs repair-calc-backend --tail 50 -f
 docker logs repair-calc-backend --tail 1000
 ```
 
-### Фильтрация (Winston JSON-формат)
+### Фильтрация
+
+> **Внимание (сверено 2026-10-03):** уровень лога окрашивается ANSI-кодами
+> (`colorize()`), поэтому `grep "[error]"` в сыром выводе **не сработает** —
+> сначала снимите цвета через `sed`.
 
 ```bash
 # Найти операции с конкретным проектом
 docker logs repair-calc-backend 2>&1 | grep "da07594f-"
 
-# Только ошибки и предупреждения
-docker logs repair-calc-backend 2>&1 | grep -E "\[(error|warn)\]"
+# Только ошибки и предупреждения (с предварительным снятием ANSI-цветов)
+docker logs repair-calc-backend 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E "\[(error|warn)\]"
 
 # Только валидационные ошибки
 docker logs repair-calc-backend 2>&1 | grep "Validation error"
@@ -350,9 +372,13 @@ window.debugLogger.clearHistory(); // Очистить историю
 
 ## 8. Планы развития
 
-- [ ] Добавить ESLint правило `no-console` для предотвращения новых `console.*`
+- [x] Добавить ESLint правило `no-console` для предотвращения новых `console.*` —
+      добавлено 2026-04-16: `no-console: ['error', { allow: ['warn', 'error'] }]`
+      (`eslint.config.js`, `server/eslint.config.js`)
 - [ ] Подключить `winston-daily-rotate-file` для ротации файлов на сервере
+      (в зависимостях `server/package.json` отсутствует — по-прежнему план)
 - [ ] Добавить транспорт Winston в файл/удалённый сервис для продакшена
+      (сейчас только Console — `server/src/middleware/logger.ts:35-44`)
 - [ ] Настроить структурированный JSON-вывод для ELK/Grafana Loki
 
 ---
@@ -365,5 +391,5 @@ window.debugLogger.clearHistory(); // Очистить историю
 
 ---
 
-**Версия документации:** 2.0
-**Дата обновления:** 2026-04-16
+**Версия документации:** 2.1
+**Дата обновления:** 2026-10-03
