@@ -1,3 +1,4 @@
+// SPLIT-ME: 648 строк > порога 400 — вынести архив-экшены в createArchiveSlice.ts (задача в docs/TODO.md)
 import type { StateCreator } from 'zustand';
 import type { ProjectSlice, StoreState } from './types';
 import type { ProjectData } from '@shared/types';

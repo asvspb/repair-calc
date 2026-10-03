@@ -228,3 +228,12 @@
 **docs/README.md**: строки P2-2 (LOGGING и ARCHITECTURE/IDEAL/TECH-SPEC/CODE_REVIEW) закрыты «устранён»; +2 строки: (1) первичное хранилище localStorage↔IndexedDB — в ARCHITECTURE устранён, формулировка AGENTS.md §7 — «нужен архитектор» (вне write-set); (2) нереализованные требования ТЗ (cleanup deleted_entities, deprecation middleware) — открыт, решение за архитектором. Строку P2-5 (openapi) НЕ закрывал: коммиты b47ac67/37c2218 есть на fix/openapi-archive-batch-003, в main не слиты.
 
 - Проверки: `bash scripts/docs-check.sh` — прогон после правок; код не менялся (write-set — только docs + developer_log).
+
+## 2026-10-03 — Архитектор: ревью batch'ей 001–004 и merge (итог)
+
+- Ревью по §4: write-set'ы ⊆ ТЗ (001: +src/store/types.ts — обоснованное отступление, interfaces slice живут там); grep диффов чист (as any/@ts-ignore/console.log/секреты — нет); ArchivePanel 341 строка ок.
+- Замечание: createProjectSlice.ts 481→648 без SPLIT-ME — маркер добавлен + задача P3-SPLIT в docs/TODO.md (не чинил «заодно» по правилу).
+- 4 подветки слиты в main последовательно (32600ad, c254349, d4a5268, b212440); конфликты developer_log.md/docs/README.md решены объединением записей (append-only лог — правомерно обе стороны).
+- Дрейф AGENTS.md §7 (localStorage vs IndexedDB/Dexie, находка batch-004) закрыт архитектором: AGENTS.md описывает IndexedDB/Dexie как первичное хранилище, localStorageProvider — легаси.
+- Финальные gates на main: pnpm test / lint / lint:deps — все зелёные (сам запускал).
+- Посторонний untracked prompts/orchestrator.md (роль «Оркестратор», создана субагентом вне write-set'ов) — НЕ закоммичен, ждёт решения владельца.

@@ -12,6 +12,8 @@
 
 ---
 
+- [ ] **P3-SPLIT:** распил `src/store/createProjectSlice.ts` (648 строк > 400) — вынести архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject) в отдельный `createArchiveSlice.ts` (добавлено при ревью T3, маркер SPLIT-ME в файле)
+
 ## ✅ Закрыто 2026-10-03 (сверка TODO с фактическим состоянием)
 
 - **P0-1** (merge `refactor/architecture-v2` → `main`) — выполнено: main содержит рефактор, актуальная рабочая ветка `feat/project-archive-t2`.

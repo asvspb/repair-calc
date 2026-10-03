@@ -115,7 +115,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 
 - Компоненты — по доменам в `src/components/<Domain>/`.
 - Состояние — **Zustand** (`src/store/`: слайсы projects/objects/rooms/sync/auth + useProjectStore). Канон нового кода — слайсы; легаси-контексты `src/contexts/` (Auth, WorkTemplate) не наращивать, мигрируются по мере касания.
-- Storage abstraction: `src/api/storage/` (apiStorageProvider через REST) + `src/utils/localStorageProvider.ts`. Данные автосохраняются в localStorage (1с debounce) + синхронизация с сервером при авторизации.
+- Storage abstraction: `src/api/storage/` — первичное хранилище IndexedDB/Dexie (`indexedDbProvider.ts`, `dexieDb.ts`), при авторизации — синхронизация через `apiStorageProvider` (REST); `src/utils/localStorageProvider.ts` — легаси, не наращивать.
 - API-вызовы — через `src/api/` (httpClient с interceptors/retry/timeout).
 
 **Backend**
