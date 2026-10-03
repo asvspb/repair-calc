@@ -36,6 +36,7 @@
 | [debugger.md](./debugger.md) | Отладчик: hypothesis-driven, репродукция → изоляция → фикс | 2 |
 | [designer.md](./designer.md) | UI/UX: Tailwind, i18n-строки, a11y | 2 |
 | [analyst.md](./analyst.md) | Исследователь: разведка кодовой базы, ответы с цитатами | 2 |
+| [doc-keeper.md](./doc-keeper.md) | Смотритель документации: дрейфы «документация↔код↔git», freshness, docs-check | 2 |
 | [pentester.md](./pentester.md) | Аудитор безопасности: 🔴/🟠/🟡-находки, re-test | контур |
 
 ## SSOT-иерархия (для всех ролей)
