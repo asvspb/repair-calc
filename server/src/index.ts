@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { config } from './config/env.js';
 import { testConnection, closePool } from './db/pool.js';
+import { startCleanupDeletedJob, stopCleanupDeletedJob } from './jobs/cleanupDeleted.js';
 import { winstonLogger as logger } from './middleware/logger.js';
 
 const app = createApp();
@@ -15,6 +16,10 @@ async function startServer() {
       process.exit(1);
     }
     logger.info('Database connection established');
+
+    // Периодическая очистка мягко-удалённых проектов (§15.2.0 ТЗ v1.1):
+    // суточное расписание + прогон на старте
+    startCleanupDeletedJob();
 
     // Start server
     app.listen(config.port, () => {
@@ -31,18 +36,20 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
+  stopCleanupDeletedJob();
   await closePool();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received. Shutting down gracefully...');
+  stopCleanupDeletedJob();
   await closePool();
   process.exit(0);
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });

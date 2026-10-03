@@ -159,7 +159,10 @@ repair-calc/
 │   │   │   ├── validation.ts         # Валидация (Zod)
 │   │   │   ├── rateLimiter.ts        # Rate limiting
 │   │   │   ├── logger.ts             # Winston логирование
+│   │   │   ├── deprecation.ts        # Deprecation/Sunset заголовки (RFC 8594) + warn-лог раз на маршрут
 │   │   │   └── errorHandler.ts       # Обработка ошибок
+│   │   ├── jobs/
+│   │   │   └── cleanupDeleted.ts     # Суточная очистка мягко-удалённых проектов (§15.2.0 ТЗ v1.1)
 │   │   ├── db/
 │   │   │   ├── pool.ts               # PostgreSQL pool (Knex)
 │   │   │   ├── migrations/           # Knex миграции
@@ -245,14 +248,16 @@ repair-calc/
 
 ### Бэкенд
 
-| Файл                              | Назначение                                                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------ |
-| `server/src/routes/sync.ts`       | Sync API (pull/push)                                                                 |
-| `server/src/routes/projects.ts`   | Projects CRUD                                                                        |
-| `server/src/routes/update/`       | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas) |
-| `server/src/config/env.ts`        | Конфигурация (DB, JWT, logging)                                                      |
-| `server/src/middleware/logger.ts` | Winston логирование                                                                  |
-| `server/src/middleware/auth.ts`   | JWT аутентификация                                                                   |
+| Файл                                   | Назначение                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `server/src/routes/sync.ts`            | Sync API (pull/push)                                                                       |
+| `server/src/routes/projects.ts`        | Projects CRUD                                                                              |
+| `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas)       |
+| `server/src/config/env.ts`             | Конфигурация (DB, JWT, logging)                                                            |
+| `server/src/middleware/logger.ts`      | Winston логирование                                                                        |
+| `server/src/middleware/auth.ts`        | JWT аутентификация                                                                         |
+| `server/src/middleware/deprecation.ts` | Депрекейшн эндпоинтов: `Deprecation`/`Sunset` + warn-лог (экспорт; на маршруты не навешан) |
+| `server/src/jobs/cleanupDeleted.ts`    | Очистка архивных проектов старше `ARCHIVE_RETENTION_DAYS` (cron 03:00 + прогон на старте)  |
 
 ---
 

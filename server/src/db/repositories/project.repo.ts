@@ -245,6 +245,21 @@ export class ProjectRepository {
   }
 
   /**
+   * Кандидаты на постоянное удаление (§15.2.0 ТЗ v1.1): архивные проекты
+   * (deleted_at IS NOT NULL), заархивированные раньше cutoff.
+   * Пары (id, userId) достаточно для hardDelete; гонка с параллельным restore
+   * гасится повторной проверкой deleted_at внутри транзакции hardDelete.
+   */
+  static async findArchivedOlderThan(cutoff: Date): Promise<{ id: string; userId: string }[]> {
+    const rows = await query<(RowDataPacket & { id: string; user_id: string })[]>(
+      `SELECT id, user_id FROM projects WHERE deleted_at IS NOT NULL AND deleted_at < ?`,
+      [cutoff],
+    );
+
+    return rows.map(row => ({ id: row.id, userId: row.user_id }));
+  }
+
+  /**
    * Полное удаление проекта из БД — единственный real-DELETE (дети уходят по FK CASCADE).
    * Только для архивного проекта; счётчики считаются ДО DELETE; запись в audit_log там же.
    */
