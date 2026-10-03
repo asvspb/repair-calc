@@ -162,3 +162,11 @@
 - prompts (coder/designer/techlead): состояние — zustand-слайсы; все npm-команды → pnpm.
 - INDEX.md: «IndexedDB» → localStorage (реальность: localStorageProvider), Context/zustand → zustand-канон, команды → pnpm.
 - docs/README.md: оба дрейфа «нужен архитектор» закрыты; копия реестра в prompts/doc-keeper.md синхронизирована.
+
+## 2026-10-03 (финал 3) — архитектор: выданы 4 task-batch'а
+
+- TASK-BATCH-001-archive-t3 (coder): клиент архива — api-функции + slice-экшены + вычистка idMapper при hard-delete.
+- TASK-BATCH-002-archive-t4 (designer, зависит от 001): UI «Архив» в настройках проекта.
+- TASK-BATCH-003-openapi-archive (coder): P2-5 — архивные эндпоинты в docs/openapi.yaml.
+- TASK-BATCH-004-docs-p2-2 (doc-keeper): сверка 6 документов с «Проверено: —», закрытие P2-2.
+  Write-set'ы непересекающиеся: 001 (src/api/projects.ts, createProjectSlice, idMapper) / 002 (src/components/projects/_) / 003 (docs/openapi.yaml) / 004 (docs/_.md) — 001–003 можно параллельно; 002 после 001.
