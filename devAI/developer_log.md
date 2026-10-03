@@ -140,3 +140,12 @@
 - Найдено дрейфов: 3. Устранены: INDEX.md (таблица API дополнена архивными и ai-settings/with-rooms/with-objects эндпоинтами по факту `server/src/routes/projects.ts`, дата → 2026-10-03); реестр дрейфов создан в docs/README.md («Известные дрейфы», 4 строки); регистрация doc-keeper в prompts/README.md закоммичена.
 - Открыты → TODO: openapi.yaml без архивные эндпоинтов (P2-5); LOGGING*.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md — «Проверено: —» (P2-2).
 - Не тронуто (вне write-set): миграция на pnpm в рабочем дереве (pnpm-lock.yaml, удалённые package-lock.json) — зона архитектора.
+
+## 2026-10-03 (позже) — Архитектор: ревью + подготовка merge docs/doc-keeper-2026-10-03
+
+- Закоммичен незакоммиченный хвост doc-keeper: указатели реестра дрейфов в 6 промптах + 2 новые записи в docs/README.md (state-management канон, pnpm-миграция) — c7a960b.
+- chore: миграция lockfiles npm→pnpm (удалён package-lock.json root/server, добавлены pnpm-lock.yaml) — f9f2b1f; .kilo lockfile — 1071d33.
+- Среда/гейты под pnpm v10 починены (onlyBuiltDependencies, @types/express-serve-static-core@4.19.8 против TS2742 при declaration:true) — eaec414.
+- Самостоятельные прогоны на ветке: `pnpm test` = 136 passed / 2 skipped (вкл. 9 интеграционных projectArchiveRoutes); `pnpm run lint` = 0 errors (warnings прежние); `pnpm run lint:deps` = 0 violations (225 модулей).
+- Ревью диффа 774ccab (архив-эндпоинты): authenticate на роутере, Zod idParamSchema, ownership в репо, guard'ы 409/400, логирование winston, '/archived' зарегистрирован до '/:id'. Принято.
+- Ветка подготовлена к merge в main.
