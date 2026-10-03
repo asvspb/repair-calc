@@ -237,3 +237,10 @@
 - Дрейф AGENTS.md §7 (localStorage vs IndexedDB/Dexie, находка batch-004) закрыт архитектором: AGENTS.md описывает IndexedDB/Dexie как первичное хранилище, localStorageProvider — легаси.
 - Финальные gates на main: pnpm test / lint / lint:deps — все зелёные (сам запускал).
 - Посторонний untracked prompts/orchestrator.md (роль «Оркестратор», создана субагентом вне write-set'ов) — НЕ закоммичен, ждёт решения владельца.
+
+## 2026-10-03 — Архитектор: деплой на прод (успешно, 7 итераций среды)
+
+- Деплой ./scripts/deploy-local.sh завершён успехом: образы frontend/backend/migrate собраны (свежие, 2026-10-03 15:10), миграции «Already up to date», все сервисы Up.
+- Цепочка фиксов незавершённой pnpm-миграции в инфраструктуре (коммиты dd854d9…d41c2ed): Dockerfile'ы root+server на corepack/pnpm --frozen-lockfile; packageManager: pnpm@12.8.1; refresh lockfiles; allowBuilds (pnpm 12 approve-builds) в pnpm-workspace.yaml root+server; migrate-команда на прямой вход knex cli (pnpm .bin-шейм — sh-скрипт).
+- Проверка живого бэкенда: frontend :3993 → 200; backend /api/health → 200; архивные эндпоинты отвечают 401 без токена (маршруты на месте, auth работает).
+- Известные мелочи: COMMIT_HASH env пуст в backend-контейнере (compose не передаёт build-arg в backend/migrate — косметика, фронтенд получает); prompts/orchestrator.md и .v2c — в /tmp/repair-calc-parked/, ждут решения владельца.
