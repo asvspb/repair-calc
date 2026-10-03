@@ -38,7 +38,7 @@ services:
       DB_PASSWORD: secure_password
       DB_NAME: repair_calc
       DB_POOL_LIMIT: 10
-    command: npx tsx node_modules/.bin/knex migrate:latest --knexfile knexfile.ts
+    command: npx tsx node_modules/knex/bin/cli.js migrate:latest --knexfile knexfile.ts
     restart: "no"
 
   # Backend сервер
