@@ -25,6 +25,8 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+      args:
+        COMMIT_HASH: ${COMMIT_HASH:-unknown}
     container_name: repair-calc-migrate
     depends_on:
       db:
@@ -46,6 +48,8 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+      args:
+        COMMIT_HASH: ${COMMIT_HASH:-unknown}
     container_name: repair-calc-backend
     restart: always
     depends_on:

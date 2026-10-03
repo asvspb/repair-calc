@@ -219,7 +219,7 @@ repair-calc/
 ├── docs/                             # Документация (карта: docs/README.md; решения: docs/adr/)
 │   └── adr/                          # Architecture Decision Records (MADR)
 ├── scripts/                          # Скрипты сборки и тестирования (+ docs-check.sh — автопроверка документации)
-├── docker-compose.yml
+├── docker-compose.yml          # backend/migrate/frontend — build.args COMMIT_HASH (env в контейнерах)
 ├── Dockerfile
 ├── package.json
 ├── tsconfig.json
