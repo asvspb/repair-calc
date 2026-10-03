@@ -81,7 +81,7 @@ repair-calc/
 │   │   ├── geometry/                 # (9 файлов: Section, Mode, Simple/Extended/Advanced)
 │   │   ├── layout/                   # (4 файла: LeftSidebar, RightSidebar, Settings)
 │   │   ├── objects/                  # (5 файлов: Card, Selector, List, CreateModal, index)
-│   │   ├── projects/                 # (5 файлов: List, Modal, DataMgmt, Create, index)
+│   │   ├── projects/                 # (6 файлов: List, Modal, DataMgmt, Create, ArchivePanel, index)
 │   │   ├── rooms/                    # (3 файла: List, ListItem, index)
 │   │   ├── works/                    # (11 файлов: WorkList, Materials, PriceSearch, index)
 │   │   ├── summary/                  # (4 файла: Materials, Tools, Works, index)
@@ -211,7 +211,7 @@ repair-calc/
 │   ├── works.spec.ts
 │   └── work-templates.spec.ts
 │
-├── tests/                            # Unit/integration тесты (в т.ч. tests/unit/ — слайсы/клиентские api)
+├── tests/                            # Unit/integration тесты (в т.ч. tests/unit/ — слайсы/клиентские api; tests/components/ — компонентные, в т.ч. ArchivePanel)
 ├── prompts/                          # Библиотека ролевых промптов ИИ-агентов (иерархия: techlead-architect → coder/debugger/designer/analyst; pentester — отдельный контур)
 ├── docs/                             # Документация (карта: docs/README.md; решения: docs/adr/)
 │   └── adr/                          # Architecture Decision Records (MADR)
