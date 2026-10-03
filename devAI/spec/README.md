@@ -1,11 +1,22 @@
-# 📂 Спецификации проекта Repair Calculator
+# 📂 Спецификации и планы задач — Repair Calculator
 
-Каталог детализированных технических спецификаций для приложения «Мой ремонт».
+Каталог процессных документов: спеки, планы, task-batch'и. Знания (архитектура,
+справочник) живут в `docs/` — карта [docs/README.md](../../docs/README.md).
+Регламент: [AI_DOCUMENTATION_GUIDELINES.md §4](../../docs/AI_DOCUMENTATION_GUIDELINES.md).
+
+**Последнее обновление:** 2026-10-03
 
 | Документ | Описание | Статус |
 |----------|----------|--------|
 | [SPEC-001-SYSTEM.md](./SPEC-001-SYSTEM.md) | Полное техническое задание | ✅ Актуально |
-| [SPEC-002-E2E-REPAIR.md](./SPEC-002-E2E-REPAIR.md) | Стабилизация E2E тестов | 📝 В разработке |
-| [../TECHNICAL-SPECIFICATION.md](../TECHNICAL-SPECIFICATION.md) | ТЗ v1.1 — группировка объектов | Утверждено |
+| [SPEC-002-E2E-REPAIR.md](./SPEC-002-E2E-REPAIR.md) | Стабилизация E2E-тестов | ✅ Завершено |
+| [SPEC-003-E2E-STABILIZATION.md](./SPEC-003-E2E-STABILIZATION.md) | Стабилизация E2E (продолжение) | ✅ Завершено |
+| [SPEC-004-CRITICAL-FIXES.md](./SPEC-004-CRITICAL-FIXES.md) | Критические исправления | ✅ Завершено |
+| [E2E_FIX_TASK.md](./E2E_FIX_TASK.md) | Правки E2E (задача) | ✅ Завершено |
+| [plan-project-archive.md](./plan-project-archive.md) | Архив проектов: UI-удаление vs удаление из БД | ✅ T1 в main (2026-10); T2/T3 в работе — ветка `feat/project-archive-t2` |
 
-**Последнее обновление:** 2026-04-13
+Правила:
+- Новый план/ТЗ — `plan-<slug>.md` или `TASK-BATCH-NNN-<slug>.md` здесь, со статусом
+  (⬜ todo / 🔄 в работе / ✅ done) в шапке.
+- Задача закрыта → итог в `../developer_log.md`; статус в этой таблице обновить.
+- Закрытые планы не удаляются (история решений); актуальность — через эту таблицу.

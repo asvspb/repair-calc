@@ -1,9 +1,11 @@
 # Архитектура проекта Repair Calculator
 
+> **Статус:** актуально • **Проверено:** 2026-10-03 (частично: блок БД MySQL→PostgreSQL сверен с кодом; остальное — при ближайшей вехе)
+
 **Дата:** 2026-06-08
 **Статус:** Актуально
 **Версия клиента:** React 19 + Vite 6
-**Версия сервера:** Express + MySQL + Knex
+**Версия сервера:** Express + PostgreSQL + Knex
 
 ---
 
@@ -21,8 +23,8 @@
 | Компонент | Статус | Описание |
 |-----------|--------|----------|
 | Клиент | ✅ Готов | React 19, Vite 6, TailwindCSS 4 |
-| Сервер | ✅ Готов | Express, MySQL, Knex, JWT |
-| База данных | ✅ Готова | MySQL 8 с 6 миграциями |
+| Сервер | ✅ Готов | Express, PostgreSQL, Knex, JWT |
+| База данных | ✅ Готова | PostgreSQL, миграции Knex |
 | Хранилище | ✅ Готов | localStorage + ApiStorageProvider |
 | AI-интеграция | ✅ Готов | Клиентская + серверная реализация |
 | Аутентификация | ✅ Готова | JWT tokens, регистрация/логин |
@@ -353,7 +355,7 @@ server/
 │   │   └── errorHandler.ts         # Обработка ошибок
 │   │
 │   ├── db/
-│   │   ├── pool.ts                 # MySQL pool
+│   │   ├── pool.ts                 # PostgreSQL pool (Knex)
 │   │   ├── migrations/             # Knex миграции
 │   │   └── repositories/           # Data access (12 файлов)
 │   │       ├── user.repo.ts
@@ -416,7 +418,7 @@ server/
 | GET | `/api/sync/pull` | Получить данные |
 | POST | `/api/sync/push` | Отправить изменения |
 
-### 3.3 База данных (MySQL)
+### 3.3 База данных (PostgreSQL)
 
 **ER-диаграмма:**
 
@@ -586,7 +588,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
                                               │
                                       ┌───────▼───────┐
                                       │  Express API  │
-                                      │  + MySQL      │
+                                      │  + PostgreSQL│
                                       └──────────────┘
 ```
 
@@ -679,7 +681,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
   "dependencies": {
     "express": "^4.21.0",
     "cors": "^2.8.5",
-    "mysql2": "^3.11.0",
+    "pg": "^8.22.0",
     "knex": "^3.1.0",
     "zod": "^3.23.0",
     "jsonwebtoken": "^9.0.2",
@@ -728,7 +730,7 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 3. ✅ IStorageProvider абстракция
 4. ✅ Каталог материалов и расчёт
 5. ✅ Поиск цен через AI (клиентский + серверный)
-6. ✅ Backend на Express + MySQL
+6. ✅ Backend на Express + PostgreSQL
 7. ✅ JWT аутентификация
 8. ✅ Объектная модель (Project → Objects → Rooms)
 9. ✅ Синхронизация localStorage ↔ API

@@ -1,5 +1,7 @@
 # Application Index - Repair Calculator
 
+> **Статус:** устарел (замещён корневым ../INDEX.md) • **Проверено:** —
+
 **Last Updated:** 2026-04-17
 **Application Name:** Мой ремонт (Repair Calculator)
 **Version:** 1.1.0

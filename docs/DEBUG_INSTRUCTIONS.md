@@ -1,5 +1,7 @@
 # Debug Instructions for Section Dimensions Bug
 
+> **Статус:** устарел (отладка одного бага; актуальное — INDEX.md и prompts/debugger.md) • **Проверено:** —
+
 > **Примечание (2026-04-16):** Все `console.*` в клиенте заменены на структурированный логгер `src/utils/logger.ts`. При добавлении новых точек отладки используйте `logDebug()`, `logError()` и другие функции из модуля.
 
 ## Added Logging

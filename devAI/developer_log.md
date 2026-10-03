@@ -107,3 +107,24 @@
 - **Ревью Архитектора:** write-set ровно 2 файла; паттерны/секреты чисто; gates лично: vitest 127 passed | 2 skipped, tsc 0, eslint 0 errors, depcruise 0 violations. Mutation-check: старый не-атомарный delete() → 3 теста падают (вкл. BLOCKING), 9 зелёных.
 - **Ревью владельца (независимое):** тесты, мутационная проверка, сверка (a)–(d) с кодом, FK/audit_log по миграциям — «рантайм-ловушек нет». Merge ff-only → main (4bbe168..3f39967), ветка удалена.
 - **Отклонения Исполнителя (approved):** defensive-ветка вместо non-null assertion в restore; +2 теста сверх списка.
+
+## [2026-10-03] prompts/ — библиотека ролевых промптов ИИ-агентов (иерархия)
+- Создано: prompts/{README, techlead-architect, coder, debugger, designer, analyst, pentester}.md — 6 ролей + README с иерархией (L1 архитектор-контролёр → L2 исполнители; пентестер — отдельный контур с re-test).
+- Практики перенесены из соседних проектов (kino-club, private-cinema): негативный grounding, SSOT-иерархия код>AGENTS>промпт, реестр дрейфов, SPLIT-ME/BREAKING-INTENT, git-safety, параноидальное ревью «факт, а не отчёт».
+- Обновлён INDEX.md (структура: + prompts/).
+- Изменён только код: не менялся (docs/prompts only).
+
+## [2026-10-03] Документация v2 — Diátaxis + ADR + freshness-контроль
+- Принята система документирования (ADR-0001): docs/README.md — Diátaxis-карта (навигация), docs/adr/ — ADR (MADR-шаблон + рекорд 0001), freshness-заголовки у всех docs/*.md, docs/PROGRESS.md (вехи), scripts/docs-check.sh (автопроверка: ссылки карты/заголовки/ADR-нумерация).
+- Переписан docs/AI_DOCUMENTATION_GUIDELINES.md → v2.0 (типы документов, жизненный цикл, запреты, обязанности ролей).
+- Исправлен дрейф: PROGRESS.md создан; старая карта ссылалась на 6 удалённых файлов.
+- Найденные дрейфы (в карте, ждут владельца): plan-project-archive.md (план в docs/), docs/INDEX.md (устарел).
+- Проверки: docs-check.sh зелёный; код не менялся.
+
+## [2026-10-03] Актуализация всей документации + сохранение в git
+- Сверка с кодом: ARCHITECTURE.md MySQL→PostgreSQL (8 мест, по факту `pg` в server/package.json); AGENTS.md — уже Knex (прежний «дрейф db:migrate:dev» был ошибкой сравнения с kino-club, записи исправлены в ADR-0001 и prompts/README).
+- Перенос: docs/plan-project-archive.md → devAI/spec/ (регламент v2); docs/INDEX.md → docs/archive/ (устарел, замещён корневым).
+- TODO.md: снято выполненное (P0-1 merge, P0-2 CI, P2-1 триаж, P2-2 частично, P2-3 PROGRESS) — секция «Закрыто 2026-10-03».
+- PROGRESS.md: вехи 2026-10 дополнены (merge рефактора, CI, T1 архива, docs v2, дрейф БД).
+- devAI/spec/README.md: реестр спек/планов со статусами; AGENTS.md: структура + prompts/, docs/adr, docs-check.
+- Проверки: docs-check.sh зелёный; код не менялся.

@@ -212,8 +212,10 @@ repair-calc/
 │   └── work-templates.spec.ts
 │
 ├── tests/                            # Unit/integration тесты
-├── docs/                             # Документация
-├── scripts/                          # Скрипты сборки и тестирования
+├── prompts/                          # Библиотека ролевых промптов ИИ-агентов (иерархия: techlead-architect → coder/debugger/designer/analyst; pentester — отдельный контур)
+├── docs/                             # Документация (карта: docs/README.md; решения: docs/adr/)
+│   └── adr/                          # Architecture Decision Records (MADR)
+├── scripts/                          # Скрипты сборки и тестирования (+ docs-check.sh — автопроверка документации)
 ├── docker-compose.yml
 ├── Dockerfile
 ├── package.json
