@@ -60,6 +60,8 @@ FSD-3-слоя, npm workspaces, dirty-flag sync, полная декомпози
 ```
 repair-calc/
 ├── src/                              # Исходный код фронтенда
+│   ├── app/                          # FSD-слой app (каркас R1: README-указатель; переезд кода в R4)
+│   ├── features/                     # FSD-фичи (каркас R1: README 7 доменов auth/projects/objects/rooms/works/summary/archive; переезд в R4)
 │   ├── api/                          # API клиенты
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
@@ -114,15 +116,15 @@ repair-calc/
 │   │   └── vite-env.d.ts
 │   ├── utils/
 │   │   ├── debugLogger.ts            # Отладочный логгер
-│   │   ├── format.ts                 # Форматирование чисел
-│   │   ├── idMapper.ts               # Маппинг локальных/серверных ID (+clearProject: вычистка маппингов при hard-delete)
+│   │   ├── format.ts                 # Фасад → shared/utils/format (R1; расшивка импортов в R4)
+│   │   ├── idMapper.ts               # Фасад → shared/utils/idMapper (R1; +clearProject: вычистка маппингов при hard-delete)
 │   │   ├── localStorageProvider.ts   # localStorage StorageProvider (легаси, не наращивать)
-│   │   ├── logger.ts                 # Структурированный логгер
-│   │   ├── migration.ts              # Миграция данных
+│   │   ├── logger.ts                 # Фасад → shared/utils/logger (R1; расшивка импортов в R4)
+│   │   ├── migration.ts              # Миграция данных (не переехал в R1: зависит от домена через projectObjects)
 │   │   ├── projectObjects.ts         # Object-based project helpers
 │   │   ├── saveQueue.ts              # Очередь сохранения
 │   │   ├── storage.ts                # StorageManager
-│   │   ├── storageConstants.ts       # STORAGE_KEYS (ключи localStorage) + CURRENT_VERSION
+│   │   ├── storageConstants.ts       # Фасад → shared/utils/storageConstants (R1)
 │   │   └── templateStorage.ts        # Хранилище шаблонов
 │   ├── domain/                       # Чистая доменная логика (без React)
 │   │   ├── factories/projectFactory.ts # createProject/createNewRoom/clone..., generateId(prefix) — единая генерация ID
@@ -141,6 +143,10 @@ repair-calc/
 │   ├── App.tsx                       # Корневой компонент (~276 строк)
 │   ├── main.tsx                      # Точка входа
 │   └── index.css                     # Глобальные стили (TailwindCSS)
+│
+├── shared/                           # Общие типы/утилиты (0 доменных зависимостей) — FSD-слой shared
+│   ├── types.ts                      # Общие типы (ProjectData, ObjectData, RoomData...)
+│   └── utils/                        # R1: format, logger, storageConstants, idMapper (в src/utils — фасады)
 │
 ├── server/                           # Backend (Node.js + Express)
 │   ├── src/
@@ -255,7 +261,7 @@ repair-calc/
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
 | `src/api/storage/apiStorageProvider.ts` | Storage через REST API — тонкий фасад (346 стр.); внутри: `apiClient.ts` (очередь/ретраи), `projectApi.ts` (синхронизация), `objectApi.ts` (CRUD), `roomApi.ts` (комнаты) |
 | `src/utils/storage.ts`                  | StorageManager (localStorage)                                                                                                                                             |
-| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID                                                                                                                                            |
+| `shared/utils/idMapper.ts`              | Маппинг локальных/серверных ID (R1; `src/utils/idMapper.ts` — re-export-фасад)                                                                                            |
 | `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)                                                                                                                                     |
 
 ### Бэкенд

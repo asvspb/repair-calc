@@ -497,3 +497,49 @@
 **Вне write-set не тронуто.** Статус в TASK-BATCH-016-018.md не обновлялся — файл не входит в write-set батча (⬜ → ✅ за архитектором/оркестратором по их регламенту).
 
 **Gates (запущены в этой сессии, на итоговом дереве):** `pnpm test` — 150 passed / 2 skipped (2 skipped — pre-existing RightSidebar NOT IMPLEMENTED); `pnpm run lint` — 0 errors, 32 warnings (все pre-existing в server/tests); `pnpm run lint:deps` — no dependency violations (251 modules, 950 dependencies).
+
+## 2026-10-04 — TASK-BATCH-017-fsd-r1 (R1: каркас слоёв + depcruise + переезд утилит)
+
+**ТЗ:** devAI/spec/TASK-BATCH-016-018.md, секция TASK-BATCH-017-fsd-r1.
+**Ветка:** refactor/fsd-r1-017 (от docs/orchestrator-rework-016). Поведение приложения не менялось.
+
+**Сделано (7 коммитов):**
+
+1. `refactor(fsd)`: depcruise-правила 3-слойки в «мягком режиме» (.dependency-cruiser.cjs):
+   - `fsd-app-layers` — src/app → только features/shared;
+   - `fsd-features-to-shared` — src/features/<f> → только shared и своя фича;
+   - `fsd-features-no-cross-imports` — фичи не импортируют друг друга (только через shared);
+   - все три — severity `warn` до R4; легаси-пути (components/hooks/contexts/api/utils) — allowlist с пометкой R4.
+   - **Грабля:** depcruise 17.4.3 НЕ подставляет `\1` из from-группы в to-regex (компилирует как обычный
+     backreference → пустое совпадение → ложные срабатывания/молчание). Рабочий синтаксис — `$1`;
+     проверено на временных фикстурах (cross-feature флагуется, same-feature — нет, app→store флагуется,
+     app→features и features→легаси — разрешены). Фикстуры удалены.
+2. `chore(fsd)`: каркас src/app/ + src/features/<7 доменов>/ — по README-указателю «переезд в R4», кода нет.
+   3–6. Переезд в shared/utils по одному, фасадом в src/utils (легаси-импортёры не тронуты, `@deprecated`-заголовки):
+   - `format.ts` (1f86581), `storageConstants.ts` (f686179), `logger.ts` (b92a96a; фасад ре-экспортирует и default),
+     `idMapper.ts` (30674ad; его импорты ./storageConstants и ./logger валидны без правок — соседи в shared/utils).
+   - После каждого — `pnpm run lint:deps` зелёный.
+3. Доки: INDEX.md (дерево: src/app, src/features, shared/utils; utils → фасады; таблица ключ-файлов),
+   docs/ARCHITECTURE.md §2.6 «Переезд FSD» (факт R1), лог.
+
+**Не переехало и почему:**
+
+- `migration.ts` — **не чистый**: `src/utils/migration.ts:10` импортирует `getAllRooms` из
+  `./projectObjects`, а `src/utils/projectObjects.ts:1` — `generateId` из
+  `../domain/factories/projectFactory` (доменная зависимость). ТЗ прямо оговаривает «migration (если чистый)» —
+  условие не выполнено, остаётся до R4 (вместе с projectObjects).
+- `geometry/costs/materialCalculations`, `debugLogger`, `localStorageProvider`, `storage`, `saveQueue`,
+  `templateStorage`, `projectObjects` — вне кандидатов R1 (доменные/легаси-модули, ТЗ их не называет).
+
+**Gates (запущены в этой сессии, на итоговом дереве):** `pnpm test` — exit 0. Корневой vitest:
+75 файлов passed | 1 skipped (migrations.test.ts, целиком it.skip) / 1043 passed | 4 skipped
+(2 — pre-existing RightSidebar NOT IMPLEMENTED `tests/components/layout/RightSidebar.test.tsx:251,255`,
+2 — pre-existing migrations.test.ts:24,28 «requires PostgreSQL» — корневой конфиг подхватывает server/tests);
+серверный прогон (`cd server && npm run test`): 13 passed | 1 skipped / 150 passed | 2 skipped (те же migrations). `pnpm run lint` — exit 0, 0 errors, 32 warnings (все pre-existing в
+server/tests/*, eslint по shared/utils + src/utils — чисто); `pnpm run lint:deps` — no dependency
+violations (255 modules, 954 dependencies).
+
+**Вне write-set:** чужой незакоммиченный `.gitignore` (+`.kilo`), висевший в дереве при старте,
+засташен (`git stash push -m "pre-017-fsd-r1: чужой .gitignore (.kilo), вне write-set"` на
+docs/orchestrator-rework-016) — в коммиты не брал. Статус секции TASK-BATCH-017 в
+TASK-BATCH-016-018.md не трогал — файл вне write-set.

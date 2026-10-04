@@ -279,6 +279,31 @@ localStorage (`LocalStorageProvider`); заменено на IndexedDB + API-с�
 - Миграция данных при загрузке
 - Синхронизация с сервером при авторизации
 
+### 2.6 Переезд FSD (статус миграции)
+
+> Цель: 3-слойка `app → features → shared` (см. `devAI/spec/ROADMAP-fsd.md`,
+> видение — `docs/IDEAL-ARCHITECTURE.md`). Принцип — strangler-миграция:
+> новое в целевой структуре, старое переезжает по мере касания.
+
+**R1 — сделано (2026-10-04, `refactor/fsd-r1-017`, поведение не менялось):**
+
+- Каркас каталогов: `src/app/`, `src/features/<auth,projects,objects,rooms,works,summary,archive>/`
+  (по README-указателю; код не переезжает — переезд доменов в R4).
+- depcruise-правила 3-слойки в «мягком режиме» (`.dependency-cruiser.cjs`):
+  `fsd-app-layers`, `fsd-features-to-shared`, `fsd-features-no-cross-imports`
+  (severity `warn` до R4); легаси-пути (`src/components`, `src/hooks`,
+  `src/contexts`, `src/api`, `src/utils`) — во временном allowlist с пометкой R4.
+- В `shared/utils/` переехали чистые утилиты (0 доменных зависимостей):
+  `format.ts`, `logger.ts`, `storageConstants.ts`, `idMapper.ts`.
+  В `src/utils/` остались re-export-фасады для легаси-импортов
+  (`@deprecated`, расшивка импортов на `@shared/utils/*` — в R4).
+- `src/utils/migration.ts` **не** переехал: не чистый — зависит от домена через
+  `src/utils/projectObjects.ts` (`projectFactory`).
+
+**Дальше:** R2 — спека sync-v2 (`devAI/spec/TASK-BATCH-016-018.md`, секция 018);
+R4 — переезд доменов в `features/` по одному, allowlist пустеет, правила
+depcruise повышаются до `error`.
+
 ---
 
 ## 3. Серверная архитектура
