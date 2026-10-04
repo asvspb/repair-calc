@@ -1,11 +1,22 @@
 import type { StateCreator } from 'zustand';
-import type { DirtyEntityKind, DirtyMap, SyncSlice, StoreState } from './types';
+import type { DirtyEntityKind, DirtyMap, FlushAckEntry, SyncSlice, StoreState } from './types';
 import type { ProjectData } from '@shared/types';
-import { logDebug, logSuccess, logError, logStart } from '../utils/logger';
+import { logDebug, logSuccess, logError, logStart, logWarning } from '../utils/logger';
 import { saveQueue } from '../utils/saveQueue';
 import { StorageManager } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage';
-import { getAllSyncStateEntries, putSyncStateEntry, syncStateKey } from '../api/storage/dexieDb';
+import {
+  getAllSyncStateEntries,
+  putSyncStateEntry,
+  deleteSyncStateEntry,
+  syncStateKey,
+} from '../api/storage/dexieDb';
+import {
+  isSyncV2Enabled,
+  notifyDirtyChanged,
+  startFlusher,
+  stopFlusher,
+} from '../api/storage/syncFlusher';
 import { isServerId } from '../utils/idMapper';
 import { getAllRooms } from '../utils/projectObjects';
 import { calculateRoomMetrics } from '../domain/geometry/geometry';
@@ -32,6 +43,8 @@ export function clearSaveTimers() {
     clearTimeout(totalsSaveTimeout);
     totalsSaveTimeout = null;
   }
+  // SYNC-V2 batch (б): debounce-таймер флашера тоже гасим
+  stopFlusher();
 }
 
 export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set, get) => ({
@@ -71,6 +84,42 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
       op: 'upsert',
     }).catch(err => {
       logError('SyncDomain', 'Ошибка персиста dirty-флага', err, { entityKind, entityId });
+    });
+
+    // SYNC-V2 §2.3 п.3: debounce-триггер флашера после мутации (под флагом; иначе no-op)
+    notifyDirtyChanged();
+  },
+
+  /** Снятие подтверждённых флашером сущностей (SYNC-V2 batch б, §2.2) */
+  acknowledgeFlushed: (entries: FlushAckEntry[]) => {
+    if (entries.length === 0) return;
+
+    set(state => {
+      const dirty: DirtyMap = {
+        project: { ...state.dirty.project },
+        object: { ...state.dirty.object },
+        room: { ...state.dirty.room },
+      };
+      let removed = 0;
+      for (const { entityKind, entityId, gaveUp } of entries) {
+        if (dirty[entityKind][entityId] !== undefined) {
+          delete dirty[entityKind][entityId];
+          removed += 1;
+          if (gaveUp) {
+            logWarning('SyncDomain', 'Сущность снята с очереди без ретрая', {
+              entityKind,
+              entityId,
+            });
+          }
+          void deleteSyncStateEntry(syncStateKey(entityKind, entityId)).catch(err => {
+            logError('SyncDomain', 'Ошибка снятия dirty-флага из Dexie', err, {
+              entityKind,
+              entityId,
+            });
+          });
+        }
+      }
+      return { dirty, dirtyCount: Math.max(0, state.dirtyCount - removed) };
     });
   },
 
@@ -245,6 +294,22 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
     // Восстановление dirty-карты из Dexie при старте (SYNC-V2 §2.1)
     void get().restoreDirtyState();
 
+    // SYNC-V2 batch (б): флашер активен только под флагом; гость отсекается внутри flushOnce (§3.3)
+    let stopSyncFlusher: (() => void) | null = null;
+    if (isSyncV2Enabled()) {
+      stopSyncFlusher = startFlusher({
+        getSnapshot: () => ({
+          isAuthenticated: get().isAuthenticated,
+          dirty: get().dirty,
+          projects: get().projects,
+        }),
+        onFlushStart: () => set({ status: 'flushing' }),
+        onFlushEnd: error => set({ status: error ? 'error' : 'idle' }),
+        onEntitiesResolved: entries => get().acknowledgeFlushed(entries),
+      });
+      logDebug('SyncDomain', 'Флашер SYNC-V2 запущен (VITE_SYNC_V2=true)');
+    }
+
     const handleBeforeUnload = () => {
       if (pendingSave) {
         StorageManager.saveProjects(pendingSave);
@@ -303,6 +368,8 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(roomSyncInterval);
+      stopSyncFlusher?.();
+      stopFlusher();
       clearSaveTimers();
     };
   },

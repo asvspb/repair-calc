@@ -69,6 +69,14 @@ export interface DirtyEntry {
 
 export type DirtyMap = Record<DirtyEntityKind, Record<string, DirtyEntry>>;
 
+/** Подтверждение сущности флашером SYNC-V2 batch (б) (спека §2.2) */
+export interface FlushAckEntry {
+  entityKind: DirtyEntityKind;
+  entityId: string;
+  /** true — снята без ретрая (конфликт/валидация/нет локального состояния) */
+  gaveUp: boolean;
+}
+
 export interface SyncSlice {
   lastSaved: Date | null;
   saveError: string | null;
@@ -92,6 +100,8 @@ export interface SyncSlice {
   markDirty: (entityKind: DirtyEntityKind, entityId: string, updatedAt: string) => void;
   /** Восстановить dirty-карту из Dexie syncState при старте */
   restoreDirtyState: () => Promise<void>;
+  /** Снять подтверждённые флашером сущности с dirty-карты и из Dexie (batch б) */
+  acknowledgeFlushed: (entries: FlushAckEntry[]) => void;
 }
 
 export type StoreState = ProjectSlice &

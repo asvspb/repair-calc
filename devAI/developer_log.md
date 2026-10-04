@@ -640,3 +640,64 @@ passed | 1 skipped / 1043 passed | 4 skipped — те же pre-existing skip'ы,
 `src/store/createRoomSlice.ts`, `src/store/createObjectSlice.ts`,
 `tests/unit/syncDirty.test.ts` (новый), `tests/hooks/domains/useRoomDomain.test.ts`,
 `tests/hooks/domains/useProjectDomain.test.ts`, `INDEX.md`, `devAI/developer_log.md`.
+
+## 2026-10-04 — TASK-BATCH-020-sync-b (R2(б): исходящая очередь / флашер)
+
+**Ветка:** `feat/sync-v2-b-020` (от `feat/sync-v2-a-019`). Роль: coder.
+**Спека:** `devAI/spec/SPEC-SYNC-V2.md` §2.2–2.3, §5(б); решения §6.1 пп. 5, 6.
+
+### What was done:
+
+1. `feat(sync-v2)`: `src/api/sync.ts` — клиентский контракт `POST /api/sync/push`
+   (`SyncPushChange`/`SyncPushResult`/`SyncConflict`); ошибки конвертируются в
+   `ProjectsApiError`, чтобы `RequestQueue` ретраил 429 с backoff (§2.2).
+2. `feat(sync-v2)`: `src/api/storage/syncFlusher.ts` — флашер рядом с `apiClient.ts`,
+   собственный экземпляр `RequestQueue` как транспорт (§2.2). Дедуп — на уровне dirty-карты
+   (одно последнее состояние на сущность); порядок parent-before-child
+   (project → object → room, сортировка по id для детерминизма); батчи ≤ 50
+   (`FLUSH_BATCH_SIZE`), незавершённая пачка не снимает очередь; `clientUpdatedAt` —
+   tie-break в `data` (§3.1). Ошибки: сеть/429/5xx — dirty остаётся; 403/404/валидация и
+   конфликты из ответа — сущность снимается с логом (LWW-слияние по `serverUpdatedAt` —
+   batch (в)).
+3. `feat(sync-v2)`: триггеры §2.3 в `createSyncSlice` — `online` (немедленный flush),
+   интервал 30 с при наличии dirty, debounce 2 с после мутации (`notifyDirtyChanged` из
+   `markDirty`); новый метод `acknowledgeFlushed` снимает подтверждённые сущности с
+   dirty-карты и из Dexie `syncState`; `status: flushing/error/idle`. Флашер стартует из
+   `initSyncListeners` только при `VITE_SYNC_V2 === 'true'`; гость отсекается внутри
+   `flushOnce` (`isAuthenticated`) — ноль сетевых вызовов (§6.1 п. 5: гостевой путь не
+   расширялся; п. 6: `scheduleTotalsSave` остался отдельным контуром).
+4. `test(sync-v2)`: `tests/api/syncFlusher.test.ts` — 9 тестов: флаг по умолчанию выключен;
+   оффлайн-сценарий (dirty копится, сетевой сбой оставляет dirty, `online` → flush снимает +
+   удаление из Dexie); дедуп; parent-before-child; батчинг 51 → 50+1; сеть/429/4xx;
+   гость; конфликт из ответа; gaveUp для dirty-сущностей без локального состояния.
+
+### Notes (интерпретации/отступления):
+
+- `src/store/types.ts` дополнен `FlushAckEntry` + `acknowledgeFlushed` — контракт
+  dirty-удаления; это минимально выходит за букву write-set §5(б) («триггеры в
+  createSyncSlice»), но без него флашер не может снимать dirty.
+- 5xx трактуется как транзиентный (dirty остаётся) — спека явно называет только сеть/429
+  и 403/404/валидацию; тишина про 5xx разрешена в пользу безопасности данных.
+- Change `id` = `entityId` (детерминированный маппинг ответа `conflicts`); `operation`
+  = `update` для серверных ID / `create` для `local-*`. `local-*` ещё не проходит серверную
+  схему (UUID-валидация) — расширение схемы запланировано на batch (в), флаг по умолчанию
+  выключен, рантайм-расхождения нет.
+- `beforeunload`-персист (§2.3 п. 4) уже обеспечен немедленным `putSyncStateEntry` в
+  `markDirty` (batch а) — отдельный обработчик не добавлялся.
+- Мульти-вкладка (§6.1 п. 8 упомянут в вопросе 6): возможны дубли-push — идемпотентны по
+  entity+updatedAt; лидерство через BroadcastChannel не вводилось (минимум по спеке).
+- `.env.example`/`docker-compose.yml` (документирование `VITE_SYNC_V2`) — write-set batch (г),
+  не тронуты.
+
+### Gates (запущены в этой сессии, на итоговом дереве):
+
+- `pnpm test` — exit 0 (frontend: 77 files passed | 1 skipped, 1061 passed | 4 skipped;
+  server: 13 files passed | 1 skipped, 150 passed | 2 skipped).
+- `pnpm run lint` — exit 0 (0 errors; warnings — pre-existing в server/tests и доменных тестах).
+- `pnpm run lint:deps` — no dependency violations (257 modules, 968 dependencies).
+
+### Файлы:
+
+`src/api/sync.ts` (новый), `src/api/storage/syncFlusher.ts` (новый, 321 стр.),
+`src/store/types.ts`, `src/store/createSyncSlice.ts`, `tests/api/syncFlusher.test.ts` (новый),
+`INDEX.md`, `devAI/developer_log.md`.

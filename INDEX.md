@@ -68,11 +68,13 @@ repair-calc/
 │   │   ├── objects.ts                # Objects API
 │   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
 │   │   ├── rooms.ts                  # Rooms API
+│   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
 │   │   ├── totals.ts                 # Totals API
 │   │   ├── users.ts                  # Users API
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
 │   │   │   ├── apiClient.ts          # Очередь запросов: rate limiting, 429-ретраи, типы кэша/контекста
+│   │   │   ├── syncFlusher.ts        # Флашер SYNC-V2 (batch б): дедуп, parent-before-child, батчи ≤50, триггеры online/30с/debounce; под VITE_SYNC_V2
 │   │   │   ├── projectApi.ts         # Полная/инкрементальная синхронизация проектов
 │   │   │   ├── objectApi.ts          # CRUD проектов + payload-билдеры объектов
 │   │   │   ├── roomApi.ts            # Синхронизация комнат + трекинг ошибок
@@ -257,7 +259,7 @@ repair-calc/
 | Файл                                    | Назначение                                                                                                                                                                |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext                                                                                        |
-| `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`)                                                                      |
+| `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`) + триггеры флашера (batch б)                                         |
 | `src/api/storage/dexieDb.ts`            | Dexie `RepairCalcDB` (version 2: таблица `syncState` — персистентные dirty-флаги SYNC-V2 §2.1)                                                                            |
 | `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                                                                                                               |
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
