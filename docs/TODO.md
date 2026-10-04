@@ -56,11 +56,11 @@
       — закрыто 2026-10-04 (`fix/infra-008`): mysql2-формулировки удалены, пояснение `any` оставлено.
       Остальные пункты P2-2 и P2-5 закрыты — см. блок «Закрыто».
 
-### P2-4. Мелкая гигиена
+### P2-4. Мелкая гигиена — ✅ ЗАКРЫТО 2026-10-04 (`fix/hygiene-011`)
 
-- [ ] Выровнять версии: root `2.0.0` / server `1.0.0`
-- [ ] Расширить `server/package.json` `lint` (`eslint src/`) на `tests/` — тесты сейчас не линтуются
-- [ ] Проверить статус `AUDIT-2026-06-21.md §4.E` (prefer-const в createSyncSlice) — закрыть, если устранено
+- [x] Версии выровнены: root `2.0.0` / server `2.0.0` — проверено 2026-10-04 (grep `"version"` server/package.json → 2.0.0)
+- [x] `server/package.json` `scripts.lint` = `eslint src/ tests/` — серверный lint покрывает tests/; `npx eslint src/ tests/` → 0 errors / 32 warnings (warnings — предмет P3-3, не отключались)
+- [x] `AUDIT-2026-06-21.md §4.E` (prefer-const в createSyncSlice) — подтверждено устранённым: `npx eslint src/store/createSyncSlice.ts` — чисто; все `let` в файле реально переприсваиваются
 
 ---
 
@@ -87,7 +87,7 @@
 - [x] Единая утилита ID: `generateId(prefix)` в `src/domain/factories/projectFactory.ts` (файл `src/utils/factories.ts` не существует — канон у factory-модуля); дубли в `WorkTemplateContext`, `useWorkTemplates`, `useGeometryState`, `costs.ts`, `roomHelpers.ts`, `useRoomWorksState.ts`, `WorkCatalogPicker.tsx`, `projectObjects.ts` заменены. Остались legacy-генераторы в `src/utils/idMapper.ts:80,248` (`device-`/`local-` prefixed, generateId() из idMapper не импортируется нигде) — кандидат на удаление в отдельной dead-code задаче
 - [x] Единые константы localStorage keys (`STORAGE_KEYS` в `src/utils/storageConstants.ts`): добавлены TOKEN/REFRESH_TOKEN/E2E_TEST_MODE/ID_MAPPINGS/DEVICE_ID/PENDING_SAVE/MIGRATION_VERSION/PRICE_CACHE/DEXIE_MIGRATED — **значения ключей не менялись**; все литеральные вызовы `localStorage.*` в src/ переведены на константы
 - [ ] Остаток: 22 `no-explicit-any` вне целевых файлов (pool.ts, abTest/object/priceCatalog/project/room/updateJob.repo.ts, rateLimiter.ts, geometry.test.ts) — вне Write-скоупа batch-010; knx-репозитории требуют типизации строк Knex
-- [ ] lint-предупреждения `no-unused-vars` в server/tests/ (10 шт.) — см. P2-4 (batch-011)
+- [ ] lint-предупреждения `no-unused-vars` в server/tests/ (10 шт.) — намеренно НЕ автофиксились в batch-011 (`--fix` их не удаляет автоматически-безопасно, удаление импортов — ручная тривиальная правка вне скоупа автоправок); 0 errors, только warnings
 
 ### P3-4. Тестирование
 
