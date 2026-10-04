@@ -1,13 +1,21 @@
 import { test, expect, setupTestEnvironment, setupCleanEnvironment } from './fixtures';
+import { clickRoomItemById } from './helpers/roomHelpers';
+import {
+  clickInRightSidebar,
+  clickSidebarByTestId,
+  clickRightSidebarByTestId,
+} from './helpers/sidebarHelpers';
 import { TEST_PROJECT_MULTI_OBJECT, TEST_PROJECT_WITH_WORK } from './fixtures/testData';
 import { RoomEditorPage } from './pages/RoomEditorPage';
 
 test.describe('Core Workflow - End-to-End Tests', () => {
-  test('Scenario 1: Full cycle - create project, add room, add work, view summary', async ({ page }) => {
+  test('Scenario 1: Full cycle - create project, add room, add work, view summary', async ({
+    page,
+  }) => {
     await setupCleanEnvironment(page);
 
     // Click new project button — opens ProjectsModal
-    await page.getByTestId('new-project-btn').click();
+    await clickRightSidebarByTestId(page, 'new-project-btn');
 
     // Click "Новый проект" inside ProjectsModal overlay
     const projectsModal = page.locator('.fixed.inset-0.z-50');
@@ -41,12 +49,13 @@ test.describe('Core Workflow - End-to-End Tests', () => {
     await expect(page.getByTestId('add-room-btn')).toBeVisible({ timeout: 10000 });
 
     // Add a room
-    await page.getByTestId('add-room-btn').click();
+    await clickSidebarByTestId(page, 'add-room-btn');
 
     // Navigate to the new room
     const roomItem = page.locator('[data-testid^="room-item-"]').first();
     await expect(roomItem).toBeVisible({ timeout: 5000 });
-    await roomItem.click();
+    const roomId = (await roomItem.getAttribute('data-testid'))?.replace('room-item-', '') ?? '';
+    await clickRoomItemById(page, roomId);
 
     // Input dimensions
     const roomEditor = new RoomEditorPage(page);
@@ -76,9 +85,7 @@ test.describe('Core Workflow - End-to-End Tests', () => {
     await workPriceInput.fill('500');
 
     // Navigate to Summary via right sidebar button
-    const summaryBtn = page.locator('button:has-text("Общая смета")');
-    await expect(summaryBtn).toBeVisible({ timeout: 5000 });
-    await summaryBtn.click();
+    await clickInRightSidebar(page, 'Смета проекта');
 
     // Verify summary is shown
     const totalCost = page.getByTestId('summary-total-cost');
@@ -115,7 +122,7 @@ test.describe('Core Workflow - End-to-End Tests', () => {
     const roomEditor = new RoomEditorPage(page);
 
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Expand work and verify price
     const workItem = page.locator('[data-testid="work-item-test-work-1"]');

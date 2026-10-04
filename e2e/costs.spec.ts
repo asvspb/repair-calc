@@ -1,14 +1,13 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT_WITH_WORK } from './fixtures/testData';
+import { clickRoomItemById } from './helpers/roomHelpers';
 
 test.describe('Cost Calculation', () => {
   test.beforeEach(async ({ page }) => {
     await setupTestEnvironment(page, [TEST_PROJECT_WITH_WORK], TEST_PROJECT_WITH_WORK.id);
 
     // Navigate to the room
-    const roomItem = page.getByTestId('room-item-test-room-1');
-    await roomItem.scrollIntoViewIfNeeded();
-    await roomItem.click();
+    await clickRoomItemById(page, 'test-room-1');
   });
 
   test('should auto-calculate cost from floor area', async ({ page }) => {

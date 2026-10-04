@@ -1,4 +1,6 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
+import { clickRoomItemById, clickRoomItemByName } from './helpers/roomHelpers';
+import { clickSidebarByTestId } from './helpers/sidebarHelpers';
 import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Room Input Bug Fix', () => {
@@ -8,12 +10,10 @@ test.describe('Room Input Bug Fix', () => {
 
   test('should NOT copy room parameters when switching between rooms', async ({ page }) => {
     // Шаг 1: Создаем новую комнату
-    await page.getByTestId('add-room-btn').click();
+    await clickSidebarByTestId(page, 'add-room-btn');
 
     // Кликаем на новую комнату в боковом меню
-    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await expect(newRoomBtn).toBeVisible();
-    await newRoomBtn.click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Шаг 2: Вводим уникальные параметры для "Новой комнаты"
     const lengthInput = page.getByTestId('geom-length');
@@ -34,7 +34,7 @@ test.describe('Room Input Bug Fix', () => {
     await expect(heightInput).toHaveValue('3');
 
     // Шаг 3: Переключаемся на "Комната 1"
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Проверяем параметры первой комнаты (должны отличаться)
     // Дефолтные значения первой комнаты: 4 x 3 x 2.7
@@ -43,8 +43,7 @@ test.describe('Room Input Bug Fix', () => {
     await expect(page.getByTestId('geom-height')).toHaveValue('2.7');
 
     // Шаг 4: Возвращаемся к "Новой комнате"
-    const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn2.click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // КРИТИЧЕСКАЯ ПРОВЕРКА: параметры должны сохраниться!
     await expect(lengthInput).toHaveValue('7');
@@ -59,9 +58,8 @@ test.describe('Room Input Bug Fix', () => {
 
   test('should allow editing multiple rooms independently', async ({ page }) => {
     // Создаем новую комнату
-    await page.getByTestId('add-room-btn').click();
-    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn.click();
+    await clickSidebarByTestId(page, 'add-room-btn');
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Вводим параметры в новую комнату
     const lengthInput = page.getByTestId('geom-length');
@@ -69,7 +67,7 @@ test.describe('Room Input Bug Fix', () => {
     await page.getByTestId('room-header-title').click();
 
     // Переключаемся на Комната 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Изменяем параметры Комнаты 1
     const room1Length = page.getByTestId('geom-length');
@@ -77,14 +75,13 @@ test.describe('Room Input Bug Fix', () => {
     await page.getByTestId('room-header-title').click();
 
     // Возвращаемся к новой комнате
-    const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn2.click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Проверяем, что значение 10 сохранилось (не заменилось на 8)
     await expect(lengthInput).toHaveValue('10');
 
     // Возвращаемся к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Проверяем, что значение 8 сохранилось
     await expect(room1Length).toHaveValue('8');
@@ -92,7 +89,7 @@ test.describe('Room Input Bug Fix', () => {
 
   test('should not interfere with typing when external value changes', async ({ page }) => {
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     const lengthInput = page.getByTestId('geom-length');
 

@@ -2,6 +2,7 @@ import { test, expect, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
 import { RoomEditorPage } from './pages/RoomEditorPage';
 import { getRoomItemByName, clickRoomItemByName } from './helpers/roomHelpers';
+import { clickSidebarByTestId } from './helpers/sidebarHelpers';
 
 test.describe('Room Management', () => {
   test.beforeEach(async ({ page }) => {
@@ -26,10 +27,10 @@ test.describe('Room Management', () => {
     const roomEditor = new RoomEditorPage(page);
 
     // Add room
-    await page.getByTestId('add-room-btn').click();
+    await clickSidebarByTestId(page, 'add-room-btn');
 
     // Select the new room via the sidebar (it appears as "Новая комната")
-    await getRoomItemByName(page, 'Новая комната').click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Edit new room
     await roomEditor.setDimensions(7, 5, 3);
@@ -42,7 +43,7 @@ test.describe('Room Management', () => {
     await expect(room1Length).toHaveValue('4');
 
     // Switch back to new room
-    await getRoomItemByName(page, 'Новая комната').click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Verify new room data persisted
     const newRoomLength = page.getByTestId('geom-length');
@@ -66,19 +67,19 @@ test.describe('Room Management', () => {
     await expect(getRoomItemByName(page, 'Гостиная')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should delete room with confirmation', async ({ page }) => {
+  test('should delete room via header button', async ({ page }) => {
     // Add a second room
-    await page.getByTestId('add-room-btn').click();
+    await clickSidebarByTestId(page, 'add-room-btn');
 
     // Select the new room
-    await getRoomItemByName(page, 'Новая комната').click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Delete room
     const roomEditor = new RoomEditorPage(page);
     await roomEditor.deleteRoom();
   });
 
-  test('should handle deleting last room correctly', async ({ page }) => {
+  test('should delete the last room and show empty state', async ({ page }) => {
     // Navigate to room first
     await clickRoomItemByName(page, 'Комната 1');
 

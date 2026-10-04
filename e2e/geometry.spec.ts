@@ -1,5 +1,6 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
+import { clickRoomItemById } from './helpers/roomHelpers';
 import { RoomEditorPage } from './pages/RoomEditorPage';
 
 test.describe('Geometry Modes', () => {
@@ -7,7 +8,7 @@ test.describe('Geometry Modes', () => {
     await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
 
     // Navigate to the room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
   });
 
   test('simple mode: input L×W×H and verify areas', async ({ page }) => {
@@ -83,8 +84,8 @@ test.describe('Geometry Modes', () => {
     const openingBlock = page.locator('[data-testid^="opening-item-"]').last();
     const numberInputs = openingBlock.locator('input[type="number"]');
     await expect(numberInputs.first()).toBeVisible({ timeout: 3000 });
-    await numberInputs.first().fill('1.5');  // width
-    await numberInputs.last().fill('1.5');   // height
+    await numberInputs.first().fill('1.5'); // width
+    await numberInputs.last().fill('1.5'); // height
 
     // Blur to save
     await page.getByTestId('room-header-title').click();
@@ -103,8 +104,8 @@ test.describe('Geometry Modes', () => {
     // Fill door dimensions
     const doorBlock = page.locator('[data-testid^="opening-item-"]').last();
     const doorInputs = doorBlock.locator('input[type="number"]');
-    await doorInputs.first().fill('0.9');  // width
-    await doorInputs.last().fill('2.1');   // height
+    await doorInputs.first().fill('0.9'); // width
+    await doorInputs.last().fill('2.1'); // height
 
     // Blur to save
     await page.getByTestId('room-header-title').click();

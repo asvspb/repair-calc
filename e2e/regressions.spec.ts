@@ -1,4 +1,6 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
+import { clickRoomItemById, clickRoomItemByName } from './helpers/roomHelpers';
+import { clickSidebarByTestId, openDataManagement } from './helpers/sidebarHelpers';
 import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Regression Tests', () => {
@@ -8,12 +10,11 @@ test.describe('Regression Tests', () => {
 
   test('should not copy room parameters when switching rooms (known bug fix)', async ({ page }) => {
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Add new room
-    await page.getByTestId('add-room-btn').click();
-    const newRoomBtn = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn.click();
+    await clickSidebarByTestId(page, 'add-room-btn');
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Enter unique dimensions
     const lengthInput = page.getByTestId('geom-length');
@@ -33,14 +34,13 @@ test.describe('Regression Tests', () => {
     await expect(heightInput).toHaveValue('3');
 
     // Switch to room 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Room 1 should have different values
     await expect(page.getByTestId('geom-length')).toHaveValue('4');
 
     // Switch back to new room
-    const newRoomBtn2 = page.locator('[data-testid^="room-item-"]').filter({ hasText: 'Новая комната' });
-    await newRoomBtn2.click();
+    await clickRoomItemByName(page, 'Новая комната');
 
     // Values should still be 7, 5, 3 (not copied from room 1)
     await expect(lengthInput).toHaveValue('7');
@@ -50,7 +50,7 @@ test.describe('Regression Tests', () => {
 
   test('should not lose focus when typing values', async ({ page }) => {
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     const lengthInput = page.getByTestId('geom-length');
 
@@ -70,7 +70,7 @@ test.describe('Regression Tests', () => {
 
   test('should correctly recalculate area with openings', async ({ page }) => {
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Helper to extract numeric wall area from metric element
     const getWallAreaValue = async () => {
@@ -93,8 +93,8 @@ test.describe('Regression Tests', () => {
     const openingBlock = page.locator('[data-testid^="opening-item-"]').last();
     const numberInputs = openingBlock.locator('input[type="number"]');
     await expect(numberInputs.first()).toBeVisible({ timeout: 3000 });
-    await numberInputs.first().fill('2');      // width
-    await numberInputs.last().fill('1.5');     // height
+    await numberInputs.first().fill('2'); // width
+    await numberInputs.last().fill('1.5'); // height
 
     // Blur to save
     await page.getByTestId('room-header-title').click();
@@ -108,21 +108,18 @@ test.describe('Regression Tests', () => {
 
   test('should handle CSV export with extended/advanced modes', async ({ page }) => {
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Switch to extended mode
     await page.getByTestId('geom-mode-extended').click();
 
     // Export as CSV via settings
-    await page.getByTestId('settings-btn').click();
+    await openDataManagement(page);
 
     const exportCsvBtn = page.getByTestId('export-csv-btn');
     await expect(exportCsvBtn).toBeVisible({ timeout: 5000 });
 
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      exportCsvBtn.click(),
-    ]);
+    const [download] = await Promise.all([page.waitForEvent('download'), exportCsvBtn.click()]);
 
     expect(download).toBeTruthy();
     const fileName = download.suggestedFilename();
@@ -131,14 +128,14 @@ test.describe('Regression Tests', () => {
 
   test('should not duplicate objects in display', async ({ page }) => {
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Create multiple objects
-    await page.getByTestId('add-object-btn').click();
+    await clickSidebarByTestId(page, 'add-object-btn');
     await page.getByTestId('create-object-modal').getByLabel('Название объекта *').fill('Объект 1');
     await page.getByRole('button', { name: 'Создать' }).click();
 
-    await page.getByTestId('add-object-btn').click();
+    await clickSidebarByTestId(page, 'add-object-btn');
     await page.getByTestId('create-object-modal').getByLabel('Название объекта *').fill('Объект 2');
     await page.getByRole('button', { name: 'Создать' }).click();
 

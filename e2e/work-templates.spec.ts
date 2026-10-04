@@ -1,4 +1,5 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
+import { clickRoomItemById } from './helpers/roomHelpers';
 import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Work Templates Functionality', () => {
@@ -6,7 +7,7 @@ test.describe('Work Templates Functionality', () => {
     await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
 
     // Navigate to room
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
   });
 
   test('should save work as template', async ({ page }) => {
@@ -49,7 +50,7 @@ test.describe('Work Templates Functionality', () => {
     await expect(page.locator('text=Шаблон сохранён')).toBeVisible();
 
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Открываем модальное окно шаблонов
     const templatesBtn = page.getByTestId('templates-btn');
@@ -82,7 +83,7 @@ test.describe('Work Templates Functionality', () => {
     await expect(page.locator('text=Шаблон сохранён')).toBeVisible();
 
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Открываем модальное окно шаблонов
     const templatesBtn = page.getByTestId('templates-btn');
@@ -113,7 +114,7 @@ test.describe('Work Templates Functionality', () => {
     await expect(page.locator('text=Шаблон сохранён')).toBeVisible();
 
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Открываем модальное окно шаблонов
     const templatesBtn = page.getByTestId('templates-btn');
@@ -122,9 +123,7 @@ test.describe('Work Templates Functionality', () => {
 
     // Проверяем наличие фильтра по категории — actual labels from CATEGORY_LABELS:
     // 'Пол/Потолок', 'Стены', 'Периметр', 'Прочее', 'Все'
-    const categoryFilter = page.locator(
-      'button:has-text("Пол/Потолок")'
-    ).first();
+    const categoryFilter = page.locator('button:has-text("Пол/Потолок")').first();
 
     await expect(categoryFilter).toBeVisible({ timeout: 5000 });
     await categoryFilter.click();
@@ -150,7 +149,7 @@ test.describe('Work Templates Functionality', () => {
     await expect(page.locator('text=Шаблон сохранён')).toBeVisible();
 
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Открываем модальное окно шаблонов
     const templatesBtn = page.getByTestId('templates-btn');
@@ -218,7 +217,7 @@ test.describe('Work Templates Functionality', () => {
     await expect(page.locator('text=Шаблон сохранён')).toBeVisible();
 
     // Переходим к Комнате 1
-    await page.getByTestId('room-item-test-room-1').click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Открываем модальное окно шаблонов
     const templatesBtn = page.getByTestId('templates-btn');
