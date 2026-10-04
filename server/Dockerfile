@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Multi-stage build для backend
 
 # Stage 1: Сборка
@@ -41,8 +42,13 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 
 # Устанавливаем зависимости включая tsx для миграций, и необходимые инструменты для сборки
-RUN apk add --no-cache python3 make g++ \
-    && pnpm install --frozen-lockfile --prod \
+RUN apk add --no-cache python3 make g++
+
+# Кэшируем браузеры playwright (postinstall playwright качает их в /root/.cache/ms-playwright,
+# ~150 МБ на каждую сборку без кэша). BuildKit cache-mount переживает `docker compose build`,
+# поэтому вторая сборка пропускает загрузку браузеров.
+RUN --mount=type=cache,target=/root/.cache/ms-playwright \
+    pnpm install --frozen-lockfile --prod \
     && pnpm add tsx \
     && apk del python3 make g++
 

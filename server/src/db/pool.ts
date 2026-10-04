@@ -2,8 +2,8 @@ import type { Knex } from 'knex';
 import db from './db.js';
 import { winstonLogger } from '../middleware/logger.js';
 
-// NOTE: `any` index signature matches the legacy RowDataPacket interface.
-// Required to avoid cascading type errors in legacy repo code.
+// NOTE: `any` index signature kept intentionally to avoid cascading type
+// errors in legacy repo code until typed repositories replace it.
 export interface RowDataPacket {
   [column: string]: any;
 }
