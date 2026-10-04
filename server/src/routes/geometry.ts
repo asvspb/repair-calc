@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import {
-  checkRoomAccess,
   createOpening,
   listOpenings,
   updateOpening,

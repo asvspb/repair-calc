@@ -16,7 +16,7 @@ import {
 } from '../../db/repositories/updateJob.repo.js';
 import type { SourceType } from '../../db/repositories/priceCatalog.repo.js';
 import { PriceHistoryRepository } from '../../db/repositories/priceHistory.repo.js';
-import type { PriceParser, PriceRequest, PriceResult } from './parsers/types.js';
+import type { PriceParser, PriceRequest } from './parsers/types.js';
 import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
 import type { PrioritizedItem } from './utils/priority.js';
