@@ -543,3 +543,46 @@ violations (255 modules, 954 dependencies).
 засташен (`git stash push -m "pre-017-fsd-r1: чужой .gitignore (.kilo), вне write-set"` на
 docs/orchestrator-rework-016) — в коммиты не брал. Статус секции TASK-BATCH-017 в
 TASK-BATCH-016-018.md не трогал — файл вне write-set.
+
+## 2026-10-04 — TASK-BATCH-018-sync-v2-spec (R2: спека dirty-flag + LWW)
+
+**Ветка:** `docs/sync-v2-spec-018` (от `refactor/fsd-r1-017` @ `f4e11e8`). Роль: analyst.
+Write-set: `devAI/spec/SPEC-SYNC-V2.md`, `devAI/developer_log.md`. Кода — ноль строк.
+
+**Сделано:**
+
+1. `docs(sync-v2)`: `devAI/spec/SPEC-SYNC-V2.md` — спецификация SYNC-V2 уровня «можно
+   нарезать batch'и», идёт владельцу на утверждение ДО имплементации (ROADMAP R2).
+   Разделы: текущий sync (факты из кода), модель dirty-флагов + очередь/flusher, LWW,
+   миграция/feature-flag/откат, 4 batch'а (а-г) с write-set и DoD, риски/вопросы.
+
+**Ключевые факты, найденные при сверке с кодом (все со ссылками на строки в спеке):**
+
+- Pull всегда полный: `GET /api/sync/pull` без `since` — `server/src/routes/sync.ts:183-222`;
+  вызывается на каждом старте (`src/store/projectInitialize.ts:55`) и внутри
+  `saveAllProjects` (`src/api/storage/projectApi.ts:50`).
+- Дифф в `scheduleSave` мёртв: сравнивает `get().projects` с самим собой
+  (`src/store/createSyncSlice.ts:57,62` — снапшот `pendingSave` в диффе не участвует),
+  поэтому фактически всегда идёт полная отправка списка.
+- Клиент **никогда не вызывает** `POST /api/sync/push` (grep по `src/` — 0 вхождений),
+  хотя серверный push с LWW-проверкой версий существует (`sync.ts:32-181`,
+  схема `server/src/middleware/validation.ts:253-262`); в схеме нет entity `object`,
+  а `entityId` требует UUID при локальных `local-*` ID (`shared/utils/idMapper.ts:249`).
+- Для LWW сейчас нет поля: серверные `updated_at` отбрасываются маппингом
+  (`src/api/projects.ts:83-142`), в клиентской модели их нет (`shared/types.ts:126-170`);
+  Dexie-индекс `projects: 'id, updatedAt'` (`src/api/storage/dexieDb.ts:19`) ссылается на
+  несуществующее поле — мёртвый индекс.
+- Серверный rate-limiter отключён полностью (`server/src/middleware/rateLimiter.ts:1-10`);
+  защита от 429 — только клиентская очередь (`src/api/storage/apiClient.ts:154-164`).
+
+**Дизайн-решения спеки (на утверждение):** авторитет LWW — серверное `updated_at`,
+клиентская метка только tie-break; tie-break по `id`; dirty-гранулярность project/object/room
+(works — часть room-JSON); флаг `VITE_SYNC_V2` (env, прецедент `VITE_E2E_TEST_MODE`);
+откат = снятие флага, серверные правки аддитивны. Открытые вопросы владельцу — 9 шт. (§6),
+среди них: семантика удаления между устройствами (tombstones), гость→логин через
+`saveAllProjects` или флашер, мульти-вкладка.
+
+**Gates (запущены в этой сессии, на итоговом дереве):** `pnpm test` — exit 0 (итог: 75 файлов
+passed | 1 skipped / 1043 passed | 4 skipped — те же pre-existing skip'ы, что и в 017);
+`pnpm run lint` — exit 0; `pnpm run lint:deps` — no dependency violations. INDEX.md не трогал —
+файл вне write-set ТЗ (эксклюзивно спека + лог).
