@@ -272,3 +272,10 @@
 - **Gates**: `pnpm test` — ⚠️ падает, но НЕ из-за зависимостей: все 15 упавших файлов и 4 теста лежат в постороннем untracked `.kilo/worktrees/ink-fig/` (stale worktree без node_modules, подхватывается дефолтным include vitest; правка vitest.config.ts вне write-set ТЗ). Базлайн на чистом main (git stash) дал идентичный счёт — предсуществующая контаминация среды. Собственные тесты проекта зелёные: root `pnpm vitest run --exclude '**/.kilo/**'` — 68 файлов / 1004 passed; server `pnpm vitest run` — 13 файлов / 150 passed. Рекомендация владельцу: исключить `**/.kilo/**` в vitest.config.ts (root+server) или убрать .kilo из репо-директории.
 - `pnpm run lint` — exit 0 (0 ошибок, 36 warning — ранее существовавшие); `pnpm run lint:deps` — «no dependency violations found (228 modules)», exit 0.
 - **docs/TODO.md**: P1-3 закрыт ✅. **INDEX.md**: строка техдолга про npm audit residual обновлена текущим статусом аудита.
+
+## 2026-10-04 — coder batch-007 (доп.): gate `pnpm test` починен (fix/audit-007)
+
+- Причина падения (подтверждена ранее базлайном на чистом main): посторонний git-worktree `.kilo/worktrees/ink-fig` (detached HEAD 50a2c0c) без своего node_modules — vitest подхватывал его тесты дефолтным include (15 упавших файлов / 4 теста, все — Failed to resolve import uuid/supertest/knex).
+- Фикс вне write-set не потребовался: worktree **перемещён** из директории репо командой `git worktree move .kilo/worktrees/ink-fig /home/asv-spb/Dev/my-coding/repair-calc-parked/ink-fig` (по прецеденту «parked» из лога; в /tmp нельзя — Invalid cross-device link). Содержимое сохранено, ни один файл репо не изменён (`.kilo` был untracked).
+- Проверка: `pnpm test` — зелёный: root 68 файлов / 1004 passed, server 13 файлов / 150 passed (skip-и ранее существовавшие). `git status` чистый, новых коммитов кода нет.
+- Рекомендация владельцу остаётся: чтобы vitest не подхватывал будущие `.kilo` worktree, добавить `**/.kilo/**` в exclude vitest.config.ts (root+server) — отдельное решение.
