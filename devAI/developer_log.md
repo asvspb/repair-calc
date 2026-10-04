@@ -383,3 +383,32 @@
 **Примечания к ТЗ:** пункт «require() → ESM-импорт» не потребовался — grep `require(` в src/api/storage → 0 вхождений (модуль уже ESM; подтверждено ранее, INDEX.md H3). Smoke-тесты отдельно не писались — ТЗ требует их только «если тестов на провайдер нет», а `tests/api/apiStorageProvider.test.ts` (6 кейсов) существовал и прогнан до/после.
 
 **docs/TODO.md**: P3-1 строка apiStorageProvider закрыта ✅ (с размерами и пруфами). **INDEX.md**: дерево storage/ дополнено 4 новыми файлами, строка таблицы ключевых файлов актуализирована.
+
+---
+
+## 2026-10-04 — batch-013 split-ui (refactor/split-ui-013)
+
+**ТЗ:** devAI/spec/TASK-BATCH-012-015-splits.md, секция TASK-BATCH-013-split-ui (P3-1). Ветка `refactor/split-ui-013` создана от `refactor/split-storage-012`.
+
+**Сделано:** два крупных UI-файла распилены на модули ≤400 строк, публичное поведение UI не изменено:
+
+1. `src/components/BackupManager.tsx` (898) → тонкий контейнер (247) + `src/components/backup/`:
+   - `ExportPanel.tsx` (70) — кнопки экспорта JSON/CSV (утилита downloadFile локальная);
+   - `ImportPanel.tsx` (190) — file input + диалог импорта с названием проекта;
+   - `SyncPanel.tsx` (380) — серверные действия (сохранить как / открыть / сохранить все / загрузить все);
+   - `LoadProjectDialog.tsx` (107) — диалог «Открыть проект с сервера»;
+   - `types.ts` (35), `helpers.ts` (8).
+     Публичный компонент `BackupManager` экспортируется из прежнего пути; импортёров у него нет (grep по src/tests/e2e — 0 внешних ссылок), но путь сохранён по ТЗ. Легаси-ветка confirm-статуса (handleConfirmImport с data) сохранена как есть.
+
+2. `src/components/projects/ProjectsModal.tsx` (727) → контейнер (207) + `useProjectsModal.ts` (361, состояние и все обработчики) + `useProjectExports.ts` (67) + `ProjectListItem.tsx` (147, включая getProjectStats) + `ServerSyncSection.tsx` (53) + `ImportStatusBanner.tsx` (48) + `modalTypes.ts` (8). `ArchivePanel` не тронут (по ТЗ).
+
+**Новые компонентные тесты** (по образцу ArchivePanel.test.tsx): `tests/components/backup/{ExportPanel,ImportPanel,SyncPanel,LoadProjectDialog}.test.tsx`, `tests/components/projects/{ProjectListItem,ServerSyncSection,ImportStatusBanner}.test.tsx` — 93 кейса зелёные (FileReader в тестах ImportPanel замокан синхронно).
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 1043 passed / 4 skipped (root) + 150 passed / 2 skipped (server), без регрессий.
+- `pnpm run lint` — 0 errors / 32 warnings (все — pre-existing в server/tests, совпадают с batch-011/012; в новых файлах чисто).
+- `pnpm run lint:deps` — «no dependency violations found (244 modules, 906 dependencies cruised)».
+- `pnpm exec tsc --noEmit -p tsconfig.json` — exit 0.
+
+**docs/TODO.md**: обе строки P3-1 (BackupManager, ProjectsModal) закрыты ✅ с размерами. **INDEX.md**: дерево components/ дополнено `backup/`, projects/ актуализирован (11 файлов), BackupManager помечен как тонкий контейнер.
