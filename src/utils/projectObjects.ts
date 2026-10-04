@@ -1,3 +1,4 @@
+import { generateId } from '../domain/factories/projectFactory';
 /**
  * Helper functions for Object-based project structure
  * Provides migration and utility functions for new data model
@@ -18,7 +19,7 @@ export function migrateProjectToObjects(project: ProjectData): ProjectData {
   // Если есть rooms — создаём первый объект
   if (project.rooms && project.rooms.length > 0) {
     const firstObject: ObjectData = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       projectId: project.id,
       name: project.name,
       city: project.city,
@@ -104,7 +105,7 @@ export function addRoomToProject(project: ProjectData, room: RoomData): ProjectD
     // Create first object with LOCAL ID (will be replaced on server sync)
     // Using 'local-' prefix to distinguish from server UUIDs
     const firstObject: ObjectData = {
-      id: `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateId('local-obj-'),
       projectId: project.id,
       name: project.name,
       city: project.city,
@@ -211,7 +212,7 @@ export function createNewObject(
   data: { name: string; city?: string },
 ): ObjectData {
   return {
-    id: `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: generateId('local-obj-'),
     projectId,
     name: data.name,
     city: data.city,
@@ -252,12 +253,12 @@ export function copyObjectInProject(
   }
 
   // Создаём копию с новыми ID
-  const newObjectId = `local-obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const newObjectId = generateId('local-obj-');
   const timestamp = Date.now();
 
   const newRooms = sourceObject.rooms.map((room, index) => ({
     ...room,
-    id: `local-room-${timestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+    id: generateId(`local-room-${timestamp}-${index}-`),
   }));
 
   const newObject: ObjectData = {

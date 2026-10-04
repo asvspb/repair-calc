@@ -1,3 +1,4 @@
+import { generateId } from '../factories/projectFactory';
 /**
  * Helper functions for room data updates.
  * Reduces duplication in RoomEditor by providing generic update functions
@@ -236,7 +237,7 @@ export function updateDoor(
 
 export function createSubSection(): RoomSubSection {
   return {
-    id: Math.random().toString(36).substring(2, 11),
+    id: generateId(),
     name: 'Секция',
     shape: 'rectangle',
     length: 0,
@@ -407,7 +408,7 @@ export function updateSubSectionDoor(
 
 export function createSegment(): RoomSegment {
   return {
-    id: Math.random().toString(36).substring(2, 11),
+    id: generateId(),
     name: 'Ниша',
     length: 1,
     width: 0.5,
@@ -487,7 +488,7 @@ export function updateSegment(
 
 export function createObstacle(): Obstacle {
   return {
-    id: Math.random().toString(36).substring(2, 11),
+    id: generateId(),
     name: 'Колонна',
     type: 'column',
     area: 0.25,
@@ -573,7 +574,7 @@ export function updateObstacle(
 
 export function createWallSection(): WallSection {
   return {
-    id: Math.random().toString(36).substring(2, 11),
+    id: generateId(),
     name: 'Участок с перепадом',
     length: 1,
     height: 3,

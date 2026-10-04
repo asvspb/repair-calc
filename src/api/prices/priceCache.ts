@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../../utils/storageConstants';
 /**
  * Кэширование результатов поиска цен
  * Хранит результаты в localStorage с TTL 7 дней
@@ -5,7 +6,7 @@
 
 import type { PriceCache, PriceCacheEntry, PriceSearchResult } from './types';
 
-const PRICE_CACHE_KEY = 'repair-calc-price-cache';
+const PRICE_CACHE_KEY = STORAGE_KEYS.PRICE_CACHE;
 const CACHE_TTL_DAYS = 7;
 const MAX_CACHE_SIZE = 100;
 
@@ -60,7 +61,7 @@ function saveCache(cache: PriceCache): void {
  */
 function cleanExpired(cache: PriceCache): PriceCache {
   const now = new Date();
-  return cache.filter((entry) => new Date(entry.expiresAt) > now);
+  return cache.filter(entry => new Date(entry.expiresAt) > now);
 }
 
 /**
@@ -69,13 +70,13 @@ function cleanExpired(cache: PriceCache): PriceCache {
 export function getCachedPrice(key: string): PriceSearchResult | null {
   const cache = loadCache();
   const cleaned = cleanExpired(cache);
-  
+
   // Если удалили просроченные — сохраняем
   if (cleaned.length !== cache.length) {
     saveCache(cleaned);
   }
-  
-  const entry = cleaned.find((e) => e.key === key);
+
+  const entry = cleaned.find(e => e.key === key);
   return entry?.result ?? null;
 }
 
@@ -85,24 +86,24 @@ export function getCachedPrice(key: string): PriceSearchResult | null {
 export function setCachedPrice(key: string, result: PriceSearchResult): void {
   const cache = loadCache();
   const cleaned = cleanExpired(cache);
-  
+
   // Удаляем старую запись с таким же ключом
-  const filtered = cleaned.filter((e) => e.key !== key);
-  
+  const filtered = cleaned.filter(e => e.key !== key);
+
   // Добавляем новую запись
   const now = new Date();
   const expiresAt = new Date(now.getTime() + CACHE_TTL_DAYS * 24 * 60 * 60 * 1000);
-  
+
   const newEntry: PriceCacheEntry = {
     key,
     result,
     cachedAt: now.toISOString(),
     expiresAt: expiresAt.toISOString(),
   };
-  
+
   // Ограничиваем размер кэша (FIFO)
   const updated = [...filtered, newEntry].slice(-MAX_CACHE_SIZE);
-  
+
   saveCache(updated);
 }
 
@@ -125,11 +126,11 @@ export function getCacheStats(): {
   const cache = loadCache();
   const cleaned = cleanExpired(cache);
   const now = new Date();
-  
-  const validEntries = cleaned.filter((e) => new Date(e.expiresAt) > now);
-  
-  const dates = cleaned.map((e) => e.cachedAt).sort();
-  
+
+  const validEntries = cleaned.filter(e => new Date(e.expiresAt) > now);
+
+  const dates = cleaned.map(e => e.cachedAt).sort();
+
   return {
     totalEntries: cache.length,
     validEntries: validEntries.length,

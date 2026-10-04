@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './storageConstants';
 /**
  * IdMapper — хранилище маппингов локальных ID на серверные UUID
  * Используется для предотвращения дублирования проектов при синхронизации
@@ -5,8 +6,8 @@
 
 import { logError, logWarning, logDebug } from './logger';
 
-const MAPPING_KEY = 'repair-calc-id-mappings';
-const DEVICE_ID_KEY = 'device-id';
+const MAPPING_KEY = STORAGE_KEYS.ID_MAPPINGS;
+const DEVICE_ID_KEY = STORAGE_KEYS.DEVICE_ID;
 
 export interface IdMapping {
   localId: string;

@@ -1,3 +1,4 @@
+import { generateId } from '../../domain/factories/projectFactory';
 /**
  * WorkCatalogPicker - модальное окно для выбора работы из каталога типовых работ
  * Позволяет выбрать работу из предопределённого каталога с автоматическим расчётом материалов
@@ -99,7 +100,7 @@ export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMe
     }
 
     return {
-      id: `mat-${Math.random().toString(36).substring(2, 9)}`,
+      id: generateId('mat-'),
       name: mat.name,
       quantity: Math.max(quantity, 0.01),
       unit: mat.unit,
@@ -109,7 +110,7 @@ export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMe
 
   // Конвертируем инструменты
   const tools: Tool[] = (template.tools || []).filter(Boolean).map(tool => ({
-    id: `tool-${Math.random().toString(36).substring(2, 9)}`,
+    id: generateId('tool-'),
     name: tool.name,
     quantity: 1,
     price: tool.defaultPrice || 0,
@@ -118,7 +119,7 @@ export function catalogToWorkData(template: WorkTemplateCatalog, metrics: RoomMe
   }));
 
   return {
-    id: `work-${Math.random().toString(36).substring(2, 9)}`,
+    id: generateId('work-'),
     name: template.name,
     unit: template.unit,
     enabled: true,

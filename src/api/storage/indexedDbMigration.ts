@@ -4,7 +4,7 @@ import { logError, logWarning, logDebug } from '../../utils/logger';
 import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
 
-const MIGRATION_FLAG = 'dexie_migrated';
+const MIGRATION_FLAG = STORAGE_KEYS.DEXIE_MIGRATED;
 const BACKUP_PREFIX = 'dexie_backup_';
 
 export async function runMigration(): Promise<void> {

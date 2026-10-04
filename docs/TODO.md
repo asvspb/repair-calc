@@ -83,9 +83,11 @@
 
 ### P3-3. Типизация
 
-- [ ] 39 `as any` warnings (`server/src/routes/update/ab-test.routes.ts`, `jobs.routes.ts`, `import.routes.ts`, `priceHistory.repo.ts`) → заменить на типы
-- [ ] Единая утилита ID: `utils/factories.ts` (`generateId(prefix)`), убрать дублирование
-- [ ] Единые константы localStorage keys (`STORAGE_KEYS`)
+- [x] Целевые файлы `server/src/routes/update/*.ts` и `priceHistory.repo.ts`: 0 `no-explicit-any` (было 4: import.routes ×1, jobs.routes ×1, priceHistory.repo ×2 — закрыты типизированными кастами/generic-аккумулятором/`Record<string, unknown>`+narrowing, 2026-10-04, ветка `fix/typing-010`)
+- [x] Единая утилита ID: `generateId(prefix)` в `src/domain/factories/projectFactory.ts` (файл `src/utils/factories.ts` не существует — канон у factory-модуля); дубли в `WorkTemplateContext`, `useWorkTemplates`, `useGeometryState`, `costs.ts`, `roomHelpers.ts`, `useRoomWorksState.ts`, `WorkCatalogPicker.tsx`, `projectObjects.ts` заменены. Остались legacy-генераторы в `src/utils/idMapper.ts:80,248` (`device-`/`local-` prefixed, generateId() из idMapper не импортируется нигде) — кандидат на удаление в отдельной dead-code задаче
+- [x] Единые константы localStorage keys (`STORAGE_KEYS` в `src/utils/storageConstants.ts`): добавлены TOKEN/REFRESH_TOKEN/E2E_TEST_MODE/ID_MAPPINGS/DEVICE_ID/PENDING_SAVE/MIGRATION_VERSION/PRICE_CACHE/DEXIE_MIGRATED — **значения ключей не менялись**; все литеральные вызовы `localStorage.*` в src/ переведены на константы
+- [ ] Остаток: 22 `no-explicit-any` вне целевых файлов (pool.ts, abTest/object/priceCatalog/project/room/updateJob.repo.ts, rateLimiter.ts, geometry.test.ts) — вне Write-скоупа batch-010; knx-репозитории требуют типизации строк Knex
+- [ ] lint-предупреждения `no-unused-vars` в server/tests/ (10 шт.) — см. P2-4 (batch-011)
 
 ### P3-4. Тестирование
 

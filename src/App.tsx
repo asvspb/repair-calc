@@ -14,6 +14,7 @@ import { ProjectsModal } from './components/projects';
 import { DataManagementModal } from './components/projects/DataManagementModal';
 import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';
 import { useModalsState } from './hooks/ui/useModalsState';
+import { STORAGE_KEYS } from './utils/storageConstants';
 
 import { createNewRoom } from './domain/factories/projectFactory';
 import { cloneProject } from './domain/factories/projectFactory';
@@ -283,7 +284,8 @@ function AppWithAuth() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isTestMode =
     import.meta.env.VITE_E2E_TEST_MODE === 'true' ||
-    (import.meta.env.MODE !== 'production' && localStorage.getItem('e2e-test-mode') === 'true');
+    (import.meta.env.MODE !== 'production' &&
+      localStorage.getItem(STORAGE_KEYS.E2E_TEST_MODE) === 'true');
 
   useEffect(() => {
     if (!isLoading) {

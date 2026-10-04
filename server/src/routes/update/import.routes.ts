@@ -103,18 +103,38 @@ router.post(
 
         const items = Array.isArray(json) ? json : json.items || json.data || [];
 
-        importedItems = items.map((item: any) => ({
-          name: item.name || item.title || item.название,
-          category: (item.category || item.type || 'material') as PriceCategory,
-          unit: item.unit || 'м²',
-          city: item.city || defaultCity,
-          price_min: parseFloat(item.price_min || item.min || item.цена_мин) || undefined,
-          price_avg: parseFloat(item.price_avg || item.avg || item.price || item.цена) || undefined,
-          price_max: parseFloat(item.price_max || item.max || item.цена_макс) || undefined,
-          currency: item.currency || 'RUB',
+        // Формат входного JSON произвольный: допускаем EN/RU варианты заголовков.
+        const itemsRaw = items as Array<Record<string, unknown>>;
+
+        const firstStr = (...values: unknown[]): string | undefined => {
+          for (const v of values) {
+            if (typeof v === 'string' && v.trim() !== '') return v;
+          }
+          return undefined;
+        };
+        const numFrom = (...values: unknown[]): number | undefined => {
+          for (const v of values) {
+            if (typeof v === 'number' && Number.isFinite(v)) return v;
+            if (typeof v === 'string' && v.trim() !== '') {
+              const parsed = parseFloat(v);
+              if (!Number.isNaN(parsed)) return parsed;
+            }
+          }
+          return undefined;
+        };
+
+        importedItems = itemsRaw.map(item => ({
+          name: firstStr(item['name'], item['title'], item['название']) || '',
+          category: (firstStr(item['category'], item['type']) || 'material') as PriceCategory,
+          unit: firstStr(item['unit']) || 'м²',
+          city: firstStr(item['city']) || defaultCity,
+          price_min: numFrom(item['price_min'], item['min'], item['цена_мин']),
+          price_avg: numFrom(item['price_avg'], item['avg'], item['price'], item['цена']),
+          price_max: numFrom(item['price_max'], item['max'], item['цена_макс']),
+          currency: firstStr(item['currency']) || 'RUB',
           source_type: 'manual' as SourceType,
-          confidence_score: parseFloat(item.confidence_score || item.confidence) || 1,
-          description: item.description || '',
+          confidence_score: numFrom(item['confidence_score'], item['confidence']) || 1,
+          description: firstStr(item['description']) || '',
         }));
       } else if (originalName.endsWith('.csv')) {
         const content = file.buffer.toString('utf-8');

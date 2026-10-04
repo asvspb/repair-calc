@@ -340,7 +340,14 @@ router.get('/health', async (req: Request, res: Response, next: NextFunction) =>
         };
         return acc;
       },
-      {} as Record<string, any>,
+      {} as Record<
+        string,
+        {
+          available: boolean;
+          circuitBreakerState: 'closed' | 'open' | 'half-open';
+          failures: number;
+        }
+      >,
     );
 
     res.json({

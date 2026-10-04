@@ -13,20 +13,26 @@ import type {
 } from '@shared/types';
 import { logUserAction } from '../../utils/logger';
 
-export function generateObjectId(): string {
+/**
+ * Единая точка генерации ID во фронтенде.
+ * Возвращает UUID (crypto.randomUUID); префикс (например 'mat-', 'local-') — опционален.
+ */
+export function generateId(prefix?: string): string {
   if (typeof crypto === 'undefined' || !crypto.randomUUID) {
     throw new Error('crypto.randomUUID is not supported in this environment');
   }
-  return crypto.randomUUID();
+  const uuid = crypto.randomUUID();
+  return prefix ? `${prefix}${uuid}` : uuid;
+}
+
+export function generateObjectId(): string {
+  return generateId();
 }
 
 export function generateProjectId(isAuthenticated: boolean): string {
-  if (typeof crypto === 'undefined' || !crypto.randomUUID) {
-    throw new Error('crypto.randomUUID is not supported in this environment');
-  }
-  // Server expects UUIDs, local can also just be a UUID (we don't need the local- prefix anymore since crypto.randomUUID is universally unique and standard).
-  // But let's keep 'local-' prefix if it's not authenticated so the ID mapper knows it's a local project.
-  return isAuthenticated ? crypto.randomUUID() : `local-${crypto.randomUUID()}`;
+  // Server expects UUIDs; локальным проектам сохраняем префикс 'local-',
+  // чтобы ID mapper отличал их от серверных.
+  return isAuthenticated ? generateId() : generateId('local-');
 }
 
 export function createProject(
@@ -148,7 +154,7 @@ export function reorderWorksInRoom(room: RoomData, works: WorkData[]): RoomData 
 }
 
 export const createNewProject = (): ProjectData => ({
-  id: crypto.randomUUID(),
+  id: generateId(),
   name: 'Новый объект',
   city: 'Москва',
   objects: [],
@@ -156,7 +162,7 @@ export const createNewProject = (): ProjectData => ({
 });
 
 export const createNewRoom = (): RoomData => ({
-  id: crypto.randomUUID(),
+  id: generateId(),
   name: 'Новая комната',
   geometryMode: 'simple',
   length: 0,
@@ -186,7 +192,7 @@ export const createNewRoom = (): RoomData => ({
 });
 
 export const createNewMaterial = (unit: string): Material => ({
-  id: crypto.randomUUID(),
+  id: generateId(),
   name: '',
   quantity: 1,
   unit: unit,
@@ -194,7 +200,7 @@ export const createNewMaterial = (unit: string): Material => ({
 });
 
 export const createNewTool = (): Tool => ({
-  id: crypto.randomUUID(),
+  id: generateId(),
   name: '',
   quantity: 1,
   price: 0,
@@ -210,13 +216,13 @@ export function cloneProject(sourceProject: ProjectData): ProjectData {
   // Deep clone via structured clone
   const clone: ProjectData = structuredClone(sourceProject);
 
-  clone.id = crypto.randomUUID();
+  clone.id = generateId();
   clone.name = `${sourceProject.name} (копия)`;
 
   // Clone nested objects (new structure)
   if (clone.objects) {
     clone.objects = clone.objects.map((obj: ObjectData) => {
-      const newObjId = crypto.randomUUID();
+      const newObjId = generateId();
       return {
         ...obj,
         id: newObjId,
@@ -235,42 +241,42 @@ export function cloneProject(sourceProject: ProjectData): ProjectData {
 }
 
 export function cloneRoom(room: RoomData, newObjectId: string | undefined): RoomData {
-  const newRoomId = crypto.randomUUID();
+  const newRoomId = generateId();
 
   return {
     ...room,
     id: newRoomId,
     objectId: newObjectId ?? room.objectId,
-    segments: (room.segments || []).map((s: RoomSegment) => ({ ...s, id: crypto.randomUUID() })),
-    obstacles: (room.obstacles || []).map((o: Obstacle) => ({ ...o, id: crypto.randomUUID() })),
+    segments: (room.segments || []).map((s: RoomSegment) => ({ ...s, id: generateId() })),
+    obstacles: (room.obstacles || []).map((o: Obstacle) => ({ ...o, id: generateId() })),
     wallSections: (room.wallSections || []).map((ws: WallSection) => ({
       ...ws,
-      id: crypto.randomUUID(),
+      id: generateId(),
     })),
     subSections: (room.subSections || []).map((ss: RoomSubSection) => ({
       ...ss,
-      id: crypto.randomUUID(),
-      windows: (ss.windows || []).map((w: Opening) => ({ ...w, id: crypto.randomUUID() })),
-      doors: (ss.doors || []).map((d: Opening) => ({ ...d, id: crypto.randomUUID() })),
+      id: generateId(),
+      windows: (ss.windows || []).map((w: Opening) => ({ ...w, id: generateId() })),
+      doors: (ss.doors || []).map((d: Opening) => ({ ...d, id: generateId() })),
     })),
-    windows: (room.windows || []).map((w: Opening) => ({ ...w, id: crypto.randomUUID() })),
-    doors: (room.doors || []).map((d: Opening) => ({ ...d, id: crypto.randomUUID() })),
+    windows: (room.windows || []).map((w: Opening) => ({ ...w, id: generateId() })),
+    doors: (room.doors || []).map((d: Opening) => ({ ...d, id: generateId() })),
     works: (room.works || []).map((work: WorkData) => ({
       ...work,
-      id: crypto.randomUUID(),
-      materials: (work.materials || []).map((m: Material) => ({ ...m, id: crypto.randomUUID() })),
-      tools: (work.tools || []).map((t: Tool) => ({ ...t, id: crypto.randomUUID() })),
+      id: generateId(),
+      materials: (work.materials || []).map((m: Material) => ({ ...m, id: generateId() })),
+      tools: (work.tools || []).map((t: Tool) => ({ ...t, id: generateId() })),
     })),
     simpleModeData: room.simpleModeData
       ? {
           ...room.simpleModeData,
           windows: (room.simpleModeData.windows || []).map((w: Opening) => ({
             ...w,
-            id: crypto.randomUUID(),
+            id: generateId(),
           })),
           doors: (room.simpleModeData.doors || []).map((d: Opening) => ({
             ...d,
-            id: crypto.randomUUID(),
+            id: generateId(),
           })),
         }
       : undefined,
@@ -279,9 +285,9 @@ export function cloneRoom(room: RoomData, newObjectId: string | undefined): Room
           ...room.extendedModeData,
           subSections: (room.extendedModeData.subSections || []).map((ss: RoomSubSection) => ({
             ...ss,
-            id: crypto.randomUUID(),
-            windows: (ss.windows || []).map((w: Opening) => ({ ...w, id: crypto.randomUUID() })),
-            doors: (ss.doors || []).map((d: Opening) => ({ ...d, id: crypto.randomUUID() })),
+            id: generateId(),
+            windows: (ss.windows || []).map((w: Opening) => ({ ...w, id: generateId() })),
+            doors: (ss.doors || []).map((d: Opening) => ({ ...d, id: generateId() })),
           })),
         }
       : undefined,
@@ -290,15 +296,15 @@ export function cloneRoom(room: RoomData, newObjectId: string | undefined): Room
           ...room.advancedModeData,
           segments: (room.advancedModeData.segments || []).map((s: RoomSegment) => ({
             ...s,
-            id: crypto.randomUUID(),
+            id: generateId(),
           })),
           obstacles: (room.advancedModeData.obstacles || []).map((o: Obstacle) => ({
             ...o,
-            id: crypto.randomUUID(),
+            id: generateId(),
           })),
           wallSections: (room.advancedModeData.wallSections || []).map((ws: WallSection) => ({
             ...ws,
-            id: crypto.randomUUID(),
+            id: generateId(),
           })),
         }
       : undefined,
