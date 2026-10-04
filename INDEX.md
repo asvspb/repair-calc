@@ -257,6 +257,8 @@ repair-calc/
 | Файл                                    | Назначение                                                                                                                                                                |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext                                                                                        |
+| `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`)                                                                      |
+| `src/api/storage/dexieDb.ts`            | Dexie `RepairCalcDB` (version 2: таблица `syncState` — персистентные dirty-флаги SYNC-V2 §2.1)                                                                            |
 | `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                                                                                                               |
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
 | `src/api/storage/apiStorageProvider.ts` | Storage через REST API — тонкий фасад (346 стр.); внутри: `apiClient.ts` (очередь/ретраи), `projectApi.ts` (синхронизация), `objectApi.ts` (CRUD), `roomApi.ts` (комнаты) |
@@ -375,6 +377,7 @@ type ProjectData = {
   city?: string;
   useAiPricing?: boolean;
   lastAiPriceUpdate?: string;
+  updatedAt?: string; // SYNC-V2 §2.1: ISO-метка мутации (dirty-модель)
 };
 ```
 
@@ -391,6 +394,7 @@ type ObjectData = {
   rooms: RoomData[];
   version?: number;
   sortOrder?: number;
+  updatedAt?: string; // SYNC-V2 §2.1
 };
 ```
 
@@ -411,6 +415,7 @@ type RoomData = {
   obstacles: Obstacle[]; // Advanced mode
   wallSections: WallSection[]; // Advanced mode
   subSections: RoomSubSection[]; // Extended mode
+  updatedAt?: string; // SYNC-V2 §2.1
 };
 ```
 
