@@ -90,6 +90,8 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
       useAiPricing: apiProject.use_ai_pricing,
       lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
       version: apiProject.version,
+      // SYNC-V2 §2.1: серверный updated_at переносится в клиентскую модель
+      updatedAt: apiProject.updated_at,
       objects: (apiProject.objects || []).map(obj => ({
         id: obj.id,
         projectId: obj.project_id,
@@ -100,6 +102,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
         lastAiPriceUpdate: obj.last_ai_price_update || undefined,
         version: obj.version,
         sortOrder: obj.sort_order,
+        updatedAt: obj.updated_at,
       })),
     };
   }
@@ -112,6 +115,7 @@ function apiToClientProject(apiProject: ApiProject): ProjectData {
     useAiPricing: apiProject.use_ai_pricing,
     lastAiPriceUpdate: apiProject.last_ai_price_update || undefined,
     version: apiProject.version,
+    updatedAt: apiProject.updated_at,
     rooms: (apiProject.rooms || []).map(apiToClientRoom),
     objects: [],
   };
@@ -138,6 +142,8 @@ function apiToClientRoom(apiRoom: ApiRoom): RoomData {
     simpleModeData: parseJSON(apiRoom.simple_mode_data, undefined),
     extendedModeData: parseJSON(apiRoom.extended_mode_data, undefined),
     advancedModeData: parseJSON(apiRoom.advanced_mode_data, undefined),
+    // SYNC-V2 §2.1: серверный updated_at переносится в клиентскую модель
+    updatedAt: apiRoom.updated_at,
   };
 }
 
