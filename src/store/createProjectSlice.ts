@@ -4,6 +4,7 @@ import type { ProjectSlice, StoreState } from './types';
 import type { ProjectData } from '@shared/types';
 import { StorageManager } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage';
+import { dequal } from 'dequal';
 
 import {
   logUserAction,
@@ -55,26 +56,41 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
   },
 
   updateProjects: (newProjects: ProjectData[]) => {
+    // SYNC-V2 §5(а): изменившиеся проекты получают updatedAt + dirty-флаг
+    const now = new Date().toISOString();
+    const prevById = new Map(get().projects.map(p => [p.id, p]));
+    const stampedProjects = newProjects.map(project => {
+      const prev = prevById.get(project.id);
+      if (prev && dequal(prev, project)) return project;
+      get().markDirty('project', project.id, now);
+      return { ...project, updatedAt: now };
+    });
+
     set(state => {
-      const activeProject = computeActiveProject(newProjects, state.activeProjectId);
+      const activeProject = computeActiveProject(stampedProjects, state.activeProjectId);
       const activeObject =
         activeProject && state.activeObjectId
           ? getObjectFromProject(activeProject, state.activeObjectId)
           : activeProject?.objects?.[0] || null;
 
-      return { projects: newProjects, activeProject, activeObject };
+      return { projects: stampedProjects, activeProject, activeObject };
     });
-    get().scheduleSave(newProjects);
-    const active = newProjects.find(p => p.id === get().activeProjectId);
+    get().scheduleSave(stampedProjects);
+    const active = stampedProjects.find(p => p.id === get().activeProjectId);
     if (active && get().isAuthenticated) {
       get().scheduleTotalsSave(active);
     }
   },
 
   updateActiveProject: (updatedProject: ProjectData) => {
+    // SYNC-V2 §5(а): мутация проекта ставит updatedAt + dirty-флаг
+    const now = new Date().toISOString();
+    const stampedProject = { ...updatedProject, updatedAt: now };
+    get().markDirty('project', stampedProject.id, now);
+
     set(state => {
       const newProjects = state.projects.map(p =>
-        p.id === updatedProject.id ? updatedProject : p,
+        p.id === stampedProject.id ? stampedProject : p,
       );
       const activeProject = computeActiveProject(newProjects, state.activeProjectId);
       const activeObject =
@@ -87,7 +103,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
     const newProjects = get().projects;
     get().scheduleSave(newProjects);
     if (get().isAuthenticated) {
-      get().scheduleTotalsSave(updatedProject);
+      get().scheduleTotalsSave(stampedProject);
     }
   },
 
@@ -141,6 +157,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
           };
         });
         StorageManager.saveActiveProject(newProject.id);
+        get().markDirty('project', newProject.id, new Date().toISOString());
         get().scheduleSave(get().projects);
         logStateChange('ProjectContext', 'Активный проект', newProject.id);
 
@@ -175,6 +192,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
           };
         });
         StorageManager.saveActiveProject(newProject.id);
+        get().markDirty('project', newProject.id, new Date().toISOString());
         get().scheduleSave(get().projects);
         logStateChange('ProjectContext', 'Активный проект', newProject.id);
 

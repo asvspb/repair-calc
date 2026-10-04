@@ -490,7 +490,11 @@ describe('useProjectDomain (Zustand)', () => {
       const newProjects = [createTestProject('p1', 'Updated')];
       useProjectStore.getState().updateProjects(newProjects);
 
-      expect(useProjectStore.getState().projects).toEqual(newProjects);
+      // SYNC-V2 §5(а): updateProjects штампует updatedAt на мутациях
+      const stored = useProjectStore.getState().projects;
+      expect(stored).toHaveLength(newProjects.length);
+      expect(stored[0]).toMatchObject({ id: 'p1', name: 'Updated' });
+      expect(typeof stored[0].updatedAt).toBe('string');
 
       vi.advanceTimersByTime(3000);
 

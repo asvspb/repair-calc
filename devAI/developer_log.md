@@ -586,3 +586,57 @@ Write-set: `devAI/spec/SPEC-SYNC-V2.md`, `devAI/developer_log.md`. Кода — 
 passed | 1 skipped / 1043 passed | 4 skipped — те же pre-existing skip'ы, что и в 017);
 `pnpm run lint` — exit 0; `pnpm run lint:deps` — no dependency violations. INDEX.md не трогал —
 файл вне write-set ТЗ (эксклюзивно спека + лог).
+
+## 2026-10-04 — TASK-BATCH-019-sync-a (R2(а): dirty-флаги в слайсах + persist)
+
+### Accomplishments:
+
+- **Dirty-модель SYNC-V2 §2.1 реализована** (`shared/types.ts`, `src/store/types.ts`,
+  `src/store/createSyncSlice.ts`): `SyncSlice` получил `dirty: DirtyMap` (project/object/room →
+  `{ updatedAt, op: 'upsert' }`), `dirtyCount`, `lastSyncAt`, `status: 'idle'|'flushing'|'error'`,
+  экшены `markDirty` (дедуп: повторная мутация заменяет запись, `dirtyCount` не растёт) и
+  `restoreDirtyState` (восстановление из Dexie при старте — вызов добавлен в `initSyncListeners`).
+- **`updatedAt` добавлен** опциональным полем в `ProjectData`/`ObjectData`/`RoomData`
+  (`shared/types.ts`) и переносится из серверных `updated_at` в `apiToClientProject/Object/Room`
+  (`src/api/projects.ts`) — мёртвый ранее сценарий «нет поля сравнения» закрыт на уровне модели.
+- **Персист в Dexie** (`src/api/storage/dexieDb.ts`): `version(2)` добавляет только таблицу
+  `syncState` (ключ `kind:id`), индексы существующих таблиц не тронуты (решение §6.1.7);
+  helpers `putSyncStateEntry`/`getAllSyncStateEntries`/`deleteSyncStateEntry` (последний — под
+  batch (б)).
+- **Мутаторы ставят dirty+updatedAt**: `createProjectSlice` (`updateProjects` — только
+  изменившиеся по dequal; `updateActiveProject`; `createProject`), `createRoomSlice`
+  (`updateRoom`, `updateRoomById`, `addRoom`), `createObjectSlice` (`createObject`,
+  `updateObject`, `copyObject`). Существующий `scheduleSave` не тронут — поведение без
+  изменений, flusher появится в batch (б) (спека §5(а): «включение пока ни на что не влияет»).
+- **Тесты** `tests/unit/syncDirty.test.ts` (9): dirty+updatedAt на всех трёх сущностях, дедуп,
+  персист `putSyncStateEntry`, восстановление из Dexie, гость без сетевых вызовов.
+  Попутно починены тестовые моки: `useRoomDomain.test.ts` (logger без `logError` —
+  unhandled rejection от catch-лога в `markDirty`), `useProjectDomain.test.ts` (updateProjects
+  теперь штампует `updatedAt`).
+
+### Technical Details:
+
+- Отступление от буквы спеки §2.1 («мутаторы вместо scheduleSave вызывают markDirty»):
+  markDirty вызывается **вместе с** scheduleSave, т.к. batch (а) обязан сохранить поведение
+  (flusher ещё нет) — расхождение минимально-интерпретационное, отмечено в notes задачи.
+- Удаления (project/object/room) и `reorderRooms`/`deleteRoom` не ставят dirty — в модели
+  есть только `op: 'upsert'`; удаление объектов остаётся на legacy-пути до batch (в)/(г).
+- Восстановление dirty-карты из `updatedAt`-полей записей (§2.1, вариант для гостя) не
+  реализовано — реализовано чтение из таблицы `syncState`, куда `markDirty` пишет всегда
+  (в т.ч. у гостя). Отдельный «фильтр updatedAt > lastSyncAt» — задача batch (в) вместе с
+  `lastSyncAt`.
+
+### Gates (запущены в этой сессии, на итоговом дереве):
+
+- `pnpm test` — exit 0 (frontend: 76 files passed | 1 skipped, 1052 passed | 4 skipped;
+  server: 13 files passed | 1 skipped, 150 passed | 2 skipped).
+- `pnpm run lint` — exit 0 (0 errors, 32 pre-existing warnings в server/tests).
+- `pnpm run lint:deps` — no dependency violations (255 modules, 956 dependencies).
+
+### Файлы:
+
+`shared/types.ts`, `src/api/projects.ts`, `src/api/storage/dexieDb.ts`,
+`src/store/types.ts`, `src/store/createSyncSlice.ts`, `src/store/createProjectSlice.ts`,
+`src/store/createRoomSlice.ts`, `src/store/createObjectSlice.ts`,
+`tests/unit/syncDirty.test.ts` (новый), `tests/hooks/domains/useRoomDomain.test.ts`,
+`tests/hooks/domains/useProjectDomain.test.ts`, `INDEX.md`, `devAI/developer_log.md`.

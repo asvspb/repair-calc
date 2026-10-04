@@ -1,10 +1,11 @@
 import type { StateCreator } from 'zustand';
-import type { SyncSlice, StoreState } from './types';
+import type { DirtyEntityKind, DirtyMap, SyncSlice, StoreState } from './types';
 import type { ProjectData } from '@shared/types';
 import { logDebug, logSuccess, logError, logStart } from '../utils/logger';
 import { saveQueue } from '../utils/saveQueue';
 import { StorageManager } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage';
+import { getAllSyncStateEntries, putSyncStateEntry, syncStateKey } from '../api/storage/dexieDb';
 import { isServerId } from '../utils/idMapper';
 import { getAllRooms } from '../utils/projectObjects';
 import { calculateRoomMetrics } from '../domain/geometry/geometry';
@@ -42,7 +43,58 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
   roomSyncError: null,
   isSyncing: false,
 
+  dirty: { project: {}, object: {}, room: {} },
+  dirtyCount: 0,
+  lastSyncAt: null,
+  status: 'idle',
+
   setSyncing: (isSyncing: boolean) => set({ isSyncing }),
+
+  markDirty: (entityKind: DirtyEntityKind, entityId: string, updatedAt: string) => {
+    set(state => {
+      const dirty: DirtyMap = {
+        project: { ...state.dirty.project },
+        object: { ...state.dirty.object },
+        room: { ...state.dirty.room },
+      };
+      const existed = dirty[entityKind][entityId] !== undefined;
+      dirty[entityKind][entityId] = { updatedAt, op: 'upsert' };
+      return { dirty, dirtyCount: state.dirtyCount + (existed ? 0 : 1) };
+    });
+
+    // Персист в Dexie (переживает reload); у гостя это тоже Dexie — сетевых вызовов нет (§2.1)
+    putSyncStateEntry({
+      key: syncStateKey(entityKind, entityId),
+      entityKind,
+      entityId,
+      updatedAt,
+      op: 'upsert',
+    }).catch(err => {
+      logError('SyncDomain', 'Ошибка персиста dirty-флага', err, { entityKind, entityId });
+    });
+  },
+
+  restoreDirtyState: async () => {
+    try {
+      const entries = await getAllSyncStateEntries();
+      set(() => {
+        const dirty: DirtyMap = { project: {}, object: {}, room: {} };
+        let dirtyCount = 0;
+        for (const entry of entries) {
+          if (dirty[entry.entityKind] && dirty[entry.entityKind][entry.entityId] === undefined) {
+            dirty[entry.entityKind][entry.entityId] = { updatedAt: entry.updatedAt, op: entry.op };
+            dirtyCount += 1;
+          }
+        }
+        return { dirty, dirtyCount };
+      });
+      if (entries.length > 0) {
+        logDebug('SyncDomain', 'Dirty-карта восстановлена из Dexie', { count: entries.length });
+      }
+    } catch (err) {
+      logError('SyncDomain', 'Ошибка восстановления dirty-карты из Dexie', err);
+    }
+  },
 
   scheduleSave: (newProjects: ProjectData[]) => {
     pendingSave = newProjects;
@@ -189,6 +241,9 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
 
   initSyncListeners: () => {
     let syncPendingRef: ProjectData[] | null = null;
+
+    // Восстановление dirty-карты из Dexie при старте (SYNC-V2 §2.1)
+    void get().restoreDirtyState();
 
     const handleBeforeUnload = () => {
       if (pendingSave) {

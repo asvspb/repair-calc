@@ -42,10 +42,13 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
 
     logUserAction('Создание объекта', { ...data, projectId: activeProject.id });
 
-    const newObject = createNewObject(activeProject.id, data);
+    // SYNC-V2 §5(а): новый объект получает updatedAt + dirty-флаг (upsert)
+    const now = new Date().toISOString();
+    const newObject = { ...createNewObject(activeProject.id, data), updatedAt: now };
     const updatedProject = addObjectToProject(activeProject, newObject);
 
     get().updateActiveProject(updatedProject);
+    get().markDirty('object', newObject.id, now);
 
     set(state => {
       const activeObject = state.activeProject
@@ -65,8 +68,14 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
 
     logUserAction('Обновление объекта', { objectId, updates: data });
 
-    const updatedProject = updateObjectInProject(activeProject, objectId, data);
+    // SYNC-V2 §5(а): мутация объекта ставит updatedAt + dirty-флаг
+    const now = new Date().toISOString();
+    const updatedProject = updateObjectInProject(activeProject, objectId, {
+      ...data,
+      updatedAt: now,
+    });
     get().updateActiveProject(updatedProject);
+    get().markDirty('object', objectId, now);
 
     logSuccess('ProjectContext', 'Объект обновлён', { objectId });
   },
@@ -116,6 +125,10 @@ export const createObjectSlice: StateCreator<StoreState, [], [], ObjectSlice> = 
     }
 
     get().updateActiveProject(result.project);
+
+    // SYNC-V2 §5(а): копия объекта получает updatedAt + dirty-флаг (upsert)
+    const now = new Date().toISOString();
+    get().markDirty('object', result.newObjectId, now);
 
     logSuccess('ProjectContext', 'Объект скопирован', {
       sourceObjectId: objectId,
