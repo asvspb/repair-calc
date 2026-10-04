@@ -1,6 +1,6 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-10-03
+**Последнее обновление:** 2026-10-04
 **Версия приложения:** 2.0
 **Состояние здоровья:** 🟢 операционно разблокирован (main актуален, CI жив); остатётся техдолг (см. [AUDIT-2026-08-11](./docs/AUDIT-2026-08-11.md))
 
@@ -129,12 +129,15 @@ repair-calc/
 │   │   ├── geometry/                 # geometry.ts, roomHelpers.ts
 │   │   └── pricing/                  # costs.ts, materialCalculations.ts
 │   ├── store/                        # Zustand-стор (мигрировано из ProjectContext)
-│   │   ├── useProjectStore.ts        # Композиция слайсов
-│   │   ├── createProjectSlice.ts     # Проекты + persistence + sync-поля (+архив T3: fetchArchivedProjects/restoreProject/permanentDeleteProject, deletingIds)
+│   │   ├── useProjectStore.ts        # Композиция слайсов (project + archive + room + object + sync + auth)
+│   │   ├── createProjectSlice.ts     # Проекты: CRUD/активный проект (267); migrateProject ре-экспортируется
+│   │   ├── createArchiveSlice.ts     # Архив: fetchArchivedProjects/restoreProject/permanentDeleteProject, deletingIds (P3-SPLIT)
+│   │   ├── projectInitialize.ts      # initialize: загрузка с сервера/локально + миграции (вынесен из project-слайса)
+│   │   ├── projectMigration.ts       # migrateProject/migrateRoom (вынесен из project-слайса)
 │   │   ├── createObjectSlice.ts      # Объекты
 │   │   ├── createRoomSlice.ts        # Комнаты
 │   │   ├── createSyncSlice.ts        # Слушатели синхронизации
-│   │   └── types.ts                  # StoreState = Project & Room & Object & Sync
+│   │   └── types.ts                  # StoreState = Project & Archive & Room & Object & Sync & Auth
 │   ├── App.tsx                       # Корневой компонент (~276 строк)
 │   ├── main.tsx                      # Точка входа
 │   └── index.css                     # Глобальные стили (TailwindCSS)
@@ -184,7 +187,11 @@ repair-calc/
 │   │   │       ├── object.repo.ts
 │   │   │       ├── priceCatalog.repo.ts
 │   │   │       ├── priceHistory.repo.ts
-│   │   │       ├── project.repo.ts
+│   │   │       ├── project.repo.ts              # Фасад: create/update/delete + наследует цепочку ниже + ре-экспорты (P3-SPLIT)
+│   │   │       ├── projectArchive.repo.ts       # Архив: findArchived*/restore/hardDelete/findArchivedOlderThan
+│   │   │       ├── projectRead.repo.ts          # Чтение: findById*/findByUserId, варианты для sync
+│   │   │       ├── projectUpdateRooms.repo.ts   # updateWithRooms (транзакция)
+│   │   │       ├── projectUpdateObjects.repo.ts # updateWithObjects (транзакция)
 │   │   │       ├── room.repo.ts
 │   │   │       ├── updateJob.repo.ts
 │   │   │       ├── user.repo.ts
