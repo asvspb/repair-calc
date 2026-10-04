@@ -44,11 +44,9 @@ export class RoomEditorPage {
   }
 
   async deleteRoom() {
+    // В приложении удаление комнаты идёт напрямую (App.deleteRoom),
+    // модального подтверждения нет: «Удалить»-кнопки других сущностей
+    // (проект/объект) нельзя трогать — иначе ловим чужую кнопку.
     await this.deleteRoomBtn.click();
-    // Confirm deletion if dialog appears
-    const confirmBtn = this.page.getByRole('button', { name: 'Удалить' });
-    if (await confirmBtn.isVisible()) {
-      await confirmBtn.click();
-    }
   }
 }

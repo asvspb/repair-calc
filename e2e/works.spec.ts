@@ -1,4 +1,5 @@
 import { test, expect, setupTestEnvironment } from './fixtures';
+import { clickRoomItemById } from './helpers/roomHelpers';
 import { TEST_PROJECT_WITH_WORK } from './fixtures/testData';
 
 test.describe('Works and Materials', () => {
@@ -6,9 +7,7 @@ test.describe('Works and Materials', () => {
     await setupTestEnvironment(page, [TEST_PROJECT_WITH_WORK], TEST_PROJECT_WITH_WORK.id);
 
     // Navigate to the room — scroll into view if needed
-    const roomItem = page.getByTestId('room-item-test-room-1');
-    await roomItem.scrollIntoViewIfNeeded();
-    await roomItem.click();
+    await clickRoomItemById(page, 'test-room-1');
   });
 
   test('should add work and fill fields', async ({ page }) => {
@@ -94,9 +93,7 @@ test.describe('Works and Materials', () => {
     await saveTemplateBtn.click();
 
     // Navigate back to room
-    const roomItem = page.getByTestId('room-item-test-room-1');
-    await roomItem.scrollIntoViewIfNeeded();
-    await roomItem.click();
+    await clickRoomItemById(page, 'test-room-1');
 
     // Open work template catalog
     const templatesBtn = page.getByTestId('templates-btn');

@@ -1,12 +1,13 @@
 import { test, expect, setupCleanEnvironment, setupTestEnvironment } from './fixtures';
 import { TEST_PROJECT } from './fixtures/testData';
+import { clickRightSidebarByTestId, ensureRightSidebarOpen } from './helpers/sidebarHelpers';
 
 test.describe('Project Management', () => {
   test('should create project via ProjectsModal', async ({ page }) => {
     await setupCleanEnvironment(page);
 
     // Click new project button — opens ProjectsModal
-    await page.getByTestId('new-project-btn').click();
+    await clickRightSidebarByTestId(page, 'new-project-btn');
 
     // ProjectsModal opens — click "Новый проект" button inside the modal overlay
     const projectsModal = page.locator('.fixed.inset-0.z-50');
@@ -45,7 +46,8 @@ test.describe('Project Management', () => {
 
     // The project item is in the RIGHT SIDEBAR ProjectsList
     // Hover to reveal action buttons
-    const projectItem = page.locator(`[data-testid="project-item-${TEST_PROJECT.id}"]`);
+    const rightSidebar = await ensureRightSidebarOpen(page);
+    const projectItem = rightSidebar.locator(`[data-testid="project-item-${TEST_PROJECT.id}"]`);
     await expect(projectItem).toBeVisible({ timeout: 5000 });
     await projectItem.hover();
 
@@ -61,14 +63,17 @@ test.describe('Project Management', () => {
     await confirmBtn.click();
 
     // Verify copied project appeared — look for "(копия)" in sidebar
-    await expect(page.locator('[data-testid^="project-item-"]').filter({ hasText: 'копия' })).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.locator('[data-testid^="project-item-"]').filter({ hasText: 'копия' }),
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test('should delete project with confirmation', async ({ page }) => {
     await setupTestEnvironment(page, [TEST_PROJECT], TEST_PROJECT.id);
 
     // The project item is in the RIGHT SIDEBAR ProjectsList
-    const projectItem = page.locator(`[data-testid="project-item-${TEST_PROJECT.id}"]`);
+    const rightSidebar = await ensureRightSidebarOpen(page);
+    const projectItem = rightSidebar.locator(`[data-testid="project-item-${TEST_PROJECT.id}"]`);
     await expect(projectItem).toBeVisible({ timeout: 5000 });
     await projectItem.hover();
 
@@ -76,6 +81,16 @@ test.describe('Project Management', () => {
     const deleteBtn = projectItem.locator('button[title="Удалить"]');
     await expect(deleteBtn).toBeVisible({ timeout: 3000 });
     await deleteBtn.click();
+
+    // На мобиле открытый drawer (z-50) перекрывает ConfirmDialog — закрываем его крестиком
+    const drawerCloseBtn = page
+      .locator('aside')
+      .last()
+      .locator('button[class~="md:hidden"]')
+      .first();
+    if (await drawerCloseBtn.isVisible()) {
+      await drawerCloseBtn.click();
+    }
 
     // Confirm deletion in the confirm dialog
     // The delete confirm dialog is rendered by RightSidebar with "Удалить" button

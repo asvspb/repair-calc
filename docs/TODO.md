@@ -91,7 +91,7 @@
 
 ### P3-4. Тестирование
 
-- [ ] Распропустить E2E-тесты (часть `.skip`): core-workflow, costs, export-import, geometry, projects, regressions, responsive, room-input, rooms, work-templates, works
+- [x] Распропустить E2E-тесты (часть `.skip`): core-workflow, costs, export-import, geometry, projects, regressions, responsive, room-input, rooms, work-templates, works — **закрыто 2026-10-04** (`test/e2e-unskip-015`): `.skip` уже сняты в a04180f, задача свелась к реальной проверке и фиксам; полный набор **159/159 passed** (chromium + firefox + mobile, два прогона подряд). Тривиальные фиксы только в e2e/: мобильный drawer-сайдбар (`e2e/helpers/sidebarHelpers.ts` — открытие/закрытие по классу, не по boundingBox в 200ms-переходе), навигация к комнатам/объектам/проектам через drawer, `openDataManagement` (у настольной кнопки настроек нет data-testid), `RoomEditorPage.deleteRoom` без чужой кнопки «Удалить» (модального подтверждения удаления комнаты в приложении нет — имена тестов скорректированы), удаление объекта через настоящий `ConfirmDialog` (не window.confirm), `Core Workflow`: «Общая смета» → «Смета проекта». Код приложения не менялся.
 - [ ] Компонентные тесты: RoomEditor, BackupManager, httpClient (после декомпозиции)
 - [ ] Добиться >80% pass rate для Chromium
 

@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { clickSidebarByTestId } from './helpers/sidebarHelpers';
 import { TEST_PROJECT } from './fixtures/testData';
 
 test.describe('Object Management', () => {
@@ -14,7 +15,7 @@ test.describe('Object Management', () => {
     });
 
     // Seed localStorage with test project data
-    await page.addInitScript((projectData) => {
+    await page.addInitScript(projectData => {
       localStorage.setItem('repair-calc-projects', JSON.stringify([projectData]));
       localStorage.setItem('repair-calc-active-project', projectData.id);
     }, TEST_PROJECT);
@@ -27,7 +28,7 @@ test.describe('Object Management', () => {
 
   test('should create object via CreateObjectModal', async ({ page }) => {
     // Click add object button
-    await page.getByRole('button', { name: 'Добавить объект ремонта' }).click();
+    await clickSidebarByTestId(page, 'add-object-btn');
 
     // Modal should appear
     const modal = page.getByTestId('create-object-modal');
@@ -49,7 +50,7 @@ test.describe('Object Management', () => {
 
   test('should switch between objects', async ({ page }) => {
     // First create a second object
-    await page.getByRole('button', { name: 'Добавить объект ремонта' }).click();
+    await clickSidebarByTestId(page, 'add-object-btn');
     const modal = page.getByTestId('create-object-modal');
     await expect(modal).toBeVisible();
     await modal.getByLabel('Название объекта *').fill('Офис');
@@ -67,7 +68,7 @@ test.describe('Object Management', () => {
 
   test('should delete object with confirmation', async ({ page }) => {
     // First create a second object
-    await page.getByRole('button', { name: 'Добавить объект ремонта' }).click();
+    await clickSidebarByTestId(page, 'add-object-btn');
     const modal = page.getByTestId('create-object-modal');
     await expect(modal).toBeVisible();
     await modal.getByLabel('Название объекта *').fill('Офис');
@@ -76,13 +77,14 @@ test.describe('Object Management', () => {
     // Wait for object selector
     await expect(page.getByTestId('object-selector')).toBeVisible();
 
-    // Handle the window.confirm dialog
-    page.once('dialog', dialog => dialog.accept());
-
     // Click delete object button
-    const deleteBtn = page.getByTestId('delete-object-btn');
-    await expect(deleteBtn).toBeVisible();
-    await deleteBtn.click();
+    await clickSidebarByTestId(page, 'delete-object-btn');
+
+    // Confirm deletion in the in-app ConfirmDialog (native confirm() больше не используется)
+    const confirmDialog = page.locator('div.fixed.inset-0.bg-black\\/50');
+    const confirmBtn = confirmDialog.getByRole('button', { name: 'Удалить', exact: true });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
 
     // Selector should disappear (back to 1 object)
     await expect(page.getByTestId('object-selector')).not.toBeVisible();
@@ -90,7 +92,7 @@ test.describe('Object Management', () => {
 
   test('should save city for object', async ({ page }) => {
     // Create second object with city
-    await page.getByRole('button', { name: 'Добавить объект ремонта' }).click();
+    await clickSidebarByTestId(page, 'add-object-btn');
     const modal = page.getByTestId('create-object-modal');
     await expect(modal).toBeVisible();
     await modal.getByLabel('Название объекта *').fill('Квартира в СПб');

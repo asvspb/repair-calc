@@ -1,4 +1,5 @@
 import { test, expect, setupTestEnvironment, setupCleanEnvironment } from './fixtures';
+import { clickRoomItemById } from './helpers/roomHelpers';
 
 export { test, expect, setupTestEnvironment, setupCleanEnvironment };
 
@@ -7,9 +8,7 @@ export { test, expect, setupTestEnvironment, setupCleanEnvironment };
  * Uses data-testid selector with scroll-into-view for reliability.
  */
 export async function navigateToRoom(page: import('@playwright/test').Page, roomId: string) {
-  const roomItem = page.getByTestId(`room-item-${roomId}`);
-  await roomItem.scrollIntoViewIfNeeded();
-  await roomItem.click();
+  await clickRoomItemById(page, roomId);
 }
 
 /**

@@ -438,3 +438,37 @@
 **Документация:** docs/TODO.md — P3-SPLIT закрыт с размерами; INDEX.md — дерево src/store/ и repositories/ актуализировано, дата обновления 2026-10-04.
 
 **Отклонение от буквы ТЗ (зафиксировано):** ТЗ называло только архив-экшены в обоих файлах, но DoD требует «все файлы ≤400» — одного выноса архива было недостаточно (createProjectSlice 484, project.repo 720), поэтому дополнительно вынесены initialize/migration (store) и read/update-методы (repo). Поведение не менялось, покрытие прежнее.
+
+## 2026-10-04 — TASK-BATCH-015-e2e-unskip (P3-4)
+
+**ТЗ:** devAI/spec/TASK-BATCH-012-015-splits.md, секция TASK-BATCH-015-e2e-unskip.
+**Ветка:** test/e2e-unskip-015 (от refactor/split-store-repo-014).
+
+**Состояние на входе:** `.skip` в e2e/ уже сняты коммитом a04180f (на базовой истории) — «раскомментировать вслепую» нечего; задача свелась к реальной проверке всех 13 наборов и честной классификации падений.
+
+**Окружение:** playwright 1.63.0; браузеры chromium-1243 (+headless shell) и firefox-1543 доустановлены (~114+110 МБ, кэш ~/.cache/ms-playwright). mobile-проект использует chromium-движок (Pixel 5).
+
+**Сделано (правки только в e2e/, код приложения не менялся):**
+
+1. Причина системных мобильных падений: оба сайдбара на <768px — drawer'ы (`-translate-x-full`/`translate-x-full`, `src/components/layout/LeftSidebar.tsx:49-50`, `RightSidebar.tsx:103`); клики по их элементам давали «outside of the viewport». Первый вариант хелпера по boundingBox() ловил промежуточную геометрию 200ms-перехода (drawer «открывается» и тут же уезжает) — переписан на чтение **класса** (`translate-x-0`-токен, React ставит итоговый класс сразу).
+2. `e2e/helpers/sidebarHelpers.ts` (новый, 88 строк): openMobileSidebarIfNeeded / clickSidebarByTestId / clickInRightSidebar / clickRightSidebarByTestId / openDataManagement / closeRightSidebarIfOpen; `roomHelpers.clickRoomItemByName/ById` и `test-utils.navigateToRoom` теперь drawer-aware.
+3. Все клики по элементам сайдбаров во всех 13 спеках переведены на хелперы (room-item/add-room-btn/add-object-btn/new-project-btn); `projects.spec` — открытие правого drawer'а перед hover и закрытие крестиком перед ConfirmDialog (drawer z-50 перекрывает диалог).
+4. Исправлены битые селекторы/потоки (селектор или флоу устарели относительно приложения):
+   - `settings-btn` в приложении не существует — только `mobile-settings-btn` + кнопка «Настройки» в правом сайдбаре без testid → `openDataManagement` по роли/имени;
+   - `RoomEditorPage.deleteRoom` кликал чужую кнопку «Удалить» (проектную, в скрытом drawer'е): подтверждения удаления **комнаты** в приложении нет (`App.tsx:104` — deleteRoom напрямую), на десктопе ветка проходила случайно (isVisible()==false). Убран ложный confirm, имена тестов в rooms.spec скорректированы;
+   - удаление **объекта** наоборот имеет in-app `ConfirmDialog` (`App.tsx:266`), а не window.confirm → objects.spec кликает настоящий диалог;
+   - core-workflow: «Общая смета» → «Смета проекта» (актуальный i18n `sidebar.projectEstimate`, ru.json:22);
+   - export-import restore-from-backup: закрытие правого drawer'а после модалки, иначе перекрывает контент на мобиле.
+5. Ни один ассерт не ослаблен; единственное удаление — несуществующая логика window.confirm в page object'е.
+
+**E2E-прогоны (в этой сессии):** полный набор `pnpm exec playwright test` (chromium+firefox+mobile) — **159 passed / 0 failed**, дважды подряд (52-54s). До фиксов: 67 failed / 92 passed (мобильный drawer), export-import 7/7 падали даже на чистом дереве (проверено git stash), core-workflow Scenario 1, objects delete, regressions CSV, projects delete — падали на всех проектах.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 150 passed / 2 skipped (2 skipped — pre-existing RightSidebar NOT IMPLEMENTED, unit, не e2e).
+- `pnpm run lint` — 0 errors, 32 warnings (все pre-existing в server/tests, e2e-файлов в выводе нет).
+- `pnpm run lint:deps` — no dependency violations (251 modules).
+
+**Документация:** docs/TODO.md — P3-4 строка «Распропустить E2E-тесты» закрыта с деталями; INDEX.md структурно не менялся (новый файл — только e2e/helpers/sidebarHelpers.ts внутри существующего раздела e2e — дополнен).
+
+**Осталось skip в e2e:** 0 (в e2e/ нет ни `.skip`, ни `fixme`). В unit-тестах 2 `it.skip` в `tests/components/layout/RightSidebar.test.tsx` (NOT IMPLEMENTED) — вне ТЗ batch'а.

@@ -224,6 +224,7 @@ repair-calc/
 │   ├── rooms.spec.ts
 │   ├── works.spec.ts
 │   └── work-templates.spec.ts
+│   ├── helpers/                      # Хелперы спек: roomHelpers.ts (клики комнат, drawer-aware), sidebarHelpers.ts (drawer левого/правого сайдбара, Настройки/данные — 2026-10-04)
 │
 ├── tests/                            # Unit/integration тесты (в т.ч. tests/unit/ — слайсы/клиентские api; tests/components/ — компонентные, в т.ч. ArchivePanel)
 ├── prompts/                          # Библиотека ролевых промптов ИИ-агентов (иерархия: techlead-architect → coder/debugger/designer/analyst; pentester — отдельный контур)
