@@ -701,3 +701,70 @@ passed | 1 skipped / 1043 passed | 4 skipped — те же pre-existing skip'ы,
 `src/api/sync.ts` (новый), `src/api/storage/syncFlusher.ts` (новый, 321 стр.),
 `src/store/types.ts`, `src/store/createSyncSlice.ts`, `tests/api/syncFlusher.test.ts` (новый),
 `INDEX.md`, `devAI/developer_log.md`.
+
+## 2026-10-05 — TASK-BATCH-021-sync-c (R2(в): LWW-слияние на pull + минимальные серверные правки)
+
+**Ветка:** `feat/sync-v2-c-021` (от `feat/sync-v2-b-020`). Роль: coder.
+**Спека:** `devAI/spec/SPEC-SYNC-V2.md` §3, §4 (инкрементальный pull), §5(в); решения §6.1 пп. 1–4, 8.
+
+### What was done:
+
+1. `feat(sync-v2)`: `server/src/middleware/validation.ts` — `syncPushSchema` расширен по §3.4:
+   entity `object`; `id`/`entityId` принимают UUID или `local-*` (upsert-новых); `clientUpdatedAt`
+   проходит в `data` (z.any() — явный unit-тест на контракт). +5 тестов
+   (`server/tests/unit/syncValidation.test.ts`).
+2. `feat(sync-v2)`: `server/src/routes/sync.ts` — LWW на push: сравнение
+   `data.clientUpdatedAt` против `updated_at` строки вместо `version`; tie-break §3.2
+   (равенство меток → больший лексикографически id; равные id — сервер); конфликт отдаёт
+   `serverUpdatedAt` + `serverEntity` (форма ответа `{synced, conflicts}` сохранена);
+   entity `object` (LWW + upsert-создание с проверкой владельца проекта); не найденные
+   project → upsert-создание (local-*). Pull: `?since=<ISO>` фильтрует дерево
+   (project/object/room по `updated_at >= since`); без `since`/с некорректным — полный pull
+   как сегодня. +14 integration-тестов `server/tests/integration/syncRoutes.test.ts`.
+3. `feat(sync-v2)`: `src/api/storage/syncMerge.ts` — чистый pull-merge §3.1/§3.3:
+   не dirty → сервер; dirty и локальная новее → остаётся локальная (dirty не снимается);
+   dirty и старее → LWW, сервер затирает, dirty снимается, `conflictsResolved`++,
+   logWarning; удалённые на сервере: dirty → сохраняется (пересоздастся пушем),
+   не dirty → удаляется локально. Tie-break §3.2 зеркален серверному (`serverWinsLww`).
+   `src/api/projects.ts` — `syncPull(since?)` добавляет query-параметр (аддитивно).
+   +13 тестов `tests/api/syncMerge.test.ts` (матрица), +1 к `tests/api/syncPull.test.ts`.
+4. `feat(sync-v2)`: `src/api/storage/syncFlusher.ts` — разбор 409 по §3.3:
+   `serverUpdatedAt >= clientUpdatedAt` → принять серверную (снять dirty,
+   `serverWins: true` в ack + `serverEntity`/`serverUpdatedAt`); иначе — сущность остаётся
+   dirty, повторный push при следующем flush; конфликт без серверной метки — прежнее
+   gaveUp. `src/store/types.ts` — `FlushAckEntry` расширен (`serverWins/serverEntity/
+serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFlushed`
+   инкрементирует счётчик при serverWins. +2 теста во `tests/api/syncFlusher.test.ts`.
+
+### Notes (интерпретации/отступления):
+
+- Минимальное расширение write-set: `src/store/types.ts` + `src/store/createSyncSlice.ts`
+  (`conflictsResolved`) — спека §3.1 требует счётчик в sync-состоянии, а §5(в) write-set
+  его не перечисляет. Реализовано, отмечено здесь.
+- Полная замена локальной сущности на `serverEntity` из 409-ответа (маппинг сырой строки БД
+  в клиентскую модель внутри store) требует проводки в provider/init — отнесена к batch (г)
+  (развилка по флагу там); сейчас по serverWins снимается dirty, счётчик растёт, версия
+  сервера придёт следующим pull-merge.
+- Upsert-новых (project/object с `local-*`): сервер создаёт сущность со своим uuid, ответ —
+  `synced` по change.id; маппинг local→server id — существующий idMapper/миграционный путь,
+  в контракт push не вводился (спека §3.4 маппинг не требует).
+- 5xx-«нет clientUpdatedAt» → push принимается без конфликта (старому клиенту нечего
+  сравнивать); это осознанный выбор в пользу доступности, тестом покрыт.
+- Rate-limiter (§6.1 п. 8) не тронут; tombstones не вводились (§6.1 п. 4).
+
+### Gates (запущены в этой сессии, на итоговом дереве):
+
+- `pnpm test` — exit 0 (frontend: 80 files passed | 1 skipped, 1096 passed | 4 skipped;
+  server: 15 files passed | 1 skipped, 169 passed | 2 skipped).
+- `pnpm run lint` — exit 0 (0 errors; warnings pre-existing).
+- `pnpm run lint:deps` — no dependency violations (258 modules, 971 dependencies).
+
+### Файлы:
+
+`server/src/middleware/validation.ts`, `server/src/routes/sync.ts`,
+`server/tests/unit/syncValidation.test.ts` (новый),
+`server/tests/integration/syncRoutes.test.ts` (новый), `src/api/storage/syncMerge.ts` (новый),
+`src/api/projects.ts`, `src/api/storage/syncFlusher.ts`, `src/store/types.ts`,
+`src/store/createSyncSlice.ts`, `tests/api/syncMerge.test.ts` (новый),
+`tests/api/syncPull.test.ts`, `tests/api/syncFlusher.test.ts`, `INDEX.md`,
+`devAI/developer_log.md`.

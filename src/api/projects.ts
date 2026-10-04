@@ -305,20 +305,22 @@ export async function updateAiSettings(
 /**
  * Синхронизация - получение всех проектов с объектами и комнатами
  */
-export async function syncPull(): Promise<{
+export async function syncPull(since?: string): Promise<{
   status: string;
   data: {
     projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
     timestamp: number;
   };
 }> {
+  // SYNC-V2 §4: since=<ISO> — инкрементальный pull; без since — полный pull как сегодня
+  const url = since ? `/api/sync/pull?since=${encodeURIComponent(since)}` : '/api/sync/pull';
   return fetchJson<{
     status: string;
     data: {
       projects: (ApiProject & { rooms?: ApiRoom[]; objects?: Array<{ rooms?: ApiRoom[] }> })[];
       timestamp: number;
     };
-  }>('/api/sync/pull');
+  }>(url);
 }
 
 /**

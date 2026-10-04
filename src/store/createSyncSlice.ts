@@ -58,6 +58,7 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
 
   dirty: { project: {}, object: {}, room: {} },
   dirtyCount: 0,
+  conflictsResolved: 0,
   lastSyncAt: null,
   status: 'idle',
 
@@ -101,11 +102,19 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
         room: { ...state.dirty.room },
       };
       let removed = 0;
-      for (const { entityKind, entityId, gaveUp } of entries) {
+      let conflictsResolved = state.conflictsResolved;
+      for (const { entityKind, entityId, gaveUp, serverWins } of entries) {
         if (dirty[entityKind][entityId] !== undefined) {
           delete dirty[entityKind][entityId];
           removed += 1;
-          if (gaveUp) {
+          if (serverWins) {
+            // §3.1/§3.3: серверная версия затёрла локальную — конфликт учитывается
+            conflictsResolved += 1;
+            logWarning('SyncDomain', 'LWW: сервер затёр локальную версию', {
+              entityKind,
+              entityId,
+            });
+          } else if (gaveUp) {
             logWarning('SyncDomain', 'Сущность снята с очереди без ретрая', {
               entityKind,
               entityId,
@@ -119,7 +128,11 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
           });
         }
       }
-      return { dirty, dirtyCount: Math.max(0, state.dirtyCount - removed) };
+      return {
+        dirty,
+        dirtyCount: Math.max(0, state.dirtyCount - removed),
+        conflictsResolved,
+      };
     });
   },
 

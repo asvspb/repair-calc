@@ -56,6 +56,12 @@ export interface FlushAckEntry {
   entityKind: DirtyEntityKind;
   entityId: string;
   gaveUp: boolean;
+  /** §3.3: серверная версия новее — локальная затирается (счётчик conflictsResolved) */
+  serverWins?: boolean;
+  /** §3.3: серверная версия сущности целиком */
+  serverEntity?: unknown;
+  /** §3.3: серверная updatedAt (ISO) */
+  serverUpdatedAt?: string;
 }
 
 /** Транспортный слой флашера — собственный экземпляр RequestQueue (спека §2.2) */
@@ -233,14 +239,46 @@ export async function flushOnce(deps: FlusherDeps): Promise<void> {
           if (syncedIds.has(change.id)) {
             resolved.push({ entityKind: change.entity, entityId: change.entityId, gaveUp: false });
           } else if (conflictIds.has(change.id)) {
-            // §2.2: конфликт/403 — элемент снимается с очереди, фиксируется в логе;
-            // LWW-слияние по serverUpdatedAt — batch (в)
-            logWarning('SyncFlusher', 'Конфликт на push — сущность снята с очереди', {
-              entity: change.entity,
-              entityId: change.entityId,
-              conflict: result.conflicts.find(c => c.id === change.id),
-            });
-            resolved.push({ entityKind: change.entity, entityId: change.entityId, gaveUp: true });
+            const conflict = result.conflicts.find(c => c.id === change.id)!;
+            // §3.3: если serverUpdatedAt >= clientUpdatedAt — принять серверную
+            // (снять dirty, конфликт в счётчик); иначе — повторный push в следующем flush
+            const clientUpdatedAt =
+              typeof change.data.clientUpdatedAt === 'string' ? change.data.clientUpdatedAt : undefined;
+            const serverUpdatedAt = conflict.serverUpdatedAt;
+            if (serverUpdatedAt === undefined) {
+              // Нет серверной метки (сущность недоступна) — снятие как gaveUp,
+              // без счётчика конфликтов (прецедент batch (б))
+              logWarning('SyncFlusher', 'Конфликт на push — сущность снята с очереди', {
+                entity: change.entity,
+                entityId: change.entityId,
+              });
+              resolved.push({ entityKind: change.entity, entityId: change.entityId, gaveUp: true });
+            } else if (
+              clientUpdatedAt !== undefined &&
+              new Date(serverUpdatedAt).getTime() < new Date(clientUpdatedAt).getTime()
+            ) {
+              // Клиентская запись новее — остаётся dirty, уйдёт пушем при следующем flush
+              logWarning('SyncFlusher', 'Конфликт на push: клиент новее — повторный push', {
+                entity: change.entity,
+                entityId: change.entityId,
+                clientUpdatedAt,
+                serverUpdatedAt,
+              });
+            } else {
+              logWarning('SyncFlusher', 'Конфликт на push: сервер новее — локальная снята', {
+                entity: change.entity,
+                entityId: change.entityId,
+                serverUpdatedAt,
+              });
+              resolved.push({
+                entityKind: change.entity,
+                entityId: change.entityId,
+                gaveUp: false,
+                serverWins: true,
+                serverEntity: conflict.serverEntity,
+                serverUpdatedAt,
+              });
+            }
           } else {
             // Сервер не подтвердил и не отклонил — остаётся dirty до следующего флаша
             logDebug('SyncFlusher', 'Сущность без подтверждения сервера — остаётся dirty', {

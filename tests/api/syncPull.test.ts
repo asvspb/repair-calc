@@ -78,7 +78,7 @@ describe('syncPull API', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer test-token',
         }),
-      })
+      }),
     );
 
     expect(result.status).toBe('success');
@@ -120,7 +120,7 @@ describe('syncPull API', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer my-auth-token',
         }),
-      })
+      }),
     );
   });
 
@@ -139,5 +139,20 @@ describe('syncPull API', () => {
 
     const callArgs = (fetch as any).mock.calls[0][1];
     expect(callArgs.headers.Authorization).toBeUndefined();
+  });
+
+  // SYNC-V2 §4 (batch в): since — инкрементальный pull
+  it('передаёт since как query-параметр инкрементального pull', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ status: 'success', data: { projects: [], timestamp: 1 } }),
+    });
+
+    localStorage.setItem('token', 't');
+    await syncPull('2026-01-02T00:00:00Z');
+
+    expect((fetch as any).mock.calls[0][0]).toContain(
+      '/api/sync/pull?since=2026-01-02T00%3A00%3A00Z',
+    );
   });
 });
