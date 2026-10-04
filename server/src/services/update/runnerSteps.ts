@@ -192,3 +192,17 @@ export async function recordFailed(
     });
   }
 }
+
+/** Разбиение массива на чанки заданного размера (вынесено из runner.ts). */
+export function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/** Задержка между батчами (вынесено из runner.ts). */
+export function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

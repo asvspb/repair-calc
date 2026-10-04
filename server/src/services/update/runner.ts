@@ -21,6 +21,8 @@ import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
 import type { PrioritizedItem } from './utils/priority.js';
 import {
+  chunkArray,
+  delay,
   getItemsToUpdate,
   recordFailed,
   recordSkipped,
@@ -158,7 +160,7 @@ export class UpdateRunner {
     items: PrioritizedItem[],
     sources?: SourceType[],
   ): Promise<void> {
-    const batches = this.chunkArray(items, this.config.batchSize);
+    const batches = chunkArray(items, this.config.batchSize);
 
     for (const [index, batch] of batches.entries()) {
       // Проверяем отмену
@@ -177,7 +179,7 @@ export class UpdateRunner {
 
       // Задержка между батчами
       if (index < batches.length - 1) {
-        await this.delay(this.config.requestDelayMs);
+        await delay(this.config.requestDelayMs);
       }
     }
   }
@@ -188,7 +190,7 @@ export class UpdateRunner {
     sources?: SourceType[],
   ): Promise<void> {
     const concurrency = this.config.concurrentRequests;
-    const chunks = this.chunkArray(batch, Math.ceil(batch.length / concurrency));
+    const chunks = chunkArray(batch, Math.ceil(batch.length / concurrency));
 
     await Promise.all(chunks.map(chunk => this.processChunk(jobId, chunk, sources)));
   }
@@ -372,18 +374,6 @@ export class UpdateRunner {
 
   private getItemKey(item: ItemToUpdate): string {
     return `${item.name}:${item.city}:${item.category}`;
-  }
-
-  private chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
