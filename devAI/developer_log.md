@@ -832,3 +832,11 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 `server/src/services/update/{parserManager,parserRegistry,parserABTest,parserManager.types,runner,runnerSteps,runner.types,runnerCache}.ts`,
 `server/tests/unit/updateJobRepo.smoke.test.ts` (новый),
 `server/tests/unit/roomRepo.smoke.test.ts` (новый), `INDEX.md`, `devAI/developer_log.md`.
+
+## 2026-10-05 — Архитектор: ревью волны SYNC-V2 (а-в) + R3
+
+- Верифицировано по факту: gates на main зелёные (сам), e2e chromium 53/53 (сам), размеры распилов в норме.
+- 021 (главный риск — серверный контракт): lwwCompare соответствует решениям §6.1 (серверное updated_at авторитет, tie-break по большему id, при равных id — сервер; без clientUpdatedAt — client, NaN-guard); push/pull обратно совместимы (без since — полный pull); интеграционная матрица 14 кейсов.
+- Флаг VITE_SYNC_V2 везде гейтит включение — прод продолжает работать по старому пути.
+- Мелочь: sync.ts 410 строк (>400) — задача P3-SPLIT-2 заведена.
+- Статус: (а)(б)(в)+R3 в main и origin. Batch (г) ждёт решения владельца (e2e в обоих режимах по спеке §5).

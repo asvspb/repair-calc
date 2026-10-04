@@ -14,6 +14,8 @@
 
 - [x] **P3-SPLIT:** распил `src/store/createProjectSlice.ts` (648 строк > 400) — вынести архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject) в отдельный `createArchiveSlice.ts` — **закрыто 2026-10-04** (`refactor/split-store-repo-014`): архив-экшены в `createArchiveSlice.ts` (183) + `ArchiveSlice` в types.ts; дополнительно для порога ≤400 вынесены `projectInitialize.ts` (222) и `projectMigration.ts` (39), `createProjectSlice` стал 267, маркер SPLIT-ME снят; заодно `server/.../project.repo.ts` (854) распилен на `projectArchive.repo.ts` (186, findArchived*/restore/hardDelete) + `projectRead.repo.ts` (141) + `projectUpdateRooms.repo.ts` (197) + `projectUpdateObjects.repo.ts` (302) + фасад (113) — вся прежняя API доступна через `ProjectRepository` (цепочка наследования + ре-экспорты), Knex остался в repositories; тесты не ослаблялись (1043 front + 150 server зелёные)
 
+- [ ] **P3-SPLIT-2:** `server/src/routes/sync.ts` (410 строк после SYNC-V2) — вынести lwwCompare+push-обработку в sync-v2.service.ts
+
 ## ✅ Закрыто 2026-10-03/04 (сверка TODO с фактическим состоянием)
 
 - **P0-1** (merge `refactor/architecture-v2` → `main`) — выполнено: main содержит рефактор, актуальная рабочая ветка `feat/project-archive-t2`.
