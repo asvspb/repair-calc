@@ -26,7 +26,7 @@ verifiable-by-tooling**: архитектура enforced через `dependency-
 **Текущий фазис (2026-08-12): 🟢 операционно разблокирован.**
 Рефактор-ветка `refactor/architecture-v2` **влита в main** (merge `--no-ff` `588c76b`,
 164 коммита); CI активирован (первый прогон запущен); рабочее дерево чистое.
-Остаётся техдолг: repo `as any` (10, Knex-типизация — отдельная задача), Docker full browser-cache (P1-2). **pnpm audit (2026-10-04, fix/audit-007): root — 0; server — 1 moderate `uuid@10` (fix мажорный 10→11 не ставится: используется только `v4` без `buf`, CVE затрагивает v3/v5/v6 с `buf`; обоснование — devAI/developer_log.md).** Шаг 3 закрыл: audit 7 high→0, route `as any` (9), lint scope → `tests/`, Docker builder-skip.
+Остаётся техдолг: repo `as any` (10, Knex-типизация — отдельная задача), Docker browser-cache (P1-2 — закрыт 2026-10-04, fix/infra-008: cache-mount в server/Dockerfile; факт — браузеры в образ не ставились, postinstall playwright заблокирован onlyBuiltDependencies). **pnpm audit (2026-10-04, fix/audit-007): root — 0; server — 1 moderate `uuid@10` (fix мажорный 10→11 не ставится: используется только `v4` без `buf`, CVE затрагивает v3/v5/v6 с `buf`; обоснование — devAI/developer_log.md).** Шаг 3 закрыл: audit 7 high→0, route `as any` (9), lint scope → `tests/`, Docker builder-skip.
 
 **Критический путь (что делать следующим):**
 

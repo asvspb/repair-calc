@@ -1,8 +1,8 @@
 # TODO: Актуальные задачи (Repair Calculator)
 
-> **Статус:** актуально (живой бэклог) • **Проверено:** 2026-10-03
+> **Статус:** актуально (живой бэклог) • **Проверено:** 2026-10-04
 
-**Дата последнего обновления:** 2026-10-03
+**Дата последнего обновления:** 2026-10-04
 **Источник приоритетов:** [AUDIT-2026-08-11.md](./AUDIT-2026-08-11.md) (снимок состояния) + сверка 2026-10-03
 **Направление проекта:** [INDEX.md → 🧭 Компас](../INDEX.md)
 
@@ -14,35 +14,30 @@
 
 - [ ] **P3-SPLIT:** распил `src/store/createProjectSlice.ts` (648 строк > 400) — вынести архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject) в отдельный `createArchiveSlice.ts` (добавлено при ревью T3, маркер SPLIT-ME в файле)
 
-## ✅ Закрыто 2026-10-03 (сверка TODO с фактическим состоянием)
+## ✅ Закрыто 2026-10-03/04 (сверка TODO с фактическим состоянием)
 
 - **P0-1** (merge `refactor/architecture-v2` → `main`) — выполнено: main содержит рефактор, актуальная рабочая ветка `feat/project-archive-t2`.
 - **P0-2** (CI) — `ci.yml`, husky-хуки, `check-secrets.sh` закоммичены.
 - **P2-1** (триаж незакоммиченных файлов) — файлы в git.
 - **P2-2** частично — AGENTS.md уже Knex; ARCHITECTURE.md MySQL→PostgreSQL исправлено.
 - **P2-3** — `docs/PROGRESS.md` создан; `FRONTEND-STATUS.md` решено не вести отдельно (вехи фронтенда — в PROGRESS.md).
-
-## 🟠 Приоритет 1: Деплой и безопасность
+- **P1-1** (деплой актуального бэкенда) — выполнено 2026-10-03 (`deploy-local.sh`), живая проверка путей пройдена; подтверждено 2026-10-04 (`fix/infra-008`): контейнер `repair-calc-backend` Up, `GET /api/objects` → 401 (роут существует, не 404).
+- **P2-2** (пункты, кроме pool.ts — batch-004) — `ARCHITECTURE.md` полностью сверен (2026-10-03); даты «Проверено» проставлены в LOGGING.md, LOGGING-CHEATSHEET.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md (см. docs/README.md).
+- **P2-5** (batch-003) — `docs/openapi.yaml` содержит `GET /api/projects/archived`, `PATCH /api/projects/{id}/restore`, `DELETE /api/projects/{id}/permanent` (строки 66/145/387, сверено 2026-10-04).
 
 ---
 
 ## 🟠 Приоритет 1: Деплой и безопасность
 
-### P1-1. Деплой актуального бэкенда
-
-Прод-контейнер `:3994` крутит **старую сборку** (фикс двойного префикса роутинга закоммичен, но не задеплоен).
-
-- [ ] `./scripts/deploy-local.sh` (тесты + линтеры + `docker compose build --no-cache`)
-- [ ] Живая проверка путей: `GET /api/objects` (200, не 404), `POST /api/rooms/:id/works`
-
 ### P1-2. Ускорить сборку бэкенда (Docker browser-cache)
 
 ⚠️ **Коррекция (2026-08-12):** `playwright` — **runtime-зависимость** сервера (`import { chromium }` в `server/src/services/update/parsers/lemanaParser.ts`, `bazavitParser.ts` — скрейперы цен). Перенос в `devDependencies` **сломал бы prod** (`Cannot find module`). Прежний диагноз «не в той секции» неверен.
 
-Реальная проблема — медленная установка browser-binaries при каждой сборке. Чинить кэшированием:
+⚠️ **Коррекция 2 (2026-10-04, `fix/infra-008`):** в образе браузеры **не скачиваются вообще** — `playwright` не входит в `onlyBuiltDependencies` (`server/package.json:60`), pnpm не запускает его postinstall, `/root/.cache/ms-playwright` в собранном образе отсутствует (проверено `docker run --rm repair-calc-backend ls /root/.cache/ms-playwright`). Формулировка «prod-стадия ставит браузеры» не соответствовала факту. Кэш-маунт добавлен превентивно — заработает сразу, как только postinstall playwright будет разрешён.
 
-- [ ] Закэшировать `PLAYWRIGHT_BROWSERS_PATH` в Docker-слой (multi-stage cache, `--mount=type=cache`)
+- [x] Закэшировать `PLAYWRIGHT_BROWSERS_PATH` в Docker-слой — `server/Dockerfile`: `# syntax=docker/dockerfile:1` + `RUN --mount=type=cache,target=/root/.cache/ms-playwright` на prod-установке (`fix/infra-008`). Замер: `docker compose build backend` — 1:46; вторая с `--pull` (слои сброшены) — 1:34. Шаг загрузки браузеров в обеих сборках отсутствует (см. коррекцию 2), поэтому ускорение именно на этом шаге продемонстрировать нечем.
 - [ ] (Опц.) Вынести `lint` → `eslint src/ tests/` отдельным коммитом (не связано с playwright)
+- [ ] (Опц.) Разрешить postinstall playwright (`onlyBuiltDependencies` + `pnpm exec playwright install` в сборке) — иначе скрейперы `lemanaParser.ts`/`bazavitParser.ts` упадут в prod при обращении к chromium
 
 ### P1-3. `npm audit fix`
 
@@ -55,11 +50,11 @@
 
 ## 🟡 Приоритет 2: Документация и гигиена
 
-### P2-2. Остатки дрейфа документации (по `AUDIT-2026-08-11.md` §6; AGENTS.md и ARCHITECTURE.md закрыты 2026-10-03)
+### P2-2 (остаток). pool.ts (по `AUDIT-2026-08-11.md` §6)
 
-- [ ] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2` / legacy RowDataPacket
-- [ ] Сверить `ARCHITECTURE.md` полностью (сейчас «Проверено» — только блок БД) и проставить даты остальным docs/\*.md с «Проверено: —» (LOGGING.md, LOGGING-CHEATSHEET.md, IDEAL-ARCHITECTURE.md, TECHNICAL-SPECIFICATION.md, CODE_REVIEW.md)
-- [ ] **P2-5.** Дополнить `docs/openapi.yaml` эндпоинтами архива проектов: `GET /api/projects/archived`, `PATCH /api/projects/:id/restore`, `DELETE /api/projects/:id/permanent` (реестр дрейфов, 2026-10-03)
+- [x] В `server/src/db/pool.ts` убрать остаточные комментарии про `mysql2` / legacy RowDataPacket
+      — закрыто 2026-10-04 (`fix/infra-008`): mysql2-формулировки удалены, пояснение `any` оставлено.
+      Остальные пункты P2-2 и P2-5 закрыты — см. блок «Закрыто».
 
 ### P2-4. Мелкая гигиена
 
@@ -73,12 +68,12 @@
 
 ### P3-1. Декомпозиция крупных файлов (по `AUDIT-2026-06-21.md` §3 — перепроверить размеры)
 
-- [ ] `src/components/RoomEditor.tsx` (~906) → вынести обработчики в хук
-- [ ] `src/components/BackupManager.tsx` (~848) → `ExportPanel` + `ImportPanel` + `SyncPanel`
-- [ ] `src/api/storage/apiStorageProvider.ts` (~1033) → `apiClient` + `projectApi` + `objectApi` + `roomApi`
-- [ ] `src/components/projects/ProjectsModal.tsx` (~696)
-- [ ] `src/store/createProjectSlice.ts` (~609) — оставить только доменные поля + CRUD
-- [ ] `src/utils/roomHelpers.ts` (~811) — проверить размеры функций
+Устаревшие строки удалены 2026-10-04 (`fix/infra-008`): `RoomEditor.tsx` уже 277 строк (распилен), `roomHelpers.ts` не существует. Актуальные размеры (`wc -l`, 2026-10-04):
+
+- [ ] `src/components/BackupManager.tsx` (898) → `ExportPanel` + `ImportPanel` + `SyncPanel`
+- [ ] `src/api/storage/apiStorageProvider.ts` (995) → `apiClient` + `projectApi` + `objectApi` + `roomApi`
+- [ ] `src/components/projects/ProjectsModal.tsx` (727)
+- [ ] `src/store/createProjectSlice.ts` (649) — оставить только доменные поля + CRUD
 
 ### P3-2. Мёртвый код (подтверждён grep, 0 ссылок)
 
