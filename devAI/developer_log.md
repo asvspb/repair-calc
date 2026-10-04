@@ -287,3 +287,27 @@
 - **Побочный риск задокументирован** (новый опц. пункт TODO): скрейперы `lemanaParser.ts`/`bazavitParser.ts` импортируют chromium — в текущем образе вызов упадёт в рантайме. Фикс (onlyBuiltDependencies + `pnpm exec playwright install` в сборке) — вне моего write-set.
 - **Часть 2 (`docs/TODO.md`)**: P1-1 закрыт (деплой 2026-10-03; сегодня повторно проверено: `repair-calc-backend` Up, `GET /api/objects` → 401 — роут жив, не 404); P2-2 (batch-004) и P2-5 (batch-003) закрыты с фактами (ARCHITECTURE.md + 5 дат «Проверено»; openapi.yaml:66/145/387 — archived/restore/permanent); P1-2 отмечен [x] с коррекцией 2; P2-2 pool.ts закрыт сразу (`server/src/db/pool.ts`: mysql2/legacy-формулировки удалены, только комментарии); P3-1 — удалены устаревшие строки (RoomEditor.tsx = 277 строк — распилен; roomHelpers.ts не существует), размеры оставшихся обновлены по `wc -l` (BackupManager 898, apiStorageProvider 995, ProjectsModal 727, createProjectSlice 649); P1-3 остаётся закрытым (batch-007).
 - **Gates**: `pnpm test` — 13 файлов / 150 passed, 2 skipped (root: 13 файлов — тесты зелёные); `pnpm run lint` — exit 0 (0 ошибок, 36 warning — ранее существовавшие); `pnpm run lint:deps` — «no dependency violations found (228 modules, 825 dependencies)».
+
+## 2026-10-04 — coder batch-009: dead code P3-2 (fix/dead-code-009)
+
+**ТЗ:** devAI/spec/TASK-BATCH-009-011-quality.md, секция TASK-BATCH-009. Цель — удалить мёртвый код P3-2.
+
+**Ключевой факт:** оба целевых файла **уже удалены ранее** — коммит `8f4a7b6` «refactor(store): split ProjectContext into zustand slices» убрал `src/hooks/useProjects.ts` (−161 строка), `src/utils/projectContextPatch.ts` (−58) и их тест `tests/hooks/useProjects.test.ts` (−284). Удаление не требуется; задача свелась к верификации и закрытию P3-2 в TODO.
+
+**Grep-доказательства (2026-10-04):**
+
+- `grep -rn "useProjects" --include="*.ts" --include="*.tsx" src/ tests/ e2e/ shared/` → **0 строк** (расширен до всего репо без node_modules/dist — тоже 0).
+- `grep -rn "projectContextPatch" src/ tests/ e2e/ shared/ server/` → **0 строк**. `projectObjects.ts` (замена) живой: 24 импорта в src/, vi.mock в 10 тестах.
+- Третий пункт P3-2: `grep -n "require(" src/api/storage/apiStorageProvider.ts` → **0 вхождений** — устранён ранее.
+
+**Попутно актуализирован stale INDEX.md** (секция utils/hooks и «Мёртвый код»): убраны строки про несуществующие `useProjects.ts`, `projectContextPatch.ts`, `roomHelpers.ts` (отсутствие `roomHelpers.ts` подтверждено `ls src/utils/` и ранее зафиксировано в batch-008); H3 «require() в ESM» помечен устранённым.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — **passed**: 13 файлов / 150 тестов +1 skipped (2 skipped).
+- `pnpm run lint` — exit 0, 0 errors / 36 warnings (предсуществующие, предмет TASK-BATCH-010).
+- `pnpm run lint:deps` — «no dependency violations found (228 modules, 825 dependencies)».
+
+**docs/TODO.md**: P3-2 закрыт ✅ (все три пункта, с grep-доказательствами и ссылкой на удаливший коммит).
+
+**Заметка для batch-010:** ТЗ batch-010 упоминает `src/utils/factories.ts`, но файла нет — фабрики живут в `src/domain/factories/projectFactory.ts`, `generateId` — в `src/utils/idMapper.ts:247`. Также INDEX.md stale по `costs.ts`/`geometry.ts`/`materialCalculations.ts` (не существует в src/utils/) — вне моего write-set, не трогал.

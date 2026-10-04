@@ -75,11 +75,11 @@
 - [ ] `src/components/projects/ProjectsModal.tsx` (727)
 - [ ] `src/store/createProjectSlice.ts` (649) — оставить только доменные поля + CRUD
 
-### P3-2. Мёртвый код (подтверждён grep, 0 ссылок)
+### P3-2. Мёртвый код — ✅ ЗАКРЫТО 2026-10-04 (`fix/dead-code-009`)
 
-- [ ] `src/hooks/useProjects.ts` — дубликат store (legacy)
-- [ ] `src/utils/projectContextPatch.ts` — заменён `utils/projectObjects.ts`
-- [ ] `require()` в ESM: `src/api/storage/apiStorageProvider.ts`
+- [x] `src/hooks/useProjects.ts` — дубликат store (legacy) — **удалён ранее** (коммит `8f4a7b6`, refactor(split ProjectContext → zustand slices)); повторный grep 2026-10-04: 0 ссылок (src/, tests/, e2e/, shared/)
+- [x] `src/utils/projectContextPatch.ts` — заменён `utils/projectObjects.ts` — **удалён ранее** (тот же коммит); grep 2026-10-04: 0 ссылок; `projectObjects.ts` живой (24 импорта в src/, 12 в tests/)
+- [x] `require()` в ESM: `src/api/storage/apiStorageProvider.ts` — grep `require(`: 0 вхождений (устранён ранее)
 
 ### P3-3. Типизация
 

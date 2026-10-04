@@ -99,7 +99,7 @@ repair-calc/
 │   ├── hooks/
 │   │   ├── useGeometryState.ts       # Состояние геометрии
 │   │   ├── useMaterialCalculation.ts # Расчёт материалов
-│   │   ├── useProjects.ts            # Хук проектов (legacy)
+│   │   ├── ui/                       # UI-хуки
 │   │   └── useWorkTemplates.ts       # Шаблоны работ
 │   ├── types/
 │   │   ├── index.ts                  # Основные типы (ProjectData, ObjectData, RoomData...)
@@ -118,9 +118,7 @@ repair-calc/
 │   │   ├── logger.ts                 # Структурированный логгер
 │   │   ├── materialCalculations.ts   # Формулы расчёта материалов
 │   │   ├── migration.ts              # Миграция данных
-│   │   ├── projectContextPatch.ts    # Context patches (legacy)
 │   │   ├── projectObjects.ts         # Object-based project helpers
-│   │   ├── roomHelpers.ts            # Хелперы для комнат
 │   │   ├── saveQueue.ts              # Очередь сохранения
 │   │   ├── storage.ts                # StorageManager
 │   │   └── templateStorage.ts        # Хранилище шаблонов
@@ -501,7 +499,7 @@ pnpm run analyze:graph # Codegraph: переиндексация графа за
 
 - **H1.** ~~`objects.ts` и `users.ts` импортируют несуществующий `fetchJson`~~ — **ИСПРАВЛЕНО**: `fetchJson` реализован в `httpClient.ts`
 - **H2.** ~~`useMaterialCalculation.ts` — вызов hook внутри `useMemo`~~ — **ИСПРАВЛЕНО**: хук вызывается на верхнем уровне, `useMemo` оборачивает только расчёт
-- **H3.** `apiStorageProvider.ts` — `require()` в ESM-модуле (warning, не исправлено)
+- **H3.** ~~`apiStorageProvider.ts` — `require()` в ESM-модуле~~ — **УСТРАНЕНО**: grep `require(` 2026-10-04 — 0 вхождений (`fix/dead-code-009`)
 
 ### Дублирование
 
@@ -512,9 +510,9 @@ pnpm run analyze:graph # Codegraph: переиндексация графа за
 
 ### Мёртвый код
 
-- `src/hooks/useProjects.ts` — дублирует ProjectContext
+- ~~`src/hooks/useProjects.ts`~~ — **УДАЛЁН** (коммит `8f4a7b6`); grep 2026-10-04: 0 ссылок
 - `src/utils/debugLogger.ts` — дублирует logger.ts
-- `src/utils/projectContextPatch.ts` — заменён projectObjects.ts
+- ~~`src/utils/projectContextPatch.ts`~~ — **УДАЛЁН** (коммит `8f4a7b6`); grep 2026-10-04: 0 ссылок
 
 ### Производительность
 
