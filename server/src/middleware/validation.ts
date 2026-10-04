@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 // Password validation
-export const passwordSchema = z.string()
+export const passwordSchema = z
+  .string()
   .min(8, 'Password must be at least 8 characters')
   .regex(/[A-Z]/, 'Must contain uppercase letter')
   .regex(/[a-z]/, 'Must contain lowercase letter')
@@ -35,17 +36,20 @@ export const updateProjectSchema = z.object({
   city: z.string().max(100).optional().nullable(),
   use_ai_pricing: z.boolean().optional(),
   // Accept ISO datetime string or any valid date string, can be null
-  last_ai_price_update: z.union([
-    z.string().datetime(),
-    z.string().min(1), // Any non-empty string (will be parsed as date)
-  ]).optional().nullable(),
+  last_ai_price_update: z
+    .union([
+      z.string().datetime(),
+      z.string().min(1), // Any non-empty string (will be parsed as date)
+    ])
+    .optional()
+    .nullable(),
   version: z.number().int().positive().optional(),
 });
 
 // Room schemas
 // Allow any string ID format (including local-room-... prefixes for client-generated IDs)
 export const createRoomSchema = z.object({
-  id: z.string().optional(),  // Any string ID format allowed
+  id: z.string().optional(), // Any string ID format allowed
   name: z.string().min(1, 'Name is required').max(255),
   geometry_mode: z.enum(['simple', 'extended', 'advanced']).optional(),
   length: z.number().min(0).optional(),
@@ -64,14 +68,14 @@ export const createRoomSchema = z.object({
   advanced_mode_data: z.union([z.string(), z.any()]).optional().nullable(),
   // Additional fields
   sort_order: z.number().int().min(0).optional(),
-  object_id: z.string().optional(),  // Any string ID format allowed
+  object_id: z.string().optional(), // Any string ID format allowed
 });
 
 // Object schema for nested updates
 // Allow any string ID format (including local-obj-... prefixes for client-generated IDs)
 // The repository will handle creating new objects for non-UUID or non-existent IDs
 export const updateObjectSchema = z.object({
-  id: z.string().optional(),  // Any string ID format allowed
+  id: z.string().optional(), // Any string ID format allowed
   name: z.string().min(1).max(255).optional(),
   city: z.string().max(100).optional().nullable(),
   rooms: z.array(createRoomSchema).optional(),
@@ -82,10 +86,10 @@ export const updateProjectWithObjectsSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   city: z.string().max(100).optional().nullable(),
   use_ai_pricing: z.boolean().optional(),
-  last_ai_price_update: z.union([
-    z.string().datetime(),
-    z.string().min(1),
-  ]).optional().nullable(),
+  last_ai_price_update: z
+    .union([z.string().datetime(), z.string().min(1)])
+    .optional()
+    .nullable(),
   objects: z.array(updateObjectSchema).optional(),
 });
 
@@ -119,7 +123,9 @@ export const createWorkSchema = z.object({
   unit: z.string().max(36).optional(),
   enabled: z.boolean().optional(),
   work_unit_price: z.number().min(0).optional(),
-  calculation_type: z.enum(['floorArea', 'netWallArea', 'skirtingLength', 'customCount']).optional(),
+  calculation_type: z
+    .enum(['floorArea', 'netWallArea', 'skirtingLength', 'customCount'])
+    .optional(),
   count: z.number().int().positive().optional().nullable(),
   manual_qty: z.number().min(0).optional().nullable(),
   use_manual_qty: z.boolean().optional(),
@@ -250,15 +256,38 @@ export const createToolSchema = z.object({
 export const updateToolSchema = createToolSchema.partial();
 
 // Sync schemas
+// SYNC-V2 (спека SPEC-SYNC-V2 §3.4): id/entityId допускают также локальные `local-*`
+// ID (upsert-новых); entity расширен `object`; data — необязательный clientUpdatedAt.
+const syncEntityIdSchema = z
+  .string()
+  .refine(
+    value => z.string().uuid().safeParse(value).success || value.startsWith('local-'),
+    'entityId must be a UUID or a local-* ID',
+  );
+
 export const syncPushSchema = z.object({
-  changes: z.array(z.object({
-    id: z.string().uuid(),
-    timestamp: z.number(),
-    operation: z.enum(['create', 'update', 'delete']),
-    entity: z.enum(['project', 'room', 'work', 'material', 'tool', 'opening', 'subsection', 'segment', 'obstacle', 'wall_section']),
-    entityId: z.string().uuid(),
-    data: z.any(),
-  })),
+  changes: z.array(
+    z.object({
+      id: syncEntityIdSchema,
+      timestamp: z.number(),
+      operation: z.enum(['create', 'update', 'delete']),
+      entity: z.enum([
+        'project',
+        'object',
+        'room',
+        'work',
+        'material',
+        'tool',
+        'opening',
+        'subsection',
+        'segment',
+        'obstacle',
+        'wall_section',
+      ]),
+      entityId: syncEntityIdSchema,
+      data: z.any(),
+    }),
+  ),
 });
 
 // ID parameter validation
