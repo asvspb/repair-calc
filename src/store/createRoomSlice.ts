@@ -13,6 +13,9 @@ import { logUserAction, logSuccess, logWarning } from '../utils/logger';
 export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set, get) => ({
   updateRoom: (updatedRoom: RoomData) => {
     const { activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave } = get();
+    // SYNC-V2 §5(а): мутация комнаты ставит updatedAt + dirty-флаг
+    const now = new Date().toISOString();
+    const stampedRoom = { ...updatedRoom, updatedAt: now };
     set(state => {
       const prevActiveProject = state.projects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) {
@@ -21,8 +24,8 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
 
       const updatedProject = updateRoomInProject(
         prevActiveProject,
-        updatedRoom.id,
-        () => updatedRoom,
+        stampedRoom.id,
+        () => stampedRoom,
       );
       const newProjects = state.projects.map(p =>
         p.id === updatedProject.id ? updatedProject : p,
@@ -40,15 +43,21 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
 
       return { projects: newProjects, activeProject, activeObject };
     });
+    get().markDirty('room', stampedRoom.id, now);
   },
 
   updateRoomById: (roomId: string, updater: (prev: RoomData) => RoomData) => {
     const { activeProjectId, scheduleSave, isAuthenticated, scheduleTotalsSave } = get();
+    // SYNC-V2 §5(а): мутация комнаты ставит updatedAt + dirty-флаг
+    const now = new Date().toISOString();
     set(state => {
       const prevActiveProject = state.projects.find(p => p.id === activeProjectId);
       if (!prevActiveProject) return state;
 
-      const updatedProject = updateRoomInProject(prevActiveProject, roomId, updater);
+      const updatedProject = updateRoomInProject(prevActiveProject, roomId, prev => ({
+        ...updater(prev),
+        updatedAt: now,
+      }));
       const newProjects = state.projects.map(p =>
         p.id === updatedProject.id ? updatedProject : p,
       );
@@ -65,6 +74,7 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
 
       return { projects: newProjects, activeProject, activeObject };
     });
+    get().markDirty('room', roomId, now);
   },
 
   deleteRoom: (roomId: string) => {
@@ -86,9 +96,13 @@ export const createRoomSlice: StateCreator<StoreState, [], [], RoomSlice> = (set
       name: newRoom.name,
       projectId: activeProject.id,
     });
-    const updatedProject = addRoomToProject(activeProject, newRoom);
+    // SYNC-V2 §5(а): новая комната получает updatedAt + dirty-флаг (upsert)
+    const now = new Date().toISOString();
+    const stampedRoom = { ...newRoom, updatedAt: now };
+    const updatedProject = addRoomToProject(activeProject, stampedRoom);
     get().updateActiveProject(updatedProject);
-    logSuccess('ProjectContext', 'Комната добавлена', { roomId: newRoom.id });
+    get().markDirty('room', stampedRoom.id, now);
+    logSuccess('ProjectContext', 'Комната добавлена', { roomId: stampedRoom.id });
   },
 
   reorderRooms: (newRooms: RoomData[]) => {
