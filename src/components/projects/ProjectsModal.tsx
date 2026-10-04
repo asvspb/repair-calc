@@ -1,36 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  X,
-  FolderOpen,
-  Plus,
-  Edit2,
-  Copy,
-  Trash2,
-  Download,
-  Upload,
-  FileJson,
-  FileSpreadsheet,
-  Server,
-  RefreshCw,
-  Save,
-  AlertTriangle,
-  CheckCircle,
-} from 'lucide-react';
-import { calculateRoomCosts } from '../../domain/pricing/costs';
-import type { ProjectData } from '@shared/types';
+import { Upload, Download, FileJson, FileSpreadsheet, Plus, FolderOpen, X } from 'lucide-react';
 import type { WorkTemplate } from '../../types/workTemplate';
-import { useProjectStore } from '../../store/useProjectStore';
-import { useAuth } from '../../contexts/AuthContext';
-import { StorageManager } from '../../utils/storage';
-import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
-import { getAllRooms, migrateProjectToObjects } from '../../utils/projectObjects';
-import { cloneProject } from '../../domain/factories/projectFactory';
-import { pluralize } from '../../utils/format';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
 import { ArchivePanel } from './ArchivePanel';
-import { dlog, derror } from '../../utils/debugLogger';
-import { logError } from '../../utils/logger';
+import { ProjectListItem } from './ProjectListItem';
+import { ServerSyncSection } from './ServerSyncSection';
+import { ImportStatusBanner } from './ImportStatusBanner';
+import { useProjectsModal } from './useProjectsModal';
+import { dlog } from '../../utils/debugLogger';
 
 const LOG_PREFIX = '[ProjectsModal]';
 
@@ -40,364 +17,13 @@ interface ProjectsModalProps {
   onImportTemplates?: (templates: WorkTemplate[]) => void;
 }
 
-type ImportStatus = {
-  type: 'success' | 'error' | 'confirm';
-  message: string;
-  data?: { projects: ProjectData[]; activeProjectId: string; workTemplates?: WorkTemplate[] };
-};
-
+/**
+ * Модалка «Мои проекты». Логика вынесена в useProjectsModal, карточка проекта
+ * в ProjectListItem, синхронизация в ServerSyncSection, баннер статуса в
+ * ImportStatusBanner (TASK-BATCH-013-split-ui). ArchivePanel не тронут.
+ */
 export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsModalProps) {
-  const projects = useProjectStore(s => s.projects);
-  const activeProjectId = useProjectStore(s => s.activeProjectId);
-  const setActiveProjectId = useProjectStore(s => s.setActiveProjectId);
-  const updateProjects = useProjectStore(s => s.updateProjects);
-  const createProject = useProjectStore(s => s.createProject);
-  const deleteProject = useProjectStore(s => s.deleteProject);
-
-  const { isAuthenticated } = useAuth();
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
-
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [copyConfirmId, setCopyConfirmId] = useState<string | null>(null);
-
-  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const [isSavingToServer, setIsSavingToServer] = useState(false);
-  const [isLoadingFromServer, setIsLoadingFromServer] = useState(false);
-
-  // Reset states when modal opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      setShowCreateModal(false);
-      setEditingProjectId(null);
-      setImportStatus(null);
-      setDeleteConfirmId(null);
-      setCopyConfirmId(null);
-    }
-  }, [isOpen]);
-
-  // Calculate project stats
-  const getProjectStats = useCallback((project: ProjectData) => {
-    const objectsCount = project.objects?.length || 0;
-    const allRooms = getAllRooms(project);
-    const roomsCount = allRooms.length;
-
-    // Calculate total cost
-    let totalCost = 0;
-    for (const room of allRooms) {
-      const roomCosts = calculateRoomCosts(room);
-      totalCost += roomCosts.total;
-    }
-
-    return { objectsCount, roomsCount, totalCost };
-  }, []);
-
-  // Create new project via modal
-  const handleCreateProject = useCallback(
-    async (data: { name: string; city?: string; objects: string[] }) => {
-      dlog(LOG_PREFIX, '[Create] Received create request:', data);
-      setIsCreating(true);
-      try {
-        dlog(LOG_PREFIX, '[Create] Calling context.createProject...');
-        const newProject = await createProject({
-          name: data.name,
-          city: data.city,
-          objects: data.objects,
-        });
-
-        dlog(
-          LOG_PREFIX,
-          '[Create] Project created OK:',
-          newProject.id,
-          newProject.name,
-          '- objects:',
-          newProject.objects?.length || 0,
-        );
-        setShowCreateModal(false);
-        setImportStatus({
-          type: 'success',
-          message: `Проект "${newProject.name}" успешно создан`,
-        });
-      } catch (error) {
-        derror(LOG_PREFIX, '[Create] Error creating project:', error);
-        setImportStatus({
-          type: 'error',
-          message: 'Ошибка создания проекта',
-        });
-      } finally {
-        setIsCreating(false);
-      }
-    },
-    [createProject],
-  );
-
-  // Import projects from backup
-  const handleImportFromBackup = useCallback(
-    (importedProjects: ProjectData[]) => {
-      dlog(
-        LOG_PREFIX,
-        '[Import] Received',
-        importedProjects.length,
-        'project(s):',
-        importedProjects.map(p => p.name),
-      );
-      if (importedProjects.length === 0) return;
-
-      // updateProjects expects an array, not a function
-      const updated = [...projects, ...importedProjects];
-      dlog(LOG_PREFIX, '[Import] Total projects now:', updated.length);
-      updateProjects(updated);
-
-      if (importedProjects[0]) {
-        dlog(LOG_PREFIX, '[Import] Setting active to:', importedProjects[0].name);
-        setActiveProjectId(importedProjects[0].id);
-      }
-
-      setImportStatus({
-        type: 'success',
-        message: `Импортировано проектов: ${importedProjects.length}`,
-      });
-    },
-    [projects, updateProjects, setActiveProjectId],
-  );
-
-  // Rename project
-  const handleRenameProject = useCallback(
-    (projectId: string) => {
-      if (!editingName.trim()) {
-        setEditingProjectId(null);
-        return;
-      }
-
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-
-      const updatedProjects = projects.map(p =>
-        p.id === projectId ? { ...p, name: editingName.trim() } : p,
-      );
-      updateProjects(updatedProjects);
-      setEditingProjectId(null);
-    },
-    [projects, editingName, updateProjects],
-  );
-
-  // Copy project
-  const handleCopyProject = useCallback(
-    (projectId: string) => {
-      const sourceProject = projects.find(p => p.id === projectId);
-      if (!sourceProject) return;
-
-      const copiedProject = cloneProject(sourceProject);
-      copiedProject.name = `${sourceProject.name} (копия)`;
-
-      const updatedProjects = [...projects, copiedProject];
-      updateProjects(updatedProjects);
-      setActiveProjectId(copiedProject.id);
-
-      setCopyConfirmId(null);
-      setImportStatus({
-        type: 'success',
-        message: `Проект "${sourceProject.name}" успешно скопирован`,
-      });
-    },
-    [projects, updateProjects, setActiveProjectId],
-  );
-
-  // Delete project
-  const handleDeleteProject = useCallback(
-    async (projectId: string) => {
-      try {
-        // Use context's deleteProject if authenticated (handles server deletion)
-        if (isAuthenticated) {
-          await deleteProject(projectId);
-        } else {
-          // Local deletion
-          const updatedProjects = projects.filter(p => p.id !== projectId);
-          updateProjects(updatedProjects);
-          if (updatedProjects.length > 0 && activeProjectId === projectId) {
-            setActiveProjectId(updatedProjects[0].id);
-          } else if (updatedProjects.length === 0) {
-            setActiveProjectId('');
-          }
-        }
-
-        setDeleteConfirmId(null);
-        setImportStatus({
-          type: 'success',
-          message: 'Проект успешно удалён',
-        });
-      } catch (error) {
-        logError('ProjectsModal', 'Error deleting project', error);
-        setImportStatus({
-          type: 'error',
-          message: 'Ошибка удаления проекта',
-        });
-      }
-    },
-    [projects, activeProjectId, isAuthenticated, deleteProject, updateProjects, setActiveProjectId],
-  );
-
-  // Export JSON
-  const handleExportJSON = useCallback(() => {
-    const json = StorageManager.exportToJSON(projects, activeProjectId);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `repair-calc-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } finally {
-      // Delayed cleanup to ensure download starts
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    }
-
-    setImportStatus({
-      type: 'success',
-      message: 'Бэкап успешно экспортирован в JSON',
-    });
-  }, [projects, activeProjectId]);
-
-  // Export CSV
-  const handleExportCSV = useCallback(() => {
-    const csv = StorageManager.exportToCSV(projects);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `repair-calc-export-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } finally {
-      // Delayed cleanup to ensure download starts
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    }
-
-    setImportStatus({
-      type: 'success',
-      message: 'Данные успешно экспортированы в CSV',
-    });
-  }, [projects]);
-
-  // Import JSON
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      const content = e.target?.result as string;
-      const result = StorageManager.importFromJSON(content);
-
-      if (result.success) {
-        setImportStatus({
-          type: 'confirm',
-          message: `Найдено ${result.data.projects.length} проектов. Заменить текущие данные?`,
-          data: result.data,
-        });
-      } else {
-        const failure = result as Extract<typeof result, { success: false }>;
-        setImportStatus({
-          type: 'error',
-          message: failure.error,
-        });
-      }
-    };
-    reader.readAsText(file);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, []);
-
-  // Confirm import
-  const handleConfirmImport = useCallback(() => {
-    if (importStatus?.data) {
-      const migratedProjects = importStatus.data.projects.map(p => migrateProjectToObjects(p));
-      updateProjects(migratedProjects);
-      setActiveProjectId(importStatus.data.activeProjectId);
-
-      if (importStatus.data.workTemplates && onImportTemplates) {
-        onImportTemplates(importStatus.data.workTemplates);
-      }
-
-      setImportStatus({
-        type: 'success',
-        message: 'Данные успешно импортированы',
-      });
-    }
-  }, [importStatus, updateProjects, setActiveProjectId, onImportTemplates]);
-
-  // Save all to server
-  const handleSaveAllToServer = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    setIsSavingToServer(true);
-    try {
-      const apiProvider = ApiStorageProvider.getInstance();
-      await apiProvider.saveProjectsAsync(projects);
-
-      setImportStatus({
-        type: 'success',
-        message: `Все проекты (${projects.length}) успешно сохранены на сервере`,
-      });
-    } catch (error) {
-      logError('ProjectsModal', 'Error saving to server', error);
-      setImportStatus({
-        type: 'error',
-        message: 'Ошибка сохранения на сервер. Проверьте подключение.',
-      });
-    } finally {
-      setIsSavingToServer(false);
-    }
-  }, [isAuthenticated, projects]);
-
-  // Load all from server
-  const handleLoadAllFromServer = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    setIsLoadingFromServer(true);
-    try {
-      const apiProvider = ApiStorageProvider.getInstance();
-      const serverProjects = await apiProvider.loadProjectsAsync();
-
-      if (serverProjects.length > 0) {
-        const migratedProjects = serverProjects.map(p => migrateProjectToObjects(p));
-        updateProjects(migratedProjects);
-        setActiveProjectId(migratedProjects[0].id);
-
-        setImportStatus({
-          type: 'success',
-          message: `Загружено ${serverProjects.length} проектов(а) с сервера`,
-        });
-      } else {
-        setImportStatus({
-          type: 'error',
-          message: 'На сервере нет сохранённых проектов',
-        });
-      }
-    } catch (error) {
-      logError('ProjectsModal', 'Error loading from server', error);
-      setImportStatus({
-        type: 'error',
-        message: 'Ошибка загрузки с сервера. Проверьте подключение.',
-      });
-    } finally {
-      setIsLoadingFromServer(false);
-    }
-  }, [isAuthenticated, updateProjects, setActiveProjectId]);
+  const ctrl = useProjectsModal({ isOpen, onImportTemplates });
 
   if (!isOpen) return null;
 
@@ -431,7 +57,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
             <button
               onClick={() => {
                 dlog(LOG_PREFIX, '"Новый проект" clicked, opening CreateProjectModal');
-                setShowCreateModal(true);
+                ctrl.setShowCreateModal(true);
               }}
               className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
             >
@@ -441,7 +67,7 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
 
             <div className="flex gap-2 ml-auto">
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => ctrl.fileInputRef.current?.click()}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 title="Импорт JSON"
               >
@@ -460,14 +86,14 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
 
                 <div className="absolute right-0 top-full pt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden group-hover:block z-10">
                   <button
-                    onClick={handleExportJSON}
+                    onClick={ctrl.handleExportJSON}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                   >
                     <FileJson className="w-4 h-4" />
                     <span>JSON (бэкап)</span>
                   </button>
                   <button
-                    onClick={handleExportCSV}
+                    onClick={ctrl.handleExportCSV}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
@@ -478,126 +104,37 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
             </div>
 
             <input
-              ref={fileInputRef}
+              ref={ctrl.fileInputRef}
               type="file"
               accept=".json"
-              onChange={handleFileSelect}
+              onChange={ctrl.handleFileSelect}
               className="hidden"
             />
           </div>
 
           {/* Project list */}
           <div className="space-y-3">
-            {projects.map(project => {
-              const stats = getProjectStats(project);
-              const isActive = project.id === activeProjectId;
-              const isEditing = editingProjectId === project.id;
+            {ctrl.projects.map(project => (
+              <ProjectListItem
+                key={project.id}
+                project={project}
+                isActive={project.id === ctrl.activeProjectId}
+                isEditing={ctrl.editingProjectId === project.id}
+                editingName={ctrl.editingName}
+                onEditingNameChange={ctrl.setEditingName}
+                onStartEditing={p => {
+                  ctrl.setEditingProjectId(p.id);
+                  ctrl.setEditingName(p.name);
+                }}
+                onRename={ctrl.handleRenameProject}
+                onCancelEditing={() => ctrl.setEditingProjectId(null)}
+                onActivate={ctrl.setActiveProjectId}
+                onCopy={ctrl.setCopyConfirmId}
+                onDelete={ctrl.setDeleteConfirmId}
+              />
+            ))}
 
-              return (
-                <div
-                  key={project.id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    isActive
-                      ? 'border-indigo-500 bg-indigo-50/50'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Project icon and info */}
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={e => setEditingName(e.target.value)}
-                          className="w-full px-3 py-1.5 text-lg font-medium border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-2"
-                          autoFocus
-                          onBlur={() => handleRenameProject(project.id)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleRenameProject(project.id);
-                            if (e.key === 'Escape') setEditingProjectId(null);
-                          }}
-                        />
-                      ) : (
-                        <div className="flex items-center gap-2 mb-1">
-                          <FolderOpen
-                            className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
-                          />
-                          <h3 className="text-lg font-medium text-gray-900 truncate">
-                            {project.name}
-                          </h3>
-                          {isActive && (
-                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                              Активен
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                        {project.city && <span>{project.city}</span>}
-                        <span>
-                          {stats.objectsCount}{' '}
-                          {pluralize(stats.objectsCount, 'объект', 'объекта', 'объектов')}
-                        </span>
-                        <span>
-                          {stats.roomsCount}{' '}
-                          {pluralize(stats.roomsCount, 'комната', 'комнаты', 'комнат')}
-                        </span>
-                        {stats.totalCost > 0 && (
-                          <span className="font-medium text-gray-700">
-                            {stats.totalCost.toLocaleString('ru-RU')} ₽
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-1">
-                      {!isEditing && (
-                        <button
-                          onClick={() => {
-                            setEditingProjectId(project.id);
-                            setEditingName(project.name);
-                          }}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                          title="Переименовать"
-                        >
-                          <Edit2 className="w-4 h-4 text-gray-500" />
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => setCopyConfirmId(project.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                        title="Копировать"
-                      >
-                        <Copy className="w-4 h-4 text-gray-500" />
-                      </button>
-
-                      <button
-                        onClick={() => setDeleteConfirmId(project.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Удалить"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-
-                      {!isActive && (
-                        <button
-                          onClick={() => setActiveProjectId(project.id)}
-                          className="ml-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
-                        >
-                          Открыть
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {projects.length === 0 && (
+            {ctrl.projects.length === 0 && (
               <div className="text-center py-12">
                 <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">Нет проектов. Создайте первый проект.</p>
@@ -609,118 +146,61 @@ export function ProjectsModal({ isOpen, onClose, onImportTemplates }: ProjectsMo
           <ArchivePanel />
 
           {/* Server sync section */}
-          {isAuthenticated && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Server className="w-4 h-4 text-gray-500" />
-                <h3 className="text-sm font-medium text-gray-700">Синхронизация с сервером</h3>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSaveAllToServer}
-                  disabled={isSavingToServer}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
-                >
-                  {isSavingToServer ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {isSavingToServer ? 'Сохранение...' : 'Сохранить все'}
-                </button>
-
-                <button
-                  onClick={handleLoadAllFromServer}
-                  disabled={isLoadingFromServer}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
-                >
-                  {isLoadingFromServer ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Server className="w-4 h-4" />
-                  )}
-                  {isLoadingFromServer ? 'Загрузка...' : 'Загрузить все'}
-                </button>
-              </div>
-            </div>
+          {ctrl.isAuthenticated && (
+            <ServerSyncSection
+              isSavingToServer={ctrl.isSavingToServer}
+              isLoadingFromServer={ctrl.isLoadingFromServer}
+              onSaveAll={ctrl.handleSaveAllToServer}
+              onLoadAll={ctrl.handleLoadAllFromServer}
+            />
           )}
 
           {/* Import status */}
-          {importStatus && (
-            <div
-              className={`mt-4 p-4 rounded-lg ${
-                importStatus.type === 'success'
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : importStatus.type === 'error'
-                    ? 'bg-red-50 text-red-800 border border-red-200'
-                    : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {importStatus.type === 'success' && <CheckCircle className="w-5 h-5 mt-0.5" />}
-                {importStatus.type === 'error' && <AlertTriangle className="w-5 h-5 mt-0.5" />}
-                {importStatus.type === 'confirm' && <AlertTriangle className="w-5 h-5 mt-0.5" />}
-                <div className="flex-1">
-                  <p className="text-sm">{importStatus.message}</p>
-                  {importStatus.type === 'confirm' && (
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={handleConfirmImport}
-                        className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer"
-                      >
-                        Импортировать
-                      </button>
-                      <button
-                        onClick={() => setImportStatus(null)}
-                        className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                      >
-                        Отмена
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+          {ctrl.importStatus && (
+            <ImportStatusBanner
+              importStatus={ctrl.importStatus}
+              onConfirm={ctrl.handleConfirmImport}
+              onDismiss={() => ctrl.setImportStatus(null)}
+            />
           )}
         </div>
       </div>
 
       {/* Delete confirmation dialog */}
-      {deleteConfirmId && (
+      {ctrl.deleteConfirmId && (
         <ConfirmDialog
-          isOpen={!!deleteConfirmId}
-          onCancel={() => setDeleteConfirmId(null)}
-          onConfirm={() => handleDeleteProject(deleteConfirmId)}
+          isOpen={!!ctrl.deleteConfirmId}
+          onCancel={() => ctrl.setDeleteConfirmId(null)}
+          onConfirm={() => ctrl.handleDeleteProject(ctrl.deleteConfirmId!)}
           title="Удалить проект?"
-          message={`Проект «${projects.find(p => p.id === deleteConfirmId)?.name}» будет удалён безвозвратно. Рекомендуется сделать бэкап перед удалением.`}
+          message={`Проект «${ctrl.projects.find(p => p.id === ctrl.deleteConfirmId)?.name}» будет удалён безвозвратно. Рекомендуется сделать бэкап перед удалением.`}
           confirmLabel="Удалить"
           variant="danger"
         />
       )}
 
       {/* Copy confirmation dialog */}
-      {copyConfirmId && (
+      {ctrl.copyConfirmId && (
         <ConfirmDialog
-          isOpen={!!copyConfirmId}
-          onCancel={() => setCopyConfirmId(null)}
-          onConfirm={() => handleCopyProject(copyConfirmId)}
+          isOpen={!!ctrl.copyConfirmId}
+          onCancel={() => ctrl.setCopyConfirmId(null)}
+          onConfirm={() => ctrl.handleCopyProject(ctrl.copyConfirmId!)}
           title="Копировать проект?"
-          message={`Создать копию проекта «${projects.find(p => p.id === copyConfirmId)?.name}»?`}
+          message={`Создать копию проекта «${ctrl.projects.find(p => p.id === ctrl.copyConfirmId)?.name}»?`}
           confirmLabel="Копировать"
         />
       )}
 
       {/* Create project modal */}
       <CreateProjectModal
-        isOpen={showCreateModal}
+        isOpen={ctrl.showCreateModal}
         onClose={() => {
           dlog(LOG_PREFIX, 'CreateProjectModal closed');
-          setShowCreateModal(false);
+          ctrl.setShowCreateModal(false);
         }}
-        onCreate={handleCreateProject}
-        onImportFromBackup={handleImportFromBackup}
-        isCreating={isCreating}
+        onCreate={ctrl.handleCreateProject}
+        onImportFromBackup={ctrl.handleImportFromBackup}
+        isCreating={ctrl.isCreating}
       />
     </div>
   );
