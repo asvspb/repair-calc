@@ -472,3 +472,9 @@
 **Документация:** docs/TODO.md — P3-4 строка «Распропустить E2E-тесты» закрыта с деталями; INDEX.md структурно не менялся (новый файл — только e2e/helpers/sidebarHelpers.ts внутри существующего раздела e2e — дополнен).
 
 **Осталось skip в e2e:** 0 (в e2e/ нет ни `.skip`, ни `fixme`). В unit-тестах 2 `it.skip` в `tests/components/layout/RightSidebar.test.tsx` (NOT IMPLEMENTED) — вне ТЗ batch'а.
+
+## 2026-10-04 — Архитектор: деплой оптимизированного main (b69f0ed)
+
+- ./scripts/deploy-local.sh — успех с первой попытки (pnpm-инфраструктура починена ранее).
+- Проверено живьём: backend COMMIT_HASH=b69f0ed (= HEAD, batch-006 работает), /api/health 200, архивные эндпоинты 401 без токена, frontend 200.
+- Прод синхронен с main после всего цикла оптимизации 007–015.
