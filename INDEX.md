@@ -85,12 +85,13 @@ repair-calc/
 │   │   ├── geometry/                 # (9 файлов: Section, Mode, Simple/Extended/Advanced)
 │   │   ├── layout/                   # (4 файла: LeftSidebar, RightSidebar, Settings)
 │   │   ├── objects/                  # (5 файлов: Card, Selector, List, CreateModal, index)
-│   │   ├── projects/                 # (6 файлов: List, Modal, DataMgmt, Create, ArchivePanel, index)
+│   │   ├── projects/                 # (11 файлов: List, Modal, CreateModal, ArchivePanel, ProjectListItem, ServerSyncSection, ImportStatusBanner, useProjectsModal, useProjectExports, modalTypes, index)
+│   │   ├── backup/                   # (6 файлов: ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog, types, helpers — распил BackupManager, batch-013)
 │   │   ├── rooms/                    # (3 файла: List, ListItem, index)
 │   │   ├── works/                    # (11 файлов: WorkList, Materials, PriceSearch, index)
 │   │   ├── summary/                  # (4 файла: Materials, Tools, Works, index)
 │   │   ├── ui/                       # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
-│   │   ├── BackupManager.tsx
+│   │   ├── BackupManager.tsx      # тонкий контейнер (панели в components/backup/)
 │   │   ├── RoomEditor.tsx
 │   │   └── SummaryView.tsx
 │   ├── contexts/                     # React Context
