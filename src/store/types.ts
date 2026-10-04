@@ -75,6 +75,12 @@ export interface FlushAckEntry {
   entityId: string;
   /** true — снята без ретрая (конфликт/валидация/нет локального состояния) */
   gaveUp: boolean;
+  /** §3.3: серверная версия новее — локальная затирается, конфликт учитывается */
+  serverWins?: boolean;
+  /** §3.3: серверная версия сущности целиком (для замены локальной) */
+  serverEntity?: unknown;
+  /** §3.3: серверная updatedAt (ISO) */
+  serverUpdatedAt?: string;
 }
 
 export interface SyncSlice {
@@ -89,6 +95,8 @@ export interface SyncSlice {
   /** Dirty-карта SYNC-V2 (спека §2.1); дедуп: на сущность одно последнее состояние */
   dirty: DirtyMap;
   dirtyCount: number;
+  /** Счётчик LWW-конфликтов, разрешённых в пользу сервера (спека §3.1) */
+  conflictsResolved: number;
   lastSyncAt: Date | null;
   status: 'idle' | 'flushing' | 'error';
 

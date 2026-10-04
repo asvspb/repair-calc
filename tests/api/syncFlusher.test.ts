@@ -373,4 +373,73 @@ describe('SYNC-V2 флашер (batch б)', () => {
     expect(changes).toHaveLength(0);
     expect(missing).toEqual([{ entityKind: 'project', entityId: 'ghost-id' }]);
   });
+
+  // §3.3 (batch в): конфликт с serverUpdatedAt разбирается LWW
+  it('409: сервер новее → серверная версия принимается (serverWins), счётчик конфликтов', async () => {
+    vi.stubEnv('VITE_SYNC_V2', 'true');
+    seedStore([makeProject(uuid(1))], true);
+    useProjectStore
+      .getState()
+      .updateActiveProject({ ...useProjectStore.getState().projects[0], name: 'x' });
+
+    mockedSyncPush.mockResolvedValueOnce({
+      synced: [],
+      conflicts: [
+        {
+          id: uuid(1),
+          entity: 'project',
+          entityId: uuid(1),
+          serverVersion: 5,
+          clientVersion: 0,
+          serverUpdatedAt: '2030-01-01T00:00:00.000Z',
+          serverEntity: { id: uuid(1), name: 'server' },
+        },
+      ],
+    });
+    useProjectStore.setState({ conflictsResolved: 0 });
+    const { deps, resolved } = makeDeps();
+    await runFlush(deps);
+
+    expect(useProjectStore.getState().dirtyCount).toBe(0);
+    expect(useProjectStore.getState().conflictsResolved).toBe(1);
+    expect(resolved.at(-1)).toEqual([
+      {
+        entityKind: 'project',
+        entityId: uuid(1),
+        gaveUp: false,
+        serverWins: true,
+        serverEntity: { id: uuid(1), name: 'server' },
+        serverUpdatedAt: '2030-01-01T00:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('409: клиент новее → сущность остаётся dirty, повторный push при следующем flush', async () => {
+    vi.stubEnv('VITE_SYNC_V2', 'true');
+    seedStore([makeProject(uuid(1))], true);
+    useProjectStore
+      .getState()
+      .updateActiveProject({ ...useProjectStore.getState().projects[0], name: 'x' });
+
+    mockedSyncPush.mockResolvedValueOnce({
+      synced: [],
+      conflicts: [
+        {
+          id: uuid(1),
+          entity: 'project',
+          entityId: uuid(1),
+          serverVersion: 1,
+          clientVersion: 0,
+          serverUpdatedAt: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    useProjectStore.setState({ conflictsResolved: 0 });
+    const { deps, resolved } = makeDeps();
+    await runFlush(deps);
+
+    expect(useProjectStore.getState().dirtyCount).toBe(1);
+    expect(useProjectStore.getState().conflictsResolved).toBe(0);
+    expect(resolved).toHaveLength(0);
+  });
 });
