@@ -74,7 +74,8 @@ repair-calc/
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
 │   │   │   ├── apiClient.ts          # Очередь запросов: rate limiting, 429-ретраи, типы кэша/контекста
-│   │   │   ├── syncFlusher.ts        # Флашер SYNC-V2 (batch б): дедуп, parent-before-child, батчи ≤50, триггеры online/30с/debounce; под VITE_SYNC_V2
+│   │   │   ├── syncFlusher.ts        # Флашер SYNC-V2 (batch б): дедуп, parent-before-child, батчи ≤50, триггеры online/30с/debounce; разбор 409 по LWW §3.3 (batch в); под VITE_SYNC_V2
+│   │   │   ├── syncMerge.ts          # Pull-merge LWW (batch в): §3.1 слияние с dirty-картой, tie-break §3.2, удалённые на сервере §3.3
 │   │   │   ├── projectApi.ts         # Полная/инкрементальная синхронизация проектов
 │   │   │   ├── objectApi.ts          # CRUD проектов + payload-билдеры объектов
 │   │   │   ├── roomApi.ts            # Синхронизация комнат + трекинг ошибок
@@ -259,7 +260,7 @@ repair-calc/
 | Файл                                    | Назначение                                                                                                                                                                |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext                                                                                        |
-| `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`) + триггеры флашера (batch б)                                         |
+| `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`) + триггеры флашера (batch б) + счётчик `conflictsResolved` (batch в) |
 | `src/api/storage/dexieDb.ts`            | Dexie `RepairCalcDB` (version 2: таблица `syncState` — персистентные dirty-флаги SYNC-V2 §2.1)                                                                            |
 | `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                                                                                                               |
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
@@ -270,16 +271,16 @@ repair-calc/
 
 ### Бэкенд
 
-| Файл                                   | Назначение                                                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `server/src/routes/sync.ts`            | Sync API (pull/push)                                                                       |
-| `server/src/routes/projects.ts`        | Projects CRUD                                                                              |
-| `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas)       |
-| `server/src/config/env.ts`             | Конфигурация (DB, JWT, logging)                                                            |
-| `server/src/middleware/logger.ts`      | Winston логирование                                                                        |
-| `server/src/middleware/auth.ts`        | JWT аутентификация                                                                         |
-| `server/src/middleware/deprecation.ts` | Депрекейшн эндпоинтов: `Deprecation`/`Sunset` + warn-лог (экспорт; на маршруты не навешан) |
-| `server/src/jobs/cleanupDeleted.ts`    | Очистка архивных проектов старше `ARCHIVE_RETENTION_DAYS` (cron 03:00 + прогон на старте)  |
+| Файл                                   | Назначение                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `server/src/routes/sync.ts`            | Sync API (pull/push; SYNC-V2: LWW на push по `clientUpdatedAt`, `?since=` на pull — batch в) |
+| `server/src/routes/projects.ts`        | Projects CRUD                                                                                |
+| `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas)         |
+| `server/src/config/env.ts`             | Конфигурация (DB, JWT, logging)                                                              |
+| `server/src/middleware/logger.ts`      | Winston логирование                                                                          |
+| `server/src/middleware/auth.ts`        | JWT аутентификация                                                                           |
+| `server/src/middleware/deprecation.ts` | Депрекейшн эндпоинтов: `Deprecation`/`Sunset` + warn-лог (экспорт; на маршруты не навешан)   |
+| `server/src/jobs/cleanupDeleted.ts`    | Очистка архивных проектов старше `ARCHIVE_RETENTION_DAYS` (cron 03:00 + прогон на старте)    |
 
 ---
 
@@ -356,10 +357,10 @@ server/src/db/migrations/
 
 ### Синхронизация
 
-| Метод | Endpoint         | Описание            |
-| ----- | ---------------- | ------------------- |
-| GET   | `/api/sync/pull` | Получить данные     |
-| POST  | `/api/sync/push` | Отправить изменения |
+| Метод | Endpoint         | Описание                                                              |
+| ----- | ---------------- | --------------------------------------------------------------------- |
+| GET   | `/api/sync/pull` | Получить данные (`?since=<ISO>` — инкрементально; без since — полный) |
+| POST  | `/api/sync/push` | Отправить изменения (LWW по `clientUpdatedAt` + tie-break по id)      |
 
 ---
 
