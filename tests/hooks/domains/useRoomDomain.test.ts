@@ -6,6 +6,9 @@ vi.mock('../../../src/utils/logger', () => ({
   logUserAction: vi.fn(),
   logSuccess: vi.fn(),
   logWarning: vi.fn(),
+  logDebug: vi.fn(),
+  logStart: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock('../../../src/utils/projectObjects', () => {
