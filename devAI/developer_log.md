@@ -412,3 +412,29 @@
 - `pnpm exec tsc --noEmit -p tsconfig.json` — exit 0.
 
 **docs/TODO.md**: обе строки P3-1 (BackupManager, ProjectsModal) закрыты ✅ с размерами. **INDEX.md**: дерево components/ дополнено `backup/`, projects/ актуализирован (11 файлов), BackupManager помечен как тонкий контейнер.
+
+---
+
+## 2026-10-04 — TASK-BATCH-014-split-store-repo (P3-SPLIT + P3-1 store/server)
+
+**Агент:** GLM-5.3-Flash (coder). **Ветка:** `refactor/split-store-repo-014` (от `refactor/split-ui-013`).
+**ТЗ:** devAI/spec/TASK-BATCH-012-015-splits.md, секция TASK-BATCH-014-split-store-repo.
+
+**Сделано:**
+
+1. `src/store/createProjectSlice.ts` (650 → 267): архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject + deletingIds-гейт/inflight) вынесены в `src/store/createArchiveSlice.ts` (183); новый интерфейс `ArchiveSlice` в `store/types.ts`, композируется в `useProjectStore`. Маркер SPLIT-ME снят. Для порога ≤400 (после выноса архива оставалось 484/452) дополнительно вынесены `projectInitialize.ts` (222 — тело initialize) и `projectMigration.ts` (39 — migrateProject/migrateRoom); `migrateProject` ре-экспортируется из `createProjectSlice` и `useProjectStore` — импортёры (contexts/index.ts, тесты) не тронуты.
+
+2. `server/src/db/repositories/project.repo.ts` (854 → 113): архивные методы (findArchivedByUserId/findArchivedByIdAndUserId/restore/findArchivedOlderThan/hardDelete + RestoreResult/HardDeleteResult) → `projectArchive.repo.ts` (186); для порога ≤400 дополнительно вынесены `projectRead.repo.ts` (141 — findById*/findByUserId/for-sync-варианты), `projectUpdateRooms.repo.ts` (197 — updateWithRooms), `projectUpdateObjects.repo.ts` (302 — updateWithObjects + isServerUuid). Цепочка наследования Archive → Read → UpdateRooms → UpdateObjects → ProjectRepository + ре-экспорты из project.repo.ts — вся прежняя API (`ProjectRepository.restore(...)` и т.д.) работает без правок импортёров (server/src/routes/projects.ts, server/src/jobs/cleanupDeleted.ts не тронуты). Knex остался в repositories. Примечание: restore внутри archive-репо собирает проект с объектами локальным `fetchProjectWithObjects` (та же SQL-логика, что был `this.findByIdWithObjects`), чтобы классы не зависели от подкласса.
+
+3. Тесты не ослаблялись: `tests/unit/archiveProjectSlice.test.ts` — обновлён только заголовочный комментарий (путь нового модуля); серверные projectArchive/cleanupDeleted/route-тесты — без изменений, зелёные.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 1043 passed / 4 skipped (root vitest) + 150 passed / 2 skipped (server vitest).
+- `pnpm run lint` — 0 errors; 31 warning (все pre-existing: `no-explicit-any` в перенесённом дословно коде updateWithObjects/findAllByUserIdForSync и легаси server/tests); в новых файлах чисто, два новых unused-import предупреждения устранены.
+- `pnpm run lint:deps` — «no dependency violations found (251 modules, 950 dependencies cruised)».
+- `pnpm exec tsc --noEmit` (front) и `server: pnpm exec tsc --noEmit` — exit 0.
+
+**Документация:** docs/TODO.md — P3-SPLIT закрыт с размерами; INDEX.md — дерево src/store/ и repositories/ актуализировано, дата обновления 2026-10-04.
+
+**Отклонение от буквы ТЗ (зафиксировано):** ТЗ называло только архив-экшены в обоих файлах, но DoD требует «все файлы ≤400» — одного выноса архива было недостаточно (createProjectSlice 484, project.repo 720), поэтому дополнительно вынесены initialize/migration (store) и read/update-методы (repo). Поведение не менялось, покрытие прежнее.

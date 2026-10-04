@@ -12,7 +12,7 @@
 
 ---
 
-- [ ] **P3-SPLIT:** распил `src/store/createProjectSlice.ts` (648 строк > 400) — вынести архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject) в отдельный `createArchiveSlice.ts` (добавлено при ревью T3, маркер SPLIT-ME в файле)
+- [x] **P3-SPLIT:** распил `src/store/createProjectSlice.ts` (648 строк > 400) — вынести архив-экшены (fetchArchivedProjects/restoreProject/permanentDeleteProject) в отдельный `createArchiveSlice.ts` — **закрыто 2026-10-04** (`refactor/split-store-repo-014`): архив-экшены в `createArchiveSlice.ts` (183) + `ArchiveSlice` в types.ts; дополнительно для порога ≤400 вынесены `projectInitialize.ts` (222) и `projectMigration.ts` (39), `createProjectSlice` стал 267, маркер SPLIT-ME снят; заодно `server/.../project.repo.ts` (854) распилен на `projectArchive.repo.ts` (186, findArchived*/restore/hardDelete) + `projectRead.repo.ts` (141) + `projectUpdateRooms.repo.ts` (197) + `projectUpdateObjects.repo.ts` (302) + фасад (113) — вся прежняя API доступна через `ProjectRepository` (цепочка наследования + ре-экспорты), Knex остался в repositories; тесты не ослаблялись (1043 front + 150 server зелёные)
 
 ## ✅ Закрыто 2026-10-03/04 (сверка TODO с фактическим состоянием)
 
