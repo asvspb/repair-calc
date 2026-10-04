@@ -20,7 +20,10 @@ export interface ProjectSlice {
     objects?: string[];
   }) => Promise<ProjectData>;
   deleteProject: (projectId: string) => Promise<void>;
+}
 
+/** Архивные операции над проектами (P3-SPLIT): список архива / restore / безвозвратное удаление */
+export interface ArchiveSlice {
   /** Список архивных проектов (только для авторизованных; гостю — пустой список) */
   fetchArchivedProjects: () => Promise<
     (ProjectData & { objectsCount: number; roomsCount: number })[]
@@ -70,4 +73,9 @@ export interface SyncSlice {
   setSyncing: (isSyncing: boolean) => void;
 }
 
-export type StoreState = ProjectSlice & RoomSlice & ObjectSlice & SyncSlice & AuthSlice;
+export type StoreState = ProjectSlice &
+  ArchiveSlice &
+  RoomSlice &
+  ObjectSlice &
+  SyncSlice &
+  AuthSlice;

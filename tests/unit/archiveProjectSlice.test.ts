@@ -1,6 +1,7 @@
 /**
  * Тесты slice-экшенов архива (T3, TASK-BATCH-001):
- * fetchArchivedProjects / restoreProject / permanentDeleteProject (src/store/createProjectSlice.ts).
+ * fetchArchivedProjects / restoreProject / permanentDeleteProject (src/store/createArchiveSlice.ts,
+ * вынесено из createProjectSlice в TASK-BATCH-014).
  *
  * Мокаются: api/projects, storage, apiStorageProvider, logger, migration, projectObjects,
  * saveQueue. idMapper — РЕАЛЬНЫЙ (localStorage мокается в tests/setup.ts): заодно

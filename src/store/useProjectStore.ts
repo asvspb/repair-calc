@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { StoreState } from './types';
 import { createProjectSlice } from './createProjectSlice';
+import { createArchiveSlice } from './createArchiveSlice';
 import { createRoomSlice } from './createRoomSlice';
 import { createObjectSlice } from './createObjectSlice';
 import { createSyncSlice } from './createSyncSlice';
@@ -12,6 +13,7 @@ import { createAuthSlice } from './createAuthSlice';
 
 export const useProjectStore = create<StoreState>()((...a) => ({
   ...createProjectSlice(...a),
+  ...createArchiveSlice(...a),
   ...createRoomSlice(...a),
   ...createObjectSlice(...a),
   ...createSyncSlice(...a),
