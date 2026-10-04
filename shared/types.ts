@@ -141,6 +141,8 @@ export type RoomData = {
   extendedModeData?: ExtendedModeData;
   advancedModeData?: AdvancedModeData;
   objectId?: string;
+  /** ISO-метка последней мутации (SYNC-V2 §2.1): ставится локально, перезаписывается серверным updated_at при pull */
+  updatedAt?: string;
 };
 
 export type ObjectData = {
@@ -154,6 +156,8 @@ export type ObjectData = {
   rooms: RoomData[];
   version?: number;
   sortOrder?: number;
+  /** ISO-метка последней мутации (SYNC-V2 §2.1) */
+  updatedAt?: string;
 };
 
 export type ProjectData = {
@@ -167,4 +171,6 @@ export type ProjectData = {
   lastAiPriceUpdate?: string;
   version?: number;
   rooms?: RoomData[];
+  /** ISO-метка последней мутации (SYNC-V2 §2.1) */
+  updatedAt?: string;
 };

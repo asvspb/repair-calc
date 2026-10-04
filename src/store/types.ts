@@ -58,6 +58,17 @@ export interface ObjectSlice {
   copyObject: (objectId: string) => string | null;
 }
 
+/** Вид сущности dirty-модели SYNC-V2 (спека §2.1) */
+export type DirtyEntityKind = 'project' | 'object' | 'room';
+
+export interface DirtyEntry {
+  /** ISO-метка последней мутации сущности */
+  updatedAt: string;
+  op: 'upsert';
+}
+
+export type DirtyMap = Record<DirtyEntityKind, Record<string, DirtyEntry>>;
+
 export interface SyncSlice {
   lastSaved: Date | null;
   saveError: string | null;
@@ -67,10 +78,20 @@ export interface SyncSlice {
   roomSyncError: string | null;
   isSyncing: boolean;
 
+  /** Dirty-карта SYNC-V2 (спека §2.1); дедуп: на сущность одно последнее состояние */
+  dirty: DirtyMap;
+  dirtyCount: number;
+  lastSyncAt: Date | null;
+  status: 'idle' | 'flushing' | 'error';
+
   initSyncListeners: () => () => void;
   scheduleSave: (newProjects: ProjectData[]) => void;
   scheduleTotalsSave: (project: ProjectData) => void;
   setSyncing: (isSyncing: boolean) => void;
+  /** Пометить сущность dirty (+ персист в Dexie syncState) */
+  markDirty: (entityKind: DirtyEntityKind, entityId: string, updatedAt: string) => void;
+  /** Восстановить dirty-карту из Dexie syncState при старте */
+  restoreDirtyState: () => Promise<void>;
 }
 
 export type StoreState = ProjectSlice &
