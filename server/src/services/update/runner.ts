@@ -1,83 +1,42 @@
 /**
  * Update Runner - Управляет процессом обновления цен
  * UPDATE_SERVICE - Specification v1.1
+ *
+ * Разнос по внутренней связности:
+ *  - runner.types.ts — конфигурация и типы;
+ *  - runnerSteps.ts  — шаги без состояния (сбор элементов, сохранение цены, запись результатов).
  */
 
 import {
-  UpdateJobRepository,
   UpdateJobItemRepository,
   UpdateJobLockRepository,
-  UpdateLogRepository,
+  UpdateJobRepository,
   type UpdateJob,
   type JobProgress,
 } from '../../db/repositories/updateJob.repo.js';
-import {
-  PriceCatalogRepository,
-  type PriceCatalog,
-  type CreatePriceCatalogInput,
-  type PriceCategory,
-  type SourceType,
-} from '../../db/repositories/priceCatalog.repo.js';
-import {
-  PriceHistoryRepository,
-  type CreatePriceHistoryInput,
-} from '../../db/repositories/priceHistory.repo.js';
+import type { SourceType } from '../../db/repositories/priceCatalog.repo.js';
+import { PriceHistoryRepository } from '../../db/repositories/priceHistory.repo.js';
 import type { PriceParser, PriceRequest, PriceResult } from './parsers/types.js';
 import { CircuitBreaker } from './parsers/circuitBreaker.js';
 import { RateLimiter } from './parsers/rateLimiter.js';
+import type { PrioritizedItem } from './utils/priority.js';
 import {
-  prioritizeItems,
-  type PrioritizedItem,
-  type JobPriority,
-} from './utils/priority.js';
-import crypto from 'crypto';
+  getItemsToUpdate,
+  recordFailed,
+  recordSkipped,
+  recordSuccess,
+  savePrice,
+} from './runnerSteps.js';
+import {
+  defaultConfig,
+  type ItemToUpdate,
+  type RunOptions,
+  type RunnerConfig,
+} from './runner.types.js';
+import { cacheKey, getFromCache, saveToCache, type RunnerCache } from './runnerCache.js';
+import { UpdateLogRepository } from '../../db/repositories/updateJob.repo.js';
 
-// ═══════════════════════════════════════════════════════
-// КОНФИГУРАЦИЯ
-// ═══════════════════════════════════════════════════════
-
-export interface RunnerConfig {
-  batchSize: number;              // Размер батча (по умолчанию 10)
-  concurrentRequests: number;     // Параллельные запросы (по умолчанию 5)
-  requestDelayMs: number;         // Задержка между запросами (500ms)
-  cacheEnabled: boolean;          // Включить кэш
-  cacheTtlMs: number;             // Время жизни кэша (1 час)
-  anomalyDetectionEnabled: boolean;
-  anomalyThresholdPercent: number;  // Порог аномалии (100%)
-  lockTtlMs: number;              // Время жизни блокировки (5 минут)
-}
-
-const defaultConfig: RunnerConfig = {
-  batchSize: 10,
-  concurrentRequests: 5,
-  requestDelayMs: 500,
-  cacheEnabled: true,
-  cacheTtlMs: 3600000, // 1 час
-  anomalyDetectionEnabled: true,
-  anomalyThresholdPercent: 100,
-  lockTtlMs: 300000, // 5 минут
-};
-
-// ═══════════════════════════════════════════════════════
-// ТИПЫ
-// ═══════════════════════════════════════════════════════
-
-export interface RunOptions {
-  city?: string;
-  categories?: PriceCategory[];
-  sources?: SourceType[];
-  force?: boolean;
-  triggeredBy?: string;
-  priority?: JobPriority;  // Приоритет задачи: 'high' | 'normal' | 'low'
-}
-
-export interface ItemToUpdate {
-  name: string;
-  category: PriceCategory;
-  city: string;
-  unit?: string;
-  existingPrice?: PriceCatalog;
-}
+export * from './runner.types.js';
 
 // ═══════════════════════════════════════════════════════
 // RUNNER
@@ -88,7 +47,7 @@ export class UpdateRunner {
   private parsers: Map<string, PriceParser> = new Map();
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private rateLimiters: Map<string, RateLimiter> = new Map();
-  private cache: Map<string, { result: PriceResult; expiresAt: number }> = new Map();
+  private cache: RunnerCache = new Map();
   private abortController: AbortController | null = null;
 
   constructor(config: Partial<RunnerConfig> = {}) {
@@ -105,11 +64,11 @@ export class UpdateRunner {
         threshold: 5,
         resetTimeoutMs: 600000, // 10 минут
         halfOpenMaxRequests: 3,
-      })
+      }),
     );
     this.rateLimiters.set(
       parser.type,
-      new RateLimiter({ requestsPerMinute: parser.getRateLimit().requestsPerMinute })
+      new RateLimiter({ requestsPerMinute: parser.getRateLimit().requestsPerMinute }),
     );
   }
 
@@ -150,7 +109,7 @@ export class UpdateRunner {
       await UpdateJobRepository.start(job.id);
 
       // Получаем элементы для обновления
-      const items = await this.getItemsToUpdate(options);
+      const items = await getItemsToUpdate(options);
       await UpdateJobRepository.updateProgress(job.id, { total_items: items.length });
 
       if (items.length === 0) {
@@ -166,7 +125,7 @@ export class UpdateRunner {
           item_name: item.name,
           item_category: item.category,
           city: item.city,
-        }))
+        })),
       );
 
       // Обрабатываем батчами
@@ -192,52 +151,12 @@ export class UpdateRunner {
     }
   }
 
-  // ─── ПОЛУЧЕНИЕ ЭЛЕМЕНТОВ ДЛЯ ОБНОВЛЕНИЯ ─────────────────────
-
-  private async getItemsToUpdate(options: RunOptions): Promise<PrioritizedItem[]> {
-    const rawItems: Array<{ name: string; category: PriceCategory; city: string; unit?: string }> = [];
-
-    // Если указан город, получаем элементы для этого города
-    if (options.city) {
-      const stalePrices = await PriceCatalogRepository.findStale(1000);
-      
-      for (const price of stalePrices) {
-        if (options.city && price.city !== options.city) continue;
-        if (options.categories && !options.categories.includes(price.category)) continue;
-
-        rawItems.push({
-          name: price.name,
-          category: price.category,
-          city: price.city,
-          unit: price.unit,
-        });
-      }
-    }
-
-    // TODO: Добавить элементы из works/materials, которых нет в каталоге
-
-    // Ждём разрешения всех промисов для existingPrice
-    const itemsWithPrices = await Promise.all(
-      rawItems.map(async (item) => {
-        const existingPrice = await PriceCatalogRepository.findByNameCityCategory(
-          item.name,
-          item.city,
-          item.category
-        );
-        return { ...item, existingPrice };
-      })
-    );
-
-    // Приоритизируем и сортируем по убыванию приоритета
-    return prioritizeItems(itemsWithPrices, (item) => item.existingPrice);
-  }
-
   // ─── ОБРАБОТКА БАТЧАМИ ────────────────────────────────────
 
   private async processBatches(
     jobId: string,
     items: PrioritizedItem[],
-    sources?: SourceType[]
+    sources?: SourceType[],
   ): Promise<void> {
     const batches = this.chunkArray(items, this.config.batchSize);
 
@@ -250,7 +169,7 @@ export class UpdateRunner {
 
       await UpdateLogRepository.debug(
         `Processing batch ${index + 1}/${batches.length} (${batch.length} items)`,
-        jobId
+        jobId,
       );
 
       // Параллельная обработка с ограничением конкурентности
@@ -266,20 +185,18 @@ export class UpdateRunner {
   private async processBatchWithConcurrency(
     jobId: string,
     batch: ItemToUpdate[],
-    sources?: SourceType[]
+    sources?: SourceType[],
   ): Promise<void> {
     const concurrency = this.config.concurrentRequests;
     const chunks = this.chunkArray(batch, Math.ceil(batch.length / concurrency));
 
-    await Promise.all(
-      chunks.map(chunk => this.processChunk(jobId, chunk, sources))
-    );
+    await Promise.all(chunks.map(chunk => this.processChunk(jobId, chunk, sources)));
   }
 
   private async processChunk(
     jobId: string,
     items: ItemToUpdate[],
-    sources?: SourceType[]
+    sources?: SourceType[],
   ): Promise<void> {
     for (const item of items) {
       await this.processItem(jobId, item, sources);
@@ -291,7 +208,7 @@ export class UpdateRunner {
   private async processItem(
     jobId: string,
     item: ItemToUpdate,
-    sources?: SourceType[]
+    sources?: SourceType[],
   ): Promise<void> {
     const startTime = Date.now();
     const itemKey = this.getItemKey(item);
@@ -300,29 +217,25 @@ export class UpdateRunner {
       // Проверка блокировки
       const isLocked = await UpdateJobLockRepository.isLocked(itemKey);
       if (isLocked) {
-        await this.recordSkipped(jobId, item, 'Item is locked by another job');
+        await recordSkipped(jobId, item, 'Item is locked by another job');
         return;
       }
 
       // acquire lock
-      const acquired = await UpdateJobLockRepository.acquire(
-        jobId,
-        itemKey,
-        this.config.lockTtlMs
-      );
+      const acquired = await UpdateJobLockRepository.acquire(jobId, itemKey, this.config.lockTtlMs);
       if (!acquired) {
-        await this.recordSkipped(jobId, item, 'Failed to acquire lock');
+        await recordSkipped(jobId, item, 'Failed to acquire lock');
         return;
       }
 
       try {
         // Проверка кэша
-        const cacheKey = this.getCacheKey(item);
+        const key = cacheKey(item);
         if (this.config.cacheEnabled) {
-          const cached = this.getFromCache(cacheKey);
+          const cached = getFromCache(this.cache, key);
           if (cached) {
-            await this.savePrice(item, cached, jobId);
-            await this.recordSuccess(jobId, item, cached, Date.now() - startTime, true);
+            await savePrice(item, cached, jobId);
+            await recordSuccess(jobId, item, cached, Date.now() - startTime, true);
             return;
           }
         }
@@ -330,14 +243,14 @@ export class UpdateRunner {
         // Выбор источника
         const parser = this.selectParser(sources);
         if (!parser) {
-          await this.recordFailed(jobId, item, 'No available parser');
+          await recordFailed(jobId, item, 'No available parser');
           return;
         }
 
         // Проверка Circuit Breaker
         const cb = this.circuitBreakers.get(parser.type);
         if (cb && !cb.isAvailable()) {
-          await this.recordFailed(jobId, item, `Circuit breaker open for ${parser.type}`);
+          await recordFailed(jobId, item, `Circuit breaker open for ${parser.type}`);
           return;
         }
 
@@ -367,34 +280,41 @@ export class UpdateRunner {
           const anomaly = await PriceHistoryRepository.detectAnomaly(
             item.existingPrice.price_avg,
             result.prices.avg,
-            this.config.anomalyThresholdPercent
+            this.config.anomalyThresholdPercent,
           );
           if (anomaly.isAnomaly) {
             result.requiresReview = true;
             await UpdateLogRepository.warn(
               `Anomaly detected for ${item.name}: ${anomaly.changePercent.toFixed(1)}% change`,
               jobId,
-              { item, anomaly }
+              { item, anomaly },
             );
           }
         }
 
         // Сохраняем цену
-        await this.savePrice(item, result, jobId, parser.type as SourceType);
+        await savePrice(item, result, jobId, parser.type as SourceType);
 
         // Кэшируем результат
         if (this.config.cacheEnabled) {
-          this.saveToCache(cacheKey, result);
+          saveToCache(this.cache, key, result, this.config.cacheTtlMs);
         }
 
-        await this.recordSuccess(jobId, item, result, Date.now() - startTime, false, parser.type as SourceType);
+        await recordSuccess(
+          jobId,
+          item,
+          result,
+          Date.now() - startTime,
+          false,
+          parser.type as SourceType,
+        );
       } finally {
         // Освобождаем блокировку
         await UpdateJobLockRepository.release(jobId, itemKey);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      await this.recordFailed(jobId, item, errorMessage);
+      await recordFailed(jobId, item, errorMessage);
 
       // Записываем ошибку в Circuit Breaker
       const parser = this.parsers.values().next().value;
@@ -427,146 +347,6 @@ export class UpdateRunner {
     return availableParsers[0] || null;
   }
 
-  // ─── СОХРАНЕНИЕ ЦЕНЫ ────────────────────────────────────────
-
-  private async savePrice(
-    item: ItemToUpdate,
-    result: PriceResult,
-    jobId: string,
-    sourceType?: SourceType
-  ): Promise<void> {
-    const input: CreatePriceCatalogInput = {
-      name: item.name,
-      category: item.category,
-      unit: item.unit,
-      city: item.city,
-      price_min: result.prices.min,
-      price_avg: result.prices.avg,
-      price_max: result.prices.max,
-      currency: result.prices.currency,
-      source_type: sourceType,
-      confidence_score: result.confidenceScore,
-      valid_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +7 дней
-    };
-
-    // Сохраняем или обновляем цену
-    const priceCatalog = await PriceCatalogRepository.upsert(input);
-
-    // Записываем историю
-    const historyInput: CreatePriceHistoryInput = {
-      price_catalog_id: priceCatalog.id,
-      job_id: jobId,
-      old_price_min: item.existingPrice?.price_min,
-      old_price_avg: item.existingPrice?.price_avg,
-      old_price_max: item.existingPrice?.price_max,
-      new_price_min: result.prices.min,
-      new_price_avg: result.prices.avg,
-      new_price_max: result.prices.max,
-      confidence_score: result.confidenceScore,
-      requires_review: result.requiresReview,
-    };
-
-    // Вычисляем процент изменения
-    if (item.existingPrice?.price_avg && result.prices.avg) {
-      const changePercent =
-        ((result.prices.avg - item.existingPrice.price_avg) /
-          item.existingPrice.price_avg) *
-        100;
-      historyInput.price_change_percent = changePercent;
-    }
-
-    await PriceHistoryRepository.create(historyInput);
-  }
-
-  // ─── ЗАПИСЬ РЕЗУЛЬТАТОВ ─────────────────────────────────────
-
-  private async recordSuccess(
-    jobId: string,
-    item: ItemToUpdate,
-    result: PriceResult,
-    _durationMs: number,
-    _fromCache: boolean,
-    sourceType?: SourceType
-  ): Promise<void> {
-    const jobItems = await UpdateJobItemRepository.findByJobId(jobId);
-    const jobItem = jobItems.find(
-      ji => ji.item_name === item.name && ji.city === item.city
-    );
-
-    if (jobItem) {
-      // Получаем ID сохранённой цены
-      const priceCatalog = await PriceCatalogRepository.findByNameCityCategory(
-        item.name,
-        item.city,
-        item.category
-      );
-
-      if (priceCatalog && sourceType) {
-        await UpdateJobItemRepository.completeItem(jobItem.id, {
-          source: sourceType,
-          price_catalog_id: priceCatalog.id,
-          price_change: result.prices.avg - (item.existingPrice?.price_avg || 0),
-        });
-      }
-    }
-
-    // Обновляем прогресс задачи
-    const job = await UpdateJobRepository.findById(jobId);
-    if (job) {
-      await UpdateJobRepository.updateProgress(jobId, {
-        processed_items: job.processed_items + 1,
-        items_updated: item.existingPrice ? job.items_updated + 1 : job.items_updated,
-        items_created: !item.existingPrice ? job.items_created + 1 : job.items_created,
-      });
-    }
-  }
-
-  private async recordSkipped(
-    jobId: string,
-    item: ItemToUpdate,
-    reason: string
-  ): Promise<void> {
-    const jobItems = await UpdateJobItemRepository.findByJobId(jobId);
-    const jobItem = jobItems.find(
-      ji => ji.item_name === item.name && ji.city === item.city
-    );
-
-    if (jobItem) {
-      await UpdateJobItemRepository.skipItem(jobItem.id, reason);
-    }
-
-    const job = await UpdateJobRepository.findById(jobId);
-    if (job) {
-      await UpdateJobRepository.updateProgress(jobId, {
-        processed_items: job.processed_items + 1,
-        items_skipped: job.items_skipped + 1,
-      });
-    }
-  }
-
-  private async recordFailed(
-    jobId: string,
-    item: ItemToUpdate,
-    error: string
-  ): Promise<void> {
-    const jobItems = await UpdateJobItemRepository.findByJobId(jobId);
-    const jobItem = jobItems.find(
-      ji => ji.item_name === item.name && ji.city === item.city
-    );
-
-    if (jobItem) {
-      await UpdateJobItemRepository.failItem(jobItem.id, error);
-    }
-
-    const job = await UpdateJobRepository.findById(jobId);
-    if (job) {
-      await UpdateJobRepository.updateProgress(jobId, {
-        processed_items: job.processed_items + 1,
-        failed_items: job.failed_items + 1,
-      });
-    }
-  }
-
   // ─── ОТМЕНА ЗАДАЧИ ──────────────────────────────────────────
 
   async cancel(jobId: string): Promise<boolean> {
@@ -586,29 +366,6 @@ export class UpdateRunner {
 
   async getProgress(jobId: string): Promise<JobProgress | null> {
     return UpdateJobRepository.getProgress(jobId);
-  }
-
-  // ─── КЭШИРОВАНИЕ ────────────────────────────────────────────
-
-  private getCacheKey(item: ItemToUpdate): string {
-    const data = `${item.name}:${item.city}:${item.category}`;
-    return crypto.createHash('sha256').update(data).digest('hex');
-  }
-
-  private getFromCache(key: string): PriceResult | null {
-    const cached = this.cache.get(key);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.result;
-    }
-    this.cache.delete(key);
-    return null;
-  }
-
-  private saveToCache(key: string, result: PriceResult): void {
-    this.cache.set(key, {
-      result,
-      expiresAt: Date.now() + this.config.cacheTtlMs,
-    });
   }
 
   // ─── HELPERS ──────────────────────────────────────────────
