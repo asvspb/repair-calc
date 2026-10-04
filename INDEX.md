@@ -69,7 +69,11 @@ repair-calc/
 │   │   ├── totals.ts                 # Totals API
 │   │   ├── users.ts                  # Users API
 │   │   ├── storage/
-│   │   │   ├── apiStorageProvider.ts # Storage через REST API
+│   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
+│   │   │   ├── apiClient.ts          # Очередь запросов: rate limiting, 429-ретраи, типы кэша/контекста
+│   │   │   ├── projectApi.ts         # Полная/инкрементальная синхронизация проектов
+│   │   │   ├── objectApi.ts          # CRUD проектов + payload-билдеры объектов
+│   │   │   ├── roomApi.ts            # Синхронизация комнат + трекинг ошибок
 │   │   │   └── index.ts
 │   │   └── prices/                   # AI поиск цен (через серверный прокси)
 │   │       ├── priceCache.ts         # Клиентский кэш (localStorage)
@@ -235,15 +239,15 @@ repair-calc/
 
 ### Фронтенд
 
-| Файл                                    | Назначение                                                                         |
-| --------------------------------------- | ---------------------------------------------------------------------------------- |
-| `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext |
-| `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                        |
-| `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                         |
-| `src/api/storage/apiStorageProvider.ts` | Синхронизация с сервером (~1036 строк)                                             |
-| `src/utils/storage.ts`                  | StorageManager (localStorage)                                                      |
-| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID                                                     |
-| `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)                                              |
+| Файл                                    | Назначение                                                                                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext                                                                                        |
+| `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                                                                                                               |
+| `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
+| `src/api/storage/apiStorageProvider.ts` | Storage через REST API — тонкий фасад (346 стр.); внутри: `apiClient.ts` (очередь/ретраи), `projectApi.ts` (синхронизация), `objectApi.ts` (CRUD), `roomApi.ts` (комнаты) |
+| `src/utils/storage.ts`                  | StorageManager (localStorage)                                                                                                                                             |
+| `src/utils/idMapper.ts`                 | Маппинг локальных/серверных ID                                                                                                                                            |
+| `src/utils/projectObjects.ts`           | Object-based helpers (pure functions)                                                                                                                                     |
 
 ### Бэкенд
 
