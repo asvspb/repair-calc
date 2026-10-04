@@ -334,3 +334,23 @@
 - `pnpm run lint:deps` — «no dependency violations found (228 modules, 839 dependencies cruised)».
 
 **docs/TODO.md**: P3-3 — целевые пункты закрыты ✅ (с числом до/после), остаток 22 `any` зафиксирован как отдельный пункт вне скоупа. **INDEX.md**: дерево src/ актуализировано (utils без фантомных costs/geometry/materialCalculations/factories, добавлен src/domain/, storageConstants), секция «Дублирование» — STORAGE_KEYS и генерация ID помечены устранёнными.
+
+---
+
+## 2026-10-04 — batch-011 hygiene (fix/hygiene-011)
+
+**ТЗ:** devAI/spec/TASK-BATCH-009-011-quality.md, секция TASK-BATCH-011-hygiene. Ветка `fix/hygiene-011` (создана от `fix/typing-010` — в репо не существовала, создана по ТЗ).
+
+**Вывод: все три пункта алгоритма уже выполнены к моменту проверки** (предположительно закрыты параллельно в batch-008/009) — код не менялся, задача свелась к верификации и документированию:
+
+1. **Версии** — `grep '"version"' server/package.json` → `2.0.0`; root уже `2.0.0`. Правка не требовалась.
+2. **Серверный lint на tests/** — `server/package.json:14` `scripts.lint` уже `"eslint src/ tests/"`. Прогон `npx eslint src/ tests/` (в server/) → **0 errors / 32 warnings**. В tests/ предупреждения только `no-unused-vars` (неиспользуемые импорты vi/beforeEach/afterEach в 4 тест-файлах, CircuitBreakerOpenError, catch-e). `eslint --fix` их не убрал (нет автозаменяемой формы — unused импорты требуют ручного удаления); по ТЗ «чинить только автоматические и тривиальные» — ручное удаление импортов оставил за рамками (вне скоупа автоправок), правило не отключал, зафиксировано в docs/TODO.md (P3-3).
+3. **prefer-const в createSyncSlice** — `npx eslint src/store/createSyncSlice.ts` → чисто; визуальная проверка `sed -n 145,200p`: все `let` (totalArea/totalWorks/totalMaterials/totalTools, timeouts, syncPendingRef) реально переприсваиваются. AUDIT-2026-06-21 §4.E подтверждён устранённым.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 13 файлов / 150 passed, 2 skipped.
+- `pnpm run lint` — exit 0, 0 errors / 32 warnings (совпадает с замером batch-010, регрессий нет).
+- `pnpm run lint:deps` — «no dependency violations found (228 modules, 839 dependencies cruised)».
+
+**docs/TODO.md**: P2-4 закрыт ✅ (три чек-пункта с пруфами), уточнён пункт P3-3 про server/tests no-unused-vars (почему не автофикс). **INDEX.md**: не менял — структурных изменений нет.
