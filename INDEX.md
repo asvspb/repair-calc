@@ -164,7 +164,7 @@ repair-calc/
 │   │   │   ├── objects.ts            # CRUD объектов
 │   │   │   ├── rooms.ts              # CRUD комнат
 │   │   │   ├── works.ts              # CRUD работ
-│   │   │   ├── geometry.ts           # Геометрические расчёты
+│   │   │   ├── geometry.ts           # Маршруты геометрии (фасад; обработчики в geometry.controller.ts / geometry.advanced.controller.ts)
 │   │   │   ├── ai.ts                 # AI-провайдеры
 │   │   │   ├── sync.ts               # Синхронизация (pull/push)
 │   │   │   ├── totals.ts             # Итоги
@@ -190,7 +190,10 @@ repair-calc/
 │   │   │   │   ├── 20260331_add_objects.ts
 │   │   │   │   └── 20260332_add_user_role.ts
 │   │   │   └── repositories/         # Data access (12 файлов)
-│   │   │       ├── abTest.repo.ts
+│   │   │       ├── abTest.repo.ts               # Фасад: сборка read/write (batch-022-r3)
+│   │   │       ├── abTest.types.ts              # Типы A/B тестирования
+│   │   │       ├── abTest.read.ts               # Чтение: поиск/результаты/статистика
+│   │   │       ├── abTest.write.ts              # Запись: CRUD/статусы/счётчики
 │   │   │       ├── aiRequest.repo.ts
 │   │   │       ├── calculatedTotals.repo.ts
 │   │   │       ├── object.repo.ts
@@ -201,14 +204,19 @@ repair-calc/
 │   │   │       ├── projectRead.repo.ts          # Чтение: findById*/findByUserId, варианты для sync
 │   │   │       ├── projectUpdateRooms.repo.ts   # updateWithRooms (транзакция)
 │   │   │       ├── projectUpdateObjects.repo.ts # updateWithObjects (транзакция)
-│   │   │       ├── room.repo.ts
-│   │   │       ├── updateJob.repo.ts
+│   │   │       ├── room.repo.ts                 # Фасад: сборка 6 репозиториев (batch-022-r3)
+│   │   │       ├── roomRead.ts / roomWrite.ts   # Чтение/запись комнат
+│   │   │       ├── roomWorks.ts / roomGeometry.ts # Проёмы+подсекции / сегменты+препятствия+стены
+│   │   │       ├── updateJob.repo.ts            # Фасад: сборка types/queries/writes/items/cleanup (batch-022-r3)
+│   │   │       ├── updateJob.types.ts / .queries.ts / .writes.ts / .items.ts / .cleanup.ts
 │   │   │       ├── user.repo.ts
 │   │   │       ├── webhook.repo.ts
 │   │   │       └── work.repo.ts
 │   │   ├── services/
 │   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache, priceSearch)
 │   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner)
+│   │   │   │   ├── parserManager.ts  # Оркестрация (фасад singleton); parserRegistry.ts / parserABTest.ts / parserManager.types.ts
+│   │   │   │   ├── runner.ts         # UpdateRunner (≤400); runnerSteps.ts / runner.types.ts / runnerCache.ts
 │   │   │   └── webhook.service.ts
 │   │   └── types/
 │   │       └── index.ts
@@ -271,16 +279,17 @@ repair-calc/
 
 ### Бэкенд
 
-| Файл                                   | Назначение                                                                                   |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `server/src/routes/sync.ts`            | Sync API (pull/push; SYNC-V2: LWW на push по `clientUpdatedAt`, `?since=` на pull — batch в) |
-| `server/src/routes/projects.ts`        | Projects CRUD                                                                                |
-| `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas)         |
-| `server/src/config/env.ts`             | Конфигурация (DB, JWT, logging)                                                              |
-| `server/src/middleware/logger.ts`      | Winston логирование                                                                          |
-| `server/src/middleware/auth.ts`        | JWT аутентификация                                                                           |
-| `server/src/middleware/deprecation.ts` | Депрекейшн эндпоинтов: `Deprecation`/`Sunset` + warn-лог (экспорт; на маршруты не навешан)   |
-| `server/src/jobs/cleanupDeleted.ts`    | Очистка архивных проектов старше `ARCHIVE_RETENTION_DAYS` (cron 03:00 + прогон на старте)    |
+| Файл                                   | Назначение                                                                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/src/routes/sync.ts`            | Sync API (pull/push; SYNC-V2: LWW на push по `clientUpdatedAt`, `?since=` на pull — batch в)                                                                          |
+| `server/src/routes/projects.ts`        | Projects CRUD                                                                                                                                                         |
+| `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas); ab-test — обработчики в ab-test.controller.ts / ab-test.lifecycle.controller.ts |
+| `server/src/routes/geometry*.ts`       | Геометрия: фасад geometry.ts + geometry.controller.ts / geometry.advanced.controller.ts (batch-022-r3)                                                                |
+| `server/src/config/env.ts`             | Конфигурация (DB, JWT, logging)                                                                                                                                       |
+| `server/src/middleware/logger.ts`      | Winston логирование                                                                                                                                                   |
+| `server/src/middleware/auth.ts`        | JWT аутентификация                                                                                                                                                    |
+| `server/src/middleware/deprecation.ts` | Депрекейшн эндпоинтов: `Deprecation`/`Sunset` + warn-лог (экспорт; на маршруты не навешан)                                                                            |
+| `server/src/jobs/cleanupDeleted.ts`    | Очистка архивных проектов старше `ARCHIVE_RETENTION_DAYS` (cron 03:00 + прогон на старте)                                                                             |
 
 ---
 

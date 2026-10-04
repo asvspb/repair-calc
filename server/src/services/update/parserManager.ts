@@ -1,104 +1,43 @@
 /**
- * Parser Manager - Управление парсерами цен
+ * Parser Manager - Управление парсерами цен (оркестрация)
  * UPDATE_SERVICE - Specification v1.1
- * 
+ *
+ * Разнос по внутренней связности:
+ *  - parserRegistry.ts      — реестр (регистрации, circuit breaker'ы, rate limiter'ы, метрики);
+ *  - parserManager.types.ts — типы;
+ *  - parserABTest.ts        — контроллер A/B тестирования (конфиг, выбор, запись результатов).
+ *
  * Поддержка A/B тестирования парсеров:
  * - Автоматическое распределение трафика между парсерами
  * - Запись результатов для анализа
  * - Определение оптимального парсера
  */
 
-import type { PriceParser, PriceRequest, PriceResult, RateLimit } from './parsers/types.js';
-import { getGeminiParser } from './parsers/gemini.js';
-import { getMistralParser } from './parsers/mistral.js';
-import { CircuitBreaker } from './parsers/circuitBreaker.js';
-import { RateLimiter } from './parsers/rateLimiter.js';
+import type { PriceParser, PriceRequest, PriceResult } from './parsers/types.js';
 import { PriceSourceRepository } from '../../db/repositories/priceCatalog.repo.js';
-import { ABTestRepository, type ParserGroup, type ParserType as ABParserType } from '../../db/repositories/abTest.repo.js';
 import { winstonLogger } from '../../middleware/logger.js';
-import crypto from 'crypto';
+import { ParserRegistry } from './parserRegistry.js';
+import { ABTestController } from './parserABTest.js';
+import type { ABTestConfig, ParserType } from './parserManager.types.js';
 
-// ═══════════════════════════════════════════════════════
-// ТИПЫ
-// ═══════════════════════════════════════════════════════
-
-export type ParserType = 'ai_gemini' | 'ai_mistral' | 'web_scraper' | 'api' | 'manual';
-
-export interface ParserInfo {
-  type: ParserType;
-  name: string;
-  available: boolean;
-  circuitBreakerState: 'closed' | 'open' | 'half-open';
-  rateLimit: RateLimit;
-  lastSuccess: Date | null;
-  avgResponseTimeMs: number | null;
-}
-
-export interface ABTestConfig {
-  enabled: boolean;
-  testId: string | null;
-  geminiWeight: number; // 0-100, процент запросов к Gemini (legacy)
-}
-
-export interface ABTestSelection {
-  testId: string;
-  parserGroup: ParserGroup;
-  parserType: ParserType;
-}
+export * from './parserManager.types.js';
 
 // ═══════════════════════════════════════════════════════
 // PARSER MANAGER
 // ═══════════════════════════════════════════════════════
 
 class ParserManagerImpl {
-  private parsers: Map<ParserType, PriceParser> = new Map();
-  private circuitBreakers: Map<ParserType, CircuitBreaker> = new Map();
-  private rateLimiters: Map<ParserType, RateLimiter> = new Map();
-  private lastSuccess: Map<ParserType, Date> = new Map();
-  private responseTimes: Map<ParserType, number[]> = new Map();
-  private abTestConfig: ABTestConfig = {
-    enabled: false,
-    testId: null,
-    geminiWeight: 50,
-  };
+  private registry: ParserRegistry = new ParserRegistry();
+  private abTest: ABTestController;
 
   constructor() {
-    this.initializeParsers();
+    this.abTest = new ABTestController(this.registry);
   }
 
-  // ─── ИНИЦИАЛИЗАЦИЯ ────────────────────────────────────────
-
-  private initializeParsers(): void {
-    // Регистрируем Gemini
-    const gemini = getGeminiParser();
-    if (gemini) {
-      this.registerParser(gemini);
-    }
-
-    // Регистрируем Mistral
-    const mistral = getMistralParser();
-    if (mistral) {
-      this.registerParser(mistral);
-    }
-
-    // Web scrapers будут добавлены позже
-  }
+  // ─── РЕЕСТР ────────────────────────────────────────────────
 
   registerParser(parser: PriceParser): void {
-    this.parsers.set(parser.type as ParserType, parser);
-    this.circuitBreakers.set(
-      parser.type as ParserType,
-      new CircuitBreaker(parser.type, {
-        threshold: 5,
-        resetTimeoutMs: 600000, // 10 минут
-        halfOpenMaxRequests: 3,
-      })
-    );
-    this.rateLimiters.set(
-      parser.type as ParserType,
-      new RateLimiter({ requestsPerMinute: parser.getRateLimit().requestsPerMinute })
-    );
-    this.responseTimes.set(parser.type as ParserType, []);
+    this.registry.register(parser);
   }
 
   // ─── ВЫБОР ПАРСЕРА ────────────────────────────────────────
@@ -108,20 +47,21 @@ class ParserManagerImpl {
    */
   selectSource(request: PriceRequest, preferredSources?: ParserType[]): PriceParser | null {
     // A/B тестирование (если включено)
-    if (this.abTestConfig.enabled && !preferredSources) {
-      return this.selectForABTest(request);
+    if (this.abTest.getConfig().enabled && !preferredSources) {
+      return this.abTest.selectForABTest(request, req => this.selectSource(req));
     }
 
     // Фильтруем доступные парсеры
-    const available = Array.from(this.parsers.entries())
-      .filter(([type, _parser]) => {
+    const available = this.registry
+      .entries()
+      .filter(([type]) => {
         // Если указаны предпочтительные источники
         if (preferredSources && !preferredSources.includes(type)) {
           return false;
         }
 
         // Проверяем доступность
-        return this.isParserAvailable(type);
+        return this.registry.isAvailable(type);
       })
       .sort(([, parserA], [, parserB]) => {
         // Сортируем по приоритету (по rate limit)
@@ -133,32 +73,6 @@ class ParserManagerImpl {
     return available[0]?.[1] || null;
   }
 
-  /**
-   * Выбор для A/B тестирования
-   */
-  private selectForABTest(request: PriceRequest): PriceParser | null {
-    const hash = this.hashRequest(request);
-    const lastChar = parseInt(hash.slice(-1), 16);
-    
-    // 50/50 распределение (или по конфигурации)
-    const geminiWeight = this.abTestConfig.geminiWeight;
-    
-    if (lastChar < geminiWeight / 100 * 16) {
-      const gemini = this.parsers.get('ai_gemini');
-      if (gemini && this.isParserAvailable('ai_gemini')) {
-        return gemini;
-      }
-    }
-    
-    const mistral = this.parsers.get('ai_mistral');
-    if (mistral && this.isParserAvailable('ai_mistral')) {
-      return mistral;
-    }
-    
-    // Fallback на любой доступный
-    return this.selectSource(request);
-  }
-
   // ─── ВЫПОЛНЕНИЕ ЗАПРОСА ────────────────────────────────────
 
   /**
@@ -166,7 +80,7 @@ class ParserManagerImpl {
    */
   async fetch(request: PriceRequest, preferredSources?: ParserType[]): Promise<PriceResult> {
     const parser = this.selectSource(request, preferredSources);
-    
+
     if (!parser) {
       throw new Error('No available parser');
     }
@@ -175,10 +89,13 @@ class ParserManagerImpl {
     const startTime = Date.now();
 
     // Проверяем Circuit Breaker
-    const cb = this.circuitBreakers.get(parserType);
+    const cb = this.registry.getCircuitBreaker(parserType);
     if (cb && !cb.isAvailable()) {
       // Пробуем другой парсер
-      const fallbackParser = this.selectSource(request, preferredSources?.filter(s => s !== parserType));
+      const fallbackParser = this.selectSource(
+        request,
+        preferredSources?.filter(s => s !== parserType),
+      );
       if (fallbackParser) {
         return this.fetchWithParser(fallbackParser, request);
       }
@@ -186,39 +103,39 @@ class ParserManagerImpl {
     }
 
     // Rate limiting
-    const limiter = this.rateLimiters.get(parserType);
+    const limiter = this.registry.getRateLimiter(parserType);
     if (limiter) {
       await limiter.wait();
     }
 
     try {
       const result = await parser.fetch(request);
-      
+
       // Успех
       if (cb) {
         cb.recordSuccess();
       }
-      
+
       // Обновляем метрики
-      this.recordSuccess(parserType, Date.now() - startTime);
-      
+      this.registry.recordSuccess(parserType, Date.now() - startTime);
+
       // Обновляем БД
       await this.updateSourceState(parserType, 'closed', 0);
-      
+
       return result;
     } catch (error) {
       // Ошибка
       if (cb) {
         cb.recordFailure();
       }
-      
+
       // Обновляем БД
       await this.updateSourceState(
         parserType,
         cb?.getState()?.state || 'open',
-        cb?.getState()?.failures || 1
+        cb?.getState()?.failures || 1,
       );
-      
+
       throw error;
     }
   }
@@ -230,17 +147,17 @@ class ParserManagerImpl {
     const parserType = parser.type as ParserType;
     const startTime = Date.now();
 
-    const limiter = this.rateLimiters.get(parserType);
+    const limiter = this.registry.getRateLimiter(parserType);
     if (limiter) {
       await limiter.wait();
     }
 
     try {
       const result = await parser.fetch(request);
-      this.recordSuccess(parserType, Date.now() - startTime);
+      this.registry.recordSuccess(parserType, Date.now() - startTime);
       return result;
     } catch (error) {
-      const cb = this.circuitBreakers.get(parserType);
+      const cb = this.registry.getCircuitBreaker(parserType);
       if (cb) {
         cb.recordFailure();
       }
@@ -251,62 +168,10 @@ class ParserManagerImpl {
   // ─── ДОСТУПНОСТЬ И СОСТОЯНИЕ ──────────────────────────────
 
   /**
-   * Проверяет доступность парсера
-   */
-  private isParserAvailable(type: ParserType): boolean {
-    const parser = this.parsers.get(type);
-    if (!parser) return false;
-
-    const cb = this.circuitBreakers.get(type);
-    if (cb && !cb.isAvailable()) return false;
-
-    return true;
-  }
-
-  /**
    * Получает информацию о всех парсерах
    */
-  async getParsersInfo(): Promise<ParserInfo[]> {
-    const infos: ParserInfo[] = [];
-
-    for (const [type, parser] of this.parsers) {
-      const cb = this.circuitBreakers.get(type);
-      const cbState = cb?.getState();
-      const times = this.responseTimes.get(type) || [];
-
-      infos.push({
-        type,
-        name: parser.name,
-        available: this.isParserAvailable(type),
-        circuitBreakerState: cbState?.state || 'closed',
-        rateLimit: parser.getRateLimit(),
-        lastSuccess: this.lastSuccess.get(type) || null,
-        avgResponseTimeMs: times.length > 0
-          ? times.reduce((a, b) => a + b, 0) / times.length
-          : null,
-      });
-    }
-
-    return infos;
-  }
-
-  // ─── МЕТРИКИ ────────────────────────────────────────────────
-
-  /**
-   * Записывает успешный результат
-   */
-  private recordSuccess(type: ParserType, responseTime: number): void {
-    this.lastSuccess.set(type, new Date());
-    
-    const times = this.responseTimes.get(type) || [];
-    times.push(responseTime);
-    
-    // Храним последние 100 измерений
-    if (times.length > 100) {
-      times.shift();
-    }
-    
-    this.responseTimes.set(type, times);
+  async getParsersInfo() {
+    return this.registry.getParsersInfo();
   }
 
   /**
@@ -315,7 +180,7 @@ class ParserManagerImpl {
   private async updateSourceState(
     type: ParserType,
     state: 'closed' | 'open' | 'half-open',
-    failures: number
+    failures: number,
   ): Promise<void> {
     try {
       const source = await PriceSourceRepository.findByType(type);
@@ -328,136 +193,50 @@ class ParserManagerImpl {
     }
   }
 
-  // ─── A/B ТЕСТИРОВАНИЕ ──────────────────────────────────────
+  // ─── A/B ТЕСТИРОВАНИЕ (делегирование в parserABTest.ts) ────
 
   /**
    * Устанавливает конфигурацию A/B тестирования
    */
   setABTestConfig(config: Partial<ABTestConfig>): void {
-    this.abTestConfig = {
-      ...this.abTestConfig,
-      ...config,
-    };
+    this.abTest.setConfig(config);
   }
 
   /**
    * Получает конфигурацию A/B тестирования
    */
   getABTestConfig(): ABTestConfig {
-    return { ...this.abTestConfig };
+    return this.abTest.getConfig();
   }
 
   /**
    * Включает A/B тестирование для конкретного теста
    */
   async enableABTest(testId: string): Promise<boolean> {
-    try {
-      const test = await ABTestRepository.findById(testId);
-      if (!test || test.status !== 'running') {
-        return false;
-      }
-
-      this.abTestConfig = {
-        enabled: true,
-        testId: test.id,
-        geminiWeight: test.traffic_split,
-      };
-
-      return true;
-    } catch (error) {
-      winstonLogger.error('Failed to enable A/B test', { error });
-      return false;
-    }
+    return this.abTest.enable(testId);
   }
 
   /**
    * Отключает A/B тестирование
    */
   disableABTest(): void {
-    this.abTestConfig = {
-      enabled: false,
-      testId: null,
-      geminiWeight: 50,
-    };
+    this.abTest.disable();
   }
 
   /**
-   * Выбирает парсер для A/B теста с записью в результат
-   * Возвращает парсер и информацию о группе
+   * Выбирает парсер для A/B теста с записью в результат.
+   * Возвращает парсер и информацию о группе.
    */
-  async selectForABTestWithTracking(request: PriceRequest): Promise<{
-    parser: PriceParser;
-    selection: ABTestSelection;
-  } | null> {
-    if (!this.abTestConfig.enabled || !this.abTestConfig.testId) {
-      return null;
-    }
-
-    try {
-      const test = await ABTestRepository.findById(this.abTestConfig.testId);
-      if (!test || test.status !== 'running') {
-        // Тест больше не активен - отключаем
-        this.disableABTest();
-        return null;
-      }
-
-      // Определяем группу на основе хэша
-      const hash = this.hashRequest(request);
-      const hashValue = parseInt(hash.slice(-8), 16); // Используем последние 8 hex символов
-      const threshold = (test.traffic_split / 100) * 0xFFFFFFFF;
-
-      let parserGroup: ParserGroup;
-      let parserType: ParserType;
-
-      if (hashValue < threshold) {
-        parserGroup = 'a';
-        parserType = test.parser_a as ParserType;
-      } else {
-        parserGroup = 'b';
-        parserType = test.parser_b as ParserType;
-      }
-
-      // Проверяем доступность выбранного парсера
-      const parser = this.parsers.get(parserType);
-      if (!parser || !this.isParserAvailable(parserType)) {
-        // Пробуем альтернативный парсер из теста
-        const altParserType = parserGroup === 'a' ? test.parser_b : test.parser_a;
-        const altParser = this.parsers.get(altParserType as ParserType);
-        
-        if (altParser && this.isParserAvailable(altParserType as ParserType)) {
-          return {
-            parser: altParser,
-            selection: {
-              testId: test.id,
-              parserGroup: parserGroup === 'a' ? 'b' : 'a',
-              parserType: altParserType as ParserType,
-            },
-          };
-        }
-
-        return null;
-      }
-
-      return {
-        parser,
-        selection: {
-          testId: test.id,
-          parserGroup,
-          parserType,
-        },
-      };
-    } catch (error) {
-      winstonLogger.error('A/B test selection error', { error });
-      return null;
-    }
+  async selectForABTestWithTracking(request: PriceRequest) {
+    return this.abTest.selectForABTestWithTracking(request);
   }
 
   /**
-   * Выполняет запрос с A/B тестированием
-   * Автоматически записывает результат теста
+   * Выполняет запрос с A/B тестированием.
+   * Автоматически записывает результат теста.
    */
   async fetchWithABTest(request: PriceRequest): Promise<PriceResult> {
-    const abSelection = await this.selectForABTestWithTracking(request);
+    const abSelection = await this.abTest.selectForABTestWithTracking(request);
 
     if (!abSelection) {
       // A/B тест не активен - обычный запрос
@@ -469,7 +248,7 @@ class ParserManagerImpl {
     const startTime = Date.now();
 
     // Rate limiting
-    const limiter = this.rateLimiters.get(parserType);
+    const limiter = this.registry.getRateLimiter(parserType);
     if (limiter) {
       await limiter.wait();
     }
@@ -479,14 +258,14 @@ class ParserManagerImpl {
       const responseTime = Date.now() - startTime;
 
       // Успех - обновляем метрики
-      const cb = this.circuitBreakers.get(parserType);
+      const cb = this.registry.getCircuitBreaker(parserType);
       if (cb) {
         cb.recordSuccess();
       }
-      this.recordSuccess(parserType, responseTime);
+      this.registry.recordSuccess(parserType, responseTime);
 
       // Записываем результат A/B теста
-      await this.recordABTestResult({
+      await this.abTest.recordResult({
         testId: selection.testId,
         request,
         parserGroup: selection.parserGroup,
@@ -501,13 +280,13 @@ class ParserManagerImpl {
       const responseTime = Date.now() - startTime;
 
       // Ошибка
-      const cb = this.circuitBreakers.get(parserType);
+      const cb = this.registry.getCircuitBreaker(parserType);
       if (cb) {
         cb.recordFailure();
       }
 
       // Записываем неудачный результат A/B теста
-      await this.recordABTestResult({
+      await this.abTest.recordResult({
         testId: selection.testId,
         request,
         parserGroup: selection.parserGroup,
@@ -523,122 +302,17 @@ class ParserManagerImpl {
   }
 
   /**
-   * Записывает результат A/B теста в БД
-   */
-  private async recordABTestResult(params: {
-    testId: string;
-    request: PriceRequest;
-    parserGroup: ParserGroup;
-    parserType: ParserType;
-    success: boolean;
-    result: PriceResult | null;
-    responseTime: number;
-    error?: unknown;
-  }): Promise<void> {
-    try {
-      await ABTestRepository.addResult({
-        test_id: params.testId,
-        item_name: params.request.itemName,
-        city: params.request.city,
-        category: params.request.category,
-        parser_group: params.parserGroup,
-        parser_type: params.parserType as ABParserType,
-        success: params.success,
-        price_min: params.result?.prices.min,
-        price_avg: params.result?.prices.avg,
-        price_max: params.result?.prices.max,
-        currency: params.result?.prices.currency,
-        confidence_score: params.result?.confidenceScore,
-        response_time_ms: params.responseTime,
-        error_message: params.error instanceof Error ? params.error.message : undefined,
-        metadata: {
-          sources: params.result?.sources,
-          itemName: params.request.itemName,
-          unit: params.request.unit,
-        },
-      });
-    } catch (dbError) {
-      // Не прерываем выполнение при ошибке записи
-      winstonLogger.error('Failed to record A/B test result', { error: dbError });
-    }
-  }
-
-  /**
    * Получает статистику активного A/B теста
    */
-  async getABTestStats(): Promise<{
-    testId: string | null;
-    stats: Awaited<ReturnType<typeof ABTestRepository.getStats>> | null;
-  }> {
-    if (!this.abTestConfig.testId) {
-      return { testId: null, stats: null };
-    }
-
-    try {
-      const stats = await ABTestRepository.getStats(this.abTestConfig.testId);
-      return { testId: this.abTestConfig.testId, stats };
-    } catch (error) {
-      winstonLogger.error('Failed to get A/B test stats', { error });
-      return { testId: this.abTestConfig.testId, stats: null };
-    }
+  async getABTestStats() {
+    return this.abTest.getStats();
   }
 
   /**
    * Автоматически завершает тест при достижении достаточной уверенности
    */
-  async checkAndCompleteABTest(confidenceThreshold = 0.95): Promise<{
-    completed: boolean;
-    winner?: string;
-    confidence?: number;
-  }> {
-    if (!this.abTestConfig.testId) {
-      return { completed: false };
-    }
-
-    try {
-      const stats = await ABTestRepository.getStats(this.abTestConfig.testId);
-      if (!stats || stats.confidenceLevel === null) {
-        return { completed: false };
-      }
-
-      // Проверяем минимальное количество запросов
-      const minRequests = 100;
-      if (stats.groupA.requests < minRequests || stats.groupB.requests < minRequests) {
-        return { completed: false };
-      }
-
-      // Проверяем порог уверенности
-      if (stats.confidenceLevel >= confidenceThreshold && stats.winner) {
-        await ABTestRepository.complete(
-          this.abTestConfig.testId,
-          stats.winner,
-          stats.confidenceLevel
-        );
-
-        this.disableABTest();
-
-        return {
-          completed: true,
-          winner: stats.winner,
-          confidence: stats.confidenceLevel,
-        };
-      }
-
-      return { completed: false };
-    } catch (error) {
-      winstonLogger.error('Failed to check A/B test completion', { error });
-      return { completed: false };
-    }
-  }
-
-  // ─── HELPERS ──────────────────────────────────────────────
-
-  /**
-   * Хэширует запрос для A/B тестирования
-   */
-  private hashRequest(request: PriceRequest): string {
-    const data = `${request.itemName}:${request.city}:${request.category}`;
-    return crypto.createHash('sha256').update(data).digest('hex');
+  async checkAndCompleteABTest(confidenceThreshold = 0.95) {
+    return this.abTest.checkAndComplete(confidenceThreshold);
   }
 }
 

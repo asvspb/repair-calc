@@ -768,3 +768,67 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 `src/store/createSyncSlice.ts`, `tests/api/syncMerge.test.ts` (новый),
 `tests/api/syncPull.test.ts`, `tests/api/syncFlusher.test.ts`, `INDEX.md`,
 `devAI/developer_log.md`.
+
+## 2026-10-05 — TASK-BATCH-022-r3-server-splits (R3: распил server-файлов ≤400)
+
+**Ветка:** `refactor/server-splits-022` (база feat/sync-v2-c-021). **Статус:** выполнено.
+
+### Что сделано (7 файлов из ТЗ, все ≤400, публичные контракты не изменены):
+
+1. `updateJob.repo.ts` (811→48, фасад) → `updateJob.types/queries/writes/items/cleanup.ts`.
+   Фасад — класс `UpdateJobRepository` (статические методы = функции queries/writes) +
+   ре-экспорт items/locks/logs. SQL не менялся.
+2. `room.repo.ts` (777→37, фасад) → `roomRead.ts`, `roomWrite.ts`, `roomWorks.ts`
+   (openings+subsections), `roomGeometry.ts` (segments/obstacles/wall_sections).
+   6 репозиториев ре-экспортированы; `RoomRepository` собирает статические методы.
+3. `ab-test.routes.ts` (716→55) → `ab-test.controller.ts` (CRUD/чтение, 375)
+   - `ab-test.lifecycle.controller.ts` (start/pause/resume/complete/cancel/active/stats/
+     check-completion, 389). Контракт HTTP (роуты/статусы/тела) не изменён; порядок маршрутов
+     сохранён (/active до /:id). Zod-схемы — существующие `./schemas.js`.
+4. `parserManager.ts` (662→337) → `parserRegistry.ts` (реестр: circuit breakers,
+   rate limiters, метрики), `parserABTest.ts` (контроллер A/B: конфиг, выбор, запись),
+   `parserManager.types.ts`. Singleton/методы сохранены (делегирование).
+5. `runner.ts` (647→395) → `runnerSteps.ts` (getItemsToUpdate/savePrice/record*),
+   `runner.types.ts`, `runnerCache.ts` (кэш + chunkArray/delay в steps).
+   Anomaly-детекция сохранена в processItem без изменений.
+6. `abTest.repo.ts` (640→21, фасад) → `abTest.types.ts`, `abTest.read.ts` (213),
+   `abTest.write.ts` (344). Методы собираются spread'ом в один объект `ABTestRepository`
+   — `this` в методах указывает на собранный объект, как в исходном литерале; типизация
+   `this` — через `ABTestRepoThis`.
+7. `geometry.ts` (636→134) → `geometry.controller.ts` (openings/subsections/works, 265)
+   - `geometry.advanced.controller.ts` (segments/obstacles/wall-sections, 351).
+     Схемы — существующие `middleware/validation.js`.
+
+### Отступления от буквы ТЗ (осознанные, минимальные):
+
+- «jobQueries/jobWrites/jobCleanup» для updateJob: класс репозитория — единый агрегат
+  (reads/writes переплетены через parseRow/this), поэтому распил по классам/связности:
+  queries (чтение+jobs CRUD) / writes (lifecycle) / items / cleanup (locks+logs).
+  Контракт ТЗ (≤400, контракты, фасады) соблюдён.
+- «+ схемы» в ab-test/geometry: zod-схемы уже вынесены ранее (`routes/update/schemas.js`,
+  `middleware/validation.ts`) — новых схем не создавал, переиспользованы существующие.
+- Существующие `as any`/`query<any[]>` касты в abTest.* и roomWrite перенесены как есть
+  (правило «без as any» применено к новому коду; чистка легаси-кастов — вне write-set).
+- Smoke ДО распила: по ТЗ добавлены mock-тесты фасадов `updateJobRepo.smoke.test.ts` (6)
+  и `roomRepo.smoke.test.ts` (5) — коммит перед распилом. abTest.repo уже был покрыт
+  `tests/unit/abTest.test.ts` (11 тестов, моки pool).
+
+### Gates (запущены в этой сессии, на итоговом дереве):
+
+- `pnpm test` — exit 0 (frontend vitest + server vitest: 17 files passed | 1 skipped,
+  180 passed | 2 skipped; суммарно с фронтом — зелёно).
+- `pnpm run lint` — exit 0, 0 errors (warnings — pre-existing легаси; 2 новых warning'а
+  от распила устранены отдельным коммитом).
+- `pnpm run lint:deps` — no dependency violations (280 modules, 1054 dependencies);
+  запускался после каждого распила (в pre-commit хуке каждого коммита).
+
+### Файлы:
+
+`server/src/db/repositories/updateJob.{repo,types,queries,writes,items,cleanup}.ts`,
+`server/src/db/repositories/room.{repo,}` + `roomRead/roomWrite/roomWorks/roomGeometry.ts`,
+`server/src/db/repositories/abTest.{repo,types,read,write}.ts`,
+`server/src/routes/update/ab-test.{routes,controller,lifecycle.controller}.ts`,
+`server/src/routes/geometry{,.controller,.advanced.controller}.ts`,
+`server/src/services/update/{parserManager,parserRegistry,parserABTest,parserManager.types,runner,runnerSteps,runner.types,runnerCache}.ts`,
+`server/tests/unit/updateJobRepo.smoke.test.ts` (новый),
+`server/tests/unit/roomRepo.smoke.test.ts` (новый), `INDEX.md`, `devAI/developer_log.md`.
