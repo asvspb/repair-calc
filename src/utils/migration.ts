@@ -9,7 +9,7 @@ import { STORAGE_KEYS } from './storageConstants';
 import { logStart, logSuccess, logWarning, logDebug, logError } from './logger';
 import { getAllRooms } from './projectObjects';
 
-const MIGRATION_VERSION_KEY = 'repair-calc-migration-version';
+const MIGRATION_VERSION_KEY = STORAGE_KEYS.MIGRATION_VERSION;
 const CURRENT_MIGRATION_VERSION = 1;
 
 /**

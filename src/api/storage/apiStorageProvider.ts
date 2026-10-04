@@ -987,7 +987,7 @@ export class ApiStorageProvider implements IStorageProvider {
  * Возвращает ApiStorageProvider если пользователь авторизован, иначе IndexedDbProvider
  */
 export function getStorageProvider(): IStorageProvider {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
     return ApiStorageProvider.getInstance();
   }

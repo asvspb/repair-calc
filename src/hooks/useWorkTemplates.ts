@@ -3,10 +3,10 @@ import type { WorkTemplate, WorkTemplateCategory } from '../types/workTemplate';
 import type { WorkData, Material, Tool } from '@shared/types';
 import { TemplateStorage } from '../utils/templateStorage';
 import { getTemplateCategory } from '../types/workTemplate';
+import { generateId } from '../domain/factories/projectFactory';
 
 export type SaveResult =
-  | { success: true; isUpdate: boolean }
-  | { success: false; error: string; needsConfirm?: boolean };
+  { success: true; isUpdate: boolean } | { success: false; error: string; needsConfirm?: boolean };
 
 export type RoomMetrics = {
   floorArea: number;
@@ -48,7 +48,7 @@ export function useWorkTemplates() {
         }
 
         const template: WorkTemplate = {
-          id: existingTemplate?.id || crypto.randomUUID(),
+          id: existingTemplate?.id || generateId(),
           name: work.name || 'Без названия',
           category: getTemplateCategory(work.calculationType),
           unit: work.unit,
@@ -104,7 +104,7 @@ export function useWorkTemplates() {
     const ratio = shouldScale ? targetVolume / sourceVolume : 1;
 
     return {
-      id: crypto.randomUUID(),
+      id: generateId(),
       enabled: true,
       isCustom: true,
       name: template.name,
@@ -113,7 +113,7 @@ export function useWorkTemplates() {
       calculationType: template.calculationType,
       count: template.count,
       materials: template.materials.map(m => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: m.name,
         quantity: shouldScale
           ? Math.round(m.quantity * ratio * 100) / 100 // округление до 2 знаков
@@ -122,7 +122,7 @@ export function useWorkTemplates() {
         pricePerUnit: m.pricePerUnit, // цена за единицу НЕ масштабируется
       })),
       tools: template.tools.map(t => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: t.name,
         quantity: t.quantity, // инструменты НЕ масштабируются
         price: t.price,

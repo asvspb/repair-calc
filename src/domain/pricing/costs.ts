@@ -1,6 +1,7 @@
 import type { RoomMetrics, WorkCosts, RoomCosts } from '../../types';
 import type { WorkData, Material, Tool, RoomData } from '@shared/types';
 import { calculateRoomMetrics } from '../geometry/geometry';
+import { generateId } from '../factories/projectFactory';
 
 /**
  * Helper function to round cost up to nearest integer
@@ -29,7 +30,7 @@ export function migrateWorkData(work: WorkData): WorkData {
   if (migrated.materialPrice && migrated.materialPrice > 0 && migrated.materials.length === 0) {
     migrated.materials = [
       {
-        id: Math.random().toString(36).substring(2, 11),
+        id: generateId(),
         name: 'Материалы',
         quantity: 1,
         unit: migrated.unit || 'м²',

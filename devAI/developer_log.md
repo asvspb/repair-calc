@@ -311,3 +311,26 @@
 **docs/TODO.md**: P3-2 закрыт ✅ (все три пункта, с grep-доказательствами и ссылкой на удаливший коммит).
 
 **Заметка для batch-010:** ТЗ batch-010 упоминает `src/utils/factories.ts`, но файла нет — фабрики живут в `src/domain/factories/projectFactory.ts`, `generateId` — в `src/utils/idMapper.ts:247`. Также INDEX.md stale по `costs.ts`/`geometry.ts`/`materialCalculations.ts` (не существует в src/utils/) — вне моего write-set, не трогал.
+
+## 2026-10-04 — coder batch-010: typing P3-3 (fix/typing-010)
+
+**ТЗ:** devAI/spec/TASK-BATCH-009-011-quality.md, секция TASK-BATCH-010. Ветка `fix/typing-010` (от `fix/dead-code-009`).
+
+**1. no-explicit-any.** Замер «до»: `pnpm run lint` → **36 warnings, из них 26 `no-explicit-any`**. Целевые файлы: `import.routes.ts` ×1, `jobs.routes.ts` ×1, `priceHistory.repo.ts` ×2. Фиксы:
+
+- `priceHistory.repo.ts:117-118` — `as any` → точечные типизированные касты `{ avg?: number | null }` / `{ created_at?: Date | null }` (Knex-агрегаты).
+- `jobs.routes.ts:343` — `{} as Record<string, any>` → `Record<string, { available: boolean; circuitBreakerState: 'closed'|'open'|'half-open'; failures: number }>` (совместимо с `PriceSource` из `server/src/types/index.ts:172`).
+- `import.routes.ts:106` — `(item: any)` → `Array<Record<string, unknown>>` + narrowing-хелперы `firstStr`/`numFrom` (EN/RU заголовки, числа и строки-цены; поведение парсинга сохранено, включая числовые значения цен в JSON).
+  **Замер «после»**: `pnpm run lint` → **0 errors / 32 warnings, `no-explicit-any` в целевых файлах — 0**. Остаток 22 `any` — pool.ts, abTest/object/priceCatalog/project/room/updateJob.repo.ts, rateLimiter.ts, geometry.test.ts — **вне Write-скоупа batch-010** (исключительный список файлов), не тронуты сознательно. Отдельные no-unused-vars в server/tests/ (10) — предмет batch-011.
+
+**2. Единый generateId.** `src/utils/factories.ts` из ТЗ **не существует** — канон размещён в живой фабрике `src/domain/factories/projectFactory.ts`: `generateId(prefix?)` (crypto.randomUUID, guard сохранён). Заменены дубли (grep `crypto.randomUUID` / `Math.random().toString(36)` по src/ без тестов): WorkTemplateContext (`mat-`/`tool-` → `generateId('mat-'|'tool-')`), useWorkTemplates ×4, useGeometryState ×6, `domain/pricing/costs.ts`, `domain/geometry/roomHelpers.ts` ×4, `components/room/useRoomWorksState.ts`, `WorkCatalogPicker.tsx` (`mat-`/`tool-`/`work-`), `utils/projectObjects.ts` (`local-obj-`/`local-room-` префиксы сохранены). **Смена формата ID** (бывшие 9-символьные Math.random → UUID) не влияет на существующие данные: старые ID хранятся как есть, требования уникальности только усилились. Legacy-генераторы `src/utils/idMapper.ts:80,248` (`device-`, `local-${Date.now()}-…`) оставлены: вне Write-скоупа (idMapper не в списке), его `generateId()` никем не импортируется — кандидат на удаление в dead-code задаче.
+
+**3. STORAGE_KEYS.** Константа уже жила в `src/utils/storageConstants.ts` — расширена (TOKEN, REFRESH_TOKEN, E2E_TEST_MODE, ID_MAPPINGS, DEVICE_ID, PENDING_SAVE, MIGRATION_VERSION, PRICE_CACHE, DEXIE_MIGRATED). **Значения ключей не менялись** (запрет ТЗ соблюдён). Все литеральные `localStorage.getItem/setItem/removeItem('…')` в src/ (auth.ts, httpClient.ts, App.tsx, createProjectSlice.ts, apiStorageProvider.ts, idMapper.ts, saveQueue.ts, migration.ts, priceCache.ts, indexedDbMigration.ts) переведены на константы; `utils/localStorageProvider.ts` не трогал — там generic-ключ-параметр. Миграция данных не требуется — значения идентичны.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 13 файлов / 150 passed, 2 skipped.
+- `pnpm run lint` — exit 0, 0 errors / 32 warnings (было 36).
+- `pnpm run lint:deps` — «no dependency violations found (228 modules, 839 dependencies cruised)».
+
+**docs/TODO.md**: P3-3 — целевые пункты закрыты ✅ (с числом до/после), остаток 22 `any` зафиксирован как отдельный пункт вне скоупа. **INDEX.md**: дерево src/ актуализировано (utils без фантомных costs/geometry/materialCalculations/factories, добавлен src/domain/, storageConstants), секция «Дублирование» — STORAGE_KEYS и генерация ID помечены устранёнными.

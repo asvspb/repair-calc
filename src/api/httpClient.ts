@@ -1,14 +1,10 @@
+import { STORAGE_KEYS } from '../utils/storageConstants';
 /**
  * Unified HTTP client with interceptors
  * Provides consistent error handling, authentication, and retry logic
  */
 
-import {
-  logApiRequest,
-  logApiSuccess,
-  logApiError,
-  logDebug,
-} from '../utils/logger';
+import { logApiRequest, logApiSuccess, logApiError, logDebug } from '../utils/logger';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
@@ -27,7 +23,7 @@ export class ApiError extends Error {
   constructor(
     public message: string,
     public statusCode: number,
-    public data?: unknown
+    public data?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -39,16 +35,13 @@ export class ApiError extends Error {
  */
 export type RequestInterceptor = (
   url: string,
-  options: RequestInit
+  options: RequestInit,
 ) => RequestInit | Promise<RequestInit>;
 
 /**
  * Response interceptor type
  */
-export type ResponseInterceptor = <T>(
-  response: Response,
-  data: T
-) => T | Promise<T>;
+export type ResponseInterceptor = <T>(response: Response, data: T) => T | Promise<T>;
 
 /**
  * Error handler type
@@ -56,7 +49,7 @@ export type ResponseInterceptor = <T>(
 export type ErrorHandler = (
   error: ApiError | Error,
   url: string,
-  method: string
+  method: string,
 ) => void | Promise<void>;
 
 /**
@@ -92,7 +85,7 @@ async function performTokenRefresh(): Promise<boolean> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          refreshToken: localStorage.getItem('refreshToken'),
+          refreshToken: localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
         }),
       });
 
@@ -101,27 +94,27 @@ async function performTokenRefresh(): Promise<boolean> {
         // Сервер возвращает { status: 'success', data: { token, refreshToken } }
         const tokens = refreshData.data || refreshData;
         if (tokens.token && tokens.refreshToken) {
-          localStorage.setItem('token', tokens.token);
-          localStorage.setItem('refreshToken', tokens.refreshToken);
+          localStorage.setItem(STORAGE_KEYS.TOKEN, tokens.token);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
           logDebug('HTTPClient', 'Токен успешно обновлён');
           return true;
         } else {
           logDebug('HTTPClient', 'Некорректный ответ сервера при обновлении токена');
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
+          localStorage.removeItem(STORAGE_KEYS.TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
           return false;
         }
       } else {
         // Refresh failed, clear tokens
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         logDebug('HTTPClient', 'Не удалось обновить токен, выход из системы');
         return false;
       }
     } catch (refreshError) {
       logDebug('HTTPClient', 'Ошибка при обновлении токена', refreshError);
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       return false;
     } finally {
       isRefreshing = false;
@@ -204,7 +197,7 @@ class HttpClient {
     options: RequestInit,
     startTime: number,
     method: string,
-    endpoint: string
+    endpoint: string,
   ): Promise<T> {
     // Apply request interceptors
     let enrichedOptions = options;
@@ -219,10 +212,7 @@ class HttpClient {
 
     // Create AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      this.config.timeout
-    );
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const response = await fetch(url, {
@@ -258,14 +248,14 @@ class HttpClient {
   async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    isRetry: boolean = false
+    isRetry: boolean = false,
   ): Promise<T> {
     const method = options.method || 'GET';
     const url = `${this.config.baseURL}${endpoint}`;
     const startTime = logApiRequest(
       method,
       endpoint,
-      options.body ? JSON.parse(options.body as string) : undefined
+      options.body ? JSON.parse(options.body as string) : undefined,
     );
 
     try {
@@ -276,11 +266,11 @@ class HttpClient {
         // Don't try to refresh on the refresh endpoint itself
         if (!url.includes('/api/auth/refresh')) {
           const refreshSucceeded = await performTokenRefresh();
-          
-            if (refreshSucceeded) {
-              logDebug('HTTPClient', 'Повторный запрос с новым токеном');
-              return await this.fetchWithTimeout<T>(url, options, startTime, method, endpoint);
-            }
+
+          if (refreshSucceeded) {
+            logDebug('HTTPClient', 'Повторный запрос с новым токеном');
+            return await this.fetchWithTimeout<T>(url, options, startTime, method, endpoint);
+          }
         }
       }
 
@@ -298,10 +288,7 @@ class HttpClient {
 
       // Handle timeout/abort
       if (error instanceof Error && error.name === 'AbortError') {
-        const timeoutError = new ApiError(
-          'Превышено время ожидания запроса',
-          408
-        );
+        const timeoutError = new ApiError('Превышено время ожидания запроса', 408);
         logApiError(method, endpoint, startTime, { timeout: true });
         throw timeoutError;
       }
@@ -322,11 +309,7 @@ class HttpClient {
   /**
    * HTTP POST
    */
-  async post<T>(
-    endpoint: string,
-    data?: unknown,
-    options?: RequestInit
-  ): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -337,11 +320,7 @@ class HttpClient {
   /**
    * HTTP PUT
    */
-  async put<T>(
-    endpoint: string,
-    data?: unknown,
-    options?: RequestInit
-  ): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -352,11 +331,7 @@ class HttpClient {
   /**
    * HTTP PATCH
    */
-  async patch<T>(
-    endpoint: string,
-    data?: unknown,
-    options?: RequestInit
-  ): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -377,7 +352,7 @@ export const httpClient = HttpClient.getInstance();
 
 // Default request interceptor: add auth token
 httpClient.addRequestInterceptor((url, options) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
     return {
       ...options,

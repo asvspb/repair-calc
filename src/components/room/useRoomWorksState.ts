@@ -1,5 +1,6 @@
 import type { WorkData, Material, Tool, RoomData } from '@shared/types';
 import { createNewMaterial, createNewTool } from '../../domain/factories/projectFactory';
+import { generateId } from '../../domain/factories/projectFactory';
 
 export function useRoomWorksState(
   room: RoomData,
@@ -111,7 +112,7 @@ export function useRoomWorksState(
 
   const addCustomWork = () => {
     const newWork: WorkData = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       name: 'Работа',
       unit: 'м²',
       enabled: true,

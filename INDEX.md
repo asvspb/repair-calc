@@ -108,20 +108,21 @@ repair-calc/
 │   │   ├── workTemplate.ts           # Шаблоны работ
 │   │   └── vite-env.d.ts
 │   ├── utils/
-│   │   ├── costs.ts                  # Расчёт стоимости
 │   │   ├── debugLogger.ts            # Отладочный логгер
-│   │   ├── factories.ts              # Фабрики создания сущностей
 │   │   ├── format.ts                 # Форматирование чисел
-│   │   ├── geometry.ts               # Геометрические расчёты
 │   │   ├── idMapper.ts               # Маппинг локальных/серверных ID (+clearProject: вычистка маппингов при hard-delete)
-│   │   ├── localStorageProvider.ts   # localStorage StorageProvider
+│   │   ├── localStorageProvider.ts   # localStorage StorageProvider (легаси, не наращивать)
 │   │   ├── logger.ts                 # Структурированный логгер
-│   │   ├── materialCalculations.ts   # Формулы расчёта материалов
 │   │   ├── migration.ts              # Миграция данных
 │   │   ├── projectObjects.ts         # Object-based project helpers
 │   │   ├── saveQueue.ts              # Очередь сохранения
 │   │   ├── storage.ts                # StorageManager
+│   │   ├── storageConstants.ts       # STORAGE_KEYS (ключи localStorage) + CURRENT_VERSION
 │   │   └── templateStorage.ts        # Хранилище шаблонов
+│   ├── domain/                       # Чистая доменная логика (без React)
+│   │   ├── factories/projectFactory.ts # createProject/createNewRoom/clone..., generateId(prefix) — единая генерация ID
+│   │   ├── geometry/                 # geometry.ts, roomHelpers.ts
+│   │   └── pricing/                  # costs.ts, materialCalculations.ts
 │   ├── store/                        # Zustand-стор (мигрировано из ProjectContext)
 │   │   ├── useProjectStore.ts        # Композиция слайсов
 │   │   ├── createProjectSlice.ts     # Проекты + persistence + sync-поля (+архив T3: fetchArchivedProjects/restoreProject/permanentDeleteProject, deletingIds)
@@ -505,7 +506,8 @@ pnpm run analyze:graph # Codegraph: переиндексация графа за
 
 - ~~`geminiPriceSearch.ts` / `mistralPriceSearch.ts`~~ — **УДАЛЕНО**: клиентские AI-модули удалены, поиск идёт через серверный прокси. Дублирование промптов устранено через `priceSearchHelpers.ts`
 - `parseJSON()` в `projects.ts` и `rooms.ts`
-- `STORAGE_KEYS` в `storage.ts` и `apiStorageProvider.ts`
+- ~~`STORAGE_KEYS` в `storage.ts` и `apiStorageProvider.ts`~~ — **УСТРАНЕНО** (2026-10-04, `fix/typing-010`): единый источник `src/utils/storageConstants.ts` (STORAGE_KEYS + все ключи: token, refreshToken, e2e-test-mode, id-mappings, device-id, pending-save, migration-version, price-cache, dexie_migrated); значения ключей не менялись
+- ~~Генерация ID~~ — **УСТРАНЕНО** (2026-10-04, `fix/typing-010`): единый `generateId(prefix)` в `src/domain/factories/projectFactory.ts`; 8 дублей (crypto.randomUUID / Math.random-обёртки) заменены. Остались legacy-генераторы `device-`/`local-` в `src/utils/idMapper.ts:80,248` (generateId() оттуда не импортируется)
 - `API_BASE` в `httpClient.ts` и `auth.ts`
 
 ### Мёртвый код

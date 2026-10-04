@@ -13,6 +13,7 @@ import type { RoomMetrics } from '../types';
 import type { WorkData } from '@shared/types';
 import { TemplateStorage } from '../utils/templateStorage';
 import { migrateWorkData } from '../domain/pricing/costs';
+import { generateId } from '../domain/factories/projectFactory';
 import type { SaveResult } from '../hooks/useWorkTemplates';
 
 interface WorkTemplateContextValue {
@@ -58,8 +59,7 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       let scaledMaterials = migratedWork.materials || [];
       if (workVolume && workVolume > 0 && migratedWork.materials?.length) {
         const sourceVol = (migratedWork as Record<string, unknown>).sourceVolume as
-          | number
-          | undefined;
+          number | undefined;
         const scaleFactor = workVolume / (sourceVol || workVolume);
         scaledMaterials = migratedWork.materials.map(m => ({
           ...m,
@@ -152,8 +152,8 @@ export function WorkTemplateProvider({ children }: WorkTemplateProviderProps) {
       workUnitPrice: template.workUnitPrice,
       materialPriceType: 'total',
       materialPrice: 0,
-      materials: scaledMaterials.map(m => ({ ...m, id: `mat-${crypto.randomUUID()}` })),
-      tools: (template.tools || []).map(t => ({ ...t, id: `tool-${crypto.randomUUID()}` })),
+      materials: scaledMaterials.map(m => ({ ...m, id: generateId('mat-') })),
+      tools: (template.tools || []).map(t => ({ ...t, id: generateId('tool-') })),
       isCustom: false,
       templateId: template.id,
       templateCreatedAt: template.createdAt,

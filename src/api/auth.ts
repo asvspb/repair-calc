@@ -2,21 +2,27 @@
  * API клиент для аутентификации
  */
 
-import type { 
-  User, 
-  AuthTokens, 
-  LoginCredentials, 
-  RegisterCredentials, 
+import type {
+  User,
+  AuthTokens,
+  LoginCredentials,
+  RegisterCredentials,
   AuthResponse,
-  RefreshResponse 
+  RefreshResponse,
 } from '../types/auth';
+
+import { STORAGE_KEYS } from '../utils/storageConstants';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3993';
 
 class AuthApiError extends Error {
   public errors?: Array<{ field: string; message: string }>;
-  
-  constructor(message: string, public statusCode: number, errors?: Array<{ field: string; message: string }>) {
+
+  constructor(
+    message: string,
+    public statusCode: number,
+    errors?: Array<{ field: string; message: string }>,
+  ) {
     super(message);
     this.name = 'AuthApiError';
     this.errors = errors;
@@ -25,18 +31,15 @@ class AuthApiError extends Error {
 
 const DEFAULT_TIMEOUT = 30000; // 30 секунд
 
-async function fetchJson<T>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  
+
   const defaultHeaders: HeadersInit = {
     'Content-Type': 'application/json',
   };
 
   // Добавляем токен авторизации если есть
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
@@ -58,11 +61,7 @@ async function fetchJson<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      throw new AuthApiError(
-        data.message || 'Произошла ошибка',
-        response.status,
-        data.errors
-      );
+      throw new AuthApiError(data.message || 'Произошла ошибка', response.status, data.errors);
     }
 
     return data;
@@ -72,10 +71,7 @@ async function fetchJson<T>(
     }
     // Обработка timeout/abort
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new AuthApiError(
-        'Превышено время ожидания запроса',
-        408
-      );
+      throw new AuthApiError('Превышено время ожидания запроса', 408);
     }
     throw error;
   } finally {
@@ -124,7 +120,7 @@ export async function getCurrentUser(): Promise<{ status: string; data: User }> 
     'Content-Type': 'application/json',
   };
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
@@ -142,11 +138,7 @@ export async function getCurrentUser(): Promise<{ status: string; data: User }> 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new AuthApiError(
-        data.message || 'Произошла ошибка',
-        response.status,
-        data.errors
-      );
+      throw new AuthApiError(data.message || 'Произошла ошибка', response.status, data.errors);
     }
 
     return data;
@@ -156,10 +148,7 @@ export async function getCurrentUser(): Promise<{ status: string; data: User }> 
     }
     // Обработка timeout/abort
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new AuthApiError(
-        'Превышено время ожидания запроса',
-        408
-      );
+      throw new AuthApiError('Превышено время ожидания запроса', 408);
     }
     throw error;
   } finally {
@@ -180,30 +169,30 @@ export async function logout(): Promise<void> {
  * Сохранение токенов в localStorage
  */
 export function saveTokens(tokens: AuthTokens): void {
-  localStorage.setItem('token', tokens.token);
-  localStorage.setItem('refreshToken', tokens.refreshToken);
+  localStorage.setItem(STORAGE_KEYS.TOKEN, tokens.token);
+  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
 }
 
 /**
  * Удаление токенов из localStorage
  */
 export function clearTokens(): void {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
+  localStorage.removeItem(STORAGE_KEYS.TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 }
 
 /**
  * Получение токена из localStorage
  */
 export function getStoredToken(): string | null {
-  return localStorage.getItem('token');
+  return localStorage.getItem(STORAGE_KEYS.TOKEN);
 }
 
 /**
  * Получение refresh токена из localStorage
  */
 export function getStoredRefreshToken(): string | null {
-  return localStorage.getItem('refreshToken');
+  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 }
 
 export { AuthApiError };

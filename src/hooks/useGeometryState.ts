@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { generateId } from '../domain/factories/projectFactory';
 import type {
   RoomData,
   Opening,
@@ -229,7 +230,7 @@ export const useGeometryState = (
 
   const addWindow = useCallback(() => {
     const newWindow: Opening = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       width: 1.5,
       height: 1.5,
       comment: '',
@@ -259,7 +260,7 @@ export const useGeometryState = (
 
   const addDoor = useCallback(() => {
     const newDoor: Opening = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       width: 0.9,
       height: 2.0,
       comment: '',
@@ -290,7 +291,7 @@ export const useGeometryState = (
   // Extended mode handlers
   const addSubSection = useCallback(() => {
     const newSubSection: RoomSubSection = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       name: 'Секция',
       shape: 'rectangle',
       length: 0,
@@ -483,7 +484,7 @@ export const useGeometryState = (
   // Advanced mode handlers
   const addSegment = useCallback(() => {
     const newSegment: RoomSegment = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       name: 'Ниша',
       length: 1,
       width: 0.5,
@@ -553,7 +554,7 @@ export const useGeometryState = (
 
   const addObstacle = useCallback(() => {
     const newObstacle: Obstacle = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       name: 'Колонна',
       type: 'column',
       area: 0.25,
@@ -627,7 +628,7 @@ export const useGeometryState = (
 
   const addWallSection = useCallback(() => {
     const newSection: WallSection = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: generateId(),
       name: 'Участок с перепадом',
       length: 1,
       height: 3,

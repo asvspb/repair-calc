@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../utils/storageConstants';
 // SPLIT-ME: 648 строк > порога 400 — вынести архив-экшены в createArchiveSlice.ts (задача в docs/TODO.md)
 import type { StateCreator } from 'zustand';
 import type { ProjectSlice, StoreState } from './types';
@@ -475,7 +476,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
             newActiveProject = null;
             newActiveObjectId = null;
             newActiveObject = null;
-            localStorage.removeItem('repair-calc-active-project');
+            localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
             logStateChange('ProjectContext', 'Активный проект (после удаления)', null);
           }
         }
@@ -610,7 +611,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
               activeProject = null;
               activeObjectId = null;
               activeObject = null;
-              localStorage.removeItem('repair-calc-active-project');
+              localStorage.removeItem(STORAGE_KEYS.ACTIVE_PROJECT);
             }
             logStateChange(
               'ProjectContext',

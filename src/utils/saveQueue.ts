@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './storageConstants';
 /**
  * SaveQueue — очередь сохранений для предотвращения race conditions
  * Гарантирует последовательное выполнение операций сохранения
@@ -16,7 +17,7 @@ interface SaveQueueState {
 
 import { logError, logWarning, logDebug } from './logger';
 
-const PENDING_SAVE_KEY = 'repair-calc-pending-save';
+const PENDING_SAVE_KEY = STORAGE_KEYS.PENDING_SAVE;
 
 /**
  * Сохранение pending данных в localStorage

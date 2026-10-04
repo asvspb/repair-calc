@@ -114,8 +114,8 @@ export class PriceHistoryRepository {
     return {
       total: Number(totalRow?.total ?? 0),
       forReview: Number(reviewRow?.total ?? 0),
-      avgChangePercent: (avgRow as any)?.avg ?? null,
-      lastCreated: (lastRow as any)?.created_at ?? null,
+      avgChangePercent: (avgRow as { avg?: number | null } | undefined)?.avg ?? null,
+      lastCreated: (lastRow as { created_at?: Date | null } | undefined)?.created_at ?? null,
     };
   }
 
