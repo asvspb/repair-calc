@@ -71,7 +71,7 @@
 Устаревшие строки удалены 2026-10-04 (`fix/infra-008`): `RoomEditor.tsx` уже 277 строк (распилен), `roomHelpers.ts` не существует. Актуальные размеры (`wc -l`, 2026-10-04):
 
 - [ ] `src/components/BackupManager.tsx` (898) → `ExportPanel` + `ImportPanel` + `SyncPanel`
-- [ ] `src/api/storage/apiStorageProvider.ts` (995) → `apiClient` + `projectApi` + `objectApi` + `roomApi`
+- [x] `src/api/storage/apiStorageProvider.ts` (995) → `apiClient` (177) + `projectApi` (319) + `objectApi` (261) + `roomApi` (99) + фасад (346) — **закрыто 2026-10-04** (`refactor/split-storage-012`): публичный API фасада не изменён, тесты `tests/api/apiStorageProvider.test.ts` зелёные до и после (6/6); `require()` в модуле отсутствовал (уже ESM)
 - [ ] `src/components/projects/ProjectsModal.tsx` (727)
 - [ ] `src/store/createProjectSlice.ts` (649) — оставить только доменные поля + CRUD
 

@@ -354,3 +354,32 @@
 - `pnpm run lint:deps` — «no dependency violations found (228 modules, 839 dependencies cruised)».
 
 **docs/TODO.md**: P2-4 закрыт ✅ (три чек-пункта с пруфами), уточнён пункт P3-3 про server/tests no-unused-vars (почему не автофикс). **INDEX.md**: не менял — структурных изменений нет.
+
+---
+
+## 2026-10-04 — batch-012 split-storage (refactor/split-storage-012)
+
+**ТЗ:** devAI/spec/TASK-BATCH-012-015-splits.md, секция TASK-BATCH-012-split-storage (P3-1). Ветка `refactor/split-storage-012` создана от `fix/hygiene-011`.
+
+**Сделано:** `src/api/storage/apiStorageProvider.ts` (995 строк) распилен на модули ≤400 строк:
+
+- `apiClient.ts` (177) — `RequestQueue` (rate limiting 500ms, 429-ретраи с exponential backoff, скип запросов удалённых проектов), `isRateLimitError`, типы `ApiCache`/`ApiSyncContext`.
+- `projectApi.ts` (319) — `saveAllProjects` (полная синхронизация: 4 ветки — маппинг/обновление/миграция/реимпорт) + `saveProjectIncremental`.
+- `objectApi.ts` (261) — CRUD проектов (`loadProjectsAsync`, `createProjectAsync`, `updateProjectAsync`, `deleteProjectAsync`, `getProjectWithRoomsAsync`) + билдеры payload'ов (`buildUpdateData`, `buildObjectsPayload`, `saveRoomsToDefaultObject`), `loadFromLocalStorage`.
+- `roomApi.ts` (99) — `RoomSyncErrors` (трекер ошибок) + `syncProjectRooms`.
+- `apiStorageProvider.ts` (346) — тонкий фасад: singleton, get/set/remove/clear/getStorageInfo + делегирование. Публичный API (класс + `getStorageProvider`) не изменён; `src/api/storage/index.ts` не менялся; импортёры (AuthContext, BackupManager, ProjectsModal, DataManagementModal) не тронуты.
+
+Поведение сохранено: тела методов перенесены без изменения логики; дублировавшийся блок «создать проект + маппинг + атомарное сохранение комнат» сведён к `saveRoomsToDefaultObject`; мёртвые поля `resolve/reject` в `QueuedRequest` и недостижимый private `loadProjectsFromLocal` убраны. `deletedProjects` инкапсулирован в `RequestQueue` (provider-методы `markProjectDeleted`/`clearDeletedProjects` делегируют).
+
+**Baseline до распила:** `pnpm vitest run tests/api/apiStorageProvider.test.ts` → 6/6 passed. После распила: те же 6/6.
+
+**Gates (запущены в этой сессии):**
+
+- `pnpm test` — 13 файлов / 150 passed, 2 skipped (без регрессий).
+- `pnpm run lint` — exit 0, 0 errors / 32 warnings (совпадает с batch-011; в src/api/storage — чисто).
+- `pnpm run lint:deps` — «no dependency violations found (232 modules, 866 dependencies cruised)».
+- `pnpm exec tsc --noEmit -p tsconfig.json` — exit 0.
+
+**Примечания к ТЗ:** пункт «require() → ESM-импорт» не потребовался — grep `require(` в src/api/storage → 0 вхождений (модуль уже ESM; подтверждено ранее, INDEX.md H3). Smoke-тесты отдельно не писались — ТЗ требует их только «если тестов на провайдер нет», а `tests/api/apiStorageProvider.test.ts` (6 кейсов) существовал и прогнан до/после.
+
+**docs/TODO.md**: P3-1 строка apiStorageProvider закрыта ✅ (с размерами и пруфами). **INDEX.md**: дерево storage/ дополнено 4 новыми файлами, строка таблицы ключевых файлов актуализирована.
