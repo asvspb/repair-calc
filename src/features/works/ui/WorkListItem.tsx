@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, ChevronUp, Package, Wrench } from 'lucide-react';
 import type { WorkData } from '@shared/types';
-import type { SaveResult } from '../../../hooks/useWorkTemplates';
+import type { SaveResult } from '../model/useWorkTemplates';
 import { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
 
 type WorkListItemProps = {

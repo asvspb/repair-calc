@@ -4,7 +4,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useMaterialCalculation, canCalculateMaterial } from '../../src/hooks/useMaterialCalculation';
+import {
+  useMaterialCalculation,
+  canCalculateMaterial,
+} from '../../src/features/works/model/useMaterialCalculation';
 import type { Material, RoomMetrics } from '../../src/types';
 
 // Mock room metrics
@@ -86,7 +89,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'netWallArea',
-      })
+      }),
     );
 
     expect(result.current.isCalculated).toBe(true);
@@ -113,7 +116,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'floorArea',
-      })
+      }),
     );
 
     expect(result.current.isCalculated).toBe(true);
@@ -139,7 +142,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'floorArea',
-      })
+      }),
     );
 
     expect(result.current.isCalculated).toBe(true);
@@ -164,7 +167,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'netWallArea',
-      })
+      }),
     );
 
     expect(result.current.isCalculated).toBe(false);
@@ -188,7 +191,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'floorArea',
-      })
+      }),
     );
 
     expect(result.current.formula).toContain('20');
@@ -214,7 +217,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'floorArea',
-      })
+      }),
     );
 
     // 20 м² / 2.0 = 10 упак (без запаса)
@@ -238,7 +241,7 @@ describe('useMaterialCalculation', () => {
         material,
         metrics: mockMetrics,
         calculationType: 'netWallArea',
-      })
+      }),
     );
 
     // 50 м² / 5.3 = 9.43 рулона (без запаса) → Math.ceil = 10
@@ -262,7 +265,7 @@ describe('useMaterialCalculation', () => {
         metrics: mockMetrics,
         calculationType: 'customCount',
         customCount: 5,
-      })
+      }),
     );
 
     expect(result.current.recommendedQty).toBe(5);

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useGeometryState } from '../../src/hooks/useGeometryState';
+import { useGeometryState } from '../../src/features/rooms/model/useGeometryState';
 import type { RoomData } from '../../src/types';
 
 // Мок для sessionStorage
@@ -68,7 +68,7 @@ describe('useGeometryState', () => {
       sessionStorageMock.setItem('subSections_expanded', 'false');
 
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       expect(result.current.isGeometryCollapsed).toBe(true);
@@ -78,7 +78,7 @@ describe('useGeometryState', () => {
 
     it('should toggle geometry collapse state', () => {
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       expect(result.current.isGeometryCollapsed).toBe(false);
@@ -90,13 +90,13 @@ describe('useGeometryState', () => {
       expect(result.current.isGeometryCollapsed).toBe(true);
       expect(sessionStorageMock.setItem).toHaveBeenCalledWith(
         'simpleMode_geometry_collapsed',
-        'true'
+        'true',
       );
     });
 
     it('should toggle extended geometry collapse state', () => {
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       expect(result.current.isExtendedGeometryCollapsed).toBe(false);
@@ -110,7 +110,7 @@ describe('useGeometryState', () => {
 
     it('should toggle subSections expanded state', () => {
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       expect(result.current.subSectionsExpanded).toBe(true);
@@ -130,7 +130,7 @@ describe('useGeometryState', () => {
     describe('updateSimpleField', () => {
       it('should update length field', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -147,7 +147,7 @@ describe('useGeometryState', () => {
 
       it('should update width field', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -163,7 +163,7 @@ describe('useGeometryState', () => {
     describe('Window handlers', () => {
       it('should add a new window', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -183,7 +183,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -201,7 +201,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -217,7 +217,7 @@ describe('useGeometryState', () => {
     describe('Door handlers', () => {
       it('should add a new door', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -237,7 +237,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -255,7 +255,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -276,7 +276,7 @@ describe('useGeometryState', () => {
     describe('SubSection handlers', () => {
       it('should add a new subSection', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -306,7 +306,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -334,7 +334,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -363,7 +363,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(extendedRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(extendedRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -393,7 +393,7 @@ describe('useGeometryState', () => {
 
       it('should add window to subSection', () => {
         const { result } = renderHook(() =>
-          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithSubSection, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -421,7 +421,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -449,7 +449,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWindow, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -477,9 +477,9 @@ describe('useGeometryState', () => {
             },
           ],
         });
-        
+
         const { result } = renderHook(() =>
-          useGeometryState(testRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(testRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -507,7 +507,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -535,7 +535,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithDoor, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -556,7 +556,7 @@ describe('useGeometryState', () => {
     describe('Segment handlers', () => {
       it('should add a new segment', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -584,7 +584,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithSegment, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithSegment, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -610,7 +610,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithSegment, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithSegment, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -637,7 +637,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(advancedRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(advancedRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -653,7 +653,7 @@ describe('useGeometryState', () => {
     describe('Obstacle handlers', () => {
       it('should add a new obstacle', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -682,7 +682,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithObstacle, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithObstacle, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -709,7 +709,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithObstacle, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithObstacle, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -725,7 +725,7 @@ describe('useGeometryState', () => {
     describe('WallSection handlers', () => {
       it('should add a new wall section', () => {
         const { result } = renderHook(() =>
-          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -751,7 +751,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWallSection, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWallSection, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -776,7 +776,7 @@ describe('useGeometryState', () => {
         });
 
         const { result } = renderHook(() =>
-          useGeometryState(roomWithWallSection, mockUpdateRoom, mockUpdateRoomById)
+          useGeometryState(roomWithWallSection, mockUpdateRoom, mockUpdateRoomById),
         );
 
         act(() => {
@@ -796,7 +796,7 @@ describe('useGeometryState', () => {
   describe('handleGeometryModeChange', () => {
     it('should return same room if mode is the same', () => {
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -811,7 +811,7 @@ describe('useGeometryState', () => {
 
     it('should change mode from simple to extended', () => {
       const { result } = renderHook(() =>
-        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(mockRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -832,7 +832,7 @@ describe('useGeometryState', () => {
       });
 
       const { result } = renderHook(() =>
-        useGeometryState(roomWithData, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(roomWithData, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -870,7 +870,7 @@ describe('useGeometryState', () => {
       });
 
       const { result } = renderHook(() =>
-        useGeometryState(roomWithSavedData, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(roomWithSavedData, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -902,7 +902,7 @@ describe('useGeometryState', () => {
       });
 
       const { result } = renderHook(() =>
-        useGeometryState(extendedRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(extendedRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -932,7 +932,7 @@ describe('useGeometryState', () => {
       });
 
       const { result } = renderHook(() =>
-        useGeometryState(advancedRoom, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(advancedRoom, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
@@ -973,7 +973,7 @@ describe('useGeometryState', () => {
       });
 
       const { result } = renderHook(() =>
-        useGeometryState(roomWithSavedAdvanced, mockUpdateRoom, mockUpdateRoomById)
+        useGeometryState(roomWithSavedAdvanced, mockUpdateRoom, mockUpdateRoomById),
       );
 
       act(() => {
