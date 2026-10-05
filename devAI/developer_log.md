@@ -904,3 +904,8 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Граничный случай merge: dirty-сущность, отсутствующая и в pull, и в локальной
   копии, остаётся dirty до флаша, где флашер снимет её как `missing→gaveUp`
   (самоизлечение, поведение batch (в) не менялось).
+
+## 2026-10-05 — Архитектор: включение SYNC-V2 в проде
+
+- Решение владельца «включаем» после ревью волны (г). VITE_SYNC_V2=true в docker-compose frontend build-args; откат — закомментировать и пересобрать.
+- Деплой ./scripts/deploy-local.sh + проверка живьём.
