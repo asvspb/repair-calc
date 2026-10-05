@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../model/AuthContext';
 
 interface LoginPageProps {
   onSwitchToRegister: () => void;
@@ -12,7 +12,7 @@ interface LoginPageProps {
 
 export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const { login, isLoading, error, clearError } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -42,7 +42,10 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const displayError = validationError || error;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4" data-testid="login-form">
+    <div
+      className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4"
+      data-testid="login-form"
+    >
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -74,7 +77,7 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
                   type="email"
                   data-testid="login-email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
@@ -94,7 +97,7 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
                   type="password"
                   data-testid="login-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
