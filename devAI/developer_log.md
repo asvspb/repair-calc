@@ -909,3 +909,9 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 
 - Решение владельца «включаем» после ревью волны (г). VITE_SYNC_V2=true в docker-compose frontend build-args; откат — закомментировать и пересобрать.
 - Деплой ./scripts/deploy-local.sh + проверка живьём.
+
+## 2026-10-05 (позже) — Архитектор: фикс включения SYNC-V2 в проде
+
+- Найдено при живой проверке: бандл не содержал sync/push — build-arg VITE_SYNC_V2 отбрасывался (в Dockerfile не был объявлен ARG); vite собирал с false и вырезал V2-код DS-элиминацией.
+- Фикс 2592d27: ARG VITE_SYNC_V2 + ENV в builder-стадии. Пересборка frontend: бандл содержит sync/push и sync/pull — V2 активен.
+- Прод: frontend+backend Up (f57d60b/2592d27), health 200, sync-эндпоинты 401 без токена (auth работает). R2 закрыт включением в прод.
