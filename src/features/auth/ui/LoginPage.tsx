@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
-import { useAuth } from '../model/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 
 interface LoginPageProps {
   onSwitchToRegister: () => void;

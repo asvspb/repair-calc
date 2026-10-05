@@ -5,7 +5,7 @@
 
 import React, { type ReactNode } from 'react';
 import { Calculator } from 'lucide-react';
-import { useAuth } from '../model/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 
 interface ProtectedRouteProps {
   children: ReactNode;
