@@ -63,7 +63,7 @@ vi.mock('../../../src/api/storage', () => ({
   },
 }));
 
-vi.mock('../../../src/api/totals', () => ({ saveTotals: vi.fn() }));
+vi.mock('../../../src/features/summary/api/totals', () => ({ saveTotals: vi.fn() }));
 vi.mock('../../../src/utils/migration', () => ({
   runMigrations: vi.fn(),
   needsMigration: vi.fn(() => false),

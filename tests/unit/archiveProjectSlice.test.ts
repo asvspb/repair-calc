@@ -40,7 +40,7 @@ vi.mock('../../src/api/storage', () => ({
   },
 }));
 
-vi.mock('../../src/api/totals', () => ({
+vi.mock('../../src/features/summary/api/totals', () => ({
   saveTotals: vi.fn(),
 }));
 

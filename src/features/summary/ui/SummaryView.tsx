@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProjectData, ObjectData, RoomData } from '@shared/types';
-import { calculateRoomMetrics } from '../domain/geometry/geometry';
-import { calculateRoomCosts } from '../domain/pricing/costs';
-import { SummaryMaterials, SummaryTools, SummaryWorks } from './summary';
-import { getAllRooms } from '../utils/projectObjects';
-import { pluralize } from '../utils/format';
+import { calculateRoomMetrics } from '../../../domain/geometry/geometry';
+import { calculateRoomCosts } from '../../../domain/pricing/costs';
+import { SummaryMaterials, SummaryTools, SummaryWorks } from './index';
+import { getAllRooms } from '../../../utils/projectObjects';
+import { pluralize } from '../../../utils/format';
 
 interface SummaryViewProps {
   project: ProjectData;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { SummaryView } from '../../src/components/SummaryView';
+import { SummaryView } from '../../src/features/summary/ui/SummaryView';
 import type { ProjectData } from '@shared/types';
 import { calculateRoomCosts } from '../../src/domain/pricing/costs';
 
@@ -29,8 +29,20 @@ describe('SummaryView object scope', () => {
     updatedAt: 0,
     rooms: [],
     objects: [
-      { id: 'o1', name: 'Object 1', rooms: [{ id: 'r1', name: 'Room 1', length: 0, width: 0, height: 0, works: [], materials: [] }] },
-      { id: 'o2', name: 'Object 2', rooms: [{ id: 'r2', name: 'Room 2', length: 0, width: 0, height: 0, works: [], materials: [] }] },
+      {
+        id: 'o1',
+        name: 'Object 1',
+        rooms: [
+          { id: 'r1', name: 'Room 1', length: 0, width: 0, height: 0, works: [], materials: [] },
+        ],
+      },
+      {
+        id: 'o2',
+        name: 'Object 2',
+        rooms: [
+          { id: 'r2', name: 'Room 2', length: 0, width: 0, height: 0, works: [], materials: [] },
+        ],
+      },
     ],
   } as unknown as ProjectData;
 
@@ -41,7 +53,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o1"
-      />
+      />,
     );
     expect(screen.getByText('sidebar.objectEstimate Object 1')).toBeInTheDocument();
     expect(screen.getByText('Room 1')).toBeInTheDocument();
@@ -55,7 +67,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="missing"
-      />
+      />,
     );
     expect(screen.getByText('Нет добавленных комнат')).toBeInTheDocument();
   });
@@ -67,7 +79,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o1"
-      />
+      />,
     );
     expect(screen.getByText('Room 1')).toBeInTheDocument();
     rerender(
@@ -76,7 +88,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o2"
-      />
+      />,
     );
     expect(screen.getByText('Room 2')).toBeInTheDocument();
     expect(screen.queryByText('Room 1')).not.toBeInTheDocument();
@@ -98,7 +110,9 @@ describe('SummaryView object scope', () => {
             {
               id: 'r1',
               name: 'Room 1',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
                   id: 'w1',
@@ -121,7 +135,9 @@ describe('SummaryView object scope', () => {
             {
               id: 'r2',
               name: 'Room 2',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
                   id: 'w2',
@@ -146,7 +162,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o1"
-      />
+      />,
     );
 
     expect(screen.getByText(/Покраска A/)).toBeInTheDocument();
@@ -169,11 +185,21 @@ describe('SummaryView object scope', () => {
             {
               id: 'r1',
               name: 'Room 1',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
-                  id: 'w1', name: 'Work 1', unit: 'm2', calculationType: 'customCount', count: 1, workUnitPrice: 100, enabled: true,
-                  materials: [{ id: 'm1', name: 'Краска A', unit: 'л', quantity: 5, pricePerUnit: 100 }]
+                  id: 'w1',
+                  name: 'Work 1',
+                  unit: 'm2',
+                  calculationType: 'customCount',
+                  count: 1,
+                  workUnitPrice: 100,
+                  enabled: true,
+                  materials: [
+                    { id: 'm1', name: 'Краска A', unit: 'л', quantity: 5, pricePerUnit: 100 },
+                  ],
                 },
               ],
               materials: [],
@@ -187,11 +213,21 @@ describe('SummaryView object scope', () => {
             {
               id: 'r2',
               name: 'Room 2',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
-                  id: 'w2', name: 'Work 2', unit: 'm2', calculationType: 'customCount', count: 1, workUnitPrice: 100, enabled: true,
-                  materials: [{ id: 'm2', name: 'Краска B', unit: 'л', quantity: 5, pricePerUnit: 100 }]
+                  id: 'w2',
+                  name: 'Work 2',
+                  unit: 'm2',
+                  calculationType: 'customCount',
+                  count: 1,
+                  workUnitPrice: 100,
+                  enabled: true,
+                  materials: [
+                    { id: 'm2', name: 'Краска B', unit: 'л', quantity: 5, pricePerUnit: 100 },
+                  ],
                 },
               ],
               materials: [],
@@ -207,7 +243,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o1"
-      />
+      />,
     );
 
     expect(screen.getByText(/Краска A/)).toBeInTheDocument();
@@ -230,11 +266,19 @@ describe('SummaryView object scope', () => {
             {
               id: 'r1',
               name: 'Room 1',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
-                  id: 'w1', name: 'Work 1', unit: 'm2', calculationType: 'customCount', count: 1, workUnitPrice: 100, enabled: true,
-                  tools: [{ id: 't1', name: 'Кисть A', price: 100, quantity: 1, isRent: false }]
+                  id: 'w1',
+                  name: 'Work 1',
+                  unit: 'm2',
+                  calculationType: 'customCount',
+                  count: 1,
+                  workUnitPrice: 100,
+                  enabled: true,
+                  tools: [{ id: 't1', name: 'Кисть A', price: 100, quantity: 1, isRent: false }],
                 },
               ],
               materials: [],
@@ -248,11 +292,19 @@ describe('SummaryView object scope', () => {
             {
               id: 'r2',
               name: 'Room 2',
-              length: 0, width: 0, height: 0,
+              length: 0,
+              width: 0,
+              height: 0,
               works: [
                 {
-                  id: 'w2', name: 'Work 2', unit: 'm2', calculationType: 'customCount', count: 1, workUnitPrice: 100, enabled: true,
-                  tools: [{ id: 't2', name: 'Кисть B', price: 100, quantity: 1, isRent: false }]
+                  id: 'w2',
+                  name: 'Work 2',
+                  unit: 'm2',
+                  calculationType: 'customCount',
+                  count: 1,
+                  workUnitPrice: 100,
+                  enabled: true,
+                  tools: [{ id: 't2', name: 'Кисть B', price: 100, quantity: 1, isRent: false }],
                 },
               ],
               materials: [],
@@ -268,7 +320,7 @@ describe('SummaryView object scope', () => {
         onRoomClick={vi.fn()}
         scope="object"
         activeObjectId="o1"
-      />
+      />,
     );
 
     expect(screen.getByText(/Кисть A/)).toBeInTheDocument();

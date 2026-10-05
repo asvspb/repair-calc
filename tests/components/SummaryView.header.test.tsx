@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { SummaryView } from '../../src/components/SummaryView';
+import { SummaryView } from '../../src/features/summary/ui/SummaryView';
 import type { ProjectData, RoomData } from '../../shared/types';
 import i18n from '../../src/i18n';
 import { I18nextProvider } from 'react-i18next';

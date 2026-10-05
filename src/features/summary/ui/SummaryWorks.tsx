@@ -6,9 +6,9 @@
 import React, { memo, useMemo } from 'react';
 import { Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectData, WorkData, RoomData } from '@shared/types';
-import { calculateRoomMetrics } from '../../domain/geometry/geometry';
-import { CALCULATION_TYPE_LABELS } from '../../types/workTemplate';
-import { getAllRooms } from '../../utils/projectObjects';
+import { calculateRoomMetrics } from '../../../domain/geometry/geometry';
+import { CALCULATION_TYPE_LABELS } from '../../../types/workTemplate';
+import { getAllRooms } from '../../../utils/projectObjects';
 
 type Props = {
   rooms?: RoomData[];

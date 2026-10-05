@@ -33,7 +33,7 @@ vi.mock('../../src/api/storage', () => ({
   },
 }));
 
-vi.mock('../../src/api/totals', () => ({ saveTotals: vi.fn() }));
+vi.mock('../../src/features/summary/api/totals', () => ({ saveTotals: vi.fn() }));
 vi.mock('../../src/utils/logger', () => ({
   logUserAction: vi.fn(),
   logSuccess: vi.fn(),
