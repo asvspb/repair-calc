@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, Check } from 'lucide-react';
 import type { WorkData } from '@shared/types';
-import type { SaveResult } from '../../../hooks/useWorkTemplates';
+import type { SaveResult } from '../model/useWorkTemplates';
 
 type Props = {
   work: WorkData;

@@ -8,7 +8,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import type { SaveResult } from '../../../hooks/useWorkTemplates';
+import type { SaveResult } from '../model/useWorkTemplates';
 import { WorkListItem } from './WorkListItem';
 import type { WorkData } from '@shared/types';
 

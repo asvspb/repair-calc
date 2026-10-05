@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { syncPull, ProjectsApiError } from '../../src/api/projects';
+import { syncPull, ProjectsApiError } from '../../src/features/projects/api/projects';
 
 // Mock fetch
 const originalFetch = global.fetch;

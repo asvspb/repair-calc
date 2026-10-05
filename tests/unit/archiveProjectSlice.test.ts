@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
 import { idMapper } from '../../src/utils/idMapper';
-import * as projectsApi from '../../src/api/projects';
+import * as projectsApi from '../../src/features/projects/api/projects';
 import type { ProjectData, RoomData } from '../../src/types';
 
 vi.mock('../../src/utils/storage', () => ({
@@ -87,7 +87,7 @@ vi.mock('../../src/utils/projectObjects', () => ({
   getFirstObject: vi.fn(),
 }));
 
-vi.mock('../../src/api/projects', () => ({
+vi.mock('../../src/features/projects/api/projects', () => ({
   getArchivedProjects: vi.fn(),
   restoreProject: vi.fn(),
   permanentDeleteProject: vi.fn(),

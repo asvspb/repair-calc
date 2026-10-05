@@ -1,0 +1,162 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# Coverage reports
+coverage/
+
+# Environment files
+.env*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Cache
+.eslintcache
+.parcel-cache
+.cache/
+*.tsbuildinfo
+.vite/
+dev-dist/
+
+# Local files
+*.local
+# Артефакты тестов/отладки (не версионировать)
+test-output.txt
+tsc_errors.log
+
+# Project specific directories
+# Local screenshots: ignore contents, keep folder via .gitkeep
+screenshots/*
+!screenshots/.gitkeep
+backups/
+temp/
+videos/
+# ВАЖНО: tests/ НЕ игнорировать — тесты должны быть в git
+test-results/
+logs/
+playwright-report/
+# playwright/ целиком не игнорируем (нужен конфиг); игнорируем только артефакты
+playwright/.cache/
+
+
+# Docker
+.dockerenv
+.dockerignore
+*.dockerapp
+docker-build-*
+
+# Docker volumes and compose
+compose/
+!docker-compose.yml
+!Dockerfile
+!.docker/
+
+# TypeScript/React specific
+.next/
+.nuxt/
+.svelte-kit/
+dist-electron/
+.output.js
+.development
+
+# Testing
+.nyc_output/
+.jest/
+jest/
+junit.xml
+
+# Security
+secret.*
+*.key
+*.pem
+*.crt
+*.cert
+
+# CI/CD
+.semaphore/
+# .github/workflows/ НЕ игнорировать — CI-конфиг должен быть в git
+.circleci/
+.travis.yml
+.gitlab-ci.yml
+
+# Database
+# database/ НЕ игнорировать — миграции и схемы БД должны быть в git
+# (бинарные дампы/бэкапы, если появятся, игнорируем точечно):
+*.sqlite
+*.db
+*.dump
+
+# AI/Editor specific
+.blackbox/
+.blackboxcli/
+.qodo/
+.kilo/
+.cline/
+.qwen/
+.codegraph/
+
+
+playwright-profile
+
+.v2c/
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+bower_components/
+jspm_packages/
+__pycache__/
+site-packages/
+venv/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

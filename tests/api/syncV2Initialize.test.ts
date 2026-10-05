@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
 import { initializeProjects } from '../../src/store/projectInitialize';
 import type { ProjectData, RoomData } from '../../src/types';
-import { syncPull, apiToClientProject } from '../../src/api/projects';
+import { syncPull, apiToClientProject } from '../../src/features/projects/api/projects';
 import { getLastSyncAt, putLastSyncAt } from '../../src/api/storage/dexieDb';
 import { ApiStorageProvider } from '../../src/api/storage';
 import { StorageManager } from '../../src/utils/storage';
@@ -29,8 +29,8 @@ vi.mock('../../src/api/storage/dexieDb', async importOriginal => {
   };
 });
 
-vi.mock('../../src/api/projects', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../src/api/projects')>();
+vi.mock('../../src/features/projects/api/projects', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../src/features/projects/api/projects')>();
   return {
     ...actual,
     syncPull: vi.fn(),

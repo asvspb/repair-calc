@@ -4,7 +4,7 @@ import type { ProjectSlice, StoreState } from './types';
 import { StorageManager } from '../utils/storage';
 import type { StorageError } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage';
-import { syncPull, apiToClientProject } from '../api/projects';
+import { syncPull, apiToClientProject } from '../features/projects/api/projects';
 import { mergePull } from '../api/storage/syncMerge';
 import { isSyncV2Enabled } from '../api/storage/syncFlusher';
 import { getLastSyncAt, putLastSyncAt } from '../api/storage/dexieDb';

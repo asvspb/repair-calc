@@ -1090,3 +1090,38 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 
 - Финальный деплой: прод на 5568427 (FSD-структура + SYNC-V2). Проверено живьём: контейнеры Up, backend COMMIT_HASH=5568427, /api/health 200, frontend 200, sync/push в бандле (урок про build-arg учтён).
 - ROADMAP-fsd.md: R1–R5 закрыты, открытые хвосты перечислены.
+
+## 2026-10-05 — Кодер: TASK-BATCH-030 facade-cleanup (ветка refactor/facade-cleanup-030)
+
+- Удалены @deprecated-фасады (3 коммита: components / hooks / api):
+  - `src/components/` — каталог удалён целиком (11 фасадов: BackupManager, RoomEditor,
+    SummaryView, auth|geometry|objects|projects|rooms|works barrels, room/*). Прямых
+    потребителей нет; единственный живой импорт `SyncPanel.tsx:142` (createRoom) переведён
+    с `components/rooms` на allowlisted-фасад `src/api/rooms`.
+  - `src/hooks/` — useWorkTemplates.ts, useMaterialCalculation.ts, useGeometryState.ts.
+    Потребители переведены на канонические пути: works ui (WorkList/WorkListItem/
+    WorkTemplateSaveButton — `import type { SaveResult }`) → features/works/model/
+    useWorkTemplates; tests/hooks/use{GeometryState,MaterialCalculation}.test.ts →
+    features/rooms|works/model. `src/hooks/ui/` (app-слой) сохранён.
+  - `src/api/` — auth.ts, totals.ts, objects.ts и каталог prices/ удалены (grep:
+    0 потребителей). Потребители `src/api/projects` переведены на
+    features/projects/api/projects: store/createArchiveSlice, store/projectInitialize,
+    SyncPanel (apiToClientProject — возвращено на фасад, см. ниже), 6 тестовых файлов
+    (archiveProjectsApi, archiveProjectSlice, apiStorageProvider, syncFlusher, syncPull,
+    syncV2Initialize — включая vi.mock и importOriginal-типы).
+- Спорные решения (не молча):
+  - Фасады `src/api/projects.ts` и `src/api/rooms.ts` СОХРАНЕНЫ: их живой потребитель —
+    `src/features/backup/ui/SyncPanel` (getProjects/getProject/createRoom). Перевод на
+    целевые пути (features/projects/api/projects, features/rooms/api/rooms) даёт 4 error
+    в depcruise (fsd-projects/rooms/features-no-cross-imports — проверено прогоном до
+    отката). Фасады легализуют кросс-фичевые импорты через allowlist; честное снятие —
+    вынос sync-логики SyncPanel из features/backup (кандидат пост-R4), не правка правил.
+  - `fsd-features-to-shared` (warn) и `fsd-app-layers` (error): `src/components` убран из
+    обоих allowlist pathNot (путь пуст — каталог удалён). Comments в правилах актуализированы;
+    в комментарии fsd-backup-no-cross-imports фасад-исключение переписано с
+    src/components/rooms на src/api/rooms.
+- INDEX.md: разделы api/ hooks/ contexts/ переписаны (фасады сняты, components удалён),
+  принципы §3 — `src/features/<Domain>/ui/` вместо src/components.
+- Gates: `pnpm test` exit 0 (180 passed / 2 skipped, server-проект); `pnpm run lint`
+  exit 0 (0 errors, 31 warning — pre-existing baseline); `pnpm run lint:deps` exit 0
+  («no dependency violations found», 282 modules, после каждой группы).

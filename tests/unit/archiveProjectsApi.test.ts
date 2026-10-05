@@ -41,7 +41,7 @@ import {
   restoreProject,
   permanentDeleteProject,
   ProjectsApiError,
-} from '../../src/api/projects';
+} from '../../src/features/projects/api/projects';
 import { ApiError } from '../../src/api/httpClient';
 
 describe('projects api: archive endpoints (T3)', () => {
