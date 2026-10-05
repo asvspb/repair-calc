@@ -1247,3 +1247,8 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Диагностика по факту (debug-спека + трассировка ответа): мок 401 доходил, authError выставлялся, но эффект App ([isLoading(auth), isAuthenticated, user?.id]) при возврате authIsLoading=false вызывал resetStore(), который после 033 стирал authError (и user/isAuthenticated/templates) — ошибка мигала и исчезала.
 - Фикс: resetStore() снова сбрасывает ТОЛЬКО домен проектов (как до 033); auth/workTemplates — отдельные домены. Комментарий-обоснование в коде.
 - Перепроверено лично: pnpm test зелёные, auth.spec 3/3, полный e2e 159/159, lint/lint:deps зелёные.
+
+## 2026-10-05 (финал) — Деплой чистки 030–033 + фикса аутентификации
+
+- Прод → 42bb3a9. Проверено живьём: контейнеры Up, backend COMMIT_HASH=42bb3a9 (= HEAD), /api/health 200, sync/push в бандле (SYNC-V2 активен), 401-логин отдаёт ошибку корректным форматом.
+- Полный цикл FSD + чистка завершён: прод = main = origin, e2e 159/159.
