@@ -21,6 +21,7 @@ import { clearSaveTimers } from './createSyncSlice';
 import { saveQueue } from '../utils/saveQueue';
 import { migrateProject } from './projectMigration';
 import { initializeProjects } from './projectInitialize';
+import { isSyncV2Enabled } from '../api/storage/syncFlusher';
 
 // Ре-экспорт для совместимости импортёров (useProjectStore, контексты)
 export { migrateProject };
@@ -41,7 +42,7 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
   deletingIds: [],
 
   initialize: (initialProjects: ProjectData[], isAuthenticated: boolean) =>
-    initializeProjects(set, initialProjects, isAuthenticated),
+    initializeProjects(set, initialProjects, isAuthenticated, get),
 
   setActiveProjectId: (id: string) => {
     logUserAction('Переключение активного проекта', { projectId: id });
@@ -130,7 +131,11 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
             generatedId: newProject.id,
           });
           newProject.objects = generatedProject.objects;
-          await apiProvider.saveProjectsAsync([newProject]);
+          // SYNC-V2 §5(г): под флагом объекты flush'атся через /api/sync/push —
+          // legacy-полное сохранение не запускаем (иначе двойная запись)
+          if (!isSyncV2Enabled()) {
+            await apiProvider.saveProjectsAsync([newProject]);
+          }
         }
 
         logSuccess(
@@ -158,6 +163,16 @@ export const createProjectSlice: StateCreator<StoreState, [], [], ProjectSlice> 
         });
         StorageManager.saveActiveProject(newProject.id);
         get().markDirty('project', newProject.id, new Date().toISOString());
+        // SYNC-V2 §2.2/§5(г): новые объекты и комнаты тоже уходят пушем (parent-before-child)
+        if (isSyncV2Enabled()) {
+          const nowIso = new Date().toISOString();
+          for (const obj of newProject.objects ?? []) {
+            get().markDirty('object', obj.id, nowIso);
+            for (const room of obj.rooms ?? []) {
+              get().markDirty('room', room.id, nowIso);
+            }
+          }
+        }
         get().scheduleSave(get().projects);
         logStateChange('ProjectContext', 'Активный проект', newProject.id);
 

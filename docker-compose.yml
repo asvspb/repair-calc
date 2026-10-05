@@ -83,6 +83,8 @@ services:
       dockerfile: Dockerfile
       args:
         COMMIT_HASH: ${COMMIT_HASH:-unknown}
+        # SYNC-V2 (SPEC-SYNC-V2.md §4): в проде НЕ включать; включение — только по решению владельца.
+        # VITE_SYNC_V2: "true"
     container_name: repair-calc-frontend
     restart: always
     depends_on:

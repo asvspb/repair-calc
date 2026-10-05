@@ -840,3 +840,67 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Флаг VITE_SYNC_V2 везде гейтит включение — прод продолжает работать по старому пути.
 - Мелочь: sync.ts 410 строк (>400) — задача P3-SPLIT-2 заведена.
 - Статус: (а)(б)(в)+R3 в main и origin. Batch (г) ждёт решения владельца (e2e в обоих режимах по спеке §5).
+
+## 2026-10-05 — Кодер: TASK-BATCH-023-sync-d (SYNC-V2 переключение под флаг, §5(г))
+
+Ветка `feat/sync-v2-d-023` (от main), 5 коммитов, не push/merge. Спека
+`devAI/spec/SPEC-SYNC-V2.md` v1.1 §4/§5(г); ТЗ — TASK-BATCH-023-sync-d.
+
+### Что сделано
+
+1. **Развилка pull (§5(г))** — `src/store/projectInitialize.ts`: `loadProjectsSyncV2`
+   — инкрементальный `syncPull(since)` (первый запуск — полный, §4 п.1) + LWW-слияние
+   `mergePull` (batch в) против персистентной локальной копии (не пустого in-memory
+   стора после reload); resolvedDirty → `acknowledgeFlushed(serverWins)` (счётчик
+   конфликтов §3.1); `lastSyncAt` — серверный `timestamp` ответа (§6.1 п.1); ошибка
+   pull → откат на локальную копию, метка не двигается. Без флага — прежний код
+   (байт-в-байт: тот же `ApiStorageProvider.loadProjectsAsync`).
+2. **lastSyncAt (§4 п.3)** — `src/api/storage/dexieDb.ts`: `getLastSyncAt/putLastSyncAt`
+   в таблице `syncState` (entityKind `'meta'`; `restoreDirtyState` такие записи
+   пропускает — проверено по коду, `dirty['meta']` undefined → skip).
+3. **Legacy-сохранение под флагом выключено** — `createSyncSlice.scheduleSave`
+   (обе ветки) и `createProjectSlice.createProject` (без `saveProjectsAsync`;
+   новые object/room помечаются dirty — parent-before-child флашера). Причина:
+   иначе двойная запись (CRUD-PUT + /api/sync/push) и ложные LWW-конфликты
+   (серверный updated_at всегда свежее клиентской метки).
+4. **Фабрика (`src/api/storage/index.ts`)** — ре-экспорт `isSyncV2Enabled` как
+   точки развилки по флагу.
+5. **env-примеры**: `.env.example` — `VITE_SYNC_V2=false` с предупреждением;
+   `docker-compose.yml` — закомментированный примечание-arg. В проде флаг НЕ
+   включён (дополнение ТЗ).
+6. **ФИКС (вне буквы write-set, обязателен для DoD)** — `clearSaveTimers` больше
+   не вызывает `stopFlusher()`: родительский эффект App вызывает `resetStore()`
+   ПОСЛЕ монтирования AppContent, и флашер убивался сразу после старта — push по
+   debounce не выполнялся никогда (прошёл бы незамеченным без e2e-сценария §5(г)).
+   Побочно чинит `deleteProject` под V2. Остановка флашера — только в cleanup'е
+   `initSyncListeners`.
+7. **Тесты**: `tests/api/syncV2Initialize.test.ts` (5: полный pull+lastSyncAt,
+   инкрементал LWW в обе стороны, fallback при ошибке, legacy-путь без флага);
+   `e2e/sync-v2.spec.ts` — «мутация → flush (push length=9) → reload → данные на
+   месте + pull c `since=`», бэкенд мокируется на маршрутах (мутируемый «сервер»),
+   CORS-обработка (API_BASE кросс-доменный), `test.skip` без флага.
+
+### Проверено переключением флага (откат-план §4)
+
+- Без флага: `pnpm exec playwright test --project=chromium` → **53 passed, 1 skipped**
+  (V2-спека корректно скипается) — базовый набор зелёный в старом режиме.
+- С флагом: `VITE_SYNC_V2=true pnpm exec playwright test e2e/sync-v2.spec.ts
+--project=chromium` → **1 passed**. Инлайн-проверка vite-трансформа подтвердила
+  инлинг `VITE_SYNC_V2` в бандл; прод-конфиги флагом не затронуты.
+
+### Gates (итоговое дерево, эта сессия)
+
+- `pnpm test` — 1112 passed (frontend) + 180 passed (server), 0 failed.
+- `pnpm run lint` — 0 errors (31 pre-existing warnings легаси).
+- `pnpm run lint:deps` — no dependency violations (280 modules).
+
+### Отступления от write-set §5(г) (осознанные, для DoD)
+
+- `src/store/createSyncSlice.ts` + `src/store/createProjectSlice.ts` — гейты
+  legacy-сохранения (см. п.3, п.6): «весь жизненный цикл через V2» (DoD §5(г))
+  недостижим без них — иначе двойной push и мёртвый флашер.
+- `src/api/storage/dexieDb.ts` — хелперы lastSyncAt (§4 п.3 явно требует Dexie-персист;
+  изменение аддитивное, схема Dexie не менялась).
+- Граничный случай merge: dirty-сущность, отсутствующая и в pull, и в локальной
+  копии, остаётся dirty до флаша, где флашер снимет её как `missing→gaveUp`
+  (самоизлечение, поведение batch (в) не менялось).

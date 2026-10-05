@@ -137,7 +137,7 @@ repair-calc/
 │   │   ├── useProjectStore.ts        # Композиция слайсов (project + archive + room + object + sync + auth)
 │   │   ├── createProjectSlice.ts     # Проекты: CRUD/активный проект (267); migrateProject ре-экспортируется
 │   │   ├── createArchiveSlice.ts     # Архив: fetchArchivedProjects/restoreProject/permanentDeleteProject, deletingIds (P3-SPLIT)
-│   │   ├── projectInitialize.ts      # initialize: загрузка с сервера/локально + миграции (вынесен из project-слайса)
+│   │   ├── projectInitialize.ts      # initialize: загрузка с сервера/локально + миграции; развилка SYNC-V2 по VITE_SYNC_V2 (batch г)
 │   │   ├── projectMigration.ts       # migrateProject/migrateRoom (вынесен из project-слайса)
 │   │   ├── createObjectSlice.ts      # Объекты
 │   │   ├── createRoomSlice.ts        # Комнаты
@@ -269,7 +269,9 @@ repair-calc/
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/store/useProjectStore.ts`          | Глобальное состояние (zustand, слайсы) — пришёл на смену удалённому ProjectContext                                                                                        |
 | `src/store/createSyncSlice.ts`          | Sync-слайс: автосейв + dirty-модель SYNC-V2 (markDirty/restoreDirtyState, карта в Dexie `syncState`) + триггеры флашера (batch б) + счётчик `conflictsResolved` (batch в) |
-| `src/api/storage/dexieDb.ts`            | Dexie `RepairCalcDB` (version 2: таблица `syncState` — персистентные dirty-флаги SYNC-V2 §2.1)                                                                            |
+| `src/api/storage/dexieDb.ts`            | Dexie `RepairCalcDB` (version 2: таблица `syncState` — персистентные dirty-флаги SYNC-V2 §2.1 + meta-запись `lastSyncAt` — batch г)                                       |
+| `tests/api/syncV2Initialize.test.ts`    | Развилка инициализации SYNC-V2 (batch г): полный/инкрементальный pull, LWW-merge, fallback, legacy-путь                                                                   |
+| `e2e/sync-v2.spec.ts`                   | E2E SYNC-V2 «мутация → flush → повторный init» — только при `VITE_SYNC_V2=true` (batch г)                                                                                 |
 | `src/contexts/AuthContext.tsx`          | Аутентификация пользователя                                                                                                                                               |
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                |
 | `src/api/storage/apiStorageProvider.ts` | Storage через REST API — тонкий фасад (346 стр.); внутри: `apiClient.ts` (очередь/ретраи), `projectApi.ts` (синхронизация), `objectApi.ts` (CRUD), `roomApi.ts` (комнаты) |

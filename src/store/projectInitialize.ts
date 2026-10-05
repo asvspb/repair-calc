@@ -4,6 +4,10 @@ import type { ProjectSlice, StoreState } from './types';
 import { StorageManager } from '../utils/storage';
 import type { StorageError } from '../utils/storage';
 import { ApiStorageProvider } from '../api/storage';
+import { syncPull, apiToClientProject } from '../api/projects';
+import { mergePull } from '../api/storage/syncMerge';
+import { isSyncV2Enabled } from '../api/storage/syncFlusher';
+import { getLastSyncAt, putLastSyncAt } from '../api/storage/dexieDb';
 import {
   logUserAction,
   logSuccess,
@@ -19,12 +23,70 @@ import { idMapper, IdMapper } from '../utils/idMapper';
 import { migrateProject } from './projectMigration';
 
 type ProjectSet = Parameters<StateCreator<StoreState, [], [], ProjectSlice>>[0];
+type ProjectGet = () => StoreState;
 
 function computeActiveProject(
   projects: ProjectData[],
   activeProjectId: string,
 ): ProjectData | null {
   return projects.find(p => p.id === activeProjectId) || null;
+}
+
+/**
+ * SYNC-V2 загрузка серверного дерева (спека §4, §5(г)): инкрементальный pull
+ * `GET /api/sync/pull?since=<lastSyncAt>` (первый запуск — полный, §4 п.1) с LWW-слиянием
+ * mergePull §3.1 против локальной копии + dirty-карты; метка lastSyncAt — серверный
+ * timestamp ответа (§6.1 п.1). Ошибка pull → откат на локальную копию (паритет с legacy
+ * fallback), метка не двигается.
+ */
+export async function loadProjectsSyncV2(get: ProjectGet): Promise<ProjectData[]> {
+  const since = await getLastSyncAt();
+
+  try {
+    const response = await syncPull(since ?? undefined);
+    const serverProjects = response.data.projects.map(apiToClientProject);
+
+    // Локальная копия для слияния: персистентный бэкап (не пустой in-memory стор после reload)
+    const localCopy = (await StorageManager.loadProjectsAsync()) ?? [];
+    const state = get();
+    const result = mergePull(serverProjects, localCopy, state.dirty);
+
+    if (result.resolvedDirty.length > 0) {
+      // §3.1: сервер затёр локальную dirty-версию — снять флаги, учесть конфликты
+      state.acknowledgeFlushed(
+        result.resolvedDirty.map(entry => ({ ...entry, gaveUp: false, serverWins: true })),
+      );
+    }
+    if (result.deletedLocally.length > 0) {
+      logDebug('SyncDomain', 'SYNC-V2 pull: локально удалены сущности, убранные на сервере', {
+        deletedLocally: result.deletedLocally,
+      });
+    }
+    if (result.conflictsResolved > 0) {
+      logWarning('SyncDomain', 'SYNC-V2 pull: LWW-конфликты разрешены в пользу сервера', {
+        count: result.conflictsResolved,
+      });
+    }
+
+    await putLastSyncAt(new Date(response.data.timestamp).toISOString());
+    return result.projects;
+  } catch (error) {
+    logWarning('SyncDomain', 'SYNC-V2 pull не удался — откат на локальную копию', error);
+    const cached = await StorageManager.loadProjectsAsync();
+    if (cached) {
+      return cached;
+    }
+    throw error;
+  }
+}
+
+/** Загрузка серверных проектов: развилка по флагу VITE_SYNC_V2 (спека §4, §5(г)) */
+async function loadServerProjects(get: ProjectGet): Promise<ProjectData[]> {
+  if (isSyncV2Enabled()) {
+    return loadProjectsSyncV2(get);
+  }
+  const apiProvider = ApiStorageProvider.getInstance();
+  return apiProvider.loadProjectsAsync();
 }
 
 /**
@@ -37,6 +99,7 @@ export async function initializeProjects(
   set: ProjectSet,
   initialProjects: ProjectData[],
   isAuthenticated: boolean,
+  get: ProjectGet,
 ): Promise<void> {
   const migratedInitial = initialProjects.map(migrateProject);
 
@@ -51,8 +114,7 @@ export async function initializeProjects(
   try {
     if (isAuthenticated) {
       logUserAction('Загрузка проектов с сервера (авторизован)');
-      const apiProvider = ApiStorageProvider.getInstance();
-      let serverProjects = await apiProvider.loadProjectsAsync();
+      let serverProjects = await loadServerProjects(get);
 
       if (needsMigration()) {
         logDebug('ProjectContext', 'Требуется миграция данных');
@@ -60,7 +122,7 @@ export async function initializeProjects(
           const migrationResult = await runMigrations(serverProjects);
           if (migrationResult.duplicatesRemoved > 0) {
             logSuccess('ProjectContext', 'Миграция выполнена', migrationResult);
-            serverProjects = await apiProvider.loadProjectsAsync();
+            serverProjects = await loadServerProjects(get);
           }
         } catch (migrationError) {
           logError('ProjectContext', 'Ошибка миграции', migrationError);
