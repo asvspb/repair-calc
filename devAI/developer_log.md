@@ -915,3 +915,22 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Найдено при живой проверке: бандл не содержал sync/push — build-arg VITE_SYNC_V2 отбрасывался (в Dockerfile не был объявлен ARG); vite собирал с false и вырезал V2-код DS-элиминацией.
 - Фикс 2592d27: ARG VITE_SYNC_V2 + ENV в builder-стадии. Пересборка frontend: бандл содержит sync/push и sync/pull — V2 активен.
 - Прод: frontend+backend Up (f57d60b/2592d27), health 200, sync-эндпоинты 401 без токена (auth работает). R2 закрыт включением в прод.
+
+## 2026-10-05 — Кодер: R4 batch 024 — переезд домена auth в features/auth (refactor/r4-auth-024)
+
+- Перенос (механический, поведение не менялось): `src/components/auth/*` → `src/features/auth/ui/`,
+  `src/contexts/AuthContext.tsx` → `src/features/auth/model/AuthContext.tsx` (легаси-контекст — как есть,
+  замена на zustand — НЕ эта задача), `src/api/auth.ts` → `src/features/auth/api/auth.ts`,
+  `tests/contexts/AuthContext.test.tsx` → `tests/features/auth/AuthContext.test.tsx`.
+- Grep-факт: `src/types/auth.ts` использовался только доменом auth + 2 integration-теста (type-only) →
+  перенесён в `src/features/auth/model/auth.types.ts` (правило R4 п.5). `src/api/users.ts` остался (общий).
+- @deprecated фасады на старых путях (`src/components/auth/index.ts`, `src/contexts/AuthContext.tsx`,
+  `src/api/auth.ts`); импортёры (App, projects/ArchivePanel, useProjectsModal, DataManagementModal,
+  backup/SyncPanel, contexts barrel, consumer-тесты с vi.mock) переведены на новые пути.
+- depcruise: error-правило `fsd-auth-no-cross-imports` (чужие features не импортируют features/auth);
+  `^node_modules` в pathNot `fsd-features-to-shared` (framework-импорты — 6 ложных warn снято).
+  Легаси-allowlist не сокращён: фасады сами живут на легаси-путях; сокращение — задача 029 (финал R4).
+- Gates: `pnpm test` 1112 passed (0 failed, 83+1 skipped files; отдельный server-проект 180 passed);
+  `pnpm run lint` 0 errors (31 warning — pre-existing, сверено stash'ем с main);
+  `pnpm run lint:deps` — «no dependency violations found (283 modules)».
+- Коммиты: перенос / импортёры / типы / depcruise — раздельно, Conventional Commits.
