@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { ObjectCard } from '../../src/components/objects/ObjectCard';
+import { ObjectCard } from '../../src/features/objects/ui/ObjectCard';
 
 const mockObject = {
   id: 'obj-1',
@@ -85,8 +85,9 @@ describe('ObjectCard', () => {
 
   it('should call onClick when card clicked', () => {
     render(<ObjectCard {...defaultProps} />);
-    const card = screen.getByText('Квартира').closest('[role="button"]') || 
-                 screen.getByText('Квартира').parentElement?.parentElement;
+    const card =
+      screen.getByText('Квартира').closest('[role="button"]') ||
+      screen.getByText('Квартира').parentElement?.parentElement;
     if (card) {
       fireEvent.click(card);
     }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { ObjectSelector } from '../../src/components/objects/ObjectSelector';
+import { ObjectSelector } from '../../src/features/objects/ui/ObjectSelector';
 
 const createMockObject = (id: string, name: string, city?: string) => ({
   id,
@@ -15,10 +15,7 @@ const mockStoreState: Record<string, any> = {
   activeProject: {
     id: 'proj-1',
     name: 'Тестовый проект',
-    objects: [
-      createMockObject('obj-1', 'Квартира'),
-      createMockObject('obj-2', 'Гараж'),
-    ],
+    objects: [createMockObject('obj-1', 'Квартира'), createMockObject('obj-2', 'Гараж')],
   },
   activeObjectId: 'obj-1',
   setActiveObjectId: vi.fn(),
@@ -35,10 +32,7 @@ describe('ObjectSelector', () => {
     mockStoreState.activeProject = {
       id: 'proj-1',
       name: 'Тестовый проект',
-      objects: [
-        createMockObject('obj-1', 'Квартира'),
-        createMockObject('obj-2', 'Гараж'),
-      ],
+      objects: [createMockObject('obj-1', 'Квартира'), createMockObject('obj-2', 'Гараж')],
     };
     mockStoreState.activeObjectId = 'obj-1';
   });

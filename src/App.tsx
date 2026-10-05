@@ -12,7 +12,7 @@ import { LeftSidebar } from './components/layout/LeftSidebar';
 import { RightSidebar } from './components/layout/RightSidebar';
 import { AppHeader } from './components/layout/AppHeader';
 import { ContentArea } from './components/layout/ContentArea';
-import { CreateObjectModal } from './components/objects/CreateObjectModal';
+import { CreateObjectModal } from './features/objects/ui/CreateObjectModal';
 import { ProjectsModal } from './components/projects';
 import { DataManagementModal } from './components/projects/DataManagementModal';
 import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';
