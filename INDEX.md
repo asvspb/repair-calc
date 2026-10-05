@@ -65,11 +65,12 @@ repair-calc/
 │   │   ├── auth/                     # Домен auth (R4 024): ui/, model/, api/
 │   │   ├── works/                    # Домен works (R4 025): ui/, model/, api/
 │   │   ├── summary/                  # Домен summary (R4 026): ui/ (SummaryView, Materials, Works, Tools), api/ (totals)
-│   │   └── rooms/                    # Домен rooms (R4 027): ui/ (RoomEditor, RoomList, geometry/ и др.), model/ (useGeometryState), api/ (rooms)
+│   │   ├── rooms/                    # Домен rooms (R4 027): ui/ (RoomEditor, RoomList, geometry/ и др.), model/ (useGeometryState), api/ (rooms)
+│   │   └── objects/                  # Домен objects (R4 028): ui/ (ObjectsList, ObjectCard, ObjectSelector, CreateObjectModal), api/ (objects)
 │   ├── api/                          # API клиенты
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
-│   │   ├── objects.ts                # Objects API
+│   │   ├── objects.ts                # @deprecated фасад → src/features/objects/api/objects.ts (R4 028)
 │   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
 │   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027)
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
@@ -89,7 +90,7 @@ repair-calc/
 │   │   ├── auth/                     # (4 файла: Login, Register, ProtectedRoute, index)
 │   │   ├── geometry/                 # @deprecated фасад → src/features/rooms/ui/geometry (R4 027)
 │   │   ├── layout/                   # (4 файла: LeftSidebar, RightSidebar, Settings)
-│   │   ├── objects/                  # (5 файлов: Card, Selector, List, CreateModal, index)
+│   │   ├── objects/                  # @deprecated фасад → src/features/objects/ui (R4 028)
 │   │   ├── projects/                 # (11 файлов: List, Modal, CreateModal, ArchivePanel, ProjectListItem, ServerSyncSection, ImportStatusBanner, useProjectsModal, useProjectExports, modalTypes, index)
 │   │   ├── backup/                   # (6 файлов: ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog, types, helpers — распил BackupManager, batch-013)
 │   │   ├── room/                     # @deprecated фасады → src/features/rooms/ui (R4 027)

@@ -1012,3 +1012,27 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
   180 passed / 2 skipped; `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик);
   `pnpm run lint:deps` — 0 errors, 38 warnings (легаси-allowlist + rooms→works warn, как до batch).
 - Коммиты: перенос / works-хук / api / импортёры / depcruise / docs — раздельно, Conventional Commits.
+
+## 2026-10-05 — Кодер: R4 batch 028 — переезд домена objects в features/objects (refactor/r4-objects-028)
+
+- Перенос (механический, поведение/контракты не менялись): `src/components/objects/*`
+  (CreateObjectModal, ObjectCard, ObjectSelector, ObjectsList, index) → `src/features/objects/ui/`;
+  `src/api/objects.ts` → `src/features/objects/api/objects.ts`.
+- Grep-факты до переноса: вне домена objects используют только `App.tsx` (CreateObjectModal,
+  src/App.tsx:15) и 4 теста (tests/components/ObjectsList/ObjectCard/CreateObjectModal/ObjectSelector
+  .test.tsx); `src/api/objects.ts` потребителей не имеет (grep src+tests — 0 импортов).
+  Связки с rooms-фасадом нет — ни один объект-компонент не импортирует rooms (grep), поэтому
+  зависимость «objects→rooms» не создавалась (пункт ТЗ «при необходимости» — не требуется).
+- Внутренние импорты переехавших файлов: `useProjectStore` → `../../../store/useProjectStore`
+  (паттерн 025/027 — общие слайсы store не трогаем до R4-projects); `ConfirmDialog` →
+  `../../../components/ui/ConfirmDialog` (легаси ui-кит, перенос — batch 029); `httpClient` →
+  `../../../api/httpClient`.
+- @deprecated фасады на старых путях: `src/components/objects/index.ts`, `src/api/objects.ts`.
+  Импортёры переведены на новые пути: App.tsx и 4 теста (пути + vi.mock). Отдельный коммит
+  «импортёры» не выделился: pre-commit lint:deps валиден только целиком — прямая ссылка
+  `./components/objects/CreateObjectModal` в App.tsx падает `not-to-unresolvable` до её
+  обновления, поэтому «перенос+фасады+импортёры» — один коммит (8f846d5).
+- depcruise: новое error-правило `fsd-objects-no-cross-imports` (9a35f0f); кросс-импортов
+  objects→/→objects вне фасадов нет (lint:deps: 0 errors, 41 warnings — все легаси, без изменений).
+- Gates: pnpm test (180 passed, 2 skipped), pnpm run lint (0 errors, 31 warnings — ранее
+  существующие), pnpm run lint:deps (0 errors). INDEX.md обновлён.
