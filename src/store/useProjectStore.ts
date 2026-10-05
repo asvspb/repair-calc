@@ -10,6 +10,7 @@ import { getAllRooms } from '../utils/projectObjects';
 import { clearSaveTimers } from './createSyncSlice';
 
 import { createAuthSlice } from './createAuthSlice';
+import { createWorkTemplateSlice } from './createWorkTemplateSlice';
 
 export const useProjectStore = create<StoreState>()((...a) => ({
   ...createProjectSlice(...a),
@@ -18,6 +19,7 @@ export const useProjectStore = create<StoreState>()((...a) => ({
   ...createObjectSlice(...a),
   ...createSyncSlice(...a),
   ...createAuthSlice(...a),
+  ...createWorkTemplateSlice(...a),
 }));
 
 export function useRoom(roomId: string | null): RoomData | null {
@@ -44,6 +46,12 @@ export function resetStore() {
     roomSyncError: null,
     isSyncing: false,
     isAuthenticated: false,
+    user: null,
+    // authIsLoading НЕ сбрасываем: initAuthCheck выполняется однократно при маунте,
+    // повторное true приведёт к вечному экрану «Загрузка...»
+    authError: null,
+    templates: [],
+    workTemplatesLoading: true,
     activeObjectId: null,
     activeObject: null,
   });

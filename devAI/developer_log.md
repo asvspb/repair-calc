@@ -1195,3 +1195,48 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - `pnpm run lint` → 0 errors, 31 warning (pre-existing, вне моих файлов —
   eslint на двух изменённых файлах чист).
 - `pnpm test` → 180 passed / 2 skipped.
+
+## 2026-10-05 — TASK-BATCH-033-contexts-to-zustand (ветка refactor/contexts-zustand-033)
+
+Легаси-контексты AuthContext и WorkTemplateContext заменены zustand-слайсами;
+каталог `src/contexts/` и файлы контекстов удалены. `grep AuthContext|WorkTemplateContext src/` = 0.
+
+### Что сделано:
+
+- `src/store/createAuthSlice.ts` — расширен: user/authIsLoading/authError +
+  initAuthCheck (проверка токена/refresh-цепочка) + login/register/logout/clearAuthError.
+  Логика перенесена 1:1 из AuthContext (включая ApiStorageProvider.resetInstance при
+  login/logout, StorageManager.clearAll + window.location.reload при register,
+  formatValidationErrors). `setIsAuthenticated` сохранён (используется тестом useProjectDomain).
+- `src/store/useAuth.ts` — новый публичный хук (проекция слайса на прежний контракт
+  useAuth). Размещён на слое store, а не в features/auth: depcruise-правило
+  fsd-auth-no-cross-imports запрещает другим фичам импортировать features/auth,
+  а прежним обходным путём был удаляемый фасад src/contexts/AuthContext.
+- `src/store/createWorkTemplateSlice.ts` — новый: templates + initWorkTemplates/
+  saveTemplate/loadTemplate/deleteTemplate/importTemplates (логика WorkTemplateContext 1:1,
+  templatesRef → get()). Инициализация — в App.useStoreEffects (экс-эффект провайдера).
+- `src/App.tsx` — AuthProvider/WorkTemplateProvider сняты; initAuthCheck — mount-эффект AppWithAuth.
+- Потребители useAuth переведены на `src/store/useAuth` (auth/ui, projects, backup).
+- `src/contexts/` (включая @deprecated фасады) удалён.
+
+### Границы гостя / persist:
+
+- Формат токенов и все сетевые вызовы не менялись (authApi не тронут); checkAuth-логика
+  эквивалентна прежнему useEffect. Найден и предотвращён регресс: resetStore сбрасывал
+  authIsLoading: true ПОСЛЕ initAuthCheck → гость зависал на «Загрузка...»; authIsLoading
+  исключён из resetStore (комментарий на месте).
+
+### Тесты:
+
+- tests/features/auth/AuthContext.test.tsx переписан на стор (render без провайдера,
+  initAuthCheck вызывается явно); ассерты поведения сохранены.
+- Integration (project-workflow, section-dimensions) — провайдеры сняты, TestWrapper удалён,
+  initWorkTemplates вызывается в initStore.
+- vi.mock-пути AuthContext → src/store/useAuth (7 файлов).
+
+### Gates (прогнано):
+
+- `pnpm vitest run` → 84 файла: 1112 passed / 4 skipped, 0 failed.
+- `pnpm test` (frontend+server) → 1112 passed + 180 passed / 2 skipped.
+- `pnpm run lint` → 0 errors (31 pre-existing warning в server/).
+- `pnpm run lint:deps` → no dependency violations (281 modules).
