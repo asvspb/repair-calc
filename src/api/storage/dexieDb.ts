@@ -7,8 +7,9 @@ export interface KeyValueEntry {
   value: unknown;
 }
 
-/** Вид сущности в dirty-модели SYNC-V2 (спека §2.1: works/материалы — часть room) */
-export type SyncEntityKind = 'project' | 'object' | 'room';
+/** Вид сущности в dirty-модели SYNC-V2 (спека §2.1: works/материалы — часть room).
+ *  'meta' — служебные записи (lastSyncAt, §4); restoreDirtyState их пропускает. */
+export type SyncEntityKind = 'project' | 'object' | 'room' | 'meta';
 
 /** Запись персистентного dirty-флага (переживает reload — спека §2.1) */
 export interface SyncStateEntry {
@@ -62,4 +63,23 @@ export async function getAllSyncStateEntries(): Promise<SyncStateEntry[]> {
 /** Снятие персистентного dirty-флага (для флашера SYNC-V2 batch (б)) */
 export async function deleteSyncStateEntry(key: string): Promise<void> {
   await db.syncState.delete(key);
+}
+
+const LAST_SYNC_AT_KEY = 'lastSyncAt';
+
+/** Метка последнего подтверждённого pull (§4 п.3: lastSyncAt персистится в Dexie syncState) */
+export async function getLastSyncAt(): Promise<string | null> {
+  const entry = await db.syncState.get(LAST_SYNC_AT_KEY);
+  return entry ? entry.updatedAt : null;
+}
+
+/** Сохранение метки последнего pull (серверный timestamp ответа — часы сервера, §6.1 п.1) */
+export async function putLastSyncAt(iso: string): Promise<void> {
+  await db.syncState.put({
+    key: LAST_SYNC_AT_KEY,
+    entityKind: 'meta',
+    entityId: LAST_SYNC_AT_KEY,
+    updatedAt: iso,
+    op: 'upsert',
+  });
 }

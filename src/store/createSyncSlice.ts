@@ -198,7 +198,9 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
                 startTime,
               );
 
-              if (isAuthenticated) {
+              // SYNC-V2 §5(г): под флагом серверный push идёт через флашер /api/sync/push,
+              // legacy saveAllProjects здесь выключен (иначе двойная запись + ложные конфликты LWW)
+              if (isAuthenticated && !isSyncV2Enabled()) {
                 const apiProvider = ApiStorageProvider.getInstance();
                 const serverStartTime = logStart('Save', 'Сохранение проекта на сервер');
                 await apiProvider.saveProjectAsync(changedProject);
@@ -225,7 +227,8 @@ export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set
                 startTime,
               );
 
-              if (isAuthenticated) {
+              // SYNC-V2 §5(г): под флагом legacy-полное сохранение выключено (push — через флашер)
+              if (isAuthenticated && !isSyncV2Enabled()) {
                 const apiProvider = ApiStorageProvider.getInstance();
                 const serverStartTime = logStart('Save', 'Сохранение на сервер');
                 await apiProvider.saveProjectsAsync(projectsToSave);
