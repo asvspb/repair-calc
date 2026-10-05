@@ -2,7 +2,7 @@
  * Totals API - сохранение и загрузка рассчитанных данных проекта
  */
 
-import { httpClient, ApiError } from './httpClient';
+import { httpClient, ApiError } from '../../../api/httpClient';
 
 export interface TotalsData {
   total_area: number;
