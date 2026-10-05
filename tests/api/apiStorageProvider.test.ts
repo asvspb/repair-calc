@@ -4,10 +4,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ApiStorageProvider } from '../../src/api/storage/apiStorageProvider';
-import * as projectsApi from '../../src/api/projects';
+import * as projectsApi from '../../src/features/projects/api/projects';
 
 // Mock projects API
-vi.mock('../../src/api/projects', () => ({
+vi.mock('../../src/features/projects/api/projects', () => ({
   syncPull: vi.fn(),
   createProject: vi.fn(),
   updateProject: vi.fn(),
@@ -36,7 +36,10 @@ vi.mock('../../src/api/projects', () => ({
     })),
   })),
   ProjectsApiError: class ProjectsApiError extends Error {
-    constructor(message: string, public statusCode: number) {
+    constructor(
+      message: string,
+      public statusCode: number,
+    ) {
       super(message);
       this.name = 'ProjectsApiError';
     }
@@ -163,9 +166,10 @@ describe('ApiStorageProvider', () => {
 
     it('should fallback to localStorage cache on error', async () => {
       // Setup localStorage cache
-      localStorage.setItem('repair-calc-projects', JSON.stringify([
-        { id: 'cached-proj', name: 'Cached Project', rooms: [] },
-      ]));
+      localStorage.setItem(
+        'repair-calc-projects',
+        JSON.stringify([{ id: 'cached-proj', name: 'Cached Project', rooms: [] }]),
+      );
 
       (projectsApi.syncPull as any).mockRejectedValueOnce(new Error('Network error'));
 

@@ -7,7 +7,7 @@ import { logSuccess, logError, logWarning, logDebug, logStateChange } from '../u
 import { idMapper } from '../utils/idMapper';
 import { getObjectFromProject } from '../utils/projectObjects';
 import { migrateProject } from './createProjectSlice';
-import * as projectsApi from '../api/projects';
+import * as projectsApi from '../features/projects/api/projects';
 
 /** In-flight promises безвозвратного удаления — идемпотентность повторных кликов */
 const permanentDeleteInflight = new Map<string, Promise<{ objects: number; rooms: number }>>();

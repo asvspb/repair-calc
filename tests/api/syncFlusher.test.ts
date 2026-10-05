@@ -25,7 +25,7 @@ import {
   stopFlusher,
 } from '../../src/api/storage/syncFlusher';
 import { syncPush } from '../../src/api/sync';
-import { ProjectsApiError } from '../../src/api/projects';
+import { ProjectsApiError } from '../../src/features/projects/api/projects';
 
 vi.mock('../../src/utils/storage', () => ({
   StorageManager: {
