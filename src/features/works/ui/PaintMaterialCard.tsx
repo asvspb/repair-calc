@@ -5,8 +5,8 @@
 
 import React, { memo, useState, useMemo } from 'react';
 import { Droplet, Layers, Info, RefreshCw } from 'lucide-react';
-import { NumberInput } from '../ui/NumberInput';
-import type { RoomMetrics } from '../../types';
+import { NumberInput } from '../../../components/ui/NumberInput';
+import type { RoomMetrics } from '../../../types';
 import type { Material } from '@shared/types';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
