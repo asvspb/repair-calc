@@ -133,6 +133,18 @@ module.exports = {
         'импортировать src/features/summary напрямую (только shared / легаси-фасады).',
       from: { path: '^src/features/(?!summary(/|$))' },
       to: { path: '^src/features/summary' }
+    },
+
+    // ─── R4 batch 027: домен rooms готов — его правило повышено до error ──────
+    {
+      name: 'fsd-rooms-no-cross-imports',
+      severity: 'error',
+      comment:
+        'R4 batch 027: rooms — готовый домен features. Любая ДРУГАЯ фича не может ' +
+        'импортировать src/features/rooms напрямую (только shared / легаси-фасады). ' +
+        'rooms→works (RoomEditor) разрешён явным исключением в fsd-works-no-cross-imports.',
+      from: { path: '^src/features/(?!rooms(/|$))' },
+      to: { path: '^src/features/rooms' }
     }
   ],
   options: {
