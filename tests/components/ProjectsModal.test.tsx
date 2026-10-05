@@ -42,7 +42,9 @@ const mockStoreState: Record<string, any> = {
   activeProjectId: 'proj-1',
   setActiveProjectId: vi.fn(),
   updateProjects: vi.fn(),
-  createProject: vi.fn().mockResolvedValue(createMockProject({ id: 'proj-new', name: 'Новый проект' })),
+  createProject: vi
+    .fn()
+    .mockResolvedValue(createMockProject({ id: 'proj-new', name: 'Новый проект' })),
   deleteProject: vi.fn().mockResolvedValue(undefined),
 };
 
@@ -50,7 +52,7 @@ vi.mock('../../src/store/useProjectStore', () => ({
   useProjectStore: (selector: (s: any) => any) => selector(mockStoreState),
 }));
 
-vi.mock('../../src/contexts/AuthContext', () => ({
+vi.mock('../../src/features/auth/model/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -78,7 +80,7 @@ vi.mock('../../src/api/storage/apiStorageProvider', () => ({
   },
 }));
 
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/features/auth/model/AuthContext';
 
 const mockUseAuth = useAuth as any;
 
@@ -93,7 +95,9 @@ describe('ProjectsModal', () => {
     vi.clearAllMocks();
     mockStoreState.setActiveProjectId = vi.fn();
     mockStoreState.updateProjects = vi.fn();
-    mockStoreState.createProject = vi.fn().mockResolvedValue(createMockProject({ id: 'proj-new', name: 'Новый проект' }));
+    mockStoreState.createProject = vi
+      .fn()
+      .mockResolvedValue(createMockProject({ id: 'proj-new', name: 'Новый проект' }));
     mockStoreState.deleteProject = vi.fn().mockResolvedValue(undefined);
     mockStoreState.projects = [createMockProject()];
     mockStoreState.activeProjectId = 'proj-1';
@@ -215,8 +219,50 @@ describe('ProjectsModal', () => {
           id: 'proj-1',
           name: 'Большой проект',
           objects: [
-            { id: 'obj-1', projectId: 'proj-1', name: 'Квартира', rooms: [{ id: 'r1', objectId: 'obj-1', name: 'Кухня', length: 4, width: 3, height: 2.7, segments: [], obstacles: [], wallSections: [], subSections: [], windows: [], doors: [], works: [] }] },
-            { id: 'obj-2', projectId: 'proj-1', name: 'Гараж', rooms: [{ id: 'r2', objectId: 'obj-2', name: 'Яма', length: 2, width: 2, height: 2, segments: [], obstacles: [], wallSections: [], subSections: [], windows: [], doors: [], works: [] }] },
+            {
+              id: 'obj-1',
+              projectId: 'proj-1',
+              name: 'Квартира',
+              rooms: [
+                {
+                  id: 'r1',
+                  objectId: 'obj-1',
+                  name: 'Кухня',
+                  length: 4,
+                  width: 3,
+                  height: 2.7,
+                  segments: [],
+                  obstacles: [],
+                  wallSections: [],
+                  subSections: [],
+                  windows: [],
+                  doors: [],
+                  works: [],
+                },
+              ],
+            },
+            {
+              id: 'obj-2',
+              projectId: 'proj-1',
+              name: 'Гараж',
+              rooms: [
+                {
+                  id: 'r2',
+                  objectId: 'obj-2',
+                  name: 'Яма',
+                  length: 2,
+                  width: 2,
+                  height: 2,
+                  segments: [],
+                  obstacles: [],
+                  wallSections: [],
+                  subSections: [],
+                  windows: [],
+                  doors: [],
+                  works: [],
+                },
+              ],
+            },
           ],
         }),
       ];

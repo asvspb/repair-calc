@@ -27,7 +27,7 @@ vi.mock('../../../src/store/useProjectStore', () => ({
   useProjectStore: (selector: (s: typeof storeMock) => unknown) => selector(storeMock),
 }));
 
-vi.mock('../../../src/contexts/AuthContext', () => ({
+vi.mock('../../../src/features/auth/model/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: authState.value }),
 }));
 

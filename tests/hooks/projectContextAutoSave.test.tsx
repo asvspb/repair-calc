@@ -39,7 +39,7 @@ vi.mock('../../src/utils/storage', () => ({
   },
 }));
 
-vi.mock('../../src/contexts/AuthContext', () => ({
+vi.mock('../../src/features/auth/model/AuthContext', () => ({
   useAuth: () => ({
     isAuthenticated: false,
     isLoading: false,

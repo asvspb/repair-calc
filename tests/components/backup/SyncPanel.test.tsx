@@ -19,7 +19,7 @@ const { providerMock, authState } = vi.hoisted(() => ({
   authState: { value: true },
 }));
 
-vi.mock('../../../src/contexts/AuthContext', () => ({
+vi.mock('../../../src/features/auth/model/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: authState.value }),
 }));
 

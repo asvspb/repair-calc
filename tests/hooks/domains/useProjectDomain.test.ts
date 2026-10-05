@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useProjectStore, resetStore } from '../../../src/store/useProjectStore';
 import type { ProjectData } from '../../../src/types';
 
-vi.mock('../../../src/contexts/AuthContext', () => ({
+vi.mock('../../../src/features/auth/model/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 

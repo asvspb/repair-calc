@@ -24,7 +24,7 @@ vi.mock('../../../src/contexts/ProjectContext', () => ({
   }),
 }));
 
-vi.mock('../../../src/contexts/AuthContext', () => ({
+vi.mock('../../../src/features/auth/model/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1', name: 'Тест', email: 'test@example.com' },
     isAuthenticated: true,
@@ -129,7 +129,7 @@ describe('DataManagementModal', () => {
     it('should call onClose when close button is clicked', () => {
       render(<DataManagementModal {...mockProps} />);
       const closeButton = screen.getByRole('button', { name: '' });
-      
+
       fireEvent.click(closeButton);
 
       expect(mockProps.onClose).toHaveBeenCalled();
