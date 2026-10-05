@@ -151,7 +151,7 @@ repair-calc/
 │   │   │   ├── works.ts              # CRUD работ
 │   │   │   ├── geometry.ts           # Маршруты геометрии (фасад; обработчики в geometry.controller.ts / geometry.advanced.controller.ts)
 │   │   │   ├── ai.ts                 # AI-провайдеры
-│   │   │   ├── sync.ts               # Синхронизация (pull/push)
+│   │   │   ├── sync.ts               # Синхронизация (pull/push) — тонкая обвязка (146): push → sync-v2.service
 │   │   │   ├── totals.ts             # Итоги
 │   │   │   ├── users.ts              # Пользователи
 │   │   │   └── update.ts             # Сервис обновлений (2184 строки)
@@ -202,6 +202,7 @@ repair-calc/
 │   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner)
 │   │   │   │   ├── parserManager.ts  # Оркестрация (фасад singleton); parserRegistry.ts / parserABTest.ts / parserManager.types.ts
 │   │   │   │   ├── runner.ts         # UpdateRunner (≤400); runnerSteps.ts / runner.types.ts / runnerCache.ts
+│   │   │   ├── sync-v2.service.ts    # LWW/push-логика SYNC-V2 (279): lwwCompare, SyncConflict, processSyncPush
 │   │   │   └── webhook.service.ts
 │   │   └── types/
 │   │       └── index.ts
