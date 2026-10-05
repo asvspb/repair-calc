@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useWorkTemplates } from '../../src/hooks/useWorkTemplates';
+import { useWorkTemplates } from '../../src/features/works/model/useWorkTemplates';
 import { TemplateStorage } from '../../src/utils/templateStorage';
 import type { WorkTemplate } from '../../src/types/workTemplate';
 import type { WorkData } from '../../src/types';
@@ -35,12 +35,8 @@ describe('useWorkTemplates', () => {
     workUnitPrice: 500,
     calculationType: 'floorArea',
     count: 10,
-    materials: [
-      { id: 'mat-1', name: 'Paint', quantity: 5, unit: 'л', pricePerUnit: 200 },
-    ],
-    tools: [
-      { id: 'tool-1', name: 'Brush', quantity: 2, price: 100, isRent: false, rentPeriod: 0 },
-    ],
+    materials: [{ id: 'mat-1', name: 'Paint', quantity: 5, unit: 'л', pricePerUnit: 200 }],
+    tools: [{ id: 'tool-1', name: 'Brush', quantity: 2, price: 100, isRent: false, rentPeriod: 0 }],
   });
 
   const createTestTemplate = (id: string, name: string): WorkTemplate => ({
@@ -52,12 +48,8 @@ describe('useWorkTemplates', () => {
     calculationType: 'floorArea',
     count: 10,
     sourceVolume: 20,
-    materials: [
-      { name: 'Paint', quantity: 5, unit: 'л', pricePerUnit: 200 },
-    ],
-    tools: [
-      { name: 'Brush', quantity: 2, price: 100, isRent: false, rentPeriod: 0 },
-    ],
+    materials: [{ name: 'Paint', quantity: 5, unit: 'л', pricePerUnit: 200 }],
+    tools: [{ name: 'Brush', quantity: 2, price: 100, isRent: false, rentPeriod: 0 }],
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   });
@@ -109,7 +101,9 @@ describe('useWorkTemplates', () => {
     it('should update existing template with forceReplace', () => {
       const existingTemplate = createTestTemplate('t1', 'Test Work');
       (TemplateStorage.findByName as ReturnType<typeof vi.fn>).mockReturnValue(existingTemplate);
-      (TemplateStorage.upsertByName as ReturnType<typeof vi.fn>).mockReturnValue([existingTemplate]);
+      (TemplateStorage.upsertByName as ReturnType<typeof vi.fn>).mockReturnValue([
+        existingTemplate,
+      ]);
 
       const { result } = renderHook(() => useWorkTemplates());
 
@@ -169,7 +163,8 @@ describe('useWorkTemplates', () => {
         result.current.saveTemplate(createTestWork(), false, 25);
       });
 
-      const savedTemplate = (TemplateStorage.upsertByName as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const savedTemplate = (TemplateStorage.upsertByName as ReturnType<typeof vi.fn>).mock
+        .calls[0][0];
       expect(savedTemplate.sourceVolume).toBe(25);
     });
   });

@@ -9,8 +9,8 @@ import {
   setCachedPrice,
   clearPriceCache,
   getCacheStats,
-} from '../../src/api/prices/priceCache';
-import type { PriceSearchResult } from '../../src/api/prices/types';
+} from '../../src/features/works/api/priceCache';
+import type { PriceSearchResult } from '../../src/features/works/api/types';
 
 // Мокаем localStorage
 const localStorageMock = (() => {

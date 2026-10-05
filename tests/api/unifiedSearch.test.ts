@@ -55,7 +55,10 @@ function mockAIStatusAvailable(providerType = 'ai_gemini') {
     status: 'success',
     data: {
       available: true,
-      provider: { name: providerType === 'ai_gemini' ? 'Google Gemini' : 'Mistral AI', type: providerType },
+      provider: {
+        name: providerType === 'ai_gemini' ? 'Google Gemini' : 'Mistral AI',
+        type: providerType,
+      },
     },
   });
 }
@@ -90,7 +93,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       // Мокаем статус AI
       mockAIStatusAvailable();
@@ -115,7 +118,7 @@ describe('unifiedSearch (server proxy)', () => {
           productName: 'Обои',
           city: 'Москва',
           useCache: true,
-        })
+        }),
       );
     });
 
@@ -125,7 +128,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       mockAIStatusAvailable();
       httpClientMock.post.mockResolvedValueOnce(mockSearchPriceResult());
@@ -147,7 +150,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       mockAIStatusAvailable();
       httpClientMock.post.mockResolvedValue(mockSearchPriceResult());
@@ -164,7 +167,7 @@ describe('unifiedSearch (server proxy)', () => {
       // Проверяем что useCache=false передано на сервер
       expect(httpClientMock.post).toHaveBeenLastCalledWith(
         '/api/ai/search-price',
-        expect.objectContaining({ useCache: false })
+        expect.objectContaining({ useCache: false }),
       );
     });
 
@@ -174,7 +177,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       // Мокаем статус: AI недоступен
       httpClientMock.get.mockResolvedValueOnce({
@@ -194,7 +197,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       mockAIStatusAvailable();
 
@@ -204,10 +207,7 @@ describe('unifiedSearch (server proxy)', () => {
       // Второй вызов - успех
       httpClientMock.post.mockResolvedValueOnce(mockSearchPriceResult());
 
-      const result = await sp(
-        { productName: 'Тест', city: 'Москва' },
-        { maxRetries: 1 }
-      );
+      const result = await sp({ productName: 'Тест', city: 'Москва' }, { maxRetries: 1 });
 
       expect(httpClientMock.post).toHaveBeenCalledTimes(2);
       expect(result.prices.avg).toBe(1200);
@@ -219,7 +219,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       mockAIStatusAvailable();
 
@@ -228,7 +228,7 @@ describe('unifiedSearch (server proxy)', () => {
       httpClientMock.post.mockRejectedValue(error);
 
       await expect(
-        sp({ productName: 'Тест', city: 'Москва' }, { maxRetries: 0 })
+        sp({ productName: 'Тест', city: 'Москва' }, { maxRetries: 0 }),
       ).rejects.toMatchObject({
         type: 'rateLimit',
         retryable: true,
@@ -241,7 +241,7 @@ describe('unifiedSearch (server proxy)', () => {
       hc.get = httpClientMock.get;
       hc.post = httpClientMock.post;
 
-      const { searchPrice: sp } = await import('../../src/api/prices/unifiedSearch');
+      const { searchPrice: sp } = await import('../../src/features/works/api/unifiedSearch');
 
       mockAIStatusAvailable();
       httpClientMock.post.mockResolvedValueOnce(mockSearchPriceResult());
@@ -258,7 +258,7 @@ describe('unifiedSearch (server proxy)', () => {
         expect.objectContaining({
           category: 'отделка',
           brand: 'Palitra',
-        })
+        }),
       );
     });
   });

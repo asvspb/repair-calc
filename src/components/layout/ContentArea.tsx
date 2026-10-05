@@ -23,7 +23,7 @@ interface ContentAreaProps {
       work: import('@shared/types').WorkData,
       forceReplace: boolean,
       workVolume?: number,
-    ) => import('../../hooks/useWorkTemplates').SaveResult;
+    ) => import('../../features/works/model/useWorkTemplates').SaveResult;
     onLoadTemplate: (
       template: WorkTemplate,
       metrics?: import('../../types').RoomMetrics,
