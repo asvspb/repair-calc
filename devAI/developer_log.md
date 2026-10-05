@@ -1162,3 +1162,36 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - `pnpm exec playwright test --project=chromium` → 53 passed / 1 skipped.
 - Дополнительно полный e2e (`pnpm run test:e2e -- --project=chromium`, флаг не
   прокинулся — прогнались все проекты) → 159 passed / 3 skipped.
+
+## 2026-10-05 — TASK-BATCH-032-sync-split (`refactor/sync-split-032`, база refactor/roomeditor-split-031)
+
+### Сделано:
+
+- **P3-SPLIT-2 закрыт**: `server/src/routes/sync.ts` распилен — LWW/push-логика
+  вынесена в `server/src/services/sync-v2.service.ts` (279 строк):
+  `lwwCompare`, `SyncConflict`, `toIso`, `processSyncPush(userId, changes)`.
+- `sync.ts` — 146 строк: middleware-логирование + authenticate, push как
+  «валидация (syncPushSchema) → processSyncPush → res.json», pull остался в роуте
+  (страничная фильтрация since — presentation-логика ответа). HTTP-контракты
+  не менялись (paths, тела ответов, коды — 1:1).
+- Тип входа сервиса — `z.infer<typeof syncPushSchema>['changes'][number]` (включает
+  `entity: 'object'`), а не `ChangeLogEntry` — иначе TS-ошибка на вызове из роута
+  (ChangeLogEntry.entity не знает 'object'). Внутри — тот же `entity as string`.
+- `docs/TODO.md`: P3-SPLIT-2 → [x] с датой/веткой.
+- `INDEX.md`: сервис добавлен в дерево server/src/services, sync.ts аннотирован.
+
+### Проверка честности распила:
+
+- Тесты НЕ правились (git status: только 2 файла кода + 3 docs) — ни одного
+  ассерта не тронуто. Полный `pnpm test` зелёный: 180 passed / 2 skipped.
+  LWW-матрица на клиенте — tests/api/syncMerge.test.ts (13 кейсов) — зелёный
+  точечным прогоном; «14 интеграционных кейсов серверной LWW-матрицы» как
+  отдельного файла в tests/ не нашёл (grep lww/LWW по tests/ → только
+  syncMerge/syncFlusher/syncV2Initialize, все в общем прогоне зелёные).
+
+### Gates (прогнано):
+
+- `pnpm run lint:deps` → «no dependency violations found» (284 modules).
+- `pnpm run lint` → 0 errors, 31 warning (pre-existing, вне моих файлов —
+  eslint на двух изменённых файлах чист).
+- `pnpm test` → 180 passed / 2 skipped.
