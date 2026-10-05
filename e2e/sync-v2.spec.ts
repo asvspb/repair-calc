@@ -105,6 +105,22 @@ function makeFakeServer(): FakeServerProject[] {
   ];
 }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+};
+
+/** JSON-ответ с CORS (API_BASE = VITE_API_URL — кросс-доменно к vite-серверу теста) */
+async function fulfillJson(route: import('@playwright/test').Route, body: unknown): Promise<void> {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: CORS_HEADERS,
+    body: JSON.stringify(body),
+  });
+}
+
 test.describe('SYNC-V2 жизненный цикл (мутация → flush → повторный init)', () => {
   test('мутация комнаты уходит пушем, после reload данные на месте', async ({ page }) => {
     const fakeServer = makeFakeServer();
@@ -123,28 +139,26 @@ test.describe('SYNC-V2 жизненный цикл (мутация → flush →
         return;
       }
 
+      // CORS-префлайт (Authorization/JSON content-type) — отвечаем разрешением
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+
       if (url.pathname.startsWith('/api/auth/me')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            data: { id: 'e2e-user', email: 'e2e@test.dev', name: 'E2E' },
-          }),
+        await fulfillJson(route, {
+          data: { id: 'e2e-user', email: 'e2e@test.dev', name: 'E2E' },
         });
         return;
       }
 
       if (url.pathname.startsWith('/api/sync/pull')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'success',
-            data: {
-              projects: JSON.parse(JSON.stringify(fakeServer)),
-              timestamp: Date.now(),
-            },
-          }),
+        await fulfillJson(route, {
+          status: 'success',
+          data: {
+            projects: JSON.parse(JSON.stringify(fakeServer)),
+            timestamp: Date.now(),
+          },
         });
         return;
       }
@@ -186,26 +200,18 @@ test.describe('SYNC-V2 жизненный цикл (мутация → flush →
           }
         }
 
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            status: 'success',
-            data: {
-              synced: body.changes.map(c => c.id),
-              conflicts: [],
-            },
-          }),
+        await fulfillJson(route, {
+          status: 'success',
+          data: {
+            synced: body.changes.map(c => c.id),
+            conflicts: [],
+          },
         });
         return;
       }
 
       // Остальные API (totals и пр.) — пустые успешные ответы
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: [] }),
-      });
+      await fulfillJson(route, { data: [] });
     });
 
     // 1. Первый init: полный pull (lastSyncAt ещё нет)

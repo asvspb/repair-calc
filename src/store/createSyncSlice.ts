@@ -43,8 +43,9 @@ export function clearSaveTimers() {
     clearTimeout(totalsSaveTimeout);
     totalsSaveTimeout = null;
   }
-  // SYNC-V2 batch (б): debounce-таймер флашера тоже гасим
-  stopFlusher();
+  // SYNC-V2 batch (г): флашер здесь НЕ гасим — resetStore()/deleteProject() не должны
+  // убивать его на живом приложении (deps флашера — геттеры стора, reset им не вредит).
+  // Остановка — только в cleanup'е initSyncListeners (размонтирование приложения).
 }
 
 export const createSyncSlice: StateCreator<StoreState, [], [], SyncSlice> = (set, get) => ({
