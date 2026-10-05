@@ -115,8 +115,12 @@ module.exports = {
       severity: 'error',
       comment:
         'R4 batch 025: works — готовый домен features. Любая ДРУГАЯ фича не может ' +
-        'импортировать src/features/works напрямую (только shared / легаси-фасады).',
-      from: { path: '^src/features/(?!works(/|$))' },
+        'импортировать src/features/works напрямую (только shared / легаси-фасады). ' +
+        'ИСКЛЮЧЕНИЕ rooms (батч 027): RoomEditor — точка композиции rooms-домена; ещё до R4 ' +
+        '(батч 025, из легаси src/components/RoomEditor.tsx) он собирал works-компоненты ' +
+        '(WorkList, WorkCard, WorkTemplatePickerModal, WorkCatalogPicker, useWorkTemplates). ' +
+        'rooms→works разрешён осознанно, см. developer_log.',
+      from: { path: '^src/features/(?!works(/|$))', pathNot: '^src/features/rooms' },
       to: { path: '^src/features/works' }
     },
 
@@ -129,6 +133,18 @@ module.exports = {
         'импортировать src/features/summary напрямую (только shared / легаси-фасады).',
       from: { path: '^src/features/(?!summary(/|$))' },
       to: { path: '^src/features/summary' }
+    },
+
+    // ─── R4 batch 027: домен rooms готов — его правило повышено до error ──────
+    {
+      name: 'fsd-rooms-no-cross-imports',
+      severity: 'error',
+      comment:
+        'R4 batch 027: rooms — готовый домен features. Любая ДРУГАЯ фича не может ' +
+        'импортировать src/features/rooms напрямую (только shared / легаси-фасады). ' +
+        'rooms→works (RoomEditor) разрешён явным исключением в fsd-works-no-cross-imports.',
+      from: { path: '^src/features/(?!rooms(/|$))' },
+      to: { path: '^src/features/rooms' }
     }
   ],
   options: {

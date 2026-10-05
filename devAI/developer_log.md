@@ -979,3 +979,36 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
   `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик до правок);
   `pnpm run lint:deps` — 0 errors, 21 warnings (легаси-allowlist, как до batch).
 - Коммиты: перенос ui / api / импортёры / depcruise / docs — раздельно, Conventional Commits.
+
+## 2026-10-05 — Кодер: R4 batch 027 — переезд домена rooms в features/rooms (refactor/r4-rooms-027)
+
+- Перенос (механический, поведение/контракты не менялись): `src/components/rooms/*` (RoomList,
+  RoomListItem, index) и `src/components/room/*` (RoomHeader, RoomMetricsSummary, useRoomWorksState)
+  - `src/components/RoomEditor.tsx` + `src/components/geometry/*` (8 компонентов + index) →
+    `src/features/rooms/ui/` (geometry — в подпапку `ui/geometry/`); `src/hooks/useGeometryState.ts` →
+    `src/features/rooms/model/`; `src/api/rooms.ts` → `src/features/rooms/api/rooms.ts`.
+    `src/store/createRoomSlice`/`createObjectSlice` НЕ тронуты (общие слайсы, R4-projects).
+- Grep-факты спорных файлов:
+  - `src/components/geometry/` — вне себя импортируется только `RoomEditor.tsx` (grep src/tests:
+    единственный внешний референс) → геометрия комнат принадлежит rooms, перенесена.
+  - `src/hooks/useMaterialCalculation.ts` — единственный потребитель вне хука и его теста —
+    `src/features/works/ui/MaterialCalculationCard.tsx` (grep src+tests); сам хук от rooms не зависит
+    (только domain/pricing + types) → перенесён в `src/features/works/model/`, НЕ в rooms (правило
+    «куда реально принадлежит — по grep-фактам»). Фасад оставлен в `src/hooks/useMaterialCalculation.ts`.
+- @deprecated фасады на старых путях: `components/rooms/index.ts`, `components/room/*`,
+  `components/RoomEditor.tsx`, `components/geometry/index.ts`, `hooks/useGeometryState.ts`,
+  `hooks/useMaterialCalculation.ts`, `api/rooms.ts`. Импортёры переведены на новые пути:
+  ContentArea (RoomEditor), LeftSidebar (RoomList — на прямой путь, без фасада), backup/SyncPanel
+  (динамический import rooms api), LeftSidebar.test (vi.mock на новый путь).
+- Файлы тестов не переносились (прецедент 025/026): `tests/hooks/useGeometryState.test.ts` и
+  `tests/hooks/useMaterialCalculation.test.ts` остались, ассерты не менялись; работает через фасад.
+- depcruise: новое error-правило `fsd-rooms-no-cross-imports`. Спорный момент: `rooms→works` —
+  RoomEditor ещё с batch 025 (из легаси `src/components/RoomEditor.tsx`) компонует works-UI
+  (WorkList, WorkCard, WorkTemplatePickerModal, WorkCatalogPicker, useWorkTemplates); после переезда
+  в features это стало error `fsd-works-no-cross-imports`. Добавлено явное исключение
+  `pathNot: '^src/features/rooms'` в правило works с комментарием (композиция — суть rooms-editor);
+  архитектор может пересмотреть в 029 (перенести works-композицию или вынести в shared).
+- Gates (до docs-коммита): `pnpm test` — 1112 passed / 4 skipped (83 файлов) + server-проект
+  180 passed / 2 skipped; `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик);
+  `pnpm run lint:deps` — 0 errors, 38 warnings (легаси-allowlist + rooms→works warn, как до batch).
+- Коммиты: перенос / works-хук / api / импортёры / depcruise / docs — раздельно, Conventional Commits.

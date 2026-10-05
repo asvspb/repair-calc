@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, X, FileText } from 'lucide-react';
 import { logUserAction } from '../../utils/logger';
-import { RoomList } from '../rooms/RoomList';
+import { RoomList } from '../../features/rooms/ui/RoomList';
 import { ObjectSettings } from './ObjectSettings';
 import type { RoomData, ObjectData } from '@shared/types';
 

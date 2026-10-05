@@ -1,6 +1,6 @@
 # INDEX — Главный индексный файл проекта
 
-**Последнее обновление:** 2026-10-04
+**Последнее обновление:** 2026-10-05
 **Версия приложения:** 2.0
 **Состояние здоровья:** 🟢 операционно разблокирован (main актуален, CI жив); остатётся техдолг (см. [AUDIT-2026-08-11](./docs/AUDIT-2026-08-11.md))
 
@@ -64,13 +64,14 @@ repair-calc/
 │   ├── features/                     # FSD-фичи (каркас R1: README 7 доменов auth/projects/objects/rooms/works/summary/archive; переезд в R4)
 │   │   ├── auth/                     # Домен auth (R4 024): ui/, model/, api/
 │   │   ├── works/                    # Домен works (R4 025): ui/, model/, api/
-│   │   └── summary/                  # Домен summary (R4 026): ui/ (SummaryView, Materials, Works, Tools), api/ (totals)
+│   │   ├── summary/                  # Домен summary (R4 026): ui/ (SummaryView, Materials, Works, Tools), api/ (totals)
+│   │   └── rooms/                    # Домен rooms (R4 027): ui/ (RoomEditor, RoomList, geometry/ и др.), model/ (useGeometryState), api/ (rooms)
 │   ├── api/                          # API клиенты
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
 │   │   ├── objects.ts                # Objects API
 │   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
-│   │   ├── rooms.ts                  # Rooms API
+│   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027)
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
 │   │   ├── totals.ts                 # @deprecated фасад → src/features/summary/api/totals.ts (R4 026)
 │   │   ├── users.ts                  # Users API
@@ -86,17 +87,18 @@ repair-calc/
 │   │   └── prices/                   # AI поиск цен — @deprecated фасады (домен works переехал в src/features/works/api, R4 025)
 │   ├── components/                   # React компоненты
 │   │   ├── auth/                     # (4 файла: Login, Register, ProtectedRoute, index)
-│   │   ├── geometry/                 # (9 файлов: Section, Mode, Simple/Extended/Advanced)
+│   │   ├── geometry/                 # @deprecated фасад → src/features/rooms/ui/geometry (R4 027)
 │   │   ├── layout/                   # (4 файла: LeftSidebar, RightSidebar, Settings)
 │   │   ├── objects/                  # (5 файлов: Card, Selector, List, CreateModal, index)
 │   │   ├── projects/                 # (11 файлов: List, Modal, CreateModal, ArchivePanel, ProjectListItem, ServerSyncSection, ImportStatusBanner, useProjectsModal, useProjectExports, modalTypes, index)
 │   │   ├── backup/                   # (6 файлов: ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog, types, helpers — распил BackupManager, batch-013)
-│   │   ├── rooms/                    # (3 файла: List, ListItem, index)
+│   │   ├── room/                     # @deprecated фасады → src/features/rooms/ui (R4 027)
+│   │   ├── rooms/                    # @deprecated фасад → src/features/rooms/ui (R4 027)
 │   │   ├── works/                    # @deprecated фасад → src/features/works/ui (R4 025)
 │   │   ├── summary/                  # удалён — переехал в src/features/summary/ui (R4 026)
 │   │   ├── ui/                       # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
 │   │   ├── BackupManager.tsx      # тонкий контейнер (панели в components/backup/)
-│   │   ├── RoomEditor.tsx
+│   │   ├── RoomEditor.tsx            # @deprecated фасад → src/features/rooms/ui (R4 027)
 │   │   └── SummaryView.tsx           # @deprecated фасад → src/features/summary/ui (R4 026)
 │   ├── contexts/                     # React Context
 │   │   ├── AuthContext.tsx           # Аутентификация
@@ -106,8 +108,8 @@ repair-calc/
 │   │   ├── initialData.ts           # Начальные данные
 │   │   └── workTemplatesCatalog.ts  # Каталог типовых работ
 │   ├── hooks/
-│   │   ├── useGeometryState.ts       # Состояние геометрии
-│   │   ├── useMaterialCalculation.ts # Расчёт материалов
+│   │   ├── useGeometryState.ts       # @deprecated фасад → src/features/rooms/model (R4 027)
+│   │   ├── useMaterialCalculation.ts # @deprecated фасад → src/features/works/model (R4 027; grep: единственный потребитель — works)
 │   │   ├── ui/                       # UI-хуки
 │   │   └── useWorkTemplates.ts       # @deprecated фасад → features/works/model (R4 025)
 │   ├── types/

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Layers, Box, Ruler, X } from 'lucide-react';
 import type { RoomData, Opening, RoomSegment, Obstacle, WallSection } from '@shared/types';
-import { NumberInput } from '../ui/NumberInput';
+import { NumberInput } from '../../../../components/ui/NumberInput';
 import { OpeningList } from './OpeningList';
 
 interface AdvancedGeometryProps {

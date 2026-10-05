@@ -1,7 +1,8 @@
 import React from 'react';
 import { ChevronUp, AlertCircle } from 'lucide-react';
 import type { RoomData, Opening, WallSection, RoomSubSection, GeometryMode } from '@shared/types';
-import { NumberInput } from '../ui/NumberInput';
+import type { RoomSegment, Obstacle } from '../../../../types';
+import { NumberInput } from '../../../../components/ui/NumberInput';
 import { ModeSelector } from './ModeSelector';
 import { SimpleGeometry } from './SimpleGeometry';
 import { ExtendedGeometry } from './ExtendedGeometry';
@@ -56,25 +57,13 @@ interface GeometrySectionProps {
   // Advanced mode handlers
   addSegment: () => void;
   removeSegment: (id: string) => void;
-  updateSegment: (
-    id: string,
-    field: keyof import('../../types').RoomSegment,
-    val: string | number,
-  ) => void;
+  updateSegment: (id: string, field: keyof RoomSegment, val: string | number) => void;
   addObstacle: () => void;
   removeObstacle: (id: string) => void;
-  updateObstacle: (
-    id: string,
-    field: keyof import('../../types').Obstacle,
-    val: string | number,
-  ) => void;
+  updateObstacle: (id: string, field: keyof Obstacle, val: string | number) => void;
   addWallSection: () => void;
   removeWallSection: (id: string) => void;
-  updateWallSection: (
-    id: string,
-    field: keyof import('../../types').WallSection,
-    val: string | number,
-  ) => void;
+  updateWallSection: (id: string, field: keyof WallSection, val: string | number) => void;
   // Advanced mode calculations
   segmentsDelta: number;
   obstaclesDelta: number;
