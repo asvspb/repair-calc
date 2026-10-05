@@ -1,31 +1,37 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ObjectsList } from '../../src/components/objects/ObjectsList';
+import { ObjectsList } from '../../src/features/objects/ui/ObjectsList';
 
 const createMockObject = (id: string, name: string, roomsCount: number = 0) => ({
   id,
   projectId: 'proj-1',
   name,
   city: 'Москва',
-  rooms: Array(roomsCount).fill(null).map((_, i) => ({
-    id: `room-${i}`,
-    objectId: id,
-    name: `Комната ${i + 1}`,
-    length: 4, width: 3, height: 2.7,
-    segments: [], obstacles: [], wallSections: [], subSections: [],
-    windows: [], doors: [], works: [],
-  })),
+  rooms: Array(roomsCount)
+    .fill(null)
+    .map((_, i) => ({
+      id: `room-${i}`,
+      objectId: id,
+      name: `Комната ${i + 1}`,
+      length: 4,
+      width: 3,
+      height: 2.7,
+      segments: [],
+      obstacles: [],
+      wallSections: [],
+      subSections: [],
+      windows: [],
+      doors: [],
+      works: [],
+    })),
 });
 
 const mockStoreState: Record<string, any> = {
   activeProject: {
     id: 'proj-1',
     name: 'Тестовый проект',
-    objects: [
-      createMockObject('obj-1', 'Квартира', 3),
-      createMockObject('obj-2', 'Гараж', 1),
-    ],
+    objects: [createMockObject('obj-1', 'Квартира', 3), createMockObject('obj-2', 'Гараж', 1)],
   },
   activeObjectId: 'obj-1',
   setActiveObjectId: vi.fn(),
@@ -39,19 +45,15 @@ vi.mock('../../src/store/useProjectStore', () => ({
   useProjectStore: (selector: (s: any) => any) => selector(mockStoreState),
 }));
 
-vi.mock('../../src/components/objects/ObjectCard', () => ({
+vi.mock('../../src/features/objects/ui/ObjectCard', () => ({
   ObjectCard: ({ object, isActive, onClick }: any) => (
-    <div
-      data-testid={`object-card-${object.id}`}
-      data-active={isActive}
-      onClick={onClick}
-    >
+    <div data-testid={`object-card-${object.id}`} data-active={isActive} onClick={onClick}>
       {object.name}
     </div>
   ),
 }));
 
-vi.mock('../../src/components/objects/CreateObjectModal', () => ({
+vi.mock('../../src/features/objects/ui/CreateObjectModal', () => ({
   CreateObjectModal: ({ onClose }: any) => (
     <div data-testid="create-object-modal">
       <button onClick={onClose}>Close</button>
@@ -144,10 +146,7 @@ describe('ObjectsList', () => {
     mockStoreState.activeProject = {
       id: 'proj-1',
       name: 'Тестовый проект',
-      objects: [
-        createMockObject('obj-1', 'Квартира', 3),
-        createMockObject('obj-2', 'Гараж', 1),
-      ],
+      objects: [createMockObject('obj-1', 'Квартира', 3), createMockObject('obj-2', 'Гараж', 1)],
     };
   });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useProjectStore } from '../../store/useProjectStore';
+import { useProjectStore } from '../../../store/useProjectStore';
 import type { ObjectData } from '@shared/types';
 
 interface CreateObjectModalProps {

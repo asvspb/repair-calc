@@ -1,5 +1,5 @@
 import React from 'react';
-import { useProjectStore } from '../../store/useProjectStore';
+import { useProjectStore } from '../../../store/useProjectStore';
 import type { ObjectData } from '@shared/types';
 
 interface ObjectSelectorProps {

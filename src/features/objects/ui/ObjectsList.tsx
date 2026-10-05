@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useProjectStore } from '../../store/useProjectStore';
+import { useProjectStore } from '../../../store/useProjectStore';
 import type { ObjectData } from '@shared/types';
 import { ObjectCard } from './ObjectCard';
 import { CreateObjectModal } from './CreateObjectModal';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 
 interface ObjectsListProps {
   className?: string;
