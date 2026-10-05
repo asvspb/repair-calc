@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
-import { StorageManager } from '../../utils/storage';
+import { StorageManager } from '../../../utils/storage';
 
 interface ExportPanelProps {
   projects: ProjectData[];

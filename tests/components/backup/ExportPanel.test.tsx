@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ExportPanel } from '../../../src/components/backup/ExportPanel';
+import { ExportPanel } from '../../../src/features/backup/ui/ExportPanel';
 import type { ProjectData } from '../../../src/types';
 
 const { storageMock } = vi.hoisted(() => ({

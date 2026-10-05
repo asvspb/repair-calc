@@ -4,3 +4,4 @@
  */
 export { RoomList } from '../../features/rooms/ui/RoomList';
 export { RoomListItem } from '../../features/rooms/ui/RoomListItem';
+export { createRoom } from '../../features/rooms/api/rooms';

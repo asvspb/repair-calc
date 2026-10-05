@@ -1,5 +1,5 @@
 import type { ProjectData } from '@shared/types';
-import type { WorkTemplate } from '../../types/workTemplate';
+import type { WorkTemplate } from '../../../types/workTemplate';
 
 export interface BackupManagerProps {
   projects: ProjectData[];

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { LoadProjectDialog } from '../../../src/components/backup/LoadProjectDialog';
+import { LoadProjectDialog } from '../../../src/features/backup/ui/LoadProjectDialog';
 
 const serverProjects = [
   { id: 's1', name: 'Дача', city: 'Сочи', updated_at: '2026-03-05T12:00:00Z' },
