@@ -139,7 +139,7 @@ export function SyncPanel({
       const allRooms = getAllRooms(activeProject);
       for (const room of allRooms) {
         try {
-          const { createRoom } = await import('../../../components/rooms');
+          const { createRoom } = await import('../../../api/rooms');
           await createRoom(newProject.id, room);
         } catch (roomError) {
           logError('BackupManager', 'Error creating room', roomError);
