@@ -69,3 +69,28 @@ Conventional, трейлер «Co-Authored-By: GLM-5.3-Flash»; gates в кор�
 ## DoD
 
 - [ ] wc -l всех перечисленных ≤400 (или обоснование в notes, почему распил вреден); gates зелёные.
+
+# TASK-BATCH-023-sync-d (переключение под флаг)
+
+**Назначено:** coder **Подветка:** feat/sync-v2-d-023 **База:** main **Статус:** ⬜
+
+## Цель
+
+Раздел §5(г) спеки SPEC-SYNC-V2 (v1.1): `VITE_SYNC_V2=true` — весь жизненный цикл
+(init pull → мутации → flush → конфликт) идёт через V2; без флага — побайтово прежнее
+поведение; откат-план §4 проверен переключением флага.
+
+**Write-set/DoD** — строго по §5(г) спеки: src/store/projectInitialize.ts (развилка),
+фабрика провайдера src/api/storage/index.ts, env-примеры (.env.example, docker-compose.yml
+— по фактическому списку env-файлов), e2e/, INDEX.md, docs/ARCHITECTURE.md §6, developer_log.md.
+
+## Дополнения к спеке
+
+- e2e: минимальный sync-сценарий V2 (мутация → flush → повторный init без потерь) отдельным
+  спеком с env VITE_SYNC_V2=true; базовый набор — в старом режиме; оба зелёные.
+- VITE_SYNC_V2 в прод-конфигах НЕ включать (проверка владельцем на dev — отдельно).
+- Gates + pnpm exec playwright test (chromium) в обоих режимах — сам, итог в лог.
+
+## DoD
+
+- [ ] Оба режима e2e зелёные; откат переключением флага продемонстрирован; gates зелёные.
