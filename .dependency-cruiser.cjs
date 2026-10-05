@@ -82,6 +82,7 @@ module.exports = {
           '^src/features/$1(/|$)', // своя фича — допустимо
           '^src/features(/|$)', // features→features флагует только fsd-features-no-cross-imports
           '^(shared/|@shared)', // строго вниз по 3-слойке
+          '^node_modules', // фреймворк/библиотеки (react, lucide-react) — не легаси-пути
           // Легаси-allowlist (R4: удалить строку и повысить правило до error):
           '^(src/components|src/hooks|src/contexts|src/api|src/utils)'
         ]
@@ -95,6 +96,17 @@ module.exports = {
         'В R4 повышается до error.',
       from: { path: '^src/features/([^/]+)' },
       to: { path: '^src/features/(?!$1(/|$))' }
+    },
+
+    // ─── R4 batch 024: домен auth готов — его правило повышено до error ─────────
+    {
+      name: 'fsd-auth-no-cross-imports',
+      severity: 'error',
+      comment:
+        'R4 batch 024: auth — первый готовый домен features. Любая ДРУГАЯ фича не может ' +
+        'импортировать src/features/auth напрямую (только shared / легаси-фасады).',
+      from: { path: '^src/features/(?!auth(/|$))' },
+      to: { path: '^src/features/auth' }
     }
   ],
   options: {
