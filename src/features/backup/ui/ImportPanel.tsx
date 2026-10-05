@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Database, Upload, X } from 'lucide-react';
-import { StorageManager, countImportedObjects } from '../../utils/storage';
-import { getDefaultImportName } from './helpers';
-import type { ImportStatus, PendingImportData, SetImportStatus } from './types';
+import { StorageManager, countImportedObjects } from '../../../utils/storage';
+import { getDefaultImportName } from '../model/helpers';
+import type { ImportStatus, PendingImportData, SetImportStatus } from '../model/types';
 
 interface ImportPanelProps {
   setImportStatus: SetImportStatus;

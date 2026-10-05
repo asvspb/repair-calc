@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { FolderOpen, Edit2, Check, X as XIcon, Copy, Trash2, Plus } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
-import { getAllRooms } from '../../utils/projectObjects';
-import { pluralize } from '../../utils/format';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { getAllRooms } from '../../../utils/projectObjects';
+import { pluralize } from '../../../utils/format';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 
 type ProjectsListProps = {
   projects: ProjectData[];

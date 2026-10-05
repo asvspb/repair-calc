@@ -3,7 +3,7 @@ import { useProjectStore } from '../../../store/useProjectStore';
 import type { ObjectData } from '@shared/types';
 import { ObjectCard } from './ObjectCard';
 import { CreateObjectModal } from './CreateObjectModal';
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 
 interface ObjectsListProps {
   className?: string;

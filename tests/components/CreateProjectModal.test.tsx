@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { CreateProjectModal } from '../../src/components/projects/CreateProjectModal';
+import { CreateProjectModal } from '../../src/features/projects/ui/CreateProjectModal';
 import type { ProjectData } from '../../src/types';
 
 // Mock StorageManager
@@ -162,7 +162,8 @@ describe('CreateProjectModal', () => {
       fireEvent.click(screen.getByRole('tab', { name: /Из бекапа/ }));
 
       // Trigger file selection
-      const hiddenInput = screen.getByRole('button', { name: /Выберите файл бекапа/ })
+      const hiddenInput = screen
+        .getByRole('button', { name: /Выберите файл бекапа/ })
         .parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
       if (hiddenInput) {
         const file = new File(['{}'], 'backup.json', { type: 'application/json' });
@@ -180,7 +181,8 @@ describe('CreateProjectModal', () => {
       fireEvent.click(screen.getByRole('tab', { name: /Из бекапа/ }));
 
       // Trigger file selection
-      const hiddenInput = screen.getByRole('button', { name: /Выберите файл бекапа/ })
+      const hiddenInput = screen
+        .getByRole('button', { name: /Выберите файл бекапа/ })
         .parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
       if (hiddenInput) {
         const file = new File(['{}'], 'backup.json', { type: 'application/json' });

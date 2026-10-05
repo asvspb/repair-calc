@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { ProjectData } from '@shared/types';
-import { StorageManager } from '../../utils/storage';
+import { StorageManager } from '../../../utils/storage';
 import type { ImportStatus } from './modalTypes';
 
 interface UseProjectExportsArgs {

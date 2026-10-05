@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Database, FolderOpen, RefreshCw, Save, X } from 'lucide-react';
 import { LoadProjectDialog } from './LoadProjectDialog';
 import type { ProjectData } from '@shared/types';
-import { useAuth } from '../../features/auth/model/AuthContext';
-import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
-import { getProjects, getProject } from '../../api/projects';
-import { getAllRooms } from '../../utils/projectObjects';
-import { logError } from '../../utils/logger';
-import type { SetImportStatus, ServerProject } from './types';
+import { useAuth } from '../../../contexts/AuthContext';
+import { ApiStorageProvider } from '../../../api/storage/apiStorageProvider';
+import { getProjects, getProject } from '../../../api/projects';
+import { getAllRooms } from '../../../utils/projectObjects';
+import { logError } from '../../../utils/logger';
+import type { SetImportStatus, ServerProject } from '../model/types';
 
 interface SyncPanelProps {
   projects: ProjectData[];
@@ -139,7 +139,7 @@ export function SyncPanel({
       const allRooms = getAllRooms(activeProject);
       for (const room of allRooms) {
         try {
-          const { createRoom } = await import('../../features/rooms/api/rooms');
+          const { createRoom } = await import('../../../components/rooms');
           await createRoom(newProject.id, room);
         } catch (roomError) {
           logError('BackupManager', 'Error creating room', roomError);
@@ -205,7 +205,7 @@ export function SyncPanel({
     setIsLoadingProject(true);
     try {
       const response = await getProject(selectedProjectId);
-      const { apiToClientProject } = await import('../../api/projects');
+      const { apiToClientProject } = await import('../../../api/projects');
       const loadedProject = apiToClientProject(response.data);
 
       // Проверяем, есть ли уже такой проект локально

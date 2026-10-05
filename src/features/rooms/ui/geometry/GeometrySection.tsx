@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronUp, AlertCircle } from 'lucide-react';
 import type { RoomData, Opening, WallSection, RoomSubSection, GeometryMode } from '@shared/types';
 import type { RoomSegment, Obstacle } from '../../../../types';
-import { NumberInput } from '../../../../components/ui/NumberInput';
+import { NumberInput } from '@shared/ui/NumberInput';
 import { ModeSelector } from './ModeSelector';
 import { SimpleGeometry } from './SimpleGeometry';
 import { ExtendedGeometry } from './ExtendedGeometry';

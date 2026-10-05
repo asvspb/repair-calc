@@ -1,5 +1,5 @@
 import { Database, FolderOpen, RefreshCw, X } from 'lucide-react';
-import type { ServerProject } from './types';
+import type { ServerProject } from '../model/types';
 
 interface LoadProjectDialogProps {
   serverProjects: ServerProject[];

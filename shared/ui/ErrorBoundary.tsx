@@ -1,6 +1,6 @@
 import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
-import { logError } from '../../utils/logger';
+import { logError } from '../../src/utils/logger';
 
 interface Props {
   children: ReactNode;

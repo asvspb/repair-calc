@@ -1,8 +1,8 @@
 import { Edit2, Copy, Trash2, FolderOpen } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
-import { calculateRoomCosts } from '../../domain/pricing/costs';
-import { getAllRooms } from '../../utils/projectObjects';
-import { pluralize } from '../../utils/format';
+import { calculateRoomCosts } from '../../../domain/pricing/costs';
+import { getAllRooms } from '../../../utils/projectObjects';
+import { pluralize } from '../../../utils/format';
 
 interface ProjectListItemProps {
   project: ProjectData;

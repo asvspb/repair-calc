@@ -304,6 +304,21 @@ localStorage (`LocalStorageProvider`); заменено на IndexedDB + API-с�
 R4 — переезд доменов в `features/` по одному, allowlist пустеет, правила
 depcruise повышаются до `error`.
 
+**R4 — сделано (2026-10-05, batch'и 024–029):** целевая структура достигнута:
+
+- Все домены живут в `src/features/<domain>/{ui,model,api}`: auth, works, summary,
+  rooms, objects, projects, backup. UI-кит — `shared/ui/` (ConfirmDialog,
+  ErrorBoundary, NumberInput); шелл приложения — `src/app/layout/`.
+- `src/components/`, `src/hooks/` (доменные), `src/contexts/` (WorkTemplate/Auth),
+  `src/api/<domain>.ts` — только @deprecated re-export-фасады (удаление — пост-R4).
+- depcruise: `fsd-features-no-cross-imports` и `fsd-app-layers` — `error`;
+  на каждый готовый домен — своё error-правило (`fsd-<domain>-no-cross-imports`).
+  Осознанные исключения: rooms→works (композиция RoomEditor), backup→rooms через
+  легаси-фасад (createRoom при pull-синхронизации).
+- Остатки на пост-R4 (вне механического скоупа R4): удаление фасадов; вынос
+  `src/domain`, `src/types`, `src/store` в shared (fsd-features-to-shared остался
+  warn по этой причине) — см. `devAI/developer_log.md`, запись batch 029.
+
 ---
 
 ## 3. Серверная архитектура

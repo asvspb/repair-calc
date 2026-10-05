@@ -5,7 +5,7 @@
 
 import React, { memo, useState, useMemo } from 'react';
 import { Grid3X3, Info, RefreshCw } from 'lucide-react';
-import { NumberInput } from '../../../components/ui/NumberInput';
+import { NumberInput } from '@shared/ui/NumberInput';
 import type { RoomMetrics } from '../../../types';
 import type { Material } from '@shared/types';
 

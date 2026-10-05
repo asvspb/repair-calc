@@ -1036,3 +1036,52 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
   objects→/→objects вне фасадов нет (lint:deps: 0 errors, 41 warnings — все легаси, без изменений).
 - Gates: pnpm test (180 passed, 2 skipped), pnpm run lint (0 errors, 31 warnings — ранее
   существующие), pnpm run lint:deps (0 errors). INDEX.md обновлён.
+
+## 2026-10-05 — Кодер: R4 batch 029 (финал R4) — projects/backup/layout/ui-кит + ужесточение depcruise (refactor/r4-projects-029)
+
+- Перенос (механический, поведение/контракты не менялись), раздельные коммиты:
+  1. UI-кит `src/components/ui/*` → `shared/ui/` (ConfirmDialog, ErrorBoundary, NumberInput).
+     Цель — корневой `shared/`, не `src/shared`: канон shared-слоя в репо — `shared/`
+     (AGENTS.md §3; алиас `@shared/*` → `./shared/*` в tsconfig+vite+vitest; depcruise-правила
+     допускают `^(shared/|@shared)`). Импортёры (App.tsx + 10 файлов features/*) → `@shared/ui/*`.
+  2. `src/api/projects.ts` → `src/features/projects/api/projects.ts`; фасад `src/api/projects.ts`
+     @deprecated (потребителей 12+ в src/store и tests — оставлены на фасаде).
+  3. `src/components/projects/*` → `src/features/projects/ui/` (8 компонентов, barrel index.ts)
+     - `model/` (modalTypes, useProjectExports, useProjectsModal). Фасад
+       `src/components/projects/index.ts` @deprecated. useAuth в переехавших файлах — через
+       легаси-фасад `src/contexts/AuthContext` (features не импортируют features/auth напрямую —
+       иначе error fsd-auth-no-cross-imports).
+  4. `src/components/backup/*` + `src/components/BackupManager.tsx` → `src/features/backup/`
+     (ui/: BackupManager, ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog; model/:
+     helpers, types). Фасад `src/components/BackupManager.tsx`. SyncPanel: динамический
+     `import('../rooms/api/rooms')` (createRoom при pull) — через легаси-фасад
+     `src/components/rooms/index.ts` (в фасад добавлен re-export createRoom) — прямой
+     features/backup → features/rooms падает error fsd-rooms-no-cross-imports.
+  5. layout → `src/app/layout/` (grep-факт: потребители только src/App.tsx и 5 тестов;
+     ContentArea/LeftSidebar/RightSidebar — точки композиции шелла, импортируют
+     features/rooms/summary/projects напрямую → целевой слой app, а не features/projects,
+     иначе features→features cross-import). ObjectSettings/ProjectSettings — рядом с шеллом.
+- Спорные решения (не молча):
+  - `src/store/` слайсы проектов (createProjectSlice, projectInitialize, projectMigration)
+    НЕ перенесены, вопреки пунктe ТЗ: grep-факты — createProjectSlice импортирует
+    createSyncSlice (общий слайс) и `src/api/storage/*` (ТЗ 029 явно «НЕ переносить»),
+    createArchiveSlice импортирует migrateProject из project-слайса, types.ts общий для
+    всех слайсов; переезд дал бы features/projects→src/store/api-инфраструктуру и цикл
+    с фасадами — решение за архитектором (кандидат R5/пост-R4).
+  - `src/api/storage/` не переносился (прямо по ТЗ).
+  - `fsd-features-to-shared` остался warn: ~35 нарушений features→src/domain, src/types,
+    src/store — вынос этих корней в shared вне скоупа R4 (массовый перенос расчётного
+    домена — не механический шаг). Allowlist пересмотрен: добавлены
+    store/domain/types/data, src/components оставлен только под легаси-фасады.
+  - `fsd-app-layers` поднят warn→error (allowlist дополнен ^node_modules — react/lucide
+    не легаси-пути; легаси-корни allowlist-ом).
+- depcruise-ужесточение: `fsd-features-no-cross-imports` warn→error (исключение rooms→works
+  задокументировано в правиле), новые error-правила `fsd-projects-no-cross-imports` и
+  `fsd-backup-no-cross-imports`.
+- Gates (до docs-коммита): `pnpm test` — exit 0 (vitest 1112 passed / 4 skipped, 83 файла
+  - server-проект 180 passed / 2 skipped); `pnpm run lint` — exit 0 (0 errors, 31 warning —
+    pre-existing, счётчик равен baseline до batch); `pnpm run lint:deps` — exit 0
+    («no dependency violations found», 304 modules).
+- ROADMAP-fsd: R4 закрыт; ARCHITECTURE.md §2.6 дополнен итогом R4; INDEX.md отражает
+  целевую структуру. Коммиты: shared-ui / projects-api / projects-ui / backup / layout /
+  depcruise / docs.

@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { DataManagementModal } from '../../../src/components/projects/DataManagementModal';
+import { DataManagementModal } from '../../../src/features/projects/ui/DataManagementModal';
 import type { WorkTemplate } from '../../../src/types/workTemplate';
 
 // Mock contexts

@@ -41,14 +41,20 @@ shared/     → ui-кит, api-клиенты, утилиты, типы, storage
 - Расщепление по сервисам (validate/apply/sync/jobs) с сохранением контрактов API;
   интеграционные тесты как предупреждающий каркас (пишутся ДО распила).
 
-### R4. Переезд доменов в features/ — по одному домену на batch (02x)
+### R4. Переезд доменов в features/ — по одному домену на batch (02x) — ЗАКРЫТ (2026-10-05)
 
 - Порядок (по связности, от простого): auth → works/templates → summary → rooms →
   objects → projects (самый связанный — последним). Каждый batch: перенос компонентов+
   хуков+api клиента домена в features/<domain>/, обновление импортов, depcruise
   ужесточается на переехавший домен.
-- Финал: легаси-пути (src/components/<Domain>, src/hooks/<Domain>) исчезают,
+- Финал: легаси-пути (src/components/<Domain>, src/hooks/<Domain]) исчезают,
   allowlist пустеет, правила depcruise становятся строгими.
+- **Статус: закрыт.** Все 6 batch'ей выполнены (024 auth → 025 works → 026 summary →
+  027 rooms → 028 objects → 029 projects+backup+layout+ui-кит). `src/components/` —
+  только @deprecated фасады; UI-кит — `shared/ui`; шелл — `src/app/layout`;
+  fsd-features-no-cross-imports и fsd-app-layers — error. Остатки на пост-R4:
+  удаление фасадов, вынос src/domain+src/types+src/store в shared (см. developer_log,
+  batch 029).
 
 ### R5. Закрытие
 

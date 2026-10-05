@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { RightSidebar } from '../../../src/components/layout/RightSidebar';
+import { RightSidebar } from '../../../src/app/layout/RightSidebar';
 import type { ProjectData, ObjectData } from '../../../src/types';
 
 // Mock auth context

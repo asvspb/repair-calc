@@ -5,32 +5,41 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { ProjectsList } from '../../../src/components/projects/ProjectsList';
+import { ProjectsList } from '../../../src/features/projects/ui/ProjectsList';
 import type { ProjectData } from '../../../src/types';
 
-const createMockProject = (id: string, name: string, objectsCount: number = 1, roomsCount: number = 2): ProjectData => ({
+const createMockProject = (
+  id: string,
+  name: string,
+  objectsCount: number = 1,
+  roomsCount: number = 2,
+): ProjectData => ({
   id,
   name,
-  objects: Array(objectsCount).fill(null).map((_, i) => ({
-    id: `obj-${i}`,
-    projectId: id,
-    name: `Object ${i}`,
-    rooms: Array(roomsCount).fill(null).map((_, j) => ({
-      id: `room-${j}`,
-      name: `Room ${j}`,
-      geometryMode: 'simple' as const,
-      length: 10,
-      width: 10,
-      height: 3,
-      segments: [],
-      obstacles: [],
-      wallSections: [],
-      subSections: [],
-      windows: [],
-      doors: [],
-      works: [],
+  objects: Array(objectsCount)
+    .fill(null)
+    .map((_, i) => ({
+      id: `obj-${i}`,
+      projectId: id,
+      name: `Object ${i}`,
+      rooms: Array(roomsCount)
+        .fill(null)
+        .map((_, j) => ({
+          id: `room-${j}`,
+          name: `Room ${j}`,
+          geometryMode: 'simple' as const,
+          length: 10,
+          width: 10,
+          height: 3,
+          segments: [],
+          obstacles: [],
+          wallSections: [],
+          subSections: [],
+          windows: [],
+          doors: [],
+          works: [],
+        })),
     })),
-  })),
 });
 
 describe('ProjectsList', () => {
@@ -83,7 +92,7 @@ describe('ProjectsList', () => {
     it('should call onProjectSelect when project is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const projectButton = screen.getByText('Второй проект').closest('button');
-      
+
       fireEvent.click(projectButton!);
 
       expect(mockProps.onProjectSelect).toHaveBeenCalledWith('proj-2');
@@ -99,7 +108,7 @@ describe('ProjectsList', () => {
     it('should call onNewProject when clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const newProjectButton = screen.getByTitle('Новый проект');
-      
+
       fireEvent.click(newProjectButton);
 
       expect(mockProps.onNewProject).toHaveBeenCalled();
@@ -110,7 +119,7 @@ describe('ProjectsList', () => {
     it('should show edit input when rename button is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const renameButton = screen.getAllByTitle('Переименовать')[0];
-      
+
       fireEvent.click(renameButton);
 
       const input = screen.getByDisplayValue('Тестовый проект');
@@ -120,7 +129,7 @@ describe('ProjectsList', () => {
     it('should call onProjectRename when save is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const renameButton = screen.getAllByTitle('Переименовать')[0];
-      
+
       fireEvent.click(renameButton);
 
       const input = screen.getByDisplayValue('Тестовый проект');
@@ -135,7 +144,7 @@ describe('ProjectsList', () => {
     it('should cancel editing when cancel button is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const renameButton = screen.getAllByTitle('Переименовать')[0];
-      
+
       fireEvent.click(renameButton);
 
       const cancelButton = screen.getByTitle('Отмена');
@@ -150,7 +159,7 @@ describe('ProjectsList', () => {
     it('should show confirm dialog when copy button is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const copyButton = screen.getAllByTitle('Копировать')[0];
-      
+
       fireEvent.click(copyButton);
 
       expect(screen.getByText('Копировать проект?')).toBeInTheDocument();
@@ -159,7 +168,7 @@ describe('ProjectsList', () => {
     it('should call onProjectCopy when confirm is clicked', () => {
       render(<ProjectsList {...mockProps} />);
       const copyButton = screen.getAllByTitle('Копировать')[0];
-      
+
       fireEvent.click(copyButton);
 
       const confirmButton = screen.getByText('Копировать');

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ProjectsModal } from '../../src/components/projects/ProjectsModal';
+import { ProjectsModal } from '../../src/features/projects/ui/ProjectsModal';
 import type { ProjectData } from '../../src/types';
 
 const createMockProject = (overrides: Partial<ProjectData> = {}): ProjectData => ({

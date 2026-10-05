@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProjectData } from '@shared/types';
-import { useProjectStore } from '../../store/useProjectStore';
-import { useAuth } from '../../features/auth/model/AuthContext';
-import { StorageManager } from '../../utils/storage';
-import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
-import { migrateProjectToObjects } from '../../utils/projectObjects';
-import { cloneProject } from '../../domain/factories/projectFactory';
-import { dlog, derror } from '../../utils/debugLogger';
+import type { WorkTemplate } from '../../../types/workTemplate';
+import { useProjectStore } from '../../../store/useProjectStore';
+import { useAuth } from '../../../contexts/AuthContext';
+import { StorageManager } from '../../../utils/storage';
+import { ApiStorageProvider } from '../../../api/storage/apiStorageProvider';
+import { migrateProjectToObjects } from '../../../utils/projectObjects';
+import { cloneProject } from '../../../domain/factories/projectFactory';
+import { dlog, derror } from '../../../utils/debugLogger';
 import { useProjectExports } from './useProjectExports';
-import { logError } from '../../utils/logger';
+import { logError } from '../../../utils/logger';
 import type { ImportStatus } from './modalTypes';
 
 const LOG_PREFIX = '[ProjectsModal]';

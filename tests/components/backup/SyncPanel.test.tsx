@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { SyncPanel } from '../../../src/components/backup/SyncPanel';
+import { SyncPanel } from '../../../src/features/backup/ui/SyncPanel';
 import type { ProjectData } from '../../../src/types';
 
 const { providerMock, authState } = vi.hoisted(() => ({

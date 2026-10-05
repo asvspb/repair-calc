@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ImportPanel } from '../../../src/components/backup/ImportPanel';
+import { ImportPanel } from '../../../src/features/backup/ui/ImportPanel';
 
 const { storageMock, countMock } = vi.hoisted(() => ({
   storageMock: {

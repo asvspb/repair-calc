@@ -6,15 +6,14 @@ import {
   useWorkTemplateContext,
 } from './features/works/model/WorkTemplateContext';
 import { AuthProvider, useAuth } from './features/auth/model/AuthContext';
-import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { ErrorBoundary } from '@shared/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './features/auth/ui';
-import { LeftSidebar } from './components/layout/LeftSidebar';
-import { RightSidebar } from './components/layout/RightSidebar';
-import { AppHeader } from './components/layout/AppHeader';
-import { ContentArea } from './components/layout/ContentArea';
+import { LeftSidebar } from './app/layout/LeftSidebar';
+import { RightSidebar } from './app/layout/RightSidebar';
+import { AppHeader } from './app/layout/AppHeader';
+import { ContentArea } from './app/layout/ContentArea';
 import { CreateObjectModal } from './features/objects/ui/CreateObjectModal';
-import { ProjectsModal } from './components/projects';
-import { DataManagementModal } from './components/projects/DataManagementModal';
+import { ProjectsModal, DataManagementModal } from './features/projects/ui';
 import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';
 import { useModalsState } from './hooks/ui/useModalsState';
 import { STORAGE_KEYS } from './utils/storageConstants';
@@ -23,7 +22,7 @@ import { createNewRoom } from './domain/factories/projectFactory';
 import { cloneProject } from './domain/factories/projectFactory';
 import { IdMapper } from './utils/idMapper';
 import { getAllRooms } from './utils/projectObjects';
-import { ConfirmDialog } from './components/ui/ConfirmDialog';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 
 import { initialProjects } from './data/initialData';
 

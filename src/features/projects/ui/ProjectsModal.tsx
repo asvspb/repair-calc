@@ -1,13 +1,13 @@
 import { Upload, Download, FileJson, FileSpreadsheet, Plus, FolderOpen, X } from 'lucide-react';
-import type { WorkTemplate } from '../../types/workTemplate';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import type { WorkTemplate } from '../../../types/workTemplate';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
 import { ArchivePanel } from './ArchivePanel';
 import { ProjectListItem } from './ProjectListItem';
 import { ServerSyncSection } from './ServerSyncSection';
 import { ImportStatusBanner } from './ImportStatusBanner';
-import { useProjectsModal } from './useProjectsModal';
-import { dlog } from '../../utils/debugLogger';
+import { useProjectsModal } from '../model/useProjectsModal';
+import { dlog } from '../../../utils/debugLogger';
 
 const LOG_PREFIX = '[ProjectsModal]';
 
