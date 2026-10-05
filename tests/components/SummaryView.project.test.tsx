@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { SummaryView } from '../../src/components/SummaryView';
+import { SummaryView } from '../../src/features/summary/ui/SummaryView';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

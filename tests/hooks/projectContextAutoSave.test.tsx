@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ProjectData, RoomData } from '../../src/types';
 
 const mockSaveTotals = vi.fn();
-vi.mock('../../src/api/totals', () => ({
+vi.mock('../../src/features/summary/api/totals', () => ({
   saveTotals: (...args: unknown[]) => mockSaveTotals(...args),
 }));
 

@@ -7,7 +7,7 @@ import type { RoomData } from '@shared/types';
 import React, { memo, useMemo } from 'react';
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectData, Material, WorkData } from '@shared/types';
-import { getAllRooms } from '../../utils/projectObjects';
+import { getAllRooms } from '../../../utils/projectObjects';
 
 type Props = {
   rooms?: RoomData[];

@@ -25,7 +25,7 @@ vi.mock('../../../src/api/storage', () => ({
   },
 }));
 
-vi.mock('../../../src/api/totals', () => ({
+vi.mock('../../../src/features/summary/api/totals', () => ({
   saveTotals: vi.fn(),
 }));
 
@@ -97,7 +97,7 @@ vi.mock('../../../src/utils/projectObjects', () => ({
 
 import { StorageManager } from '../../../src/utils/storage';
 import { ApiStorageProvider } from '../../../src/api/storage';
-import { saveTotals } from '../../../src/api/totals';
+import { saveTotals } from '../../../src/features/summary/api/totals';
 import { needsMigration, runMigrations } from '../../../src/utils/migration';
 import { saveQueue } from '../../../src/utils/saveQueue';
 import { migrateProjectToObjects } from '../../../src/utils/projectObjects';

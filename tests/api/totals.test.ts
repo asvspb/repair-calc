@@ -9,7 +9,7 @@ import {
   TotalsApiError,
   type TotalsData,
   type TotalsResponse,
-} from '../../src/api/totals';
+} from '../../src/features/summary/api/totals';
 import { httpClient, ApiError } from '../../src/api/httpClient';
 
 // Мокаем httpClient.request
@@ -73,7 +73,7 @@ describe('Totals API', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(mockTotalsData),
-        })
+        }),
       );
 
       expect(result).toEqual(mockTotalsResponse);
@@ -107,10 +107,7 @@ describe('Totals API', () => {
 
       const result = await getTotals('project-123');
 
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/totals/project-123',
-        expect.any(Object)
-      );
+      expect(mockRequest).toHaveBeenCalledWith('/api/totals/project-123', expect.any(Object));
 
       expect(result).toEqual(mockTotalsResponse);
     });

@@ -118,6 +118,17 @@ module.exports = {
         'импортировать src/features/works напрямую (только shared / легаси-фасады).',
       from: { path: '^src/features/(?!works(/|$))' },
       to: { path: '^src/features/works' }
+    },
+
+    // ─── R4 batch 026: домен summary готов — его правило повышено до error ─────
+    {
+      name: 'fsd-summary-no-cross-imports',
+      severity: 'error',
+      comment:
+        'R4 batch 026: summary — готовый домен features. Любая ДРУГАЯ фича не может ' +
+        'импортировать src/features/summary напрямую (только shared / легаси-фасады).',
+      from: { path: '^src/features/(?!summary(/|$))' },
+      to: { path: '^src/features/summary' }
     }
   ],
   options: {

@@ -21,7 +21,7 @@ import { isServerId } from '../utils/idMapper';
 import { getAllRooms } from '../utils/projectObjects';
 import { calculateRoomMetrics } from '../domain/geometry/geometry';
 import { calculateRoomCosts } from '../domain/pricing/costs';
-import { saveTotals } from '../api/totals';
+import { saveTotals } from '../features/summary/api/totals';
 import type { StorageError } from '../utils/storage';
 import { dequal } from 'dequal';
 
