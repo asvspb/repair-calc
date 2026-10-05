@@ -60,18 +60,20 @@ FSD-3-слоя, npm workspaces, dirty-flag sync, полная декомпози
 ```
 repair-calc/
 ├── src/                              # Исходный код фронтенда
-│   ├── app/                          # FSD-слой app (каркас R1: README-указатель; переезд кода в R4)
-│   ├── features/                     # FSD-фичи (каркас R1: README 7 доменов auth/projects/objects/rooms/works/summary/archive; переезд в R4)
+│   ├── app/                          # FSD-слой app: layout/ (шелл — AppHeader, ContentArea, сайдбары, настройки; R4 029)
+│   ├── features/                     # FSD-фичи (переезд доменов завершён в R4, 024–029)
 │   │   ├── auth/                     # Домен auth (R4 024): ui/, model/, api/
 │   │   ├── works/                    # Домен works (R4 025): ui/, model/, api/
 │   │   ├── summary/                  # Домен summary (R4 026): ui/ (SummaryView, Materials, Works, Tools), api/ (totals)
 │   │   ├── rooms/                    # Домен rooms (R4 027): ui/ (RoomEditor, RoomList, geometry/ и др.), model/ (useGeometryState), api/ (rooms)
-│   │   └── objects/                  # Домен objects (R4 028): ui/ (ObjectsList, ObjectCard, ObjectSelector, CreateObjectModal), api/ (objects)
+│   │   ├── objects/                  # Домен objects (R4 028): ui/ (ObjectsList, ObjectCard, ObjectSelector, CreateObjectModal), api/ (objects)
+│   │   ├── projects/                 # Домен projects (R4 029): ui/ (ProjectsModal, ProjectsList, CreateProjectModal, ArchivePanel и др.), model/ (useProjectsModal, useProjectExports, modalTypes), api/ (projects)
+│   │   └── backup/                   # Домен backup (R4 029): ui/ (BackupManager, ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog), model/ (helpers, types)
 │   ├── api/                          # API клиенты
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
 │   │   ├── objects.ts                # @deprecated фасад → src/features/objects/api/objects.ts (R4 028)
-│   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
+│   │   ├── projects.ts               # @deprecated фасад → src/features/projects/api/projects.ts (R4 029)
 │   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027)
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
 │   │   ├── totals.ts                 # @deprecated фасад → src/features/summary/api/totals.ts (R4 026)
@@ -86,19 +88,18 @@ repair-calc/
 │   │   │   ├── roomApi.ts            # Синхронизация комнат + трекинг ошибок
 │   │   │   └── index.ts
 │   │   └── prices/                   # AI поиск цен — @deprecated фасады (домен works переехал в src/features/works/api, R4 025)
-│   ├── components/                   # React компоненты
-│   │   ├── auth/                     # (4 файла: Login, Register, ProtectedRoute, index)
+│   ├── components/                   # Легаси-каталог: только @deprecated фасады (удаление — пост-R4)
+│   │   ├── auth/                     # @deprecated фасад → src/features/auth/ui (R4 024)
 │   │   ├── geometry/                 # @deprecated фасад → src/features/rooms/ui/geometry (R4 027)
-│   │   ├── layout/                   # (4 файла: LeftSidebar, RightSidebar, Settings)
 │   │   ├── objects/                  # @deprecated фасад → src/features/objects/ui (R4 028)
-│   │   ├── projects/                 # (11 файлов: List, Modal, CreateModal, ArchivePanel, ProjectListItem, ServerSyncSection, ImportStatusBanner, useProjectsModal, useProjectExports, modalTypes, index)
-│   │   ├── backup/                   # (6 файлов: ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog, types, helpers — распил BackupManager, batch-013)
+│   │   ├── projects/                 # @deprecated фасад → src/features/projects/ui (R4 029)
 │   │   ├── room/                     # @deprecated фасады → src/features/rooms/ui (R4 027)
-│   │   ├── rooms/                    # @deprecated фасад → src/features/rooms/ui (R4 027)
+│   │   ├── rooms/                    # @deprecated фасад → src/features/rooms/ui (R4 027; +createRoom для backup-фасада)
 │   │   ├── works/                    # @deprecated фасад → src/features/works/ui (R4 025)
 │   │   ├── summary/                  # удалён — переехал в src/features/summary/ui (R4 026)
-│   │   ├── ui/                       # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
-│   │   ├── BackupManager.tsx      # тонкий контейнер (панели в components/backup/)
+│   │   ├── layout/                   # удалён — переехал в src/app/layout (R4 029)
+│   │   ├── ui/                       # удалён — переехал в shared/ui (R4 029)
+│   │   ├── BackupManager.tsx         # @deprecated фасад → src/features/backup/ui/BackupManager (R4 029)
 │   │   ├── RoomEditor.tsx            # @deprecated фасад → src/features/rooms/ui (R4 027)
 │   │   └── SummaryView.tsx           # @deprecated фасад → src/features/summary/ui (R4 026)
 │   ├── contexts/                     # React Context
@@ -151,6 +152,7 @@ repair-calc/
 │
 ├── shared/                           # Общие типы/утилиты (0 доменных зависимостей) — FSD-слой shared
 │   ├── types.ts                      # Общие типы (ProjectData, ObjectData, RoomData...)
+│   ├── ui/                           # R4 029: общий UI-кит (ConfirmDialog, ErrorBoundary, NumberInput) — из src/components/ui
 │   └── utils/                        # R1: format, logger, storageConstants, idMapper (в src/utils — фасады)
 │
 ├── server/                           # Backend (Node.js + Express)
