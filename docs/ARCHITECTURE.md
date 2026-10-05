@@ -635,6 +635,28 @@ logDebug('RoomEditor', 'Geometry change', { mode, dimensions });
 - **Offline support:** данные сохраняются в IndexedDB (Dexie; legacy localStorage
   переносится через `src/api/storage/indexedDbMigration.ts`)
 
+### 6.3 SYNC-V2 (env-флаг `VITE_SYNC_V2`, спека `devAI/spec/SPEC-SYNC-V2.md` v1.1)
+
+Два параллельных контура синхронизации; переключение — только env-флагом
+(фиксируется при сборке, в localStorage не персистится):
+
+- **Legacy (флаг отсутствует/`false`, дефолт):** путь §6.2 выше — полный pull
+  `GET /api/sync/pull` при инициализации, push через CRUD/`saveAllProjects`
+  (debounce 2 c, `scheduleSave`).
+- **SYNC-V2 (`VITE_SYNC_V2=true`):** dirty-флаги project/object/room в store
+  - Dexie `syncState`; исходящий флашер (`src/api/storage/syncFlusher.ts`) шлёт
+    батчи ≤50 на `POST /api/sync/push` (LWW по `clientUpdatedAt` с tie-break по id);
+    инициализация — инкрементальный `GET /api/sync/pull?since=<lastSyncAt>`
+    (первый запуск — полный) с LWW-слиянием (`src/api/storage/syncMerge.ts`);
+    `lastSyncAt` персистится в Dexie `syncState` (meta-запись). Legacy-сохранение
+    на сервер под флагом выключено (push — только через флашер).
+- **Откат (§4 спеки):** снять флаг в env/compose → пересобрать frontend — код V2
+  мёртв; данные общие (те же таблицы Dexie/строки БД), несброшенные dirty
+  восстанавливаются из `syncState` и досылаются при повторном включении.
+- **Прод:** флаг НЕ включается (`docker-compose.yml` — примечание); включение —
+  отдельное решение владельца. E2E: `VITE_SYNC_V2=true pnpm exec playwright test
+e2e/sync-v2.spec.ts --project=chromium`; базовый набор — в старом режиме.
+
 ---
 
 ## 7. Тестирование
