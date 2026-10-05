@@ -1240,3 +1240,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - `pnpm test` (frontend+server) → 1112 passed + 180 passed / 2 skipped.
 - `pnpm run lint` → 0 errors (31 pre-existing warning в server/).
 - `pnpm run lint:deps` → no dependency violations (281 modules).
+
+## 2026-10-05 — Архитектор: ревью чистки 030–033 + фикс регресса аутентификации
+
+- Все 4 batch'а влиты в main (6742459..d4d7ac7); финальный e2e в воркфлоу был КРАСНЫЙ → push справедливо не выполнялся.
+- Диагностика по факту (debug-спека + трассировка ответа): мок 401 доходил, authError выставлялся, но эффект App ([isLoading(auth), isAuthenticated, user?.id]) при возврате authIsLoading=false вызывал resetStore(), который после 033 стирал authError (и user/isAuthenticated/templates) — ошибка мигала и исчезала.
+- Фикс: resetStore() снова сбрасывает ТОЛЬКО домен проектов (как до 033); auth/workTemplates — отдельные домены. Комментарий-обоснование в коде.
+- Перепроверено лично: pnpm test зелёные, auth.spec 3/3, полный e2e 159/159, lint/lint:deps зелёные.

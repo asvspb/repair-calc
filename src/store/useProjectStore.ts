@@ -45,14 +45,13 @@ export function resetStore() {
     totalsSaveError: null,
     roomSyncError: null,
     isSyncing: false,
-    isAuthenticated: false,
-    user: null,
-    // authIsLoading НЕ сбрасываем: initAuthCheck выполняется однократно при маунте,
-    // повторное true приведёт к вечному экрану «Загрузка...»
-    authError: null,
-    templates: [],
-    workTemplatesLoading: true,
     activeObjectId: null,
     activeObject: null,
   });
+  // ВАЖНО (фикс регресса batch 033): resetStore сбрасывает ТОЛЬКО домен проектов.
+  // Auth-поля (user/isAuthenticated/authError/authIsLoading) и workTemplates —
+  // отдельные домены: их сбрасывают logout/свои экшены. До миграции контекстов на
+  // zustand эффект App ([isLoading, isAuthenticated, user?.id]) при переходе
+  // authIsLoading вызывал resetStore и мгновенно стирал authError логина
+  // (e2e auth.spec «should show error with invalid credentials»).
 }
