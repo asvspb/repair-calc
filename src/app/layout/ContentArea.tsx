@@ -3,6 +3,7 @@ import { Calculator } from 'lucide-react';
 import { logWarning } from '../../utils/logger';
 import { SummaryView } from '../../features/summary/ui/SummaryView';
 import { RoomEditor } from '../../features/rooms/ui/RoomEditor';
+import { RoomWorksSection } from '../../features/works/ui/RoomWorksSection';
 import { getAllRooms } from '../../utils/projectObjects';
 import type { ProjectData, RoomData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
@@ -99,13 +100,23 @@ export function ContentArea({
           city={activeProject.city}
           updateRoom={roomEditorProps.updateRoom}
           deleteRoom={roomEditorProps.onDeleteRoom}
-          templates={roomEditorProps.templates}
-          onSaveTemplate={roomEditorProps.onSaveTemplate}
-          onLoadTemplate={roomEditorProps.onLoadTemplate}
-          onDeleteTemplate={roomEditorProps.onDeleteTemplate}
-          isTemplatePickerOpen={roomEditorProps.isTemplatePickerOpen}
-          onOpenTemplatePicker={roomEditorProps.onOpenTemplatePicker}
-          onCloseTemplatePicker={roomEditorProps.onCloseTemplatePicker}
+          worksSlot={ctx => (
+            <RoomWorksSection
+              room={ctx.room}
+              city={ctx.city}
+              updateRoom={ctx.updateRoom}
+              updateRoomById={ctx.updateRoomById}
+              metrics={ctx.metrics}
+              costs={ctx.costs}
+              templates={roomEditorProps.templates}
+              onSaveTemplate={roomEditorProps.onSaveTemplate}
+              onLoadTemplate={roomEditorProps.onLoadTemplate}
+              onDeleteTemplate={roomEditorProps.onDeleteTemplate}
+              isTemplatePickerOpen={roomEditorProps.isTemplatePickerOpen}
+              onOpenTemplatePicker={roomEditorProps.onOpenTemplatePicker}
+              onCloseTemplatePicker={roomEditorProps.onCloseTemplatePicker}
+            />
+          )}
         />
       );
     }

@@ -101,10 +101,10 @@ module.exports = {
       severity: 'error',
       comment:
         'R4 batch 029 (финал): фичи не импортируют друг друга напрямую — только через ' +
-        'shared или легаси-фасады. Повышено с warn до error. ИСКЛЮЧЕНИЕ rooms (см. ' +
-        'fsd-works-no-cross-imports): RoomEditor — точка композиции rooms-домена, ' +
-        'rooms→works разрешён осознанно.',
-      from: { path: '^src/features/([^/]+)', pathNot: '^src/features/rooms' },
+        'shared или легаси-фасады. Повышено с warn до error. R4 batch 031: исключение ' +
+        'rooms→works снято (works-панель выделена в RoomWorksSection, композиция — ' +
+        'на app-слое); правило теперь строгое, без pathNot-лазеек.',
+      from: { path: '^src/features/([^/]+)' },
       to: { path: '^src/features/(?!$1(/|$))' }
     },
 
@@ -126,11 +126,10 @@ module.exports = {
       comment:
         'R4 batch 025: works — готовый домен features. Любая ДРУГАЯ фича не может ' +
         'импортировать src/features/works напрямую (только shared / легаси-фасады). ' +
-        'ИСКЛЮЧЕНИЕ rooms (батч 027): RoomEditor — точка композиции rooms-домена; ещё до R4 ' +
-        '(батч 025, из легаси src/components/RoomEditor.tsx) он собирал works-компоненты ' +
-        '(WorkList, WorkCard, WorkTemplatePickerModal, WorkCatalogPicker, useWorkTemplates). ' +
-        'rooms→works разрешён осознанно, см. developer_log.',
-      from: { path: '^src/features/(?!works(/|$))', pathNot: '^src/features/rooms' },
+        'R4 batch 031: исключение rooms снято — works-панель комнаты выделена в ' +
+        'RoomWorksSection (features/works/ui), монтируется слотом на app-слое ' +
+        '(ContentArea); правило теперь строгое.',
+      from: { path: '^src/features/(?!works(/|$))' },
       to: { path: '^src/features/works' }
     },
 
@@ -152,7 +151,7 @@ module.exports = {
       comment:
         'R4 batch 027: rooms — готовый домен features. Любая ДРУГАЯ фича не может ' +
         'импортировать src/features/rooms напрямую (только shared / легаси-фасады). ' +
-        'rooms→works (RoomEditor) разрешён явным исключением в fsd-works-no-cross-imports.',
+        'R4 batch 031: rooms больше не импортирует works (works-панель — слот на app-слое).',
       from: { path: '^src/features/(?!rooms(/|$))' },
       to: { path: '^src/features/rooms' }
     },

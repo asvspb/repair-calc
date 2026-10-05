@@ -1125,3 +1125,40 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Gates: `pnpm test` exit 0 (180 passed / 2 skipped, server-проект); `pnpm run lint`
   exit 0 (0 errors, 31 warning — pre-existing baseline); `pnpm run lint:deps` exit 0
   («no dependency violations found», 282 modules, после каждой группы).
+
+## 2026-10-05 — Кодер: TASK-BATCH-031 roomeditor-split (ветка refactor/roomeditor-split-031)
+
+### Что сделано:
+
+- `src/features/rooms/ui/useRoomWorksState.ts` → `src/features/works/model/useRoomWorksState.ts`
+  (git mv; hook не зависел от rooms-UI — только @shared/types + domain/factories;
+  единственный потребитель был RoomEditor).
+- Новый `src/features/works/ui/RoomWorksSection.tsx` (216 строк, ≤400): works-панель комнаты
+  (WorkList/WorkCard/pикеры/кнопки «Новая работа»/«Из каталога»/«По шаблону», sessionStorage
+  collapsed-флаг, pickers) выделена из RoomEditor 1:1 — поведение без изменений, все данные
+  (room, city, updateRoom, updateRoomById, metrics, costs, templates, template-picker props)
+  приходят через props; updateRoomById по-прежнему из useProjectStore.
+- `src/features/rooms/ui/RoomEditor.tsx` (277→135 строк): остались только комната/геометрия;
+  works-часть — слот-рендер-проп `worksSlot?: (ctx: RoomWorksSlotContext) => ReactNode`
+  (экспортирован интерфейс). Импортов features/works в rooms — 0 (grep подтверждён).
+- Композиция поднята на app-слой: `src/app/layout/ContentArea.tsx` рендерит
+  `<RoomEditor worksSlot={ctx => <RoomWorksSection .../>}>` — app→features разрешён
+  правилом fsd-app-layers. RoomWorksSection в barrel `features/works/ui/index.ts` НЕ
+  добавлен: WorkCard уже импортирует `./` barrel → цикл index→RoomWorksSection→WorkCard→
+  index (пойман прогоном depcruise до снятия barrel-строки); ContentArea импортирует
+  прямой путь.
+- `.dependency-cruiser.cjs`: удалены оба `pathNot: '^src/features/rooms'`
+  (fsd-features-no-cross-imports, fsd-works-no-cross-imports) — правила error без
+  исключений; comments актуализированы (включая fsd-rooms-no-cross-imports).
+- Спорные/не найденные: компонентных unit-тестов RoomEditor в tests/ нет (grep) —
+  править нечего, новых тестов не потребовалось (behavior e2e-покрыт: works/work-templates/
+  rooms specs).
+
+### Gates (прогнано):
+
+- `pnpm run lint:deps` → «no dependency violations found» (283 modules).
+- `pnpm run lint` → 0 errors, 31 warning (pre-existing server-tests baseline).
+- `pnpm test` → 180 passed / 2 skipped (17 files + 1 skipped).
+- `pnpm exec playwright test --project=chromium` → 53 passed / 1 skipped.
+- Дополнительно полный e2e (`pnpm run test:e2e -- --project=chromium`, флаг не
+  прокинулся — прогнались все проекты) → 159 passed / 3 skipped.
