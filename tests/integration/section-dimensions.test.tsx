@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
-import { WorkTemplateProvider } from '../../src/contexts/WorkTemplateContext';
+import { WorkTemplateProvider } from '../../src/features/works/model/WorkTemplateContext';
 import { AuthContext } from '../../src/features/auth/model/AuthContext';
 import type { RoomData, RoomSubSection } from '../../src/types';
 import type { AuthContextValue } from '../../src/features/auth/model/AuthContext';

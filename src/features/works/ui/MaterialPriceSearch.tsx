@@ -1,25 +1,23 @@
 /**
- * WorkPriceSearch - кнопка и модальное окно для поиска цен на работы через AI (Gemini/Mistral)
+ * MaterialPriceSearch - кнопка и модальное окно для поиска цен через AI (Gemini/Mistral)
  */
 
 import React, { memo, useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Check, RefreshCw } from 'lucide-react';
-import { usePriceSearch } from '../../api/prices';
+import { usePriceSearch } from '../api';
 
 type Props = {
-  workName: string;
-  unit?: string;
+  materialName: string;
   city?: string;
   onPriceFound: (price: number) => void;
   disabled?: boolean;
 };
 
 /**
- * Компонент для поиска цены работы
+ * Компонент для поиска цены материала
  */
-const WorkPriceSearchInternal: React.FC<Props> = ({
-  workName,
-  unit = 'м²',
+const MaterialPriceSearchInternal: React.FC<Props> = ({
+  materialName,
   city = 'Москва',
   onPriceFound,
   disabled = false,
@@ -29,14 +27,13 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
 
   // Обработчик поиска
   const handleSearch = useCallback(() => {
-    if (!workName.trim()) return;
+    if (!materialName.trim()) return;
 
     search({
-      productName: `${workName} (${unit})`,
+      productName: materialName,
       city,
-      category: 'строительные работы',
     });
-  }, [workName, unit, city, search]);
+  }, [materialName, city, search]);
 
   // Обработчик применения цены
   const handleApplyPrice = (price: number) => {
@@ -59,9 +56,9 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
           setShowModal(true);
           handleSearch();
         }}
-        disabled={disabled || !workName.trim()}
+        disabled={disabled || !materialName.trim()}
         className="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        title="Найти цену работы в интернете"
+        title="Найти цену в интернете"
       >
         <Search className="w-4 h-4" />
       </button>
@@ -83,7 +80,7 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Search className="w-5 h-5 text-indigo-600" />
-                Поиск цен на работу
+                Поиск цен
               </h3>
               <button
                 onClick={() => {
@@ -99,10 +96,8 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
             {/* Что ищем */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-500">Поиск цен на:</div>
-              <div className="font-medium">{workName}</div>
-              <div className="text-sm text-gray-500">
-                Единица: {unit} • Город: {city}
-              </div>
+              <div className="font-medium">{materialName}</div>
+              <div className="text-sm text-gray-500">Город: {city}</div>
             </div>
 
             {/* Загрузка */}
@@ -144,7 +139,7 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
                     <div className="text-2xl font-bold text-indigo-900">
                       {Math.round(result.prices.avg).toLocaleString('ru-RU')} ₽
                     </div>
-                    <div className="text-sm text-indigo-600">средняя цена за {unit}</div>
+                    <div className="text-sm text-indigo-600">средняя цена</div>
                     <div className="mt-2 flex justify-center gap-4 text-sm">
                       <span className="text-gray-500">
                         от {Math.round(result.prices.min).toLocaleString('ru-RU')} ₽
@@ -236,4 +231,4 @@ const WorkPriceSearchInternal: React.FC<Props> = ({
   );
 };
 
-export const WorkPriceSearch = memo(WorkPriceSearchInternal);
+export const MaterialPriceSearch = memo(MaterialPriceSearchInternal);

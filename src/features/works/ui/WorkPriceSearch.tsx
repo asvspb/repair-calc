@@ -1,23 +1,25 @@
 /**
- * MaterialPriceSearch - кнопка и модальное окно для поиска цен через AI (Gemini/Mistral)
+ * WorkPriceSearch - кнопка и модальное окно для поиска цен на работы через AI (Gemini/Mistral)
  */
 
 import React, { memo, useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Check, RefreshCw } from 'lucide-react';
-import { usePriceSearch } from '../../api/prices';
+import { usePriceSearch } from '../api';
 
 type Props = {
-  materialName: string;
+  workName: string;
+  unit?: string;
   city?: string;
   onPriceFound: (price: number) => void;
   disabled?: boolean;
 };
 
 /**
- * Компонент для поиска цены материала
+ * Компонент для поиска цены работы
  */
-const MaterialPriceSearchInternal: React.FC<Props> = ({
-  materialName,
+const WorkPriceSearchInternal: React.FC<Props> = ({
+  workName,
+  unit = 'м²',
   city = 'Москва',
   onPriceFound,
   disabled = false,
@@ -27,13 +29,14 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
 
   // Обработчик поиска
   const handleSearch = useCallback(() => {
-    if (!materialName.trim()) return;
-    
+    if (!workName.trim()) return;
+
     search({
-      productName: materialName,
+      productName: `${workName} (${unit})`,
       city,
+      category: 'строительные работы',
     });
-  }, [materialName, city, search]);
+  }, [workName, unit, city, search]);
 
   // Обработчик применения цены
   const handleApplyPrice = (price: number) => {
@@ -56,22 +59,31 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
           setShowModal(true);
           handleSearch();
         }}
-        disabled={disabled || !materialName.trim()}
+        disabled={disabled || !workName.trim()}
         className="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        title="Найти цену в интернете"
+        title="Найти цену работы в интернете"
       >
         <Search className="w-4 h-4" />
       </button>
 
       {/* Модальное окно с результатами */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowModal(false); reset(); }}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => {
+            setShowModal(false);
+            reset();
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in"
+            onClick={e => e.stopPropagation()}
+          >
             {/* Заголовок */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Search className="w-5 h-5 text-indigo-600" />
-                Поиск цен
+                Поиск цен на работу
               </h3>
               <button
                 onClick={() => {
@@ -87,8 +99,10 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
             {/* Что ищем */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-500">Поиск цен на:</div>
-              <div className="font-medium">{materialName}</div>
-              <div className="text-sm text-gray-500">Город: {city}</div>
+              <div className="font-medium">{workName}</div>
+              <div className="text-sm text-gray-500">
+                Единица: {unit} • Город: {city}
+              </div>
             </div>
 
             {/* Загрузка */}
@@ -130,9 +144,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
                     <div className="text-2xl font-bold text-indigo-900">
                       {Math.round(result.prices.avg).toLocaleString('ru-RU')} ₽
                     </div>
-                    <div className="text-sm text-indigo-600">
-                      средняя цена
-                    </div>
+                    <div className="text-sm text-indigo-600">средняя цена за {unit}</div>
                     <div className="mt-2 flex justify-center gap-4 text-sm">
                       <span className="text-gray-500">
                         от {Math.round(result.prices.min).toLocaleString('ru-RU')} ₽
@@ -150,10 +162,7 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
                     <div className="text-xs text-gray-500 mb-1">Источники:</div>
                     <div className="flex flex-wrap gap-1">
                       {result.sources.map((source, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-2 py-0.5 bg-gray-100 rounded"
-                        >
+                        <span key={i} className="text-xs px-2 py-0.5 bg-gray-100 rounded">
                           {source}
                         </span>
                       ))}
@@ -169,23 +178,21 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
                       result.confidence === 'high'
                         ? 'bg-green-100 text-green-700'
                         : result.confidence === 'medium'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-gray-100 text-gray-600'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {result.confidence === 'high'
                       ? 'Высокая'
                       : result.confidence === 'medium'
-                      ? 'Средняя'
-                      : 'Низкая'}
+                        ? 'Средняя'
+                        : 'Низкая'}
                   </span>
                 </div>
 
                 {/* Предупреждение */}
                 {result.disclaimer && (
-                  <p className="text-xs text-gray-500 italic">
-                    ⚠️ {result.disclaimer}
-                  </p>
+                  <p className="text-xs text-gray-500 italic">⚠️ {result.disclaimer}</p>
                 )}
 
                 {/* Кнопки действий */}
@@ -229,4 +236,4 @@ const MaterialPriceSearchInternal: React.FC<Props> = ({
   );
 };
 
-export const MaterialPriceSearch = memo(MaterialPriceSearchInternal);
+export const WorkPriceSearch = memo(WorkPriceSearchInternal);

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronUp, Plus, BookOpen, ClipboardList } from 'lucide-react';
-import { WorkList } from './works/WorkList';
-import { WorkCard } from './works/WorkCard';
-import type { WorkCardHandlers } from './works/WorkCard';
-import { WorkTemplatePickerModal } from './works/WorkTemplatePickerModal';
-import { WorkCatalogPicker } from './works/WorkCatalogPicker';
+import { WorkList } from '../features/works/ui/WorkList';
+import { WorkCard } from '../features/works/ui/WorkCard';
+import type { WorkCardHandlers } from '../features/works/ui/WorkCard';
+import { WorkTemplatePickerModal } from '../features/works/ui/WorkTemplatePickerModal';
+import { WorkCatalogPicker } from '../features/works/ui/WorkCatalogPicker';
 import { RoomHeader } from './room/RoomHeader';
 import { RoomMetricsSummary } from './room/RoomMetricsSummary';
 import { useRoomWorksState } from './room/useRoomWorksState';
@@ -15,7 +15,7 @@ import { calculateRoomCosts } from '../domain/pricing/costs';
 import type { RoomMetrics } from '../types';
 import type { RoomData, WorkData } from '@shared/types';
 import type { WorkTemplate } from '../types/workTemplate';
-import type { SaveResult } from '../hooks/useWorkTemplates';
+import type { SaveResult } from '../features/works/model/useWorkTemplates';
 import { useProjectStore } from '../store/useProjectStore';
 
 interface RoomEditorProps {

@@ -5,10 +5,10 @@
 
 import React, { memo, useState } from 'react';
 import { RefreshCw, Info, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-react';
-import { NumberInput } from '../ui/NumberInput';
-import type { RoomMetrics } from '../../types';
+import { NumberInput } from '../../../components/ui/NumberInput';
+import type { RoomMetrics } from '../../../types';
 import type { Material } from '@shared/types';
-import { useMaterialCalculation, formatFormula } from '../../hooks/useMaterialCalculation';
+import { useMaterialCalculation, formatFormula } from '../../../hooks/useMaterialCalculation';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 

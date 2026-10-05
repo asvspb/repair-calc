@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Trash2 } from 'lucide-react';
-import type { WorkTemplate, WorkTemplateCategory } from '../../types/workTemplate';
-import { CATEGORY_LABELS as BASE_CATEGORY_LABELS } from '../../types/workTemplate';
+import type { WorkTemplate, WorkTemplateCategory } from '../../../types/workTemplate';
+import { CATEGORY_LABELS as BASE_CATEGORY_LABELS } from '../../../types/workTemplate';
 import type { WorkData } from '@shared/types';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 
 type Props = {
   isOpen: boolean;

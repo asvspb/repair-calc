@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
 import { useProjectStore, resetStore } from './store/useProjectStore';
-import { WorkTemplateProvider, useWorkTemplateContext } from './contexts/WorkTemplateContext';
+import {
+  WorkTemplateProvider,
+  useWorkTemplateContext,
+} from './features/works/model/WorkTemplateContext';
 import { AuthProvider, useAuth } from './features/auth/model/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './features/auth/ui';

@@ -1,4 +1,4 @@
-import { generateId } from '../../domain/factories/projectFactory';
+import { generateId } from '../../../domain/factories/projectFactory';
 /**
  * WorkCatalogPicker - модальное окно для выбора работы из каталога типовых работ
  * Позволяет выбрать работу из предопределённого каталога с автоматическим расчётом материалов
@@ -6,15 +6,15 @@ import { generateId } from '../../domain/factories/projectFactory';
 
 import React, { useState, useMemo } from 'react';
 import { X, Search, Package, Wrench, Clock, Star, Info } from 'lucide-react';
-import type { WorkTemplateCatalog, WorkCategory, Difficulty } from '../../types/workTemplate';
-import { WORK_CATEGORY_LABELS, DIFFICULTY_LABELS } from '../../types/workTemplate';
-import type { RoomMetrics } from '../../types';
+import type { WorkTemplateCatalog, WorkCategory, Difficulty } from '../../../types/workTemplate';
+import { WORK_CATEGORY_LABELS, DIFFICULTY_LABELS } from '../../../types/workTemplate';
+import type { RoomMetrics } from '../../../types';
 import type { WorkData, Material, Tool } from '@shared/types';
 import {
   WORK_TEMPLATES_CATALOG,
   getWorksByCategory,
   getPopularWorks,
-} from '../../data/workTemplatesCatalog';
+} from '../../../data/workTemplatesCatalog';
 
 type Props = {
   isOpen: boolean;

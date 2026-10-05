@@ -1,10 +1,10 @@
 import { Package, Wrench, X } from 'lucide-react';
-import { NumberInput } from '../ui/NumberInput';
+import { NumberInput } from '../../../components/ui/NumberInput';
 import { MaterialPriceSearch, WorkPriceSearch } from './';
-import { migrateWorkData } from '../../domain/pricing/costs';
-import type { RoomMetrics } from '../../types';
+import { migrateWorkData } from '../../../domain/pricing/costs';
+import type { RoomMetrics } from '../../../types';
 import type { CalculationType, Material, Tool, WorkData, RoomData } from '@shared/types';
-import { useProjectStore } from '../../store/useProjectStore';
+import { useProjectStore } from '../../../store/useProjectStore';
 
 export interface WorkCardHandlers {
   handleWorkChange: (id: string, field: keyof WorkData, value: string | number | boolean) => void;

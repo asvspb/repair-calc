@@ -1,10 +1,17 @@
-export { WorkList } from './WorkList';
-export { WorkListItem } from './WorkListItem';
-export { WorkTemplateSaveButton } from './WorkTemplateSaveButton';
-export { WorkTemplatePickerModal } from './WorkTemplatePickerModal';
-export { WorkCatalogPicker, catalogToWorkData } from './WorkCatalogPicker';
-export { MaterialCalculationCard } from './MaterialCalculationCard';
-export { PaintMaterialCard } from './PaintMaterialCard';
-export { TileMaterialCard } from './TileMaterialCard';
-export { MaterialPriceSearch } from './MaterialPriceSearch';
-export { WorkPriceSearch } from './WorkPriceSearch';
+/**
+ * @deprecated Легаси-фасад. Домен works переехал в src/features/works (R4, batch 025).
+ * Импортируйте напрямую из src/features/works/ui.
+ */
+export {
+  WorkList,
+  WorkListItem,
+  WorkTemplateSaveButton,
+  WorkTemplatePickerModal,
+  WorkCatalogPicker,
+  catalogToWorkData,
+  MaterialCalculationCard,
+  PaintMaterialCard,
+  TileMaterialCard,
+  MaterialPriceSearch,
+  WorkPriceSearch,
+} from '../../features/works/ui';

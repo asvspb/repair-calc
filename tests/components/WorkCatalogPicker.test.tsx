@@ -4,7 +4,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { WorkCatalogPicker, catalogToWorkData } from '../../src/components/works/WorkCatalogPicker';
+import {
+  WorkCatalogPicker,
+  catalogToWorkData,
+} from '../../src/features/works/ui/WorkCatalogPicker';
 import type { WorkTemplateCatalog, WorkCategory } from '../../src/types/workTemplate';
 import type { RoomMetrics } from '../../src/types';
 
@@ -94,7 +97,7 @@ describe('catalogToWorkData', () => {
     const workData = catalogToWorkData(mockWorkTemplate, mockMetrics);
 
     // Ламинат: 20 м² / 2.0 м² в упак * 1.05 (5% запас) = 10.5 → Math.ceil = 11 упак
-    const laminate = workData.materials.find((m) => m.name === 'Ламинат');
+    const laminate = workData.materials.find(m => m.name === 'Ламинат');
     expect(laminate).toBeDefined();
     expect(laminate!.quantity).toBe(11);
     expect(laminate!.unit).toBe('упак');
@@ -105,7 +108,7 @@ describe('catalogToWorkData', () => {
     const workData = catalogToWorkData(mockWorkTemplate, mockMetrics);
 
     // Плинтус: perimeter=18 * 1.0 * 1.05 / 2.5 = 7.56 -> 8 шт
-    const skirting = workData.materials.find((m) => m.name === 'Плинтус');
+    const skirting = workData.materials.find(m => m.name === 'Плинтус');
     expect(skirting).toBeDefined();
     expect(skirting!.quantity).toBe(8);
     expect(skirting!.unit).toBe('шт');
@@ -116,12 +119,12 @@ describe('catalogToWorkData', () => {
 
     expect(workData.tools).toHaveLength(2);
 
-    const podboyka = workData.tools.find((t) => t.name === 'Подбойка');
+    const podboyka = workData.tools.find(t => t.name === 'Подбойка');
     expect(podboyka).toBeDefined();
     expect(podboyka!.isRent).toBe(false);
     expect(podboyka!.price).toBe(500);
 
-    const jigsaw = workData.tools.find((t) => t.name === 'Электролобзик');
+    const jigsaw = workData.tools.find(t => t.name === 'Электролобзик');
     expect(jigsaw).toBeDefined();
     expect(jigsaw!.isRent).toBe(true);
     expect(jigsaw!.rentPeriod).toBe(1);
@@ -150,7 +153,7 @@ describe('catalogToWorkData', () => {
     const workData = catalogToWorkData(wallTemplate, mockMetrics);
 
     // Обои: 50 м² / 5.3 * 1.10 = 10.38 → Math.ceil = 11 рулонов
-    const wallpaper = workData.materials.find((m) => m.name === 'Обои');
+    const wallpaper = workData.materials.find(m => m.name === 'Обои');
     expect(wallpaper).toBeDefined();
     expect(wallpaper!.quantity).toBe(11);
   });
@@ -179,7 +182,7 @@ describe('catalogToWorkData', () => {
     const workData = catalogToWorkData(paintTemplate, mockMetrics);
 
     // Краска: 50 * 0.006 * 2 * 1.05 = 0.63 → Math.ceil = 1 л
-    const paint = workData.materials.find((m) => m.name === 'Краска');
+    const paint = workData.materials.find(m => m.name === 'Краска');
     expect(paint).toBeDefined();
     expect(paint!.quantity).toBe(1);
   });
@@ -226,7 +229,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     expect(screen.queryByText('Каталог работ')).not.toBeInTheDocument();
@@ -239,7 +242,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     expect(screen.getByText('Каталог работ')).toBeInTheDocument();
@@ -253,7 +256,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     // Use getAllBy for categories that appear multiple times (in filter buttons and work cards)
@@ -261,12 +264,13 @@ describe('WorkCatalogPicker Component', () => {
     expect(screen.getByText('Все')).toBeInTheDocument();
     // Check filter buttons specifically by their button role
     const buttons = screen.getAllByRole('button');
-    const categoryButtons = buttons.filter(btn => 
-      btn.textContent?.includes('Пол') || 
-      btn.textContent?.includes('Стены') ||
-      btn.textContent?.includes('Потолок') ||
-      btn.textContent?.includes('Проёмы') ||
-      btn.textContent?.includes('Прочее')
+    const categoryButtons = buttons.filter(
+      btn =>
+        btn.textContent?.includes('Пол') ||
+        btn.textContent?.includes('Стены') ||
+        btn.textContent?.includes('Потолок') ||
+        btn.textContent?.includes('Проёмы') ||
+        btn.textContent?.includes('Прочее'),
     );
     expect(categoryButtons.length).toBeGreaterThan(0);
   });
@@ -278,7 +282,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     const searchInput = screen.getByPlaceholderText('Поиск работы...');
@@ -296,13 +300,13 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     // Find close button in header
     const closeButtons = screen.getAllByRole('button');
     const closeButton = closeButtons.find(
-      (btn) => btn.querySelector('svg.lucide-x') || btn.closest('button')?.querySelector('svg')
+      btn => btn.querySelector('svg.lucide-x') || btn.closest('button')?.querySelector('svg'),
     );
 
     if (closeButton) {
@@ -323,7 +327,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     // Search for laminate to filter works
@@ -353,7 +357,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     // Search for laminate to filter works
@@ -390,7 +394,7 @@ describe('WorkCatalogPicker Component', () => {
         onClose={mockOnClose}
         onSelect={mockOnSelect}
         roomMetrics={mockMetrics}
-      />
+      />,
     );
 
     expect(screen.getByText(/Всего работ в каталоге:/)).toBeInTheDocument();

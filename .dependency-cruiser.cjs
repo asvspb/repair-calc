@@ -107,6 +107,17 @@ module.exports = {
         'импортировать src/features/auth напрямую (только shared / легаси-фасады).',
       from: { path: '^src/features/(?!auth(/|$))' },
       to: { path: '^src/features/auth' }
+    },
+
+    // ─── R4 batch 025: домен works готов — его правило повышено до error ────────
+    {
+      name: 'fsd-works-no-cross-imports',
+      severity: 'error',
+      comment:
+        'R4 batch 025: works — готовый домен features. Любая ДРУГАЯ фича не может ' +
+        'импортировать src/features/works напрямую (только shared / легаси-фасады).',
+      from: { path: '^src/features/(?!works(/|$))' },
+      to: { path: '^src/features/works' }
     }
   ],
   options: {
