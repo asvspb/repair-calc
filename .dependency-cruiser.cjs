@@ -69,8 +69,9 @@ module.exports = {
           '^src/app(/|$)', // внутри app — допустимо
           '^(src/features|shared/|@shared)', // строго вниз по 3-слойке
           '^node_modules', // фреймворк/библиотеки (react, lucide-react) — не легаси-пути
-          // Легаси-allowlist, пересмотренный в R4 029 (см. developer_log):
-          '^(src/store|src/hooks|src/contexts|src/components|src/api|src/utils|src/domain|src/types|src/data)'
+          // Легаси-allowlist, пересмотрен в R4 029/030 (см. developer_log):
+          // src/components удалён из allowlist и из репо (батч 030, фасады сняты).
+          '^(src/store|src/hooks|src/contexts|src/api|src/utils|src/domain|src/types|src/data)'
         ]
       }
     },
@@ -89,8 +90,9 @@ module.exports = {
           '^src/features(/|$)', // features→features флагует только fsd-features-no-cross-imports
           '^(shared/|@shared)', // строго вниз по 3-слойке
           '^node_modules', // фреймворк/библиотеки (react, lucide-react) — не легаси-пути
-          // Легаси-allowlist, пересмотренный в R4 029 (см. developer_log):
-          '^(src/store|src/hooks|src/contexts|src/components|src/api|src/utils|src/domain|src/types|src/data)'
+          // Легаси-allowlist, пересмотрен в R4 029/030 (см. developer_log):
+          // src/components удалён из allowlist и из репо (батч 030, фасады сняты).
+          '^(src/store|src/hooks|src/contexts|src/api|src/utils|src/domain|src/types|src/data)'
         ]
       }
     },
@@ -183,7 +185,7 @@ module.exports = {
         'R4 batch 029: backup — готовый домен features. Любая ДРУГАЯ фича не может ' +
         'импортировать src/features/backup напрямую (только shared / легаси-фасады). ' +
         'ИСКЛЮЧЕНИЕ: backup→rooms (createRoom при pull-синхронизации) идёт через ' +
-        'легаси-фасад src/components/rooms, не напрямую.',
+        'легаси-фасад src/api/rooms, не напрямую (R4 030: src/components удалён).',
       from: { path: '^src/features/(?!backup(/|$))' },
       to: { path: '^src/features/backup' }
     }

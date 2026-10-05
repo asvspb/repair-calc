@@ -41,7 +41,7 @@ FSD-3-слоя, npm workspaces, dirty-flag sync, полная декомпози
 **Принципы (не нарушать):**
 
 - Слои `routes → services → repositories`; ORM (**Knex**) изолирован в repositories.
-- Компоненты по доменам `src/components/<Domain>/`; состояние — zustand-слайсы `src/store/` (канон; легаси-контексты не наращивать).
+- Компоненты по доменам `src/features/<Domain>/ui/` (легаси-каталог `src/components/` удалён в R4 030); состояние — zustand-слайсы `src/store/` (канон; легаси-контексты не наращивать).
 - Валидация входа — Zod в `server/schemas/`; секреты — только `.env`; ключи AI — только на сервере.
 - Запреты: `as any`/`as unknown` без обоснования, `@ts-ignore`, пустые `catch`, `console.log` в проде.
 - DoD любого ТЗ: `pnpm test` + `pnpm run lint` + `pnpm run lint:deps` зелёные; `INDEX.md`/`developer_log.md` актуальны.
@@ -70,13 +70,10 @@ repair-calc/
 │   │   ├── projects/                 # Домен projects (R4 029): ui/ (ProjectsModal, ProjectsList, CreateProjectModal, ArchivePanel и др.), model/ (useProjectsModal, useProjectExports, modalTypes), api/ (projects)
 │   │   └── backup/                   # Домен backup (R4 029): ui/ (BackupManager, ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog), model/ (helpers, types)
 │   ├── api/                          # API клиенты
-│   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
-│   │   ├── objects.ts                # @deprecated фасад → src/features/objects/api/objects.ts (R4 028)
-│   │   ├── projects.ts               # @deprecated фасад → src/features/projects/api/projects.ts (R4 029)
-│   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027)
+│   │   ├── projects.ts               # @deprecated фасад → src/features/projects/api/projects.ts (R4 029; живой потребитель — SyncPanel, снятие — пост-R4)
+│   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027; живой потребитель — SyncPanel, снятие — пост-R4)
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
-│   │   ├── totals.ts                 # @deprecated фасад → src/features/summary/api/totals.ts (R4 026)
 │   │   ├── users.ts                  # Users API
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
@@ -87,21 +84,8 @@ repair-calc/
 │   │   │   ├── objectApi.ts          # CRUD проектов + payload-билдеры объектов
 │   │   │   ├── roomApi.ts            # Синхронизация комнат + трекинг ошибок
 │   │   │   └── index.ts
-│   │   └── prices/                   # AI поиск цен — @deprecated фасады (домен works переехал в src/features/works/api, R4 025)
-│   ├── components/                   # Легаси-каталог: только @deprecated фасады (удаление — пост-R4)
-│   │   ├── auth/                     # @deprecated фасад → src/features/auth/ui (R4 024)
-│   │   ├── geometry/                 # @deprecated фасад → src/features/rooms/ui/geometry (R4 027)
-│   │   ├── objects/                  # @deprecated фасад → src/features/objects/ui (R4 028)
-│   │   ├── projects/                 # @deprecated фасад → src/features/projects/ui (R4 029)
-│   │   ├── room/                     # @deprecated фасады → src/features/rooms/ui (R4 027)
-│   │   ├── rooms/                    # @deprecated фасад → src/features/rooms/ui (R4 027; +createRoom для backup-фасада)
-│   │   ├── works/                    # @deprecated фасад → src/features/works/ui (R4 025)
-│   │   ├── summary/                  # удалён — переехал в src/features/summary/ui (R4 026)
-│   │   ├── layout/                   # удалён — переехал в src/app/layout (R4 029)
-│   │   ├── ui/                       # удалён — переехал в shared/ui (R4 029)
-│   │   ├── BackupManager.tsx         # @deprecated фасад → src/features/backup/ui/BackupManager (R4 029)
-│   │   ├── RoomEditor.tsx            # @deprecated фасад → src/features/rooms/ui (R4 027)
-│   │   └── SummaryView.tsx           # @deprecated фасад → src/features/summary/ui (R4 026)
+│   │   └── prices/                   # удалён — @deprecated фасады сняты (R4 030; домен works → src/features/works/api)
+│   ├── components/                   # УДАЛЁН (R4 030): @deprecated фасады сняты, каталог пуст — импортируйте src/features/* напрямую
 │   ├── contexts/                     # React Context
 │   │   ├── AuthContext.tsx           # Аутентификация
 │   │   ├── WorkTemplateContext.tsx   # Шаблоны работ — @deprecated фасад → features/works/model (R4 025)
@@ -110,10 +94,7 @@ repair-calc/
 │   │   ├── initialData.ts           # Начальные данные
 │   │   └── workTemplatesCatalog.ts  # Каталог типовых работ
 │   ├── hooks/
-│   │   ├── useGeometryState.ts       # @deprecated фасад → src/features/rooms/model (R4 027)
-│   │   ├── useMaterialCalculation.ts # @deprecated фасад → src/features/works/model (R4 027; grep: единственный потребитель — works)
-│   │   ├── ui/                       # UI-хуки
-│   │   └── useWorkTemplates.ts       # @deprecated фасад → features/works/model (R4 025)
+│   │   └── ui/                       # UI-хуки app-слоя (model-хуки доменов — в src/features/*/model; фасады сняты R4 030)
 │   ├── types/
 │   │   ├── index.ts                  # Основные типы (ProjectData, ObjectData, RoomData...)
 │   │   ├── auth.ts                   # Типы аутентификации
