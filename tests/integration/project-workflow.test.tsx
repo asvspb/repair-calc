@@ -6,7 +6,7 @@ import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
 import { WorkTemplateProvider } from '../../src/contexts/WorkTemplateContext';
 import { AuthContext } from '../../src/features/auth/model/AuthContext';
 import type { ProjectData, RoomData } from '../../src/types';
-import type { AuthContextValue } from '../../src/types/auth';
+import type { AuthContextValue } from '../../src/features/auth/model/AuthContext';
 
 vi.mock('../../src/utils/storage', () => ({
   StorageManager: {

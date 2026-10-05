@@ -9,7 +9,7 @@ import type {
   RegisterCredentials,
   AuthResponse,
   RefreshResponse,
-} from '../../../types/auth';
+} from '../model/auth.types';
 
 import { STORAGE_KEYS } from '../../../utils/storageConstants';
 
