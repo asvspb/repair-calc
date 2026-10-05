@@ -1085,3 +1085,8 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - ROADMAP-fsd: R4 закрыт; ARCHITECTURE.md §2.6 дополнен итогом R4; INDEX.md отражает
   целевую структуру. Коммиты: shared-ui / projects-api / projects-ui / backup / layout /
   depcruise / docs.
+
+## 2026-10-05 — Архитектор: R5 закрытие — FSD-этап завершён
+
+- Финальный деплой: прод на 5568427 (FSD-структура + SYNC-V2). Проверено живьём: контейнеры Up, backend COMMIT_HASH=5568427, /api/health 200, frontend 200, sync/push в бандле (урок про build-arg учтён).
+- ROADMAP-fsd.md: R1–R5 закрыты, открытые хвосты перечислены.
