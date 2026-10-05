@@ -1,6 +1,6 @@
 import { Upload, Download, FileJson, FileSpreadsheet, Plus, FolderOpen, X } from 'lucide-react';
 import type { WorkTemplate } from '../../types/workTemplate';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 import { CreateProjectModal } from './CreateProjectModal';
 import { ArchivePanel } from './ArchivePanel';
 import { ProjectListItem } from './ProjectListItem';

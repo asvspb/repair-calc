@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, HelpCircle, Square } from 'lucide-react';
 import type { RoomSubSection, Opening, WallSection } from '@shared/types';
-import { NumberInput } from '../../../../components/ui/NumberInput';
+import { NumberInput } from '@shared/ui/NumberInput';
 import { OpeningList } from './OpeningList';
 import { calculateSectionMetrics } from '../../../../domain/geometry/geometry';
 

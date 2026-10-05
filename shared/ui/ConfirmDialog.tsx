@@ -66,13 +66,13 @@ export function ConfirmDialog({
   const styles = variantStyles[variant];
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
       onClick={onCancel}
     >
-      <div 
+      <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-scale-in"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">

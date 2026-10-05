@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import type { Opening } from '@shared/types';
-import { NumberInput } from '../../../../components/ui/NumberInput';
+import { NumberInput } from '@shared/ui/NumberInput';
 
 interface OpeningListProps {
   title: string;

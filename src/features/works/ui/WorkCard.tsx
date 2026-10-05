@@ -1,5 +1,5 @@
 import { Package, Wrench, X } from 'lucide-react';
-import { NumberInput } from '../../../components/ui/NumberInput';
+import { NumberInput } from '@shared/ui/NumberInput';
 import { MaterialPriceSearch, WorkPriceSearch } from './';
 import { migrateWorkData } from '../../../domain/pricing/costs';
 import type { RoomMetrics } from '../../../types';

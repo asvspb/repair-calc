@@ -3,7 +3,7 @@ import { FolderOpen, Edit2, Check, X as XIcon, Copy, Trash2, Plus } from 'lucide
 import type { ProjectData } from '@shared/types';
 import { getAllRooms } from '../../utils/projectObjects';
 import { pluralize } from '../../utils/format';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog';
 
 type ProjectsListProps = {
   projects: ProjectData[];
