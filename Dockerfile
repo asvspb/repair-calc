@@ -15,6 +15,10 @@ COPY . .
 
 ARG COMMIT_HASH=unknown
 ENV COMMIT_HASH=$COMMIT_HASH
+# SYNC-V2: build-arg должен быть объявлен как ARG и прокинут в ENV,
+# иначе vite соберёт с VITE_SYNC_V2=false и вырежет V2-код (DS-элиминация)
+ARG VITE_SYNC_V2=false
+ENV VITE_SYNC_V2=$VITE_SYNC_V2
 
 # Build the project
 RUN pnpm run build
