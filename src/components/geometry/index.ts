@@ -1,8 +1,14 @@
-export { GeometrySection } from './GeometrySection';
-export { ModeSelector } from './ModeSelector';
-export { SimpleGeometry } from './SimpleGeometry';
-export { ExtendedGeometry } from './ExtendedGeometry';
-export { AdvancedGeometry } from './AdvancedGeometry';
-export { SubSectionItem } from './SubSectionItem';
-export { OpeningList } from './OpeningList';
-export { GeometryMetrics } from './GeometryMetrics';
+/**
+ * @deprecated Геометрия комнат переехала в src/features/rooms (R4 batch 027).
+ * Импортируйте напрямую из src/features/rooms/ui/geometry. Фасад будет удалён по завершении R4.
+ */
+export {
+  AdvancedGeometry,
+  ExtendedGeometry,
+  GeometryMetrics,
+  GeometrySection,
+  ModeSelector,
+  OpeningList,
+  SimpleGeometry,
+  SubSectionItem,
+} from '../../features/rooms/ui/geometry';

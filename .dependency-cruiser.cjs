@@ -115,8 +115,12 @@ module.exports = {
       severity: 'error',
       comment:
         'R4 batch 025: works — готовый домен features. Любая ДРУГАЯ фича не может ' +
-        'импортировать src/features/works напрямую (только shared / легаси-фасады).',
-      from: { path: '^src/features/(?!works(/|$))' },
+        'импортировать src/features/works напрямую (только shared / легаси-фасады). ' +
+        'ИСКЛЮЧЕНИЕ rooms (батч 027): RoomEditor — точка композиции rooms-домена; ещё до R4 ' +
+        '(батч 025, из легаси src/components/RoomEditor.tsx) он собирал works-компоненты ' +
+        '(WorkList, WorkCard, WorkTemplatePickerModal, WorkCatalogPicker, useWorkTemplates). ' +
+        'rooms→works разрешён осознанно, см. developer_log.',
+      from: { path: '^src/features/(?!works(/|$))', pathNot: '^src/features/rooms' },
       to: { path: '^src/features/works' }
     },
 

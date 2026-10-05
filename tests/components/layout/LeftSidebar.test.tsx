@@ -25,7 +25,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock RoomList component
-vi.mock('../../../src/components/rooms/RoomList', () => ({
+vi.mock('../../../src/components/rooms', () => ({
   RoomList: ({ rooms, activeTab, onRoomClick, onReorderRooms }: any) => (
     <div data-testid="room-list">
       {rooms.map((room: RoomData) => (

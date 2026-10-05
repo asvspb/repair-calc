@@ -1,9 +1,9 @@
 import React from 'react';
 import { Trash2, HelpCircle, Square } from 'lucide-react';
 import type { RoomSubSection, Opening, WallSection } from '@shared/types';
-import { NumberInput } from '../ui/NumberInput';
+import { NumberInput } from '../../../../components/ui/NumberInput';
 import { OpeningList } from './OpeningList';
-import { calculateSectionMetrics } from '../../domain/geometry/geometry';
+import { calculateSectionMetrics } from '../../../../domain/geometry/geometry';
 
 // Custom SVG icons for shapes
 const Trapezoid = ({ className }: { className?: string }) => (
