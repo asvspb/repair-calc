@@ -24,7 +24,7 @@ vi.mock('../../../src/contexts/ProjectContext', () => ({
   }),
 }));
 
-vi.mock('../../../src/features/auth/model/AuthContext', () => ({
+vi.mock('../../../src/store/useAuth', () => ({
   useAuth: () => ({
     user: { id: 'user-1', name: 'Тест', email: 'test@example.com' },
     isAuthenticated: true,

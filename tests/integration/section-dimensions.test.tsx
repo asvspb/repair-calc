@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import React from 'react';
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
-import { WorkTemplateProvider } from '../../src/features/works/model/WorkTemplateContext';
-import { AuthContext } from '../../src/features/auth/model/AuthContext';
 import type { RoomData, RoomSubSection } from '../../src/types';
-import type { AuthContextValue } from '../../src/features/auth/model/AuthContext';
 import { createNewProject, createNewRoom } from '../../src/domain/factories/projectFactory';
 
 vi.mock('../../src/utils/storage', () => ({
@@ -75,25 +70,6 @@ const TEST_PROJECTS = [
   },
 ];
 
-const mockAuthValue: AuthContextValue = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-  login: vi.fn(),
-  register: vi.fn(),
-  logout: vi.fn(),
-  clearError: vi.fn(),
-};
-
-function TestWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthContext.Provider value={mockAuthValue}>
-      <WorkTemplateProvider>{children}</WorkTemplateProvider>
-    </AuthContext.Provider>
-  );
-}
-
 describe('Extended Mode - Section Dimensions Data Integrity', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -111,6 +87,7 @@ describe('Extended Mode - Section Dimensions Data Integrity', () => {
   });
 
   async function initStore() {
+    useProjectStore.getState().initWorkTemplates();
     await useProjectStore.getState().initialize(TEST_PROJECTS, false);
   }
 

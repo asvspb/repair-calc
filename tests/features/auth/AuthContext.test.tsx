@@ -1,11 +1,13 @@
 /**
- * Тесты для AuthContext - проверка сброса кэша при логине/выходе
+ * Тесты для auth-слоя (бывш. AuthContext → zustand createAuthSlice) —
+ * проверка сброса кэша при логине/выходе. Ассерты поведения сохранены.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { AuthProvider, useAuth } from '../../../src/features/auth/model/AuthContext';
+import { useProjectStore, resetStore } from '../../../src/store/useProjectStore';
+import { useAuth } from '../../../src/store/useAuth';
 import { ApiStorageProvider } from '../../../src/api/storage/apiStorageProvider';
 import * as authApi from '../../../src/features/auth/api/auth';
 
@@ -42,7 +44,7 @@ vi.mock('../../../src/api/storage/apiStorageProvider', () => ({
   },
 }));
 
-// Test component to access auth context
+// Test component to access auth state via store hook
 function TestComponent() {
   const { user, isAuthenticated, login, logout } = useAuth();
 
@@ -63,11 +65,12 @@ function TestComponent() {
   );
 }
 
-describe('AuthContext', () => {
+describe('AuthSlice (useAuth)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (authApi.getStoredToken as any).mockReturnValue(null);
     (authApi.getStoredRefreshToken as any).mockReturnValue(null);
+    resetStore();
   });
 
   afterEach(() => {
@@ -85,11 +88,7 @@ describe('AuthContext', () => {
       },
     });
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
-    );
+    render(<TestComponent />);
 
     fireEvent.click(screen.getByTestId('login-btn'));
 
@@ -113,13 +112,10 @@ describe('AuthContext', () => {
       data: { id: 'user-1', email: 'test@test.com', name: 'Test User' },
     });
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
-    );
+    render(<TestComponent />);
 
     // Wait for initial auth check
+    useProjectStore.getState().initAuthCheck();
     await waitFor(() => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated');
     });
@@ -144,11 +140,7 @@ describe('AuthContext', () => {
       },
     });
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
-    );
+    render(<TestComponent />);
 
     fireEvent.click(screen.getByTestId('login-btn'));
 

@@ -9,7 +9,7 @@ import { RightSidebar } from '../../../src/app/layout/RightSidebar';
 import type { ProjectData, ObjectData } from '../../../src/types';
 
 // Mock auth context
-vi.mock('../../../src/features/auth/model/AuthContext', () => ({
+vi.mock('../../../src/store/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -22,7 +22,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { useAuth } from '../../../src/features/auth/model/AuthContext';
+import { useAuth } from '../../../src/store/useAuth';
 
 const mockUseAuth = useAuth as any;
 

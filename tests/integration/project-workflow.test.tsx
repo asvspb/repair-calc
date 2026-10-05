@@ -3,10 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from '@testing-library/react';
 import React from 'react';
 import { useProjectStore, resetStore } from '../../src/store/useProjectStore';
-import { WorkTemplateProvider } from '../../src/features/works/model/WorkTemplateContext';
-import { AuthContext } from '../../src/features/auth/model/AuthContext';
 import type { ProjectData, RoomData } from '../../src/types';
-import type { AuthContextValue } from '../../src/features/auth/model/AuthContext';
 
 vi.mock('../../src/utils/storage', () => ({
   StorageManager: {
@@ -99,21 +96,6 @@ vi.stubGlobal('crypto', {
   randomUUID: () => mockUUIDs[uuidIndex++ % mockUUIDs.length],
 });
 
-const mockAuthValue: AuthContextValue = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-  login: vi.fn(),
-  register: vi.fn(),
-  logout: vi.fn(),
-  clearError: vi.fn(),
-};
-
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <AuthContext.Provider value={mockAuthValue}>{children}</AuthContext.Provider>
-);
-
 const TestComponent: React.FC = () => {
   const projects = useProjectStore(s => s.projects);
   const activeProject = useProjectStore(s => s.activeProject);
@@ -178,11 +160,7 @@ describe('Project-Work Integration', () => {
     it('should create and persist a new project', async () => {
       await useProjectStore.getState().initialize([], false);
 
-      render(
-        <TestWrapper>
-          <TestComponent />
-        </TestWrapper>,
-      );
+      render(<TestComponent />);
 
       await waitFor(() => {
         expect(screen.getByTestId('is-loading').textContent).toBe('false');
@@ -201,11 +179,7 @@ describe('Project-Work Integration', () => {
     it('should add room to current project', async () => {
       await useProjectStore.getState().initialize([], false);
 
-      render(
-        <TestWrapper>
-          <TestComponent />
-        </TestWrapper>,
-      );
+      render(<TestComponent />);
 
       await waitFor(() => {
         expect(screen.getByTestId('is-loading').textContent).toBe('false');
@@ -229,11 +203,7 @@ describe('Project-Work Integration', () => {
     it('should calculate room properties correctly', async () => {
       await useProjectStore.getState().initialize([], false);
 
-      render(
-        <TestWrapper>
-          <TestComponent />
-        </TestWrapper>,
-      );
+      render(<TestComponent />);
 
       await waitFor(() => {
         expect(screen.getByTestId('is-loading').textContent).toBe('false');
@@ -263,13 +233,9 @@ describe('Template Integration', () => {
   it('should render with template provider', async () => {
     await useProjectStore.getState().initialize([], false);
 
-    const { container } = render(
-      <AuthContext.Provider value={mockAuthValue}>
-        <WorkTemplateProvider>
-          <TestComponent />
-        </WorkTemplateProvider>
-      </AuthContext.Provider>,
-    );
+    useProjectStore.getState().initWorkTemplates();
+
+    const { container } = render(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('is-loading').textContent).toBe('false');

@@ -79,7 +79,7 @@ vi.mock('../../../src/utils/geometry', () => ({
 vi.mock('../../../src/utils/costs', () => ({
   calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
 }));
-vi.mock('../../../src/features/auth/model/AuthContext', () => ({ useAuth: vi.fn() }));
+vi.mock('../../../src/store/useAuth', () => ({ useAuth: vi.fn() }));
 
 import { saveQueue } from '../../../src/utils/saveQueue';
 
