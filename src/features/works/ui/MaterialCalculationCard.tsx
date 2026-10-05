@@ -8,7 +8,7 @@ import { RefreshCw, Info, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-reac
 import { NumberInput } from '../../../components/ui/NumberInput';
 import type { RoomMetrics } from '../../../types';
 import type { Material } from '@shared/types';
-import { useMaterialCalculation, formatFormula } from '../../../hooks/useMaterialCalculation';
+import { useMaterialCalculation, formatFormula } from '../model/useMaterialCalculation';
 
 type CalculationType = 'floorArea' | 'netWallArea' | 'skirtingLength' | 'customCount';
 
