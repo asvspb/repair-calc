@@ -11,17 +11,17 @@
 
 ## 2. Стек технологий
 
-| Слой      | Технология                                                                                |
-| --------- | ----------------------------------------------------------------------------------------- |
-| Frontend  | React + TypeScript + Vite                                                                 |
-| Стили     | Tailwind CSS                                                                              |
-| Состояние | **Zustand** — слайсы в `src/store/` (канон); легаси-контексты `src/contexts/` в поддержке |
-| Backend   | Express + Zod (валидация)                                                                 |
-| ORM/БД    | Knex (query builder) + PostgreSQL                                                         |
-| AI        | Gemini + Mistral — серверный прокси (`server/services/`, ключи НЕ в клиентский бандл)     |
-| Тесты     | Vitest (unit) + Playwright (e2e)                                                          |
-| Линт      | ESLint + Prettier + dependency-cruiser                                                    |
-| Деплой    | Docker (docker-compose) + `scripts/deploy-local.sh`                                       |
+| Слой      | Технология                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| Frontend  | React + TypeScript + Vite                                                                      |
+| Стили     | Tailwind CSS                                                                                   |
+| Состояние | **Zustand** — слайсы в `src/store/` (канон); легаси-контексты `src/contexts/` удалены (R4 033) |
+| Backend   | Express + Zod (валидация)                                                                      |
+| ORM/БД    | Knex (query builder) + PostgreSQL                                                              |
+| AI        | Gemini + Mistral — серверный прокси (`server/services/`, ключи НЕ в клиентский бандл)          |
+| Тесты     | Vitest (unit) + Playwright (e2e)                                                               |
+| Линт      | ESLint + Prettier + dependency-cruiser                                                         |
+| Деплой    | Docker (docker-compose) + `scripts/deploy-local.sh`                                            |
 
 ## 3. Структура проекта
 
@@ -29,7 +29,6 @@
 repair-calc/
 ├── src/                      # FRONTEND (React + TS)
 │   ├── components/           # По доменам: auth, geometry, layout, objects, projects, rooms, works, summary, ui
-│   ├── contexts/             # ЛЕГАСИ (AuthContext, WorkTemplateContext) — не наращивать
 │   ├── store/                # Zustand-слайсы (canon): createProjectSlice, createRoomSlice, useProjectStore...
 │   ├── data/                 # initialData, workTemplatesCatalog
 │   ├── hooks/                # useGeometryState, useMaterialCalculation, useProjects, useWorkTemplates
@@ -114,7 +113,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 **Frontend**
 
 - Компоненты — по доменам в `src/components/<Domain>/`.
-- Состояние — **Zustand** (`src/store/`: слайсы projects/objects/rooms/sync/auth + useProjectStore). Канон нового кода — слайсы; легаси-контексты `src/contexts/` (Auth, WorkTemplate) не наращивать, мигрируются по мере касания.
+- Состояние — **Zustand** (`src/store/`: слайсы projects/objects/rooms/sync/auth + useProjectStore). Канон нового кода — слайсы; легаси-контексты `src/contexts/` (Auth, WorkTemplate) удалены в R4 033 — состояние в createAuthSlice/createWorkTemplateSlice, хук useAuth — `src/store/useAuth.ts`.
 - Storage abstraction: `src/api/storage/` — первичное хранилище IndexedDB/Dexie (`indexedDbProvider.ts`, `dexieDb.ts`), при авторизации — синхронизация через `apiStorageProvider` (REST); `src/utils/localStorageProvider.ts` — легаси, не наращивать.
 - API-вызовы — через `src/api/` (httpClient с interceptors/retry/timeout).
 
@@ -150,7 +149,7 @@ MISTRAL_API_KEY=...            # AI — ТОЛЬКО на сервере
 | Бизнес-логику                | `server/services/`                                                                 |
 | Запрос к БД                  | `server/src/db/repositories/` + `server/src/db/db.ts` (Knex)                       |
 | Экран/UI                     | `src/components/<Domain>/`                                                         |
-| Состояние (Zustand-слайсы)   | `src/store/` (легаси-контексты: `src/contexts/`)                                   |
+| Состояние (Zustand-слайсы)   | `src/store/`                                                                       |
 | Хук логики                   | `src/hooks/`                                                                       |
 | API-клиент                   | `src/api/`                                                                         |
 | Хранилище (localStorage/API) | `src/api/storage/`, `src/utils/localStorageProvider.ts`                            |
