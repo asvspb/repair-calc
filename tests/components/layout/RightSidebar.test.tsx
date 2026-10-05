@@ -9,7 +9,7 @@ import { RightSidebar } from '../../../src/components/layout/RightSidebar';
 import type { ProjectData, ObjectData } from '../../../src/types';
 
 // Mock auth context
-vi.mock('../../../src/contexts/AuthContext', () => ({
+vi.mock('../../../src/features/auth/model/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -22,7 +22,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { useAuth } from '../../../src/contexts/AuthContext';
+import { useAuth } from '../../../src/features/auth/model/AuthContext';
 
 const mockUseAuth = useAuth as any;
 
@@ -45,10 +45,7 @@ describe('RightSidebar', () => {
     createMockProject('proj-2', 'Второй проект'),
   ];
 
-  const mockObjects = [
-    createMockObject('obj-1', 'Квартира'),
-    createMockObject('obj-2', 'Гараж'),
-  ];
+  const mockObjects = [createMockObject('obj-1', 'Квартира'), createMockObject('obj-2', 'Гараж')];
 
   const mockProps = {
     isMobileMenuOpen: false,
@@ -232,13 +229,7 @@ describe('RightSidebar', () => {
     });
 
     it('should disable buttons when isSyncing is true', () => {
-      render(
-        <RightSidebar
-          {...mockProps}
-          showDeleteConfirm={true}
-          isSyncing={true}
-        />
-      );
+      render(<RightSidebar {...mockProps} showDeleteConfirm={true} isSyncing={true} />);
       const cancelButton = screen.getByRole('button', { name: 'Отмена' });
       const deleteButton = screen.getByRole('button', { name: /Удаление/ });
 

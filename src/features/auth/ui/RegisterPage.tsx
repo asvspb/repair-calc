@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../model/AuthContext';
 
 interface RegisterPageProps {
   onSwitchToLogin: () => void;
@@ -12,7 +12,7 @@ interface RegisterPageProps {
 
 export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
   const { register, isLoading, error, clearError } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -59,10 +59,10 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
     }
 
     try {
-      await register({ 
-        email: email.trim(), 
+      await register({
+        email: email.trim(),
         password,
-        name: name.trim() || undefined 
+        name: name.trim() || undefined,
       });
     } catch {
       // Ошибка обрабатывается в контексте
@@ -103,7 +103,7 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
                   id="name"
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   placeholder="Ваше имя"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
@@ -122,7 +122,7 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
@@ -141,7 +141,7 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="Минимум 8 символов, буквы и цифра"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
@@ -151,16 +151,24 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
               <div className="mt-2 text-xs text-gray-500">
                 <p className="mb-1">Требования к паролю:</p>
                 <ul className="space-y-0.5 ml-2">
-                  <li className={`flex items-center gap-1 ${password.length >= 8 ? 'text-green-600' : ''}`}>
+                  <li
+                    className={`flex items-center gap-1 ${password.length >= 8 ? 'text-green-600' : ''}`}
+                  >
                     {password.length >= 8 ? '✓' : '○'} Минимум 8 символов
                   </li>
-                  <li className={`flex items-center gap-1 ${/[A-Z]/.test(password) ? 'text-green-600' : ''}`}>
+                  <li
+                    className={`flex items-center gap-1 ${/[A-Z]/.test(password) ? 'text-green-600' : ''}`}
+                  >
                     {/[A-Z]/.test(password) ? '✓' : '○'} Заглавная буква (A-Z)
                   </li>
-                  <li className={`flex items-center gap-1 ${/[a-z]/.test(password) ? 'text-green-600' : ''}`}>
+                  <li
+                    className={`flex items-center gap-1 ${/[a-z]/.test(password) ? 'text-green-600' : ''}`}
+                  >
                     {/[a-z]/.test(password) ? '✓' : '○'} Строчная буква (a-z)
                   </li>
-                  <li className={`flex items-center gap-1 ${/[0-9]/.test(password) ? 'text-green-600' : ''}`}>
+                  <li
+                    className={`flex items-center gap-1 ${/[0-9]/.test(password) ? 'text-green-600' : ''}`}
+                  >
                     {/[0-9]/.test(password) ? '✓' : '○'} Цифра (0-9)
                   </li>
                 </ul>
@@ -169,7 +177,10 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Подтвердите пароль
               </label>
               <div className="relative">
@@ -178,7 +189,7 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Повторите пароль"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   disabled={isLoading}
@@ -232,4 +243,3 @@ function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
-

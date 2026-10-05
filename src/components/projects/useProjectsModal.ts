@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProjectData } from '@shared/types';
 import { useProjectStore } from '../../store/useProjectStore';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../features/auth/model/AuthContext';
 import { StorageManager } from '../../utils/storage';
 import { ApiStorageProvider } from '../../api/storage/apiStorageProvider';
 import { migrateProjectToObjects } from '../../utils/projectObjects';

@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
-import { ApiStorageProvider } from '../../src/api/storage/apiStorageProvider';
-import * as authApi from '../../src/api/auth';
+import { AuthProvider, useAuth } from '../../../src/features/auth/model/AuthContext';
+import { ApiStorageProvider } from '../../../src/api/storage/apiStorageProvider';
+import * as authApi from '../../../src/features/auth/api/auth';
 
 // Mock auth API
-vi.mock('../../src/api/auth', () => ({
+vi.mock('../../../src/features/auth/api/auth', () => ({
   login: vi.fn(),
   logout: vi.fn(),
   register: vi.fn(),
@@ -21,7 +21,10 @@ vi.mock('../../src/api/auth', () => ({
   saveTokens: vi.fn(),
   clearTokens: vi.fn(),
   AuthApiError: class AuthApiError extends Error {
-    constructor(message: string, public statusCode: number) {
+    constructor(
+      message: string,
+      public statusCode: number,
+    ) {
       super(message);
       this.name = 'AuthApiError';
     }
@@ -29,7 +32,7 @@ vi.mock('../../src/api/auth', () => ({
 }));
 
 // Mock ApiStorageProvider
-vi.mock('../../src/api/storage/apiStorageProvider', () => ({
+vi.mock('../../../src/api/storage/apiStorageProvider', () => ({
   ApiStorageProvider: {
     resetInstance: vi.fn(),
     getInstance: vi.fn(() => ({
@@ -85,7 +88,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     fireEvent.click(screen.getByTestId('login-btn'));
@@ -113,7 +116,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     // Wait for initial auth check
@@ -144,7 +147,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     fireEvent.click(screen.getByTestId('login-btn'));
