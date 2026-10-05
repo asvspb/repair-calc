@@ -2,7 +2,7 @@ import React from 'react';
 import { Calculator } from 'lucide-react';
 import { logWarning } from '../../utils/logger';
 import { SummaryView } from '../../features/summary/ui/SummaryView';
-import { RoomEditor } from '../RoomEditor';
+import { RoomEditor } from '../../features/rooms/ui/RoomEditor';
 import { getAllRooms } from '../../utils/projectObjects';
 import type { ProjectData, RoomData } from '@shared/types';
 import type { WorkTemplate } from '../../types/workTemplate';
