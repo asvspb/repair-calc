@@ -955,3 +955,27 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
   `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик до правок);
   `pnpm run lint:deps` — 0 errors, 17 warnings (легаси-allowlist, как до batch).
 - Коммиты: перенос ui / хук / контекст / api / импортёры / depcruise / docs — раздельно, Conventional Commits.
+
+## 2026-10-05 — Кодер: R4 batch 026 — переезд домена summary в features/summary (refactor/r4-summary-026)
+
+- Перенос (механический, поведение/контракты не менялись): `src/components/summary/*` (index,
+  SummaryMaterials, SummaryTools, SummaryWorks) + `src/components/SummaryView.tsx` →
+  `src/features/summary/ui/`; `src/api/totals.ts` → `src/features/summary/api/totals.ts`.
+- Grep-факт: barrel `src/components/summary/index.ts` импортировался только самим SummaryView
+  (`import ... from './summary'`) — внешних импортёров нет, каталог удалён без фасада;
+  `src/api/totals.ts` имел 12+ импортёров (store/createSyncSlice + тесты) → @deprecated фасад оставлен.
+- @deprecated фасады: `src/components/SummaryView.tsx`, `src/api/totals.ts`. Импортёры переведены
+  на новые пути: components/layout/ContentArea.tsx, store/createSyncSlice.ts, тесты
+  (SummaryView.header/object/project, archiveProjectSlice, projectContextAutoSave,
+  useProject/Object/Room/SyncDomain, 2 integration, tests/api/totals.test.ts).
+  Файлы тестов не переносились (прецедент batch 025) — обновлены только пути импортов,
+  ассерты не менялись.
+- Cross-domain: SummaryWorks импортирует `src/types/workTemplate` (домен works) — как легаси
+  `src/types`, не напрямую из features/works (правило fsd-summary-no-cross-imports это блокирует);
+  перестройка после задачи 029.
+- depcruise: новое error-правило `fsd-summary-no-cross-imports` (чужие features не импортируют
+  features/summary). Легаси-allowlist не сокращён — фасады живут на легаси-путях; сокращение — 029.
+- Gates (до docs-коммита): `pnpm test` — 180 passed / 2 skipped (17 файлов passed, 1 skipped);
+  `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик до правок);
+  `pnpm run lint:deps` — 0 errors, 21 warnings (легаси-allowlist, как до batch).
+- Коммиты: перенос ui / api / импортёры / depcruise / docs — раздельно, Conventional Commits.

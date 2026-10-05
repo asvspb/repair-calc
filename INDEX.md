@@ -62,6 +62,9 @@ repair-calc/
 ├── src/                              # Исходный код фронтенда
 │   ├── app/                          # FSD-слой app (каркас R1: README-указатель; переезд кода в R4)
 │   ├── features/                     # FSD-фичи (каркас R1: README 7 доменов auth/projects/objects/rooms/works/summary/archive; переезд в R4)
+│   │   ├── auth/                     # Домен auth (R4 024): ui/, model/, api/
+│   │   ├── works/                    # Домен works (R4 025): ui/, model/, api/
+│   │   └── summary/                  # Домен summary (R4 026): ui/ (SummaryView, Materials, Works, Tools), api/ (totals)
 │   ├── api/                          # API клиенты
 │   │   ├── auth.ts                   # Аутентификация (JWT)
 │   │   ├── httpClient.ts             # HTTP-клиент (interceptors, retry, timeout)
@@ -69,7 +72,7 @@ repair-calc/
 │   │   ├── projects.ts               # Projects API (+архив T3: getArchivedProjects/restoreProject/permanentDeleteProject)
 │   │   ├── rooms.ts                  # Rooms API
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
-│   │   ├── totals.ts                 # Totals API
+│   │   ├── totals.ts                 # @deprecated фасад → src/features/summary/api/totals.ts (R4 026)
 │   │   ├── users.ts                  # Users API
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
@@ -90,11 +93,11 @@ repair-calc/
 │   │   ├── backup/                   # (6 файлов: ExportPanel, ImportPanel, SyncPanel, LoadProjectDialog, types, helpers — распил BackupManager, batch-013)
 │   │   ├── rooms/                    # (3 файла: List, ListItem, index)
 │   │   ├── works/                    # @deprecated фасад → src/features/works/ui (R4 025)
-│   │   ├── summary/                  # (4 файла: Materials, Tools, Works, index)
+│   │   ├── summary/                  # удалён — переехал в src/features/summary/ui (R4 026)
 │   │   ├── ui/                       # (3 файла: ConfirmDialog, ErrorBoundary, NumberInput)
 │   │   ├── BackupManager.tsx      # тонкий контейнер (панели в components/backup/)
 │   │   ├── RoomEditor.tsx
-│   │   └── SummaryView.tsx
+│   │   └── SummaryView.tsx           # @deprecated фасад → src/features/summary/ui (R4 026)
 │   ├── contexts/                     # React Context
 │   │   ├── AuthContext.tsx           # Аутентификация
 │   │   ├── WorkTemplateContext.tsx   # Шаблоны работ — @deprecated фасад → features/works/model (R4 025)
@@ -270,6 +273,7 @@ repair-calc/
 | `e2e/sync-v2.spec.ts`                   | E2E SYNC-V2 «мутация → flush → повторный init» — только при `VITE_SYNC_V2=true` (batch г)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `src/features/auth/`                    | Домен auth (R4 batch 024): `ui/` (LoginPage, RegisterPage, ProtectedRoute), `model/` (AuthContext — легаси-контекст перенесён как есть; auth.types), `api/auth.ts`. Старые пути (`src/components/auth`, `src/contexts/AuthContext.tsx`, `src/api/auth.ts`) — @deprecated фасады; depcruise-правило `fsd-auth-no-cross-imports` (error)                                                                                                                                                                                                      |
 | `src/features/works/`                   | Домен works (R4 batch 025): `ui/` (11 компонентов работ/материалов/поиска цен), `model/` (useWorkTemplates, WorkTemplateContext — легаси-контекст как есть), `api/` (AI-поиск цен: unifiedSearch, priceCache, types). Старые пути (`src/components/works`, `src/hooks/useWorkTemplates.ts`, `src/contexts/WorkTemplateContext.tsx`, `src/api/prices/*`) — @deprecated фасады; depcruise-правило `fsd-works-no-cross-imports` (error). `src/data/workTemplatesCatalog.ts` остался в data (используется вне works: `src/data/initialData.ts`) |
+| `src/features/summary/`                 | Домен summary (R4 batch 026): `ui/` (SummaryView, SummaryMaterials, SummaryWorks, SummaryTools, barrel), `api/` (totals: saveTotals/getTotals). Старые пути (`src/components/summary/`, `src/components/SummaryView.tsx`, `src/api/totals.ts`) — @deprecated фасады; depcruise-правило `fsd-summary-no-cross-imports` (error). `src/components/summary/` удалён после переезда (внешних импортёров barrel не было — grep)                                                                                                                   |
 | `src/api/httpClient.ts`                 | HTTP-клиент (interceptors, retry, timeout)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `src/api/storage/apiStorageProvider.ts` | Storage через REST API — тонкий фасад (346 стр.); внутри: `apiClient.ts` (очередь/ретраи), `projectApi.ts` (синхронизация), `objectApi.ts` (CRUD), `roomApi.ts` (комнаты)                                                                                                                                                                                                                                                                                                                                                                   |
 | `src/utils/storage.ts`                  | StorageManager (localStorage)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
