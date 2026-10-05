@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle } from 'lucide-react';
-import type { ImportStatus } from './modalTypes';
+import type { ImportStatus } from '../model/modalTypes';
 
 interface ImportStatusBannerProps {
   importStatus: ImportStatus;

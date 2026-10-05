@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Upload, FileJson, FolderOpen, Check } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
-import { StorageManager, type BackupData } from '../../utils/storage';
-import { migrateProjectToObjects } from '../../utils/projectObjects';
-import { dlog, derror } from '../../utils/debugLogger';
+import { StorageManager, type BackupData } from '../../../utils/storage';
+import { migrateProjectToObjects } from '../../../utils/projectObjects';
+import { dlog, derror } from '../../../utils/debugLogger';
 
 const LOG_PREFIX = '[CreateProjectModal]';
 

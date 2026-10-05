@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ProjectListItem } from '../../../src/components/projects/ProjectListItem';
+import { ProjectListItem } from '../../../src/features/projects/ui/ProjectListItem';
 import type { ProjectData } from '../../../src/types';
 
 const createProject = (overrides: Partial<ProjectData> = {}): ProjectData =>

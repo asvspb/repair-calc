@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ServerSyncSection } from '../../../src/components/projects/ServerSyncSection';
+import { ServerSyncSection } from '../../../src/features/projects/ui/ServerSyncSection';
 
 const defaultProps = {
   isSavingToServer: false,

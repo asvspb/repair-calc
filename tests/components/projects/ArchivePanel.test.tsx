@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
-import { ArchivePanel } from '../../../src/components/projects/ArchivePanel';
+import { ArchivePanel } from '../../../src/features/projects/ui/ArchivePanel';
 import type { ProjectData } from '../../../src/types';
 
 type ArchivedItem = ProjectData & { objectsCount: number; roomsCount: number; archivedAt?: string };

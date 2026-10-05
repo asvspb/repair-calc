@@ -10,10 +10,10 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
-import { useProjectStore } from '../../store/useProjectStore';
-import { useAuth } from '../../features/auth/model/AuthContext';
-import { logUserAction, logWarning } from '../../utils/logger';
-import { pluralize } from '../../utils/format';
+import { useProjectStore } from '../../../store/useProjectStore';
+import { useAuth } from '../../../contexts/AuthContext';
+import { logUserAction, logWarning } from '../../../utils/logger';
+import { pluralize } from '../../../utils/format';
 
 /**
  * Элемент списка архива. Дата архивации (серверное deleted_at) в маппинге

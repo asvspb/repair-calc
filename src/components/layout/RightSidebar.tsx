@@ -1,6 +1,6 @@
 import { X, Settings, LayoutDashboard, Plus, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ProjectsList } from '../projects/ProjectsList';
+import { ProjectsList } from '../../features/projects/ui/ProjectsList';
 import { OtherObjectsSection } from './ObjectSettings';
 import type { ProjectData, ObjectData } from '@shared/types';
 
