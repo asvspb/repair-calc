@@ -11,7 +11,7 @@ export type { BackupManagerProps };
 
 /**
  * Тонкий контейнер (TASK-BATCH-013-split-ui):
- * панели экспорта/импорта/синхронизации вынесены в src/components/backup/.
+ * панели экспорта/импорта/синхронизации вынесены в src/features/backup/ui/.
  */
 export function BackupManager({
   projects,
