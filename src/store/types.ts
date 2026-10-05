@@ -1,5 +1,13 @@
-import type { ProjectData, ObjectData, RoomData } from '@shared/types';
+import type { ProjectData, ObjectData, RoomData, WorkData } from '@shared/types';
 import type { StorageError } from '../utils/storage';
+import type {
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+} from '../features/auth/model/auth.types';
+import type { WorkTemplate } from '../types/workTemplate';
+import type { RoomMetrics } from '../types';
+import type { SaveResult } from '../features/works/model/useWorkTemplates';
 
 export interface ProjectSlice {
   projects: ProjectData[];
@@ -36,7 +44,33 @@ export interface ArchiveSlice {
 
 export interface AuthSlice {
   isAuthenticated: boolean;
+  /** Пользователь сессии (перенесено из контекста аутентификации) */
+  user: User | null;
+  /** Проверка токена при старте приложения (перенесено из контекста аутентификации) */
+  authIsLoading: boolean;
+  /** Ошибка входа/регистрации (перенесено из контекста аутентификации) */
+  authError: string | null;
+
   setIsAuthenticated: (value: boolean) => void;
+  /** Проверка сохранённого токена при загрузке; при 401 — refresh-цепочка */
+  initAuthCheck: () => void;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  clearAuthError: () => void;
+}
+
+/** Слайс шаблонов работ (бывш. контекст шаблонов) */
+export interface WorkTemplateSlice {
+  templates: WorkTemplate[];
+  /** Загрузка шаблонов из TemplateStorage при старте */
+  workTemplatesLoading: boolean;
+
+  initWorkTemplates: () => void;
+  saveTemplate: (work: WorkData, forceReplace: boolean, workVolume?: number) => SaveResult;
+  loadTemplate: (template: WorkTemplate, metrics?: RoomMetrics) => WorkData;
+  deleteTemplate: (id: string) => void;
+  importTemplates: (templates: WorkTemplate[]) => void;
 }
 
 export interface RoomSlice {
@@ -117,4 +151,5 @@ export type StoreState = ProjectSlice &
   RoomSlice &
   ObjectSlice &
   SyncSlice &
-  AuthSlice;
+  AuthSlice &
+  WorkTemplateSlice;

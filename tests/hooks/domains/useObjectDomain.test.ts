@@ -120,7 +120,7 @@ vi.mock('../../../src/utils/geometry', () => ({
 vi.mock('../../../src/utils/costs', () => ({
   calculateRoomCosts: vi.fn(() => ({ totalWork: 0, totalMaterial: 0, totalTools: 0 })),
 }));
-vi.mock('../../../src/features/auth/model/AuthContext', () => ({ useAuth: vi.fn() }));
+vi.mock('../../../src/store/useAuth', () => ({ useAuth: vi.fn() }));
 
 function createTestObject(id: string, name: string, rooms: unknown[] = []): ObjectData {
   return { id, projectId: 'p1', name, rooms: rooms as ObjectData['rooms'], sortOrder: 0 };

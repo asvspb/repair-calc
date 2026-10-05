@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Database, FolderOpen, RefreshCw, Save, X } from 'lucide-react';
 import { LoadProjectDialog } from './LoadProjectDialog';
 import type { ProjectData } from '@shared/types';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 import { ApiStorageProvider } from '../../../api/storage/apiStorageProvider';
 import { getProjects, getProject } from '../../../api/projects';
 import { getAllRooms } from '../../../utils/projectObjects';

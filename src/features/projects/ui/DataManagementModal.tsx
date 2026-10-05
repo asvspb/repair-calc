@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import type { WorkTemplate } from '../../../types/workTemplate';
 import { useProjectStore } from '../../../store/useProjectStore';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 import { StorageManager } from '../../../utils/storage';
 import { ApiStorageProvider } from '../../../api/storage/apiStorageProvider';
 import { migrateProjectToObjects } from '../../../utils/projectObjects';

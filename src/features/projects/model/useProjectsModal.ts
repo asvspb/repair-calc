@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProjectData } from '@shared/types';
 import type { WorkTemplate } from '../../../types/workTemplate';
 import { useProjectStore } from '../../../store/useProjectStore';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 import { StorageManager } from '../../../utils/storage';
 import { ApiStorageProvider } from '../../../api/storage/apiStorageProvider';
 import { migrateProjectToObjects } from '../../../utils/projectObjects';

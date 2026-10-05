@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { ProjectData } from '@shared/types';
 import { useProjectStore } from '../../../store/useProjectStore';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../store/useAuth';
 import { logUserAction, logWarning } from '../../../utils/logger';
 import { pluralize } from '../../../utils/format';
 

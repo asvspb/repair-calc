@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
 import { useProjectStore, resetStore } from './store/useProjectStore';
-import {
-  WorkTemplateProvider,
-  useWorkTemplateContext,
-} from './features/works/model/WorkTemplateContext';
-import { AuthProvider, useAuth } from './features/auth/model/AuthContext';
+import { useAuth } from './store/useAuth';
 import { ErrorBoundary } from '@shared/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './features/auth/ui';
 import { LeftSidebar } from './app/layout/LeftSidebar';
@@ -38,6 +34,8 @@ function AuthPages() {
 function useStoreEffects() {
   useEffect(() => {
     const cleanup = useProjectStore.getState().initSyncListeners();
+    // Загрузка шаблонов работ (бывш. WorkTemplateProvider useEffect на монтирование)
+    useProjectStore.getState().initWorkTemplates();
     return cleanup;
   }, []);
 }
@@ -68,8 +66,11 @@ function AppContent() {
 
   useStoreEffects();
 
-  const { templates, saveTemplate, loadTemplate, deleteTemplate, importTemplates } =
-    useWorkTemplateContext();
+  const templates = useProjectStore(s => s.templates);
+  const saveTemplate = useProjectStore(s => s.saveTemplate);
+  const loadTemplate = useProjectStore(s => s.loadTemplate);
+  const deleteTemplate = useProjectStore(s => s.deleteTemplate);
+  const importTemplates = useProjectStore(s => s.importTemplates);
   const [objectToDeleteId, setObjectToDeleteId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'summary' | 'editor' | 'estimate' | (string & {})>(
@@ -289,6 +290,11 @@ function AppWithAuth() {
     (import.meta.env.MODE !== 'production' &&
       localStorage.getItem(STORAGE_KEYS.E2E_TEST_MODE) === 'true');
 
+  // Проверка сохранённого токена при загрузке (бывш. AuthProvider useEffect на монтирование)
+  useEffect(() => {
+    useProjectStore.getState().initAuthCheck();
+  }, []);
+
   useEffect(() => {
     if (!isLoading) {
       resetStore();
@@ -309,19 +315,13 @@ function AppWithAuth() {
 
   if (!isAuthenticated && !isTestMode) return <AuthPages />;
 
-  return (
-    <WorkTemplateProvider>
-      <AppContent />
-    </WorkTemplateProvider>
-  );
+  return <AppContent />;
 }
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <AppWithAuth />
-      </AuthProvider>
+      <AppWithAuth />
     </ErrorBoundary>
   );
 }

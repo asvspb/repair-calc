@@ -42,7 +42,7 @@ export interface RefreshResponse {
   data: AuthTokens;
 }
 
-export interface AuthContextValue extends AuthState {
+export interface AuthActions extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
