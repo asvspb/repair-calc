@@ -934,3 +934,24 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
   `pnpm run lint` 0 errors (31 warning — pre-existing, сверено stash'ем с main);
   `pnpm run lint:deps` — «no dependency violations found (283 modules)».
 - Коммиты: перенос / импортёры / типы / depcruise — раздельно, Conventional Commits.
+
+## 2026-10-05 — Кодер: R4 batch 025 — переезд домена works в features/works (refactor/r4-works-025)
+
+- Перенос (механический, поведение/контракты не менялись): `src/components/works/*` (11 файлов) →
+  `src/features/works/ui/`, `src/hooks/useWorkTemplates.ts` + `src/contexts/WorkTemplateContext.tsx`
+  (легаси-контекст — как есть) → `src/features/works/model/`, `src/api/prices/*` (клиент AI-поиска
+  цен — домен works) → `src/features/works/api/`.
+- Grep-факт: `src/data/workTemplatesCatalog.ts` используется вне works (`src/data/initialData.ts`)
+  → остался в src/data по правилу «используется во многих местах — оставить».
+- @deprecated фасады на старых путях (`src/components/works/index.ts`, `src/hooks/useWorkTemplates.ts`,
+  `src/contexts/WorkTemplateContext.tsx`, `src/api/prices/{index,priceCache,types,unifiedSearch}.ts`);
+  импортёры переведены на новые пути: App.tsx, components/RoomEditor.tsx, components/layout/ContentArea.tsx,
+  тесты (useWorkTemplates, unifiedSearch, priceCache, WorkCatalogPicker, 2 integration).
+- depcruise: новое error-правило `fsd-works-no-cross-imports` (чужие features не импортируют features/works).
+  Легаси-allowlist не сокращён — фасады живут на легаси-путях; сокращение — задача 029.
+- Cross-domain: works-ui импортирует `hooks/useMaterialCalculation` (решение rooms, batch 027) и
+  `components/ui/*` — оба через легаси-allowlist (warn), перестройка после 027/029.
+- Gates: `pnpm test` — 180 passed / 2 skipped (17 файлов passed, 1 skipped);
+  `pnpm run lint` — 0 errors (31 warning — pre-existing, тот же счётчик до правок);
+  `pnpm run lint:deps` — 0 errors, 17 warnings (легаси-allowlist, как до batch).
+- Коммиты: перенос ui / хук / контекст / api / импортёры / depcruise / docs — раздельно, Conventional Commits.
