@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ProjectSettings } from '../../../src/components/layout/ProjectSettings';
+import { ProjectSettings } from '../../../src/app/layout/ProjectSettings';
 import type { ProjectData } from '../../../src/types';
 
 // Mock IdMapper
@@ -51,10 +51,10 @@ describe('ProjectSettings', () => {
     it('should display project selector with all projects', () => {
       render(<ProjectSettings {...mockProps} />);
       const select = screen.getByRole('combobox');
-      
+
       expect(select).toBeInTheDocument();
       expect(select).toHaveValue('proj-1');
-      
+
       const options = select.querySelectorAll('option');
       expect(options).toHaveLength(2);
       expect(options[0]).toHaveTextContent('Тестовый проект');
@@ -64,9 +64,9 @@ describe('ProjectSettings', () => {
     it('should call onProjectChange when selection changes', () => {
       render(<ProjectSettings {...mockProps} />);
       const select = screen.getByRole('combobox');
-      
+
       fireEvent.change(select, { target: { value: 'proj-2' } });
-      
+
       expect(mockProps.onProjectChange).toHaveBeenCalledWith('proj-2');
     });
 
@@ -78,9 +78,13 @@ describe('ProjectSettings', () => {
 
     it('should show offline icon for local projects', () => {
       const localProject = createMockProject('local-1', 'Локальный проект');
-      render(<ProjectSettings {...mockProps} activeProject={localProject} activeProjectId="local-1" />);
-      
-      const { container } = render(<ProjectSettings {...mockProps} activeProject={localProject} activeProjectId="local-1" />);
+      render(
+        <ProjectSettings {...mockProps} activeProject={localProject} activeProjectId="local-1" />,
+      );
+
+      const { container } = render(
+        <ProjectSettings {...mockProps} activeProject={localProject} activeProjectId="local-1" />,
+      );
       const offlineIcon = container.querySelector('svg');
       expect(offlineIcon).toBeInTheDocument();
     });
@@ -95,9 +99,9 @@ describe('ProjectSettings', () => {
     it('should switch to edit mode when rename button is clicked', async () => {
       render(<ProjectSettings {...mockProps} />);
       const renameButton = screen.getByText('Переименовать проект');
-      
+
       fireEvent.click(renameButton);
-      
+
       expect(screen.getByDisplayValue('Тестовый проект')).toBeInTheDocument();
       expect(screen.getByTitle('Сохранить')).toBeInTheDocument();
       expect(screen.getByTitle('Отмена')).toBeInTheDocument();
@@ -107,13 +111,13 @@ describe('ProjectSettings', () => {
       render(<ProjectSettings {...mockProps} />);
       const renameButton = screen.getByText('Переименовать проект');
       fireEvent.click(renameButton);
-      
+
       const input = screen.getByDisplayValue('Тестовый проект');
       fireEvent.change(input, { target: { value: 'Новое название' } });
-      
+
       const saveButton = screen.getByTitle('Сохранить');
       fireEvent.click(saveButton);
-      
+
       expect(mockProps.onRename).toHaveBeenCalledWith('Новое название');
     });
 
@@ -121,11 +125,11 @@ describe('ProjectSettings', () => {
       render(<ProjectSettings {...mockProps} />);
       const renameButton = screen.getByText('Переименовать проект');
       fireEvent.click(renameButton);
-      
+
       const input = screen.getByDisplayValue('Тестовый проект');
       fireEvent.change(input, { target: { value: 'Новое название' } });
       fireEvent.keyDown(input, { key: 'Enter' });
-      
+
       expect(mockProps.onRename).toHaveBeenCalledWith('Новое название');
     });
 
@@ -133,10 +137,10 @@ describe('ProjectSettings', () => {
       render(<ProjectSettings {...mockProps} />);
       const renameButton = screen.getByText('Переименовать проект');
       fireEvent.click(renameButton);
-      
+
       const input = screen.getByRole('textbox');
       fireEvent.keyDown(input, { key: 'Escape' });
-      
+
       // After escape, should go back to view mode with rename button visible
       expect(screen.getByText('Переименовать проект')).toBeInTheDocument();
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
@@ -146,13 +150,13 @@ describe('ProjectSettings', () => {
       render(<ProjectSettings {...mockProps} />);
       const renameButton = screen.getByText('Переименовать проект');
       fireEvent.click(renameButton);
-      
+
       const input = screen.getByDisplayValue('Тестовый проект');
       fireEvent.change(input, { target: { value: '   ' } });
-      
+
       const saveButton = screen.getByTitle('Сохранить');
       fireEvent.click(saveButton);
-      
+
       expect(mockProps.onRename).not.toHaveBeenCalled();
     });
   });
@@ -166,9 +170,9 @@ describe('ProjectSettings', () => {
     it('should call onDelete when delete button is clicked', () => {
       render(<ProjectSettings {...mockProps} />);
       const deleteButton = screen.getByText('Удалить проект');
-      
+
       fireEvent.click(deleteButton);
-      
+
       expect(mockProps.onDelete).toHaveBeenCalled();
     });
   });

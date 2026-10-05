@@ -8,10 +8,10 @@ import {
 import { AuthProvider, useAuth } from './features/auth/model/AuthContext';
 import { ErrorBoundary } from '@shared/ui/ErrorBoundary';
 import { LoginPage, RegisterPage } from './features/auth/ui';
-import { LeftSidebar } from './components/layout/LeftSidebar';
-import { RightSidebar } from './components/layout/RightSidebar';
-import { AppHeader } from './components/layout/AppHeader';
-import { ContentArea } from './components/layout/ContentArea';
+import { LeftSidebar } from './app/layout/LeftSidebar';
+import { RightSidebar } from './app/layout/RightSidebar';
+import { AppHeader } from './app/layout/AppHeader';
+import { ContentArea } from './app/layout/ContentArea';
 import { CreateObjectModal } from './features/objects/ui/CreateObjectModal';
 import { ProjectsModal, DataManagementModal } from './features/projects/ui';
 import { useRoomHeaderVisibility } from './hooks/ui/useRoomHeaderVisibility';

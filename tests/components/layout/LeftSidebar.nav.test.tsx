@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { LeftSidebar } from '../../../src/components/layout/LeftSidebar';
+import { LeftSidebar } from '../../../src/app/layout/LeftSidebar';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
