@@ -131,7 +131,8 @@ repair-calc/
 ├── shared/                           # Общие типы/утилиты (0 доменных зависимостей) — FSD-слой shared
 │   ├── types.ts                      # Общие типы (ProjectData, ObjectData, RoomData...)
 │   ├── ui/                           # R4 029: общий UI-кит (ConfirmDialog, ErrorBoundary, NumberInput) — из src/components/ui
-│   └── utils/                        # R1: format, logger, storageConstants, idMapper (в src/utils — фасады)
+│   ├── utils/                        # R1: format, logger, storageConstants, idMapper (в src/utils — фасады)
+│   └── data/                         # priceCatalogSeed.json — сид каталога цен (генерация: pnpm run generate:price-seed; 034)
 │
 ├── server/                           # Backend (Node.js + Express)
 │   ├── src/
@@ -196,7 +197,7 @@ repair-calc/
 │   │   │       └── work.repo.ts
 │   │   ├── services/
 │   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache, priceSearch)
-│   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner)
+│   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner; seedItems — слив сида каталога в очередь, 035)
 │   │   │   │   ├── parserManager.ts  # Оркестрация (фасад singleton); parserRegistry.ts / parserABTest.ts / parserManager.types.ts
 │   │   │   │   ├── runner.ts         # UpdateRunner (≤400); runnerSteps.ts / runner.types.ts / runnerCache.ts
 │   │   │   ├── sync-v2.service.ts    # LWW/push-логика SYNC-V2 (279): lwwCompare, SyncConflict, processSyncPush
@@ -230,7 +231,7 @@ repair-calc/
 ├── prompts/                          # Библиотека ролевых промптов ИИ-агентов (иерархия: techlead-architect → coder/debugger/designer/analyst; pentester — отдельный контур)
 ├── docs/                             # Документация (карта: docs/README.md; решения: docs/adr/)
 │   └── adr/                          # Architecture Decision Records (MADR)
-├── scripts/                          # Скрипты сборки и тестирования (+ docs-check.sh — автопроверка документации)
+├── scripts/                          # Скрипты сборки и тестирования (+ docs-check.sh — автопроверка документации; + generate-price-seed.ts — экспорт каталога в сид, 034)
 ├── docker-compose.yml          # backend/migrate/frontend — build.args COMMIT_HASH (env в контейнерах)
 ├── Dockerfile
 ├── package.json

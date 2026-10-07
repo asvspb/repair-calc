@@ -5,7 +5,6 @@ import {
 import {
   PriceCatalogRepository,
   type CreatePriceCatalogInput,
-  type PriceCategory,
   type SourceType,
 } from '../../db/repositories/priceCatalog.repo.js';
 import {
@@ -13,6 +12,7 @@ import {
   type CreatePriceHistoryInput,
 } from '../../db/repositories/priceHistory.repo.js';
 import { prioritizeItems, type PrioritizedItem } from './utils/priority.js';
+import { loadSeedItems, mergeSeedItems, type RawUpdateItem } from './seedItems.js';
 import type { PriceResult } from './parsers/types.js';
 import type { ItemToUpdate, RunOptions } from './runner.types.js';
 
@@ -23,8 +23,7 @@ import type { ItemToUpdate, RunOptions } from './runner.types.js';
 
 /** Получение и приоритизация элементов для обновления. */
 export async function getItemsToUpdate(options: RunOptions): Promise<PrioritizedItem[]> {
-  const rawItems: Array<{ name: string; category: PriceCategory; city: string; unit?: string }> =
-    [];
+  let rawItems: RawUpdateItem[] = [];
 
   // Если указан город, получаем элементы для этого города
   if (options.city) {
@@ -41,9 +40,16 @@ export async function getItemsToUpdate(options: RunOptions): Promise<Prioritized
         unit: price.unit,
       });
     }
-  }
 
-  // TODO: Добавить элементы из works/materials, которых нет в каталоге
+    // Элементы сида каталога, которых в price_catalog для города нет вообще
+    const seed = loadSeedItems();
+    const filteredSeed = options.categories
+      ? seed.filter(item => options.categories?.includes(item.category))
+      : seed;
+    rawItems = await mergeSeedItems(rawItems, filteredSeed, options.city, (name, city, category) =>
+      PriceCatalogRepository.findByNameCityCategory(name, city, category),
+    );
+  }
 
   // Ждём разрешения всех промисов для existingPrice
   const itemsWithPrices = await Promise.all(

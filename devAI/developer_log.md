@@ -1252,3 +1252,26 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 
 - Прод → 42bb3a9. Проверено живьём: контейнеры Up, backend COMMIT_HASH=42bb3a9 (= HEAD), /api/health 200, sync/push в бандле (SYNC-V2 активен), 401-логин отдаёт ошибку корректным форматом.
 - Полный цикл FSD + чистка завершён: прод = main = origin, e2e 159/159.
+
+## 2026-10-07 — TASK-BATCH-034 (price-seed extract)
+
+- Скрипт `scripts/generate-price-seed.ts` (+ script `generate:price-seed` в package.json): экспорт каталога works/materials/tools из `src/data/workTemplatesCatalog.ts` в `shared/data/priceCatalogSeed.json` (102 элемента: 21 work / 46 material / 35 tool; dedupe по name+category, сортировка category→name, цены не включаются).
+- `tests/priceSeed.spec.ts`: покрытие 100% каталога, без дублей, unit непустой, category ∈ {work,material,tool}, сортировка, version=1.
+- Регенерация байт-в-байт идентична (кроме generatedAt) — проверено.
+- Gates: `pnpm test` 194 passed / 2 skipped; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations.
+- Коммит: 1464c36.
+
+## 2026-10-07 — TASK-BATCH-035 (seed coverage в price-updater)
+
+- `server/src/services/update/seedItems.ts`: `loadSeedItems()` (fs+JSON, при битом/отсутствующем файле — winston warning и []) + `mergeSeedItems()` — в очередь добавляются только элементы сида, отсутствующие в price_catalog для города (сравнение по name+category); свежие не трогаются.
+- `runnerSteps.getItemsToUpdate`: слияние сида со stale-элементами (применяется и categories-фильтр), TODO runnerSteps.ts:46 удалён; без города сид не добавляется.
+- Тесты `server/tests/unit/seedItems.test.ts` + `runnerSteps.seed.test.ts` (14): свежий не попадает в очередь, отсутствующий попадает (priority ≥ 100), дубль со stale не дублируется, битый JSON → warning + раннер жив, name в разных категориях различаются.
+- Gates: `pnpm test` 194 passed / 2 skipped; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations (282 modules).
+- Коммит: 7e081c2. Дифф ⊆ объединённого write-set 034+035.
+
+## 2026-10-07 — Пилот оркестратора (L1.5): merge price-seed-coverage
+
+- Первый реальный прогон orchestrator (L1.5) по prompts/orchestrator.md: диспетчеризация 034→035, gates, write-set-сверка. ТЗ/ревью §4/merge — архитектор.
+- Ревью §4 (архитектор, независимый прогон): `pnpm test` 1134+194 passed / 0 failed; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations; дифф ⊆ write-set; секретов нет; `as unknown` единственный — тестовый DI-мок с обоснованием.
+- Отклонения от ТЗ (3) приняты: путь сида как параметр loadSeedItems для тестируемости; контрактный тест битого JSON; распространение categories-фильтра на сид.
+- Merge feat/price-seed-coverage → main. Готово к деплою через `./scripts/deploy-local.sh` (за владельцем).

@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port=3993 --host=0.0.0.0 2>&1 | grep -v \"@ljharb/tsconfig\"",
     "clean": "rm -rf dist",
+    "generate:price-seed": "tsx scripts/generate-price-seed.ts",
     "clean:full": "bash scripts/rebuild.sh",
     "lint": "tsc --noEmit && eslint src/ && cd server && tsc --noEmit && npm run lint",
     "test": "vitest run && cd server && npm run test",
