@@ -1315,3 +1315,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Независимые сверки: сид каталога — полная идентичность items (name/category/unit/порядок) против коммита 034; initialProjects/initialRooms — глубокая идентичность против main (git-worktree dump, 142 КБ, cmp пуст).
 - Отклонения исполнителя приняты: spread-композиция хендлеров в useGeometryState (порядок ключей сверен, композитор 181 строка ≤200); createInitialProjects в фасаде (иначе цикл factories↔demo, 6 no-circular).
 - Merge refactor/monolith-splits-b1 → main. Волна B2 (server: ai.ts, gemini/mistralProvider) — следующий план.
+
+## 2026-10-07 — TASK-BATCH-040 (split ai routes)
+
+- `server/src/routes/ai.ts` (558 строк) → фасад (32 строки: Router + authenticate + aiRateLimiter + 7 строк маршрутов + default export) + 7 handler-файлов в `server/src/routes/ai/handlers/` (status, history, stats, estimate, suggestMaterials, generateTemplate, searchPrice).
+- Тела callbacks перенесены байт-в-байт; порядок маршрутов и middleware-цепочка сохранены; общие импорты дублируются по необходимости.
+- Тесты и импортеры НЕ правились: aiRoutes.test.ts + routeMounting.test.ts зелёные без изменений (24 теста).
+- Gates: pnpm test (root 194 passed + server cascade 194 passed), lint 0 errors, lint:deps clean.
