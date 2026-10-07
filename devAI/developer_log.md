@@ -1308,3 +1308,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 
 - 036→037→038→039 последовательно, отдельные атомарные коммиты, после каждого — полный gates-прогон (перезапущен оркестратором лично).
 - `git diff main --name-only` ⊆ объединённого write-set + devAI/spec (ТЗ/PLAN) + developer_log. INDEX.md не трогался (запрет). Тесты/импортеры (App.tsx, RoomEditor.tsx, tests/, scripts/generate-price-seed.ts) не правились.
+
+## 2026-10-07 — Волна B1 (распил монолитов): ревью и merge
+
+- Архитектор, ревью §4 (независимые прогоны): все gates зелёные (1134+194 tests, lint 0 errors/31 pre-existing warnings, deps 307 modules clean); дифф ⊆ write-set; тесты/импортеры не тронуты; smells нет.
+- Независимые сверки: сид каталога — полная идентичность items (name/category/unit/порядок) против коммита 034; initialProjects/initialRooms — глубокая идентичность против main (git-worktree dump, 142 КБ, cmp пуст).
+- Отклонения исполнителя приняты: spread-композиция хендлеров в useGeometryState (порядок ключей сверен, композитор 181 строка ≤200); createInitialProjects в фасаде (иначе цикл factories↔demo, 6 no-circular).
+- Merge refactor/monolith-splits-b1 → main. Волна B2 (server: ai.ts, gemini/mistralProvider) — следующий план.
