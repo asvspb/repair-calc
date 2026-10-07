@@ -1275,3 +1275,36 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Ревью §4 (архитектор, независимый прогон): `pnpm test` 1134+194 passed / 0 failed; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations; дифф ⊆ write-set; секретов нет; `as unknown` единственный — тестовый DI-мок с обоснованием.
 - Отклонения от ТЗ (3) приняты: путь сида как параметр loadSeedItems для тестируемости; контрактный тест битого JSON; распространение categories-фильтра на сид.
 - Merge feat/price-seed-coverage → main. Готово к деплою через `./scripts/deploy-local.sh` (за владельцем).
+
+## 2026-10-07 — TASK-BATCH-036 (распил workTemplatesCatalog)
+
+- `src/data/workTemplatesCatalog.ts` (1220 строк) → фасад; реализация в `src/data/catalog/`: tools.ts (TOOLS), works-floor/walls/ceiling/openings/other.ts (записи байт-в-байт, распределение по полю category), selectors.ts (сборка WORK_TEMPLATES_CATALOG в исходном порядке + query-функции + type re-export).
+- Импортеры не тронуты (initialData, WorkCatalogPicker, tests, scripts/generate-price-seed.ts — работают через фасад).
+- Сверка сида: `pnpm tsx scripts/generate-price-seed.ts` → diff priceCatalogSeed.json = только generatedAt; JSON (без generatedAt) идентичен коммиту; регенерация откачена (`git checkout --`).
+- Gates: test 194 passed/2 skipped; lint 0 errors (31 pre-existing warnings); lint:deps no violations (296 modules).
+- Коммит: f81e692. Все новые файлы ≤273 строк.
+
+## 2026-10-07 — TASK-BATCH-037 (распил roomHelpers)
+
+- `src/domain/geometry/roomHelpers.ts` (765 строк) → фасад; реализация в `src/domain/geometry/roomHelpers/`: arrayUtils, windowsDoors, subSections (включая nested windows/doors и internal updateSubSectionArray), segments, obstacles, wallSections, switchMode.
+- Приваты syncModeData/updateSubSectionArray — internal-экспорты модулей, фасадом НЕ переэкспортируются. Сверка: 34 публичных экспорта фасада == исходные (`git show HEAD:... | grep export`), diff пуст.
+- Gates: test 194 passed/2 skipped; lint 0 errors; lint:deps no violations. Коммит: 477b1e9.
+
+## 2026-10-07 — TASK-BATCH-038 (распил useGeometryState)
+
+- `src/features/rooms/model/useGeometryState.ts` (748 строк) → композитор (181 строка ≤200): UI-collapse state + handleGeometryModeChange + сборка; доменные хуки в `model/geometry/`: types.ts (UseGeometryStateReturn), useWindowDoorHandlers, useSubSectionHandlers, useAdvancedHandlers — тела useCallback байт-в-байт, deps без изменений (room.id → аргумент roomId).
+- Отклонение (обоснование в отчёте оркестратора): вместо построчной деструктуризации трёх хуков — их spread в возвращаемом объекте (printWidth 100 не даёт ужать композитор до ≤200 иначе); порядок ключей каждого хука совпадает с исходным порядком полей — возвращаемый объект идентичен.
+- Инцидент + фикс: первый прогон — красные lint:deps (не тот уровень вложенности импорта projectFactory из geometry/) и падение tests/hooks/useGeometryState.test.ts; исправлено путём импорта, всё зелёное.
+- Gates: test 1134 passed/4 skipped; lint 0 errors; lint:deps no violations (300 modules). Коммит: 8aa3c68.
+
+## 2026-10-07 — TASK-BATCH-039 (распил initialData)
+
+- `src/data/initialData.ts` (636 строк) → фасад; реализация в `src/data/demo/`: factories.ts (createWorkFromTemplate, calculateSimpleMetrics, createRoom, works-фабрики, createDemoObject) + house/garage/dacha/shop/warehouse/workshop.ts (демо-комнаты по объектам).
+- Отклонение (допустимо по ТЗ «вычисление в фасаде ИЛИ ре-экспорт»): createInitialProjects выполняется в фасаде — иначе цикл factories ↔ объекты (no-circular в lint:deps). Порядок комнат/объектов байт-в-байт.
+- Глубокая сверка: JSON.stringify(initialProjects + initialRooms) до/после распила — cmp идентичен (INITIAL DATA DEEPLY IDENTICAL).
+- Gates: test 1134 passed/4 skipped; lint 0 errors; lint:deps no violations (307 modules). Коммит: b3281c3.
+
+## 2026-10-07 — Волна B1: сводка оркестратора
+
+- 036→037→038→039 последовательно, отдельные атомарные коммиты, после каждого — полный gates-прогон (перезапущен оркестратором лично).
+- `git diff main --name-only` ⊆ объединённого write-set + devAI/spec (ТЗ/PLAN) + developer_log. INDEX.md не трогался (запрет). Тесты/импортеры (App.tsx, RoomEditor.tsx, tests/, scripts/generate-price-seed.ts) не правились.
