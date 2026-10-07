@@ -6,6 +6,10 @@ export interface User {
   email: string;
   name: string | null;
   role?: 'admin' | 'user';
+  // Премиум-колонки users (миграция 20260331): читаются честно из записи;
+  // механизм присвоения премиума — продуктовое решение за владельцем (решение №2)
+  is_premium?: boolean;
+  premium_expires_at?: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -294,6 +298,7 @@ export interface ChangeLogEntry {
     | 'material'
     | 'tool'
     | 'opening'
+    | 'object'
     | 'subsection'
     | 'segment'
     | 'obstacle'

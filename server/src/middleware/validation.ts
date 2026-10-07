@@ -71,13 +71,29 @@ export const createRoomSchema = z.object({
   object_id: z.string().optional(), // Any string ID format allowed
 });
 
-// Object schema for nested updates
+// Object schemas (трассировка ТЗ v1.1, пункт 15.17 / решение №9)
+// Столбцы objects: name varchar(255), city varchar(100), address varchar(500)
+export const createObjectSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  city: z.string().max(100).optional(),
+  address: z.string().max(500).optional(),
+  use_ai_pricing: z.boolean().optional(),
+});
+
+// Object schema for nested updates and PUT /api/objects/:id
 // Allow any string ID format (including local-obj-... prefixes for client-generated IDs)
 // The repository will handle creating new objects for non-UUID or non-existent IDs
 export const updateObjectSchema = z.object({
   id: z.string().optional(), // Any string ID format allowed
   name: z.string().min(1).max(255).optional(),
   city: z.string().max(100).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  use_ai_pricing: z.boolean().optional(),
+  last_ai_price_update: z
+    .union([z.string().datetime(), z.string().min(1)])
+    .optional()
+    .nullable(),
+  sort_order: z.number().int().min(0).optional(),
   rooms: z.array(createRoomSchema).optional(),
 });
 

@@ -74,7 +74,7 @@ repair-calc/
 │   │   ├── projects.ts               # @deprecated фасад → src/features/projects/api/projects.ts (R4 029; живой потребитель — SyncPanel, снятие — пост-R4)
 │   │   ├── rooms.ts                  # @deprecated фасад → src/features/rooms/api/rooms.ts (R4 027; живой потребитель — SyncPanel, снятие — пост-R4)
 │   │   ├── sync.ts                   # SYNC-V2 push-контракт (POST /api/sync/push; batch б)
-│   │   ├── users.ts                  # Users API
+│   │   ├── users.ts                  # Users API (is_premium из БД, 042)
 │   │   ├── storage/
 │   │   │   ├── apiStorageProvider.ts # Storage через REST API (тонкий фасад, ~346 строк)
 │   │   │   ├── apiClient.ts          # Очередь запросов: rate limiting, 429-ретраи, типы кэша/контекста
@@ -146,7 +146,7 @@ repair-calc/
 │   │   │   ├── index.ts              # Роутер
 │   │   │   ├── auth.ts               # Аутентификация
 │   │   │   ├── projects.ts           # CRUD проектов
-│   │   │   ├── objects.ts            # CRUD объектов
+│   │   │   ├── objects.ts            # CRUD объектов (Zod-валидация, 042)
 │   │   │   ├── rooms.ts              # CRUD комнат
 │   │   │   ├── works.ts              # CRUD работ
 │   │   │   ├── geometry.ts           # Маршруты геометрии (фасад; обработчики в geometry.controller.ts / geometry.advanced.controller.ts)
@@ -173,6 +173,7 @@ repair-calc/
 │   │   │   │   ├── 20260314_webhooks.ts
 │   │   │   │   ├── 20260315_room_json_fields.ts
 │   │   │   │   ├── 20260331_add_objects.ts
+│   │   │   │   ├── 20260407_drop_deleted_entities.ts  # дроп мёртвой таблицы (трассировка ТЗ, 043)
 │   │   │   │   └── 20260332_add_user_role.ts
 │   │   │   └── repositories/         # Data access (12 файлов)
 │   │   │       ├── abTest.repo.ts               # Фасад: сборка read/write (batch-022-r3)
@@ -275,6 +276,8 @@ repair-calc/
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `server/src/routes/sync.ts`            | Sync API (pull/push; SYNC-V2: LWW на push по `clientUpdatedAt`, `?since=` на pull — batch в)                                                                          |
 | `server/src/routes/ai.ts`              | AI-роуты: фасад-роутер (B2 040) → ai/handlers/{status,history,stats,estimate,suggestMaterials,generateTemplate,searchPrice}                                           |
+| `server/src/routes/objects.ts`         | CRUD объектов (B 042: Zod-валидация create/update через validation.ts; лимит 10 объектов)                                                                             |
+| `server/src/routes/users.ts`           | /users/me GET/PUT (B 042: is_premium/premium_expires_at читаются из БД)                                                                                               |
 | `server/src/routes/projects.ts`        | Projects CRUD                                                                                                                                                         |
 | `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas); ab-test — обработчики в ab-test.controller.ts / ab-test.lifecycle.controller.ts |
 | `server/src/routes/geometry*.ts`       | Геометрия: фасад geometry.ts + geometry.controller.ts / geometry.advanced.controller.ts (batch-022-r3)                                                                |

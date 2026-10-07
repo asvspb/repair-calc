@@ -31,7 +31,7 @@ export class UserRepository {
 
   static async findById(id: string): Promise<User | null> {
     const row = await db('users')
-      .select('id', 'email', 'name', 'created_at', 'updated_at')
+      .select('id', 'email', 'name', 'is_premium', 'premium_expires_at', 'created_at', 'updated_at')
       .where({ id })
       .whereNull('deleted_at')
       .first();

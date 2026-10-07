@@ -4,6 +4,7 @@ import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { notFound } from '../middleware/errorHandler.js';
 import { winstonLogger } from '../middleware/logger.js';
+import { createObjectSchema, updateObjectSchema } from '../middleware/validation.js';
 import type { AuthRequest } from '../types/index.js';
 
 const router = Router();
@@ -17,13 +18,17 @@ router.use(authenticate);
  */
 router.post('/projects/:projectId/objects', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const { projectId } = req.params;
-    const { name, city, address, use_ai_pricing } = req.body;
+    const { name, city, address, use_ai_pricing } = createObjectSchema.parse(req.body);
     const userId = req.user!.id;
 
-    winstonLogger.info('[POST /projects/:id/objects] Создание объекта', { projectId, name, city: city || null });
+    winstonLogger.info('[POST /projects/:id/objects] Создание объекта', {
+      projectId,
+      name,
+      city: city || null,
+    });
 
     // Проверка существования проекта
     const project = await ProjectRepository.findByIdAndUserId(projectId, userId);
@@ -52,14 +57,20 @@ router.post('/projects/:projectId/objects', async (req: AuthRequest, res, next) 
       use_ai_pricing: use_ai_pricing || false,
     });
 
-    winstonLogger.info('[POST /projects/:id/objects] Создан объект', { objectId: object.id, duration: Date.now() - startTime });
+    winstonLogger.info('[POST /projects/:id/objects] Создан объект', {
+      objectId: object.id,
+      duration: Date.now() - startTime,
+    });
 
     res.status(201).json({
       status: 'success',
       data: object,
     });
   } catch (error) {
-    winstonLogger.error('[POST /projects/:id/objects] Ошибка', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[POST /projects/:id/objects] Ошибка', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -70,7 +81,7 @@ router.post('/projects/:projectId/objects', async (req: AuthRequest, res, next) 
  */
 router.get('/objects', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const userId = req.user!.id;
 
@@ -78,7 +89,10 @@ router.get('/objects', async (req: AuthRequest, res, next) => {
 
     const objects = await ObjectRepository.findByUserId(userId);
 
-    winstonLogger.info('[GET /api/objects] Найдено', { count: objects.length, duration: Date.now() - startTime });
+    winstonLogger.info('[GET /api/objects] Найдено', {
+      count: objects.length,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
@@ -96,7 +110,7 @@ router.get('/objects', async (req: AuthRequest, res, next) => {
  */
 router.get('/objects/:id', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const { id } = req.params;
     const userId = req.user!.id;
@@ -112,14 +126,20 @@ router.get('/objects/:id', async (req: AuthRequest, res, next) => {
     // Загружаем комнаты
     const objectWithRooms = await ObjectRepository.findByIdWithRooms(id);
 
-    winstonLogger.info('[GET /api/objects/:id] Найден', { roomsCount: objectWithRooms?.rooms.length || 0, duration: Date.now() - startTime });
+    winstonLogger.info('[GET /api/objects/:id] Найден', {
+      roomsCount: objectWithRooms?.rooms.length || 0,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       data: objectWithRooms,
     });
   } catch (error) {
-    winstonLogger.error('[GET /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[GET /api/objects/:id] Ошибка', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -130,11 +150,12 @@ router.get('/objects/:id', async (req: AuthRequest, res, next) => {
  */
 router.put('/objects/:id', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const { id } = req.params;
     const userId = req.user!.id;
-    const { name, city, address, use_ai_pricing, last_ai_price_update, sort_order } = req.body;
+    const { name, city, address, use_ai_pricing, last_ai_price_update, sort_order } =
+      updateObjectSchema.parse(req.body);
 
     winstonLogger.info('[PUT /api/objects/:id] Обновление объекта', { id });
 
@@ -151,9 +172,12 @@ router.put('/objects/:id', async (req: AuthRequest, res, next) => {
       city: city !== undefined ? city : existing.city,
       address: address !== undefined ? address : existing.address,
       use_ai_pricing: use_ai_pricing !== undefined ? use_ai_pricing : existing.use_ai_pricing,
-      last_ai_price_update: last_ai_price_update !== undefined 
-        ? (last_ai_price_update ? new Date(last_ai_price_update) : null)
-        : existing.last_ai_price_update,
+      last_ai_price_update:
+        last_ai_price_update !== undefined
+          ? last_ai_price_update
+            ? new Date(last_ai_price_update)
+            : null
+          : existing.last_ai_price_update,
       sort_order: sort_order !== undefined ? sort_order : existing.sort_order,
     });
 
@@ -164,7 +188,10 @@ router.put('/objects/:id', async (req: AuthRequest, res, next) => {
       data: object,
     });
   } catch (error) {
-    winstonLogger.error('[PUT /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[PUT /api/objects/:id] Ошибка', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });
@@ -175,7 +202,7 @@ router.put('/objects/:id', async (req: AuthRequest, res, next) => {
  */
 router.delete('/objects/:id', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const { id } = req.params;
     const userId = req.user!.id;
@@ -190,14 +217,20 @@ router.delete('/objects/:id', async (req: AuthRequest, res, next) => {
 
     await ObjectRepository.delete(id);
 
-    winstonLogger.info('[DELETE /api/objects/:id] Удалён', { id, duration: Date.now() - startTime });
+    winstonLogger.info('[DELETE /api/objects/:id] Удалён', {
+      id,
+      duration: Date.now() - startTime,
+    });
 
     res.json({
       status: 'success',
       message: 'Object deleted',
     });
   } catch (error) {
-    winstonLogger.error('[DELETE /api/objects/:id] Ошибка', { duration: Date.now() - startTime, error });
+    winstonLogger.error('[DELETE /api/objects/:id] Ошибка', {
+      duration: Date.now() - startTime,
+      error,
+    });
     next(error);
   }
 });

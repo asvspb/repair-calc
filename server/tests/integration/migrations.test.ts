@@ -49,7 +49,10 @@ describe('Database Migrations', () => {
     expect(tableNames).toContain('ai_requests');
     expect(tableNames).toContain('calculated_totals');
     expect(tableNames).toContain('audit_log');
-    expect(tableNames).toContain('deleted_entities');
     expect(tableNames).toContain('objects');
+    // TASK-BATCH-043 (решение №1 трассировки ТЗ v1.1): мёртвая таблица
+    // deleted_entities удалена миграцией 20260407 — финальная схема удаления
+    // = soft-delete (deleted_at) + retention-джоба cleanupDeleted.ts
+    expect(tableNames).not.toContain('deleted_entities');
   });
 });

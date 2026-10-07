@@ -16,7 +16,7 @@ router.use(authenticate);
  */
 router.get('/me', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const userId = req.user!.id;
 
@@ -32,8 +32,10 @@ router.get('/me', async (req: AuthRequest, res, next) => {
       id: user.id,
       email: user.email,
       name: user.name,
-      is_premium: false, // По умолчанию
-      premium_expires_at: null,
+      // Честное чтение из user-записи БД (колонки users.is_premium/premium_expires_at,
+      // миграция 20260331); механизм присвоения премиума — за владельцем (решение №2)
+      is_premium: Boolean(user.is_premium),
+      premium_expires_at: user.premium_expires_at ?? null,
       limits: {
         max_objects_per_project: 10,
         max_projects: -1,
@@ -59,7 +61,7 @@ router.get('/me', async (req: AuthRequest, res, next) => {
  */
 router.put('/me', async (req: AuthRequest, res, next) => {
   const startTime = Date.now();
-  
+
   try {
     const userId = req.user!.id;
     const { name } = req.body;
