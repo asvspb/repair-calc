@@ -1,12 +1,7 @@
 import { ProjectRepository } from '../db/repositories/project.repo.js';
 import { ObjectRepository } from '../db/repositories/object.repo.js';
 import { RoomRepository } from '../db/repositories/room.repo.js';
-import type {
-  Conflict,
-  Room,
-  Project,
-  DbObject,
-} from '../types/index.js';
+import type { Conflict, Room, Project, DbObject } from '../types/index.js';
 import { winstonLogger } from '../middleware/logger.js';
 import type { z } from 'zod';
 import type { syncPushSchema } from '../middleware/validation.js';
@@ -64,15 +59,16 @@ function toIso(value: Date | string | null | undefined): string | undefined {
  * SYNC-V2 (спека §3.4): конфликтность определяется сравнением `data.clientUpdatedAt`
  * против `updated_at` строки (LWW + tie-break §3.2), а не `version`.
  */
-export async function processSyncPush(userId: string, changes: SyncChange[]): Promise<SyncPushResult> {
+export async function processSyncPush(
+  userId: string,
+  changes: SyncChange[],
+): Promise<SyncPushResult> {
   const synced: string[] = [];
   const conflicts: SyncConflict[] = [];
 
   for (const change of changes) {
     try {
-      const { id, entityId, data, timestamp: _timestamp } = change;
-      // change.entity не знает 'object' в ChangeLogEntry — сравнение по строке (спека §3.4)
-      const entity = change.entity as string;
+      const { id, entityId, data, entity, timestamp: _timestamp } = change;
       const clientUpdatedAt = (data as { clientUpdatedAt?: string })?.clientUpdatedAt;
       const roomData = data as Partial<Room>;
       const objectData = data as { name?: string; city?: string; sort_order?: number };
