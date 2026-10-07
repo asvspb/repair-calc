@@ -1339,3 +1339,16 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Отклонения исполнителя ПРИНЯТЫ (моё ТЗ их предусматривало): prompts.ts не создан — строки промптов Gemini/Mistral различаются («(БЕЗ markdown обёртки)»), запрет менять промпты сильнее дедупа; parse*Response остались в классах (тянут провайдеро-специфичные extractText/parseJsonFromText/validateConfidence). Провайдеры 550/544 строк (>400) — признано допустимым для legacy, отмечено как потенциальная B3.
 - Вынесено общее: responseParsers.ts (parseWorks/parseMaterials/parseTools, байтово идентичны у обоих провайдеров — сверено по диффу).
 - Merge refactor/monolith-splits-b2 → main.
+
+## 2026-10-07 — TASK-BATCH-042 (tz-trivial-fixes) + TASK-BATCH-043 (drop-deleted-entities)
+
+- Ветка fix/tz-trace-042 (от main), два кодовых коммита: 1656d97 (042), 82f4909 (043).
+- 042 (решения №4/9/10/11 трассировки ТЗ v1.1):
+  - /users/me: is_premium/premium_expires_at читаются честно из user-записи (колонки users, миграция 20260331). Потребовалось минимальное расширение сверх буквального write-set: UserRepository.findById select + User-интерфейс (server/src/types/index.ts) — без них поле из БД физически не доходит до маршрута; форма ответа не менялась (клиент src/api/users.ts:13 читает is_premium как boolean — проверено grep'ом).
+  - POST/PUT объектов: Zod (createObjectSchema name≤200 по ТЗ; updateObjectSchema расширен опциональными address/use_ai_pricing/last_ai_price_update/sort_order — надмножество, обратно совместимо с with-objects). 400 через errorHandler — единообразно с projects.
+  - ChangeLogEntry: 'object' в union; `as string` в sync-v2.service.ts заменён деструктуризацией entity (SyncChange из syncPushSchema уже типобезопасен).
+  - Тесты: usersRoutes.test.ts (is_premium true/false/undefined), objectsRoutes.test.ts (Zod 400 × 4, лимит 403 OBJECT_LIMIT_REACHED, happy-path POST/PUT), changeLogEntryObject.test.ts (тип-тест). Entity-object в sync/push уже был покрыт syncRoutes.test.ts.
+- 043 (решение №1): миграция 20260407_drop_deleted_entities (dropTableIfExists; down воссоздаёт по определению 20260331). migrations.test.ts — таблицы нет; ARCHITECTURE.md — две правки (модель данных + снят устаревший пункт про очистку deleted_entities).
+- Миграция к dev-БД: `pnpm run migrate` локально невозможен — контейнер repair-calc-db не публикует порт на хост (а 127.0.0.1:5432 занят посторонним сервисом, pg-протокол не отвечает). Применено штатным `docker compose build migrate && docker compose run --rm migrate`: "Batch 2 run: 1 migrations"; psql в контейнере подтверждает: "Did not find any relation named 'deleted_entities'", knex_migrations последняя запись — 20260407_drop_deleted_entities.ts.
+- Gates (перезапущены после обоих ТЗ): pnpm test — root 1149 passed | 4 skipped, server 209 passed | 2 skipped; pnpm run lint — 0 errors (31 pre-existing warnings); pnpm run lint:deps — 0 violations (316 modules, 1184 dependencies).
+- REQUIREMENTS-TRACE-v1.1.md: решения №1/4/9/10/11 отмечены «✅ закрыто/доработано (042/043)». Статусы обоих ТЗ ⬜→✅.
