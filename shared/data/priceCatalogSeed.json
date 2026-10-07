@@ -1,0 +1,516 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-07T11:04:44.695Z",
+  "items": [
+    {
+      "name": "Брусок 50×30 мм (обрешётка)",
+      "category": "material",
+      "unit": "пог. м"
+    },
+    {
+      "name": "ГКЛ (потолочный)",
+      "category": "material",
+      "unit": "лист"
+    },
+    {
+      "name": "Грунтовка",
+      "category": "material",
+      "unit": "л"
+    },
+    {
+      "name": "Дверной блок",
+      "category": "material",
+      "unit": "компл"
+    },
+    {
+      "name": "Замок/защёлка",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Затирка для швов",
+      "category": "material",
+      "unit": "кг"
+    },
+    {
+      "name": "Кабель ВВГнг 3×2.5",
+      "category": "material",
+      "unit": "м"
+    },
+    {
+      "name": "Клей для линолеума",
+      "category": "material",
+      "unit": "л"
+    },
+    {
+      "name": "Клей для обоев",
+      "category": "material",
+      "unit": "пачка"
+    },
+    {
+      "name": "Клей для плитки",
+      "category": "material",
+      "unit": "мешок"
+    },
+    {
+      "name": "Краска",
+      "category": "material",
+      "unit": "л"
+    },
+    {
+      "name": "Краска потолочная",
+      "category": "material",
+      "unit": "л"
+    },
+    {
+      "name": "Крепёж для плинтуса",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Крестики для плитки",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Ламинат",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Лента-серпянка",
+      "category": "material",
+      "unit": "рулон"
+    },
+    {
+      "name": "Линолеум",
+      "category": "material",
+      "unit": "м²"
+    },
+    {
+      "name": "Маяки",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Маяки штукатурные",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Мешки для мусора",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Монтажная пена",
+      "category": "material",
+      "unit": "баллон"
+    },
+    {
+      "name": "Обои",
+      "category": "material",
+      "unit": "рулон"
+    },
+    {
+      "name": "Оконный блок",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Отлив",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Панели стеновые",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Панель откосная",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Плинтус",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Плитка напольная",
+      "category": "material",
+      "unit": "м²"
+    },
+    {
+      "name": "Плитка настенная",
+      "category": "material",
+      "unit": "м²"
+    },
+    {
+      "name": "Подвесы",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Подложка",
+      "category": "material",
+      "unit": "рулон"
+    },
+    {
+      "name": "Подоконник",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Подрозетник",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Полотно натяжное",
+      "category": "material",
+      "unit": "м²"
+    },
+    {
+      "name": "Профиль потолочный CD60",
+      "category": "material",
+      "unit": "пог. м"
+    },
+    {
+      "name": "Розетка/выключатель",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Ручка дверная",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Саморезы",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Саморезы для ГКЛ",
+      "category": "material",
+      "unit": "упак"
+    },
+    {
+      "name": "Смесь для стяжки",
+      "category": "material",
+      "unit": "мешок"
+    },
+    {
+      "name": "Трубы PPR",
+      "category": "material",
+      "unit": "м"
+    },
+    {
+      "name": "Уголки декоративные",
+      "category": "material",
+      "unit": "шт"
+    },
+    {
+      "name": "Уголок",
+      "category": "material",
+      "unit": "пог. м"
+    },
+    {
+      "name": "Фитинги",
+      "category": "material",
+      "unit": "компл"
+    },
+    {
+      "name": "Шпаклёвка",
+      "category": "material",
+      "unit": "кг"
+    },
+    {
+      "name": "Штукатурка",
+      "category": "material",
+      "unit": "мешок"
+    },
+    {
+      "name": "Валик игольчатый",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Валик малярный",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Валик обойный",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Валик с удлинителем",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Ванночка для краски",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Кисть для клея",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Кисть малярная",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Клинья распорные",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Лом",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Миксер (насадка)",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Молоток",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Набор ключей",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Набор шпателей",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Нож для линолеума",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Нож обойный",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Ножницы по металлу",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Ножовка",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Паяльник для труб",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Перфоратор",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Пила",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Пистолет для пены",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Плиткорез",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Подбойка для ламината",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Правило",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Правило алюминиевое",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Скотч малярный",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Тёрка резиновая",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Тёрка шлифовальная",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Тестер (мультиметр)",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Трубогиб",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Уровень пузырьковый",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Шпатель для клея",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Шпатель зубчатый",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Шуруповёрт",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Электролобзик",
+      "category": "tool",
+      "unit": "шт"
+    },
+    {
+      "name": "Выравнивание потолка",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Демонтаж",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Заливка стяжки",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Натяжной потолок",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Облицовка панелями",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Откосы",
+      "category": "work",
+      "unit": "пог. м"
+    },
+    {
+      "name": "Поклейка обоев",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Покраска потолка",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Покраска стен",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Потолок из ГКЛ",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Сантехника",
+      "category": "work",
+      "unit": "точка"
+    },
+    {
+      "name": "Укладка ламината",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Укладка линолеума",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Укладка плитки (пол)",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Укладка плитки (стены)",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Установка двери",
+      "category": "work",
+      "unit": "шт"
+    },
+    {
+      "name": "Установка окна",
+      "category": "work",
+      "unit": "шт"
+    },
+    {
+      "name": "Шпаклёвка потолка",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Шпаклёвка стен",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Штукатурка стен",
+      "category": "work",
+      "unit": "м²"
+    },
+    {
+      "name": "Электрика",
+      "category": "work",
+      "unit": "точка"
+    }
+  ]
+}
