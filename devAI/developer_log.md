@@ -1359,3 +1359,11 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Решения архитектора: 4 тривиальные доработки (batch 042: is_premium из БД, Zod objects, лимит-тест, ChangeLogEntry 'object') + дроп deleted_entities (batch 043, миграция 20260407, применена docker compose run migrate, Batch 2); премиум и Excel-смета — продуктовые решения за владельцем; остальное закрыто won't-fix/«реализовано иначе».
 - Ревью §4: gates лично (1149+209 tests, 15 новых; lint 0 errors; deps 316 clean); дифф ⊆ write-set с двумя обоснованными расширениями (user.repo select, User-тип); миграция и down-ветка корректны.
 - Merge fix/tz-trace-042 → main. ТЗ v1.1 окончательно переведено в статус исторического: висящих технических расхождений нет, открыты только 2 продуктовых вопроса (премиум, Excel).
+
+## 2026-10-07 — Push + CI + деплой (делегировано владельцем)
+
+- Блокер найден и устранён ДО пуша: CI (.github/workflows/ci.yml) был на npm ci + package-lock — падал после миграции на pnpm. Переведён на pnpm/action-setup@4 + pnpm install --frozen-lockfile (коммит 95fcd5a).
+- Push main → origin: 95485f3..95fcd5a (29 коммитов: пилот оркестратора, B1, B2, этап C).
+- CI на GitHub: ✅ Lint/Test/Architecture за 1m08s (первый зелёный прогон после серии failures из-за npm ci).
+- Деплой: ./scripts/deploy-local.sh — тесты, линтеры, docker compose build, migrate (включая 20260407_drop_deleted_entities), все контейнеры Up.
+- Верификация прода: /api/health 200, backend COMMIT_HASH=95fcd5a (= HEAD = origin/main), frontend 3993 → HTTP 200. Прод = main = origin.
