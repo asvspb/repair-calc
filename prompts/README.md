@@ -31,19 +31,20 @@
 
 ## Роли
 
-| Промпт                                             | Роль                                                                                                 | Уровень |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------- |
-| [techlead-architect.md](./techlead-architect.md)   | Архитектор-контролёр: декомпозиция, параноидальное ревью, git-цикл, merge                            | 1       |
-| [coder.md](./coder.md)                             | Исполнитель: один task-batch → одна подветка → один PR                                               | 2       |
-| [prompt-architect.md](./prompt-architect.md)       | **Мета-роль:** создаёт/улучшает промпты других агентов (v3)                                          | мета    |
-| [debugger.md](./debugger.md)                       | Отладчик: hypothesis-driven, репродукция → изоляция → фикс                                           | 2       |
-| [designer.md](./designer.md)                       | UI/UX: Tailwind, i18n-строки, a11y                                                                   | 2       |
-| [analyst.md](./analyst.md)                         | Исследователь: разведка кодовой базы, ответы с цитатами                                              | 2       |
-| [doc-keeper.md](./doc-keeper.md)                   | Смотритель документации: дрейфы «документация↔код↔git», freshness, docs-check                        | 2       |
-| [tester.md](./tester.md)                           | QA: Vitest unit/компонентные + Playwright e2e, RED-проверка тестов, дефект = репорт, не фикс         | 2       |
-| [release-engineer.md](./release-engineer.md)       | DevOps: Docker/деплой-скрипты, миграции Knex, pnpm-финиш, ready-to-deploy; сам деплой — за человеком | 2       |
-| [requirements-keeper.md](./requirements-keeper.md) | Контролёр требований: матрица трассировки ТЗ v1.1 ↔ код, «висящие» требования, код без требований    | 2       |
-| [pentester.md](./pentester.md)                     | Аудитор безопасности: 🔴/🟠/🟡-находки, re-test                                                      | контур  |
+| Промпт                                             | Роль                                                                                                                                                                        | Уровень |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| [techlead-architect.md](./techlead-architect.md)   | Архитектор-контролёр: декомпозиция, параноидальное ревью, git-цикл, merge                                                                                                   | 1       |
+| [coder.md](./coder.md)                             | Исполнитель: один task-batch → одна подветка → один PR                                                                                                                      | 2       |
+| [prompt-architect.md](./prompt-architect.md)       | **Мета-роль:** создаёт/улучшает промпты других агентов (v3)                                                                                                                 | мета    |
+| [debugger.md](./debugger.md)                       | Отладчик: hypothesis-driven, репродукция → изоляция → фикс                                                                                                                  | 2       |
+| [designer.md](./designer.md)                       | UI/UX: Tailwind, i18n-строки, a11y                                                                                                                                          | 2       |
+| [analyst.md](./analyst.md)                         | Исследователь: разведка кодовой базы, ответы с цитатами                                                                                                                     | 2       |
+| [doc-keeper.md](./doc-keeper.md)                   | Смотритель документации: дрейфы «документация↔код↔git», freshness, docs-check                                                                                               | 2       |
+| [tester.md](./tester.md)                           | QA: Vitest unit/компонентные + Playwright e2e, RED-проверка тестов, дефект = репорт, не фикс                                                                                | 2       |
+| [release-engineer.md](./release-engineer.md)       | DevOps: Docker/деплой-скрипты, миграции Knex, pnpm-финиш, ready-to-deploy; сам деплой — за человеком                                                                        | 2       |
+| [requirements-keeper.md](./requirements-keeper.md) | Контролёр требований: матрица трассировки ТЗ v1.1 ↔ код, «висящие» требования, код без требований                                                                           | 2       |
+| [interviewer.md](./interviewer.md)                 | Интервьюер: жалобы/пожелания владельца → FEATURE-REQUEST для техлида; спрашивает только то, чего нет в репо; работает с человеком напрямую; НЕ коммитит (git — за техлидом) | 2*      |
+| [pentester.md](./pentester.md)                     | Аудитор безопасности: 🔴/🟠/🟡-находки, re-test                                                                                                                             | контур  |
 
 ## SSOT-иерархия (для всех ролей)
 
