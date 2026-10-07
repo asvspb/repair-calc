@@ -1268,3 +1268,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Тесты `server/tests/unit/seedItems.test.ts` + `runnerSteps.seed.test.ts` (14): свежий не попадает в очередь, отсутствующий попадает (priority ≥ 100), дубль со stale не дублируется, битый JSON → warning + раннер жив, name в разных категориях различаются.
 - Gates: `pnpm test` 194 passed / 2 skipped; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations (282 modules).
 - Коммит: 7e081c2. Дифф ⊆ объединённого write-set 034+035.
+
+## 2026-10-07 — Пилот оркестратора (L1.5): merge price-seed-coverage
+
+- Первый реальный прогон orchestrator (L1.5) по prompts/orchestrator.md: диспетчеризация 034→035, gates, write-set-сверка. ТЗ/ревью §4/merge — архитектор.
+- Ревью §4 (архитектор, независимый прогон): `pnpm test` 1134+194 passed / 0 failed; `pnpm run lint` 0 errors (31 pre-existing warning); `pnpm run lint:deps` no violations; дифф ⊆ write-set; секретов нет; `as unknown` единственный — тестовый DI-мок с обоснованием.
+- Отклонения от ТЗ (3) приняты: путь сида как параметр loadSeedItems для тестируемости; контрактный тест битого JSON; распространение categories-фильтра на сид.
+- Merge feat/price-seed-coverage → main. Готово к деплою через `./scripts/deploy-local.sh` (за владельцем).
