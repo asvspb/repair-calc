@@ -1,7 +1,7 @@
 # TASK-BATCH-041-dedupe-ai-providers
 
 **Назначено:** coder **Подветка:** общая ветка refactor/monolith-splits-b2 (отдельный коммит)
-**Зависит от:** TASK-BATCH-040 **Статус:** ⬜
+**Зависит от:** TASK-BATCH-040 **Статус:** ✅
 
 ## Цель (проверяемая)
 
