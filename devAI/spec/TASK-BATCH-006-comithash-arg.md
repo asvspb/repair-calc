@@ -1,5 +1,7 @@
 # TASK-BATCH-006-comithash-arg (COMMIT_HASH в backend/migrate)
 
+> ⚠️ Историческая спека. Роль «оркестратор» (L1.5) отменена владельцем 2026-10-07 — см. developer_log; текущая система ролей без неё (prompts/README.md).
+
 **Назначено:** coder **Подветка:** fix/comithash-arg-batch-006
 **Зависит от:** TASK-BATCH-005 (ветку_base уточнит оркестратор) **Статус:** ⬜
 
