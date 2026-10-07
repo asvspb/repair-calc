@@ -1352,3 +1352,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Миграция к dev-БД: `pnpm run migrate` локально невозможен — контейнер repair-calc-db не публикует порт на хост (а 127.0.0.1:5432 занят посторонним сервисом, pg-протокол не отвечает). Применено штатным `docker compose build migrate && docker compose run --rm migrate`: "Batch 2 run: 1 migrations"; psql в контейнере подтверждает: "Did not find any relation named 'deleted_entities'", knex_migrations последняя запись — 20260407_drop_deleted_entities.ts.
 - Gates (перезапущены после обоих ТЗ): pnpm test — root 1149 passed | 4 skipped, server 209 passed | 2 skipped; pnpm run lint — 0 errors (31 pre-existing warnings); pnpm run lint:deps — 0 violations (316 modules, 1184 dependencies).
 - REQUIREMENTS-TRACE-v1.1.md: решения №1/4/9/10/11 отмечены «✅ закрыто/доработано (042/043)». Статусы обоих ТЗ ⬜→✅.
+
+## 2026-10-07 — Этап C (трассировка ТЗ v1.1): ревью и merge
+
+- Requirements-keeper: полная трассировка 85 требований §5–§15 → devAI/spec/REQUIREMENTS-TRACE-v1.1.md (38 ✅ / 21 🔄 / 12 ⚠️ / 9 ❌ / 5 ❓). Ключевые факты перепроверены архитектором лично (deleted_entities мертва, is_premium хардкод, objects без Zod, sync/pull без deleted).
+- Решения архитектора: 4 тривиальные доработки (batch 042: is_premium из БД, Zod objects, лимит-тест, ChangeLogEntry 'object') + дроп deleted_entities (batch 043, миграция 20260407, применена docker compose run migrate, Batch 2); премиум и Excel-смета — продуктовые решения за владельцем; остальное закрыто won't-fix/«реализовано иначе».
+- Ревью §4: gates лично (1149+209 tests, 15 новых; lint 0 errors; deps 316 clean); дифф ⊆ write-set с двумя обоснованными расширениями (user.repo select, User-тип); миграция и down-ветка корректны.
+- Merge fix/tz-trace-042 → main. ТЗ v1.1 окончательно переведено в статус исторического: висящих технических расхождений нет, открыты только 2 продуктовых вопроса (премиум, Excel).
