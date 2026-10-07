@@ -480,7 +480,10 @@ rooms 1──∞ wall_sections (advanced)
 - `tools` — инструменты (work_id, name, price, is_rent)
 - `openings` — окна/двери (room_id, type, dimensions)
 - `ai_requests` — лог AI-запросов
-- `deleted_entities` — отслеживание удалений (30 дней)
+- ~~`deleted_entities`~~ — удалена миграцией `20260407_drop_deleted_entities`
+  (TASK-BATCH-043, решение №1 трассировки ТЗ v1.1): таблица была «мёртвой» —
+  записей не писалось и не читалось. Финальная схема удаления — soft-delete
+  (`deleted_at`) + retention-джоба `cleanupDeleted.ts` (90 дней, cron 03:00)
 
 ---
 
@@ -843,7 +846,6 @@ e2e/sync-v2.spec.ts --project=chromium`; базовый набор — в ста
 3. **Улучшения:**
    - Request ID middleware
    - Per-user rate limiting
-   - Очистка `deleted_entities` (требование ТЗ §15.2.0 — в коде job не найден, 2026-10-03)
 
 ---
 
