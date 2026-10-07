@@ -1322,3 +1322,13 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Тела callbacks перенесены байт-в-байт; порядок маршрутов и middleware-цепочка сохранены; общие импорты дублируются по необходимости.
 - Тесты и импортеры НЕ правились: aiRoutes.test.ts + routeMounting.test.ts зелёные без изменений (24 теста).
 - Gates: pnpm test (root 194 passed + server cascade 194 passed), lint 0 errors, lint:deps clean.
+
+## 2026-10-07 — TASK-BATCH-041 (dedupe ai providers)
+
+- Механическая сверка (python, git show main) всех 9 заявленных методов-двойников по телам:
+  - parseWorks / parseMaterials / parseTools — побайтово идентичны в обоих провайдерах, без this-вызовов → вынесены в новый `server/src/services/ai/responseParsers.ts` (59 строк). Сверка переноса: тела без сигнатуры и отступов идентичны удалённым из ОБЕИХ провайдеров (True × 6).
+  - buildEstimatePrompt / buildSuggestMaterialsPrompt / buildGenerateTemplatePrompt — НЕ идентичны: в Gemini-версиях строка «Верни JSON в точном формате (БЕЗ markdown обёртки):», в Mistral — «Верни JSON в точном формате:». Строки промптов менять запрещено → оставлены в классах; `prompts.ts` не создан.
+  - parseEstimateResponse / parseSuggestMaterialsResponse / parseGenerateTemplateResponse — тела идентичны, но тянут this.extractText / this.parseJsonFromText (различаются между провайдерами) и this.validateConfidence → по ТЗ оставлены в классах; вызовы this.parseWorks/Materials/Tools переключены на импорты.
+- Публичный API классов и services/ai/index.ts не менялись; tsc/ESLint подтверждают совместимость типов.
+- Отклонение от DoD: провайдеры 550/544 строки (>400) — прямое следствие допустимого отклонения «оставить неидентичные методы в классах».
+- Gates: pnpm test (root 194 passed + server 194 passed), lint 0 errors, lint:deps clean (315 modules).

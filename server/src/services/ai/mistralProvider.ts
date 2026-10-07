@@ -16,14 +16,12 @@ import type {
   GenerateTemplateResult,
   PriceSearchRequest,
   PriceSearchResult,
-  RecommendedWork,
-  RecommendedMaterial,
-  RecommendedTool,
 } from './types.js';
 import { AIProviderError } from './types.js';
 import { CircuitBreaker } from '../update/parsers/circuitBreaker.js';
 import { RateLimiter } from '../update/parsers/rateLimiter.js';
 import { buildPriceSearchPrompt, buildPriceSearchResult } from './priceSearchHelpers.js';
+import { parseWorks, parseMaterials, parseTools } from './responseParsers.js';
 
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
 
@@ -65,7 +63,8 @@ abstract class BaseAIProvider {
       this.stats.failedRequests++;
     }
     this.stats.averageLatencyMs =
-      (this.stats.averageLatencyMs * (this.stats.totalRequests - 1) + latencyMs) / this.stats.totalRequests;
+      (this.stats.averageLatencyMs * (this.stats.totalRequests - 1) + latencyMs) /
+      this.stats.totalRequests;
     this.stats.lastRequestAt = new Date().toISOString();
   }
 
@@ -138,7 +137,11 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
     const response = await this.makeRequest(prompt);
     const text = this.extractText(response);
     const parsed = this.parseJsonFromText(text);
-    return buildPriceSearchResult(parsed as Parameters<typeof buildPriceSearchResult>[0], request, (c) => this.validateConfidence(c));
+    return buildPriceSearchResult(
+      parsed as Parameters<typeof buildPriceSearchResult>[0],
+      request,
+      c => this.validateConfidence(c),
+    );
   }
 
   /**
@@ -150,7 +153,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
         'API ключ Mistral не настроен. Добавьте MISTRAL_API_KEY в .env',
         this.name,
         false,
-        'NO_API_KEY'
+        'NO_API_KEY',
       );
     }
 
@@ -159,7 +162,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
         'Circuit breaker is open for Mistral',
         this.name,
         false,
-        'CIRCUIT_BREAKER_OPEN'
+        'CIRCUIT_BREAKER_OPEN',
       );
     }
 
@@ -198,7 +201,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
             `Mistral API auth error: ${response.status}`,
             this.name,
             false,
-            'AUTH_ERROR'
+            'AUTH_ERROR',
           );
         }
 
@@ -208,7 +211,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
             'Mistral API rate limit exceeded',
             this.name,
             true,
-            'RATE_LIMIT'
+            'RATE_LIMIT',
           );
         }
 
@@ -216,7 +219,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
           `Mistral API error: ${response.status} - ${errorText}`,
           this.name,
           true,
-          'API_ERROR'
+          'API_ERROR',
         );
       }
 
@@ -237,7 +240,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
         error instanceof Error ? error.message : 'Unknown error',
         this.name,
         true,
-        'REQUEST_ERROR'
+        'REQUEST_ERROR',
       );
     }
   }
@@ -284,7 +287,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
         'Не удалось распарсить JSON из ответа',
         this.name,
         false,
-        'PARSE_ERROR'
+        'PARSE_ERROR',
       );
     }
   }
@@ -455,9 +458,9 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
         max: parsed.estimatedCost?.max || 0,
         currency: parsed.estimatedCost?.currency || 'RUB',
       },
-      works: this.parseWorks(parsed.works),
-      materials: this.parseMaterials(parsed.materials),
-      tools: this.parseTools(parsed.tools),
+      works: parseWorks(parsed.works),
+      materials: parseMaterials(parsed.materials),
+      tools: parseTools(parsed.tools),
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
       disclaimer: parsed.disclaimer || 'Данные ориентировочные, уточните цены у подрядчиков',
@@ -469,7 +472,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
    */
   private parseSuggestMaterialsResponse(
     data: unknown,
-    request: SuggestMaterialsRequest
+    request: SuggestMaterialsRequest,
   ): SuggestMaterialsResult {
     const text = this.extractText(data);
     const parsed = this.parseJsonFromText(text) as {
@@ -483,8 +486,8 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
       workName: request.workName,
       area: request.area,
       city: request.city,
-      materials: this.parseMaterials(parsed.materials),
-      tools: this.parseTools(parsed.tools),
+      materials: parseMaterials(parsed.materials),
+      tools: parseTools(parsed.tools),
       tips: parsed.tips || [],
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
@@ -496,7 +499,7 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
    */
   private parseGenerateTemplateResponse(
     data: unknown,
-    request: GenerateTemplateRequest
+    request: GenerateTemplateRequest,
   ): GenerateTemplateResult {
     const text = this.extractText(data);
     const parsed = this.parseJsonFromText(text) as {
@@ -510,66 +513,12 @@ export class MistralAIProvider extends BaseAIProvider implements AIProvider {
       roomType: request.roomType,
       area: request.area,
       city: request.city,
-      works: this.parseWorks(parsed.works),
-      recommendedMaterials: this.parseMaterials(parsed.recommendedMaterials),
+      works: parseWorks(parsed.works),
+      recommendedMaterials: parseMaterials(parsed.recommendedMaterials),
       estimatedDays: parsed.estimatedDays,
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Парсинг списка работ
-   */
-  private parseWorks(works: unknown): RecommendedWork[] {
-    if (!Array.isArray(works)) return [];
-
-    return works.map((w: unknown) => {
-      const work = w as Record<string, unknown>;
-      return {
-        name: String(work.name || ''),
-        unit: String(work.unit || 'м²'),
-        quantity: Number(work.quantity) || 0,
-        pricePerUnit: Number(work.pricePerUnit) || 0,
-        calculationType: String(work.calculationType || 'customCount'),
-        category: work.category ? String(work.category) : undefined,
-      };
-    });
-  }
-
-  /**
-   * Парсинг списка материалов
-   */
-  private parseMaterials(materials: unknown): RecommendedMaterial[] {
-    if (!Array.isArray(materials)) return [];
-
-    return materials.map((m: unknown) => {
-      const material = m as Record<string, unknown>;
-      return {
-        name: String(material.name || ''),
-        unit: String(material.unit || 'шт'),
-        quantity: Number(material.quantity) || 0,
-        pricePerUnit: Number(material.pricePerUnit) || 0,
-        coverage: material.coverage ? String(material.coverage) : undefined,
-      };
-    });
-  }
-
-  /**
-   * Парсинг списка инструментов
-   */
-  private parseTools(tools: unknown): RecommendedTool[] {
-    if (!Array.isArray(tools)) return [];
-
-    return tools.map((t: unknown) => {
-      const tool = t as Record<string, unknown>;
-      return {
-        name: String(tool.name || ''),
-        quantity: Number(tool.quantity) || 1,
-        pricePerUnit: Number(tool.pricePerUnit) || 0,
-        isRent: Boolean(tool.isRent),
-      };
-    });
   }
 
   /**

@@ -10,9 +10,6 @@ import type {
   GenerateTemplateResult,
   PriceSearchRequest,
   PriceSearchResult,
-  RecommendedWork,
-  RecommendedMaterial,
-  RecommendedTool,
   AIProviderStats,
   AIProviderConfig,
   AIProvider,
@@ -21,6 +18,7 @@ import type {
   SuggestMaterialsRequest,
 } from './types.js';
 import { buildPriceSearchPrompt, buildPriceSearchResult } from './priceSearchHelpers.js';
+import { parseWorks, parseMaterials, parseTools } from './responseParsers.js';
 import { AIProviderError } from './types.js';
 import { CircuitBreaker } from '../update/parsers/circuitBreaker.js';
 import { RateLimiter } from '../update/parsers/rateLimiter.js';
@@ -460,9 +458,9 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
         max: parsed.estimatedCost?.max || 0,
         currency: parsed.estimatedCost?.currency || 'RUB',
       },
-      works: this.parseWorks(parsed.works),
-      materials: this.parseMaterials(parsed.materials),
-      tools: this.parseTools(parsed.tools),
+      works: parseWorks(parsed.works),
+      materials: parseMaterials(parsed.materials),
+      tools: parseTools(parsed.tools),
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
       disclaimer: parsed.disclaimer || 'Данные ориентировочные, уточните цены у подрядчиков',
@@ -488,8 +486,8 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
       workName: request.workName,
       area: request.area,
       city: request.city,
-      materials: this.parseMaterials(parsed.materials),
-      tools: this.parseTools(parsed.tools),
+      materials: parseMaterials(parsed.materials),
+      tools: parseTools(parsed.tools),
       tips: parsed.tips || [],
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
@@ -515,66 +513,12 @@ export class GeminiAIProvider extends BaseAIProvider implements AIProvider {
       roomType: request.roomType,
       area: request.area,
       city: request.city,
-      works: this.parseWorks(parsed.works),
-      recommendedMaterials: this.parseMaterials(parsed.recommendedMaterials),
+      works: parseWorks(parsed.works),
+      recommendedMaterials: parseMaterials(parsed.recommendedMaterials),
       estimatedDays: parsed.estimatedDays,
       confidence: this.validateConfidence(parsed.confidence),
       generatedAt: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Парсинг списка работ
-   */
-  private parseWorks(works: unknown): RecommendedWork[] {
-    if (!Array.isArray(works)) return [];
-
-    return works.map((w: unknown) => {
-      const work = w as Record<string, unknown>;
-      return {
-        name: String(work.name || ''),
-        unit: String(work.unit || 'м²'),
-        quantity: Number(work.quantity) || 0,
-        pricePerUnit: Number(work.pricePerUnit) || 0,
-        calculationType: String(work.calculationType || 'customCount'),
-        category: work.category ? String(work.category) : undefined,
-      };
-    });
-  }
-
-  /**
-   * Парсинг списка материалов
-   */
-  private parseMaterials(materials: unknown): RecommendedMaterial[] {
-    if (!Array.isArray(materials)) return [];
-
-    return materials.map((m: unknown) => {
-      const material = m as Record<string, unknown>;
-      return {
-        name: String(material.name || ''),
-        unit: String(material.unit || 'шт'),
-        quantity: Number(material.quantity) || 0,
-        pricePerUnit: Number(material.pricePerUnit) || 0,
-        coverage: material.coverage ? String(material.coverage) : undefined,
-      };
-    });
-  }
-
-  /**
-   * Парсинг списка инструментов
-   */
-  private parseTools(tools: unknown): RecommendedTool[] {
-    if (!Array.isArray(tools)) return [];
-
-    return tools.map((t: unknown) => {
-      const tool = t as Record<string, unknown>;
-      return {
-        name: String(tool.name || ''),
-        quantity: Number(tool.quantity) || 1,
-        pricePerUnit: Number(tool.pricePerUnit) || 0,
-        isRent: Boolean(tool.isRent),
-      };
-    });
   }
 
   /**
