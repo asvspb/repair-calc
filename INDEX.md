@@ -198,7 +198,7 @@ repair-calc/
 │   │   │       ├── webhook.repo.ts
 │   │   │       └── work.repo.ts
 │   │   ├── services/
-│   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache, priceSearch)
+│   │   │   ├── ai/                   # AI-провайдеры (Gemini, Mistral, cache, priceSearch; responseParsers — общие парсеры works/materials/tools, B2 041)
 │   │   │   ├── update/               # Сервис обновлений (parsers, scheduler, runner; seedItems — слив сида каталога в очередь, 035)
 │   │   │   │   ├── parserManager.ts  # Оркестрация (фасад singleton); parserRegistry.ts / parserABTest.ts / parserManager.types.ts
 │   │   │   │   ├── runner.ts         # UpdateRunner (≤400); runnerSteps.ts / runner.types.ts / runnerCache.ts
@@ -274,6 +274,7 @@ repair-calc/
 | Файл                                   | Назначение                                                                                                                                                            |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `server/src/routes/sync.ts`            | Sync API (pull/push; SYNC-V2: LWW на push по `clientUpdatedAt`, `?since=` на pull — batch в)                                                                          |
+| `server/src/routes/ai.ts`              | AI-роуты: фасад-роутер (B2 040) → ai/handlers/{status,history,stats,estimate,suggestMaterials,generateTemplate,searchPrice}                                           |
 | `server/src/routes/projects.ts`        | Projects CRUD                                                                                                                                                         |
 | `server/src/routes/update/`            | Сервис обновлений (декомпозирован: ab-test, import, jobs, prices, webhooks, schemas); ab-test — обработчики в ab-test.controller.ts / ab-test.lifecycle.controller.ts |
 | `server/src/routes/geometry*.ts`       | Геометрия: фасад geometry.ts + geometry.controller.ts / geometry.advanced.controller.ts (batch-022-r3)                                                                |

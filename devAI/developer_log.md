@@ -1332,3 +1332,10 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Публичный API классов и services/ai/index.ts не менялись; tsc/ESLint подтверждают совместимость типов.
 - Отклонение от DoD: провайдеры 550/544 строки (>400) — прямое следствие допустимого отклонения «оставить неидентичные методы в классах».
 - Gates: pnpm test (root 194 passed + server 194 passed), lint 0 errors, lint:deps clean (315 modules).
+
+## 2026-10-07 — Волна B2 (серверные монолиты AI): ревью и merge
+
+- Архитектор, ревью §4 (независимые прогоны): 1134+194 tests зелёные, lint 0 errors/31 pre-existing warnings, deps 315 modules clean; дифф ⊆ write-set; middleware-цепочка и порядок маршрутов ai.ts сохранены; smells/секретов нет.
+- Отклонения исполнителя ПРИНЯТЫ (моё ТЗ их предусматривало): prompts.ts не создан — строки промптов Gemini/Mistral различаются («(БЕЗ markdown обёртки)»), запрет менять промпты сильнее дедупа; parse*Response остались в классах (тянут провайдеро-специфичные extractText/parseJsonFromText/validateConfidence). Провайдеры 550/544 строк (>400) — признано допустимым для legacy, отмечено как потенциальная B3.
+- Вынесено общее: responseParsers.ts (parseWorks/parseMaterials/parseTools, байтово идентичны у обоих провайдеров — сверено по диффу).
+- Merge refactor/monolith-splits-b2 → main.
