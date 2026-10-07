@@ -1,7 +1,7 @@
 # TASK-BATCH-035-seed-coverage
 
 **Назначено:** coder **Подветка:** feat/price-seed-coverage-batch-035
-**Зависит от:** TASK-BATCH-034 **Статус:** ⬜
+**Зависит от:** TASK-BATCH-034 **Статус:** ✅
 
 ## Цель (проверяемая)
 
