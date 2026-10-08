@@ -1380,3 +1380,9 @@ serverUpdatedAt`), `SyncSlice.conflictsResolved`; `createSyncSlice.acknowledgeFl
 - Ревью техлида принято с правками (→ v1.1): по решению владельца «гит и документы за техлидом» из write-set интервьюера исключены developer_log/append, docs/TODO.md и коммиты — артефакт + черновик строки лога, коммитит техлид. Роутинг-строка добавлена в techlead-architect.md §1a (вход фич: FEATURE-REQUEST — вход в декомпозицию §1).
 - Устранено устаревшее упоминание оркестратора в строке реестра README (роль отменена ранее тем же днём).
 - Мой черновик prompts/assistant.md (догка до обнаружения агента в рабочем дереве) удалён.
+
+## 2026-10-08 — Очистка пользователей из БД (приказ владельца)
+
+- DELETE FROM users (удалён единственный аккаунт asv@asv.asv); каскадом обнулились projects/objects/rooms/works/materials, refresh_tokens.
+- Перед удалением снят полный бэкап: backups/db-before-user-wipe-20261008-072037.sql (109 КБ, вне git — .gitignore backups/). Восстановление: docker exec -i repair-calc-db psql -U repair_user repair_calc < <файл>.
+- price_catalog и другие глобальные таблицы не тронуты. Backend жив (/api/health 200).
